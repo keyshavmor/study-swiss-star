@@ -35,7 +35,7 @@ function ChatIndex() {
   }
 
   if (threads && threads.length > 0) {
-    throw redirect({ to: "/chat/$threadId", params: { threadId: threads[0].id } });
+    throw redirect({ to: "/chat/$threadId", params: { threadId: threads[0]!.id } });
   }
 
   createThreadFn({ data: { title: "General study session", subject: "All subjects" } })

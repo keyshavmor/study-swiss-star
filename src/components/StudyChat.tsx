@@ -94,8 +94,7 @@ export function StudyChat({ threadId }: StudyChatProps) {
 
   useEffect(() => {
     if (!activeThreadId && threads && threads.length > 0) {
-      const first = threads[0];
-      navigate({ to: "/chat/$threadId", params: { threadId: first.id } });
+      navigate({ to: "/chat/$threadId", params: { threadId: threads[0]!.id } });
     }
   }, [activeThreadId, threads, navigate]);
 
