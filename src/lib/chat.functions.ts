@@ -119,7 +119,7 @@ export const listMessages = createServerFn({ method: "POST" })
       id: row.id,
       role: row.role,
       content: row.content,
-      parts: (row.parts ?? []) as unknown[],
+      parts: (row.parts ?? []) as Json[],
     }));
   });
 
