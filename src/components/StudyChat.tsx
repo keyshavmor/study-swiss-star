@@ -316,12 +316,10 @@ export function StudyChat({ threadId }: StudyChatProps) {
 
         <div className="border-t bg-card p-4 lg:px-6">
           <PromptInput
-            onSubmit={(_, event) => {
-              const form = event.currentTarget;
-              const textarea = form.querySelector('textarea[name="message"]') as HTMLTextAreaElement | null;
-              const value = textarea?.value ?? "";
-              if (!value.trim()) return;
-              chat.sendMessage({ text: value.trim() });
+            onSubmit={(message) => {
+              const value = message.text.trim();
+              if (!value) return;
+              chat.sendMessage({ text: value });
             }}
           >
             <PromptInputTextarea
