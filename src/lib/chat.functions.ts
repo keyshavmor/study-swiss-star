@@ -1,7 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
-import type { UIMessage } from "ai";
 
 const ThreadInput = z.object({
   title: z.string().min(1).max(140),
@@ -20,7 +19,7 @@ const UpdateThreadInput = z.object({
 
 const SaveMessageInput = z.object({
   threadId: z.string().uuid(),
-  message: z.record(z.unknown()).transform((val) => val as UIMessage),
+  message: z.unknown(),
 });
 
 export const listThreads = createServerFn({ method: "GET" })
@@ -117,9 +116,9 @@ export const listMessages = createServerFn({ method: "POST" })
 
     return (rows ?? []).map((row) => ({
       id: row.id,
-      role: row.role as "user" | "assistant" | "system" | "data",
-      content: row.content as string,
-      parts: (row.parts ?? []) as UIMessage["parts"],
+      role: row.role,
+      content: row.content,
+      parts: (row.parts ?? []) as unknown[],
     }));
   });
 
@@ -127,14 +126,19 @@ export const saveMessage = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) => SaveMessageInput.parse(input))
   .handler(async ({ data, context }) => {
-    const { message } = data;
+    const message = data.message as {
+      id: string;
+      role: string;
+      content: string;
+      parts: unknown[];
+    };
     const { error } = await context.supabase.from("messages").insert({
       thread_id: data.threadId,
       user_id: context.userId,
       id: message.id,
       role: message.role,
       content: message.content,
-      parts: message.parts as unknown as Record<string, unknown>[],
+      parts: message.parts as Record<string, unknown>[],
     });
 
     if (error) throw new Error(error.message);
