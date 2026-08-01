@@ -33,7 +33,7 @@ export const listThreads = createServerFn({ method: "GET" })
       .order("updated_at", { ascending: false });
 
     if (error) throw new Error(error.message);
-    return data ?? [];
+    return (data ?? []).map((thread) => ({ ...thread, subject: thread.subject ?? "" }));
   });
 
 export const createThread = createServerFn({ method: "POST" })
@@ -50,8 +50,8 @@ export const createThread = createServerFn({ method: "POST" })
       .select("id, title, subject, updated_at")
       .single();
 
-    if (error) throw new Error(error.message);
-    return row;
+    if (error || !row) throw new Error(error?.message ?? "Thread not found");
+    return { ...row, subject: row.subject ?? "" };
   });
 
 export const getThread = createServerFn({ method: "POST" })
@@ -65,8 +65,8 @@ export const getThread = createServerFn({ method: "POST" })
       .eq("user_id", context.userId)
       .single();
 
-    if (error) throw new Error(error.message);
-    return row;
+    if (error || !row) throw new Error(error?.message ?? "Thread not found");
+    return { ...row, subject: row.subject ?? "" };
   });
 
 export const updateThread = createServerFn({ method: "POST" })
@@ -84,8 +84,8 @@ export const updateThread = createServerFn({ method: "POST" })
       .select("id, title, subject, updated_at")
       .single();
 
-    if (error) throw new Error(error.message);
-    return row;
+    if (error || !row) throw new Error(error?.message ?? "Thread not found");
+    return { ...row, subject: row.subject ?? "" };
   });
 
 export const deleteThread = createServerFn({ method: "POST" })
