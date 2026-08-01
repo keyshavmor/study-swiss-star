@@ -23,22 +23,18 @@ import {
   ConversationContent,
   ConversationScrollButton,
 } from "@/components/ai-elements/conversation";
-import {
-  Message,
-  MessageContent,
-  MessageResponse,
-} from "@/components/ai-elements/message";
+import { Message, MessageContent } from "@/components/ai-elements/message";
 import {
   PromptInput,
-  PromptInputBody,
   PromptInputFooter,
   PromptInputSubmit,
   PromptInputTextarea,
 } from "@/components/ai-elements/prompt-input";
 import { Shimmer } from "@/components/ai-elements/shimmer";
-import { BookOpen, Plus, Trash2, LogOut } from "lucide-react";
+import { BookOpen, Plus, LogOut } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import ReactMarkdown from "react-markdown";
 import type { UIMessage } from "ai";
 
 interface StudyChatProps {
@@ -76,8 +72,21 @@ export function StudyChat({ threadId }: StudyChatProps) {
 
   const chat = useChat({
     id: activeThreadId,
-    messages: (messages as UIMessage[]) ?? [],
-    transport: new DefaultChatTransport({ api: "/api/chat" }),
+    messages: (messages as unknown as UIMessage[]) ?? [],
+    transport: new DefaultChatTransport({
+      api: "/api/chat",
+      body: { threadId: activeThreadId },
+      fetch: async (input, init) => {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+        const headers = new Headers(init?.headers);
+        if (session?.access_token) {
+          headers.set("Authorization", `Bearer ${session.access_token}`);
+        }
+        return fetch(input, { ...init, headers });
+      },
+    }),
     onError: (err) => {
       toast.error(err.message || "Failed to send message");
     },
@@ -124,6 +133,8 @@ export function StudyChat({ threadId }: StudyChatProps) {
 
   const isLoading = threadsLoading || messagesLoading || chat.status === "submitted" || chat.status === "streaming";
 
+  const activeThread = threads?.find((t) => t.id === activeThreadId);
+
   return (
     <div className="flex h-screen w-full bg-background">
       <aside className="hidden w-72 flex-col border-r bg-sidebar lg:flex">
@@ -144,7 +155,7 @@ export function StudyChat({ threadId }: StudyChatProps) {
             <DialogContent>
               <DialogHeader>
                 <DialogTitle>New study session</DialogTitle>
-                <DialogDescription>Pick a subject and title for this session.</DialogDescription>
+                <DialogDescription>Pick a subject and topic for this session.</DialogDescription>
               </DialogHeader>
               <div className="space-y-4 py-2">
                 <div className="space-y-2">
@@ -205,10 +216,10 @@ export function StudyChat({ threadId }: StudyChatProps) {
           </div>
           <div className="hidden lg:block">
             <h2 className="text-sm font-medium text-muted-foreground">
-              {threads?.find((t) => t.id === activeThreadId)?.subject ?? "Study session"}
+              {activeThread?.subject ?? "Study session"}
             </h2>
             <h1 className="text-lg font-semibold text-foreground">
-              {threads?.find((t) => t.id === activeThreadId)?.title ?? "Get ready for your exams"}
+              {activeThread?.title ?? "Get ready for your exams"}
             </h1>
           </div>
           <div className="lg:hidden">
@@ -221,7 +232,7 @@ export function StudyChat({ threadId }: StudyChatProps) {
               <DialogContent>
                 <DialogHeader>
                   <DialogTitle>New study session</DialogTitle>
-                  <DialogDescription>Pick a subject and title for this session.</DialogDescription>
+                  <DialogDescription>Pick a subject and topic for this session.</DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4 py-2">
                   <div className="space-y-2">
@@ -269,16 +280,12 @@ export function StudyChat({ threadId }: StudyChatProps) {
                 </div>
               ) : (
                 chat.messages.map((message) => (
-                  <Message key={message.id} message={message}>
-                    <MessageContent
-                      className={
-                        message.role === "user"
-                          ? "bg-user text-user-foreground rounded-2xl rounded-tr-sm px-4 py-3"
-                          : "bg-transparent text-foreground px-1 py-2"
-                      }
-                    >
+                  <Message key={message.id} from={message.role}>
+                    <MessageContent className={message.role === "user" ? "rounded-2xl rounded-tr-sm bg-user text-user-foreground" : undefined}>
                       {message.role === "assistant" ? (
-                        <MessageResponse className="prose-study prose-sm" />
+                        <div className="prose-study prose-sm">
+                          <ReactMarkdown>{message.content}</ReactMarkdown>
+                        </div>
                       ) : (
                         <p>{message.content}</p>
                       )}
@@ -288,7 +295,7 @@ export function StudyChat({ threadId }: StudyChatProps) {
               )}
               {(chat.status === "submitted" || chat.status === "streaming") && (
                 <div className="px-1 py-2">
-                  <Shimmer className="text-muted-foreground" />
+                  <Shimmer className="text-muted-foreground">Thinking...</Shimmer>
                 </div>
               )}
             </ConversationContent>
@@ -298,32 +305,22 @@ export function StudyChat({ threadId }: StudyChatProps) {
 
         <div className="border-t bg-card p-4 lg:px-6">
           <PromptInput
-            onSubmit={(event) => {
-              const input = event.value;
-              if (!input?.trim()) return;
-              chat.sendMessage({ text: input.trim() });
+            onSubmit={(_, event) => {
+              const form = event.currentTarget;
+              const textarea = form.querySelector('textarea[name="message"]') as HTMLTextAreaElement | null;
+              const value = textarea?.value ?? "";
+              if (!value.trim()) return;
+              chat.sendMessage({ text: value.trim() });
             }}
-            disabled={isLoading}
           >
-            <PromptInputBody>
-              <PromptInputTextarea
-                placeholder="Ask about a topic, request a quiz, or paste a question..."
-                className="min-h-[72px] resize-none"
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && !e.shiftKey) {
-                    e.preventDefault();
-                    const target = e.target as HTMLTextAreaElement;
-                    const value = target.value;
-                    if (value.trim()) {
-                      chat.sendMessage({ text: value.trim() });
-                    }
-                  }
-                }}
-              />
-              <PromptInputFooter className="justify-end">
-                <PromptInputSubmit status={chat.status} disabled={isLoading} />
-              </PromptInputFooter>
-            </PromptInputBody>
+            <PromptInputTextarea
+              placeholder="Ask about a topic, request a quiz, or paste a question..."
+              className="min-h-[72px] resize-none"
+              disabled={isLoading}
+            />
+            <PromptInputFooter className="justify-end">
+              <PromptInputSubmit status={chat.status} disabled={isLoading} />
+            </PromptInputFooter>
           </PromptInput>
         </div>
       </main>
