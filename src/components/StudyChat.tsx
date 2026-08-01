@@ -94,7 +94,8 @@ export function StudyChat({ threadId }: StudyChatProps) {
 
   useEffect(() => {
     if (!activeThreadId && threads && threads.length > 0) {
-      navigate({ to: "/chat/$threadId", params: { threadId: threads[0].id } });
+      const first = threads[0];
+      navigate({ to: "/chat/$threadId", params: { threadId: first.id } });
     }
   }, [activeThreadId, threads, navigate]);
 
@@ -279,19 +280,30 @@ export function StudyChat({ threadId }: StudyChatProps) {
                   </p>
                 </div>
               ) : (
-                chat.messages.map((message) => (
-                  <Message key={message.id} from={message.role}>
-                    <MessageContent className={message.role === "user" ? "rounded-2xl rounded-tr-sm bg-user text-user-foreground" : undefined}>
-                      {message.role === "assistant" ? (
-                        <div className="prose-study prose-sm">
-                          <ReactMarkdown>{message.content}</ReactMarkdown>
-                        </div>
-                      ) : (
-                        <p>{message.content}</p>
-                      )}
-                    </MessageContent>
-                  </Message>
-                ))
+                chat.messages.map((message) => {
+                  const text = message.parts
+                    .map((part) => (part.type === "text" ? part.text : ""))
+                    .join("");
+                  return (
+                    <Message key={message.id} from={message.role}>
+                      <MessageContent
+                        className={
+                          message.role === "user"
+                            ? "rounded-2xl rounded-tr-sm bg-user text-user-foreground"
+                            : undefined
+                        }
+                      >
+                        {message.role === "assistant" ? (
+                          <div className="prose-study prose-sm">
+                            <ReactMarkdown>{text}</ReactMarkdown>
+                          </div>
+                        ) : (
+                          <p>{text}</p>
+                        )}
+                      </MessageContent>
+                    </Message>
+                  );
+                })
               )}
               {(chat.status === "submitted" || chat.status === "streaming") && (
                 <div className="px-1 py-2">
