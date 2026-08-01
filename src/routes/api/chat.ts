@@ -121,19 +121,17 @@ export const Route = createFileRoute("/api/chat")({
 
         return result.toUIMessageStreamResponse({
           originalMessages: messages,
-          onFinish: async ({ response }) => {
-            const assistant = response.messages.find((m) => m.role === "assistant");
-            if (!assistant) return;
-            const content = assistant.content
+          onFinish: async ({ responseMessage }) => {
+            const content = responseMessage.parts
               .map((part) => (part.type === "text" ? part.text : ""))
               .join("");
             const { error } = await supabase.from("messages").insert({
               thread_id: threadId,
               user_id: userId,
-              id: assistant.id,
+              id: responseMessage.id,
               role: "assistant",
               content,
-              parts: assistant.content as unknown[],
+              parts: responseMessage.parts as Json[],
             });
             if (error) {
               console.error("Failed to save assistant message", error);
