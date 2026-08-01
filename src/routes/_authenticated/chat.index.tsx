@@ -3,7 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { listThreads, createThread } from "@/lib/chat.functions";
 
-export const Route = createFileRoute("/_authenticated/chat")({
+export const Route = createFileRoute("/_authenticated/chat/")({
   head: () => ({
     meta: [
       { title: "Study chat — StudyMate" },
