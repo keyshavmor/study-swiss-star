@@ -20,16 +20,7 @@ const UpdateThreadInput = z.object({
 
 const SaveMessageInput = z.object({
   threadId: z.string().uuid(),
-  message: z.custom<UIMessage>((val) => {
-    if (typeof val !== "object" || val === null) return false;
-    const obj = val as Record<string, unknown>;
-    return (
-      typeof obj.id === "string" &&
-      (obj.role === "user" || obj.role === "assistant" || obj.role === "system" || obj.role === "data") &&
-      (typeof obj.content === "string" || Array.isArray(obj.content)) &&
-      Array.isArray(obj.parts)
-    );
-  }),
+  message: z.record(z.unknown()).transform((val) => val as UIMessage),
 });
 
 export const listThreads = createServerFn({ method: "GET" })
@@ -115,7 +106,7 @@ export const listMessages = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) => ThreadIdInput.parse(input))
   .handler(async ({ data, context }) => {
-    const { data, error } = await context.supabase
+    const { data: rows, error } = await context.supabase
       .from("messages")
       .select("id, role, content, parts, created_at")
       .eq("thread_id", data.threadId)
@@ -124,7 +115,7 @@ export const listMessages = createServerFn({ method: "POST" })
 
     if (error) throw new Error(error.message);
 
-    return (data ?? []).map((row) => ({
+    return (rows ?? []).map((row) => ({
       id: row.id,
       role: row.role as "user" | "assistant" | "system" | "data",
       content: row.content as string,
@@ -143,7 +134,7 @@ export const saveMessage = createServerFn({ method: "POST" })
       id: message.id,
       role: message.role,
       content: message.content,
-      parts: message.parts,
+      parts: message.parts as unknown as Record<string, unknown>[],
     });
 
     if (error) throw new Error(error.message);
