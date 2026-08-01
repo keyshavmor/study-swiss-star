@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { createClient } from "@supabase/supabase-js";
 import { convertToModelMessages, streamText, type UIMessage } from "ai";
 import { createLovableAiGatewayProvider } from "@/lib/ai-gateway.server";
-import type { Database } from "@/integrations/supabase/types";
+import type { Database, Json } from "@/integrations/supabase/types";
 
 function isNewSupabaseApiKey(value: string): boolean {
   return value.startsWith("sb_publishable_") || value.startsWith("sb_secret_");
