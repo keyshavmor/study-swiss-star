@@ -139,7 +139,7 @@ export const saveMessage = createServerFn({ method: "POST" })
       id: message.id,
       role: message.role,
       content: message.content,
-      parts: message.parts as Record<string, unknown>[],
+      parts: message.parts as Json[],
     });
 
     if (error) throw new Error(error.message);
