@@ -99,7 +99,7 @@ export const Route = createFileRoute("/api/chat")({
             content: lastMessage.parts
               .map((part) => (part.type === "text" ? part.text : ""))
               .join(""),
-            parts: lastMessage.parts as unknown[],
+            parts: lastMessage.parts as Json[],
           });
 
           if (insertError) {
