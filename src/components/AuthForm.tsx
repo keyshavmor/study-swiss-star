@@ -58,10 +58,12 @@ export function AuthForm() {
   };
 
   return (
-    <div className="space-y-4 rounded-2xl border bg-card p-6 shadow-sm">
-      <form onSubmit={handleEmailSubmit} className="space-y-4">
+    <div className="app-card space-y-6 p-7">
+      <form onSubmit={handleEmailSubmit} className="space-y-5">
         <div className="space-y-2">
-          <Label htmlFor="email">Email</Label>
+          <Label htmlFor="email" className="text-[13px] font-semibold text-muted-foreground">
+            Email
+          </Label>
           <Input
             id="email"
             type="email"
@@ -73,7 +75,9 @@ export function AuthForm() {
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="password">Password</Label>
+          <Label htmlFor="password" className="text-[13px] font-semibold text-muted-foreground">
+            Password
+          </Label>
           <Input
             id="password"
             type="password"
@@ -85,16 +89,16 @@ export function AuthForm() {
           />
         </div>
         <Button type="submit" className="w-full" disabled={isLoading}>
-          {isLoading ? "Please wait..." : mode === "signin" ? "Sign in" : "Create account"}
+          {isLoading ? "Please wait…" : mode === "signin" ? "Sign in" : "Create account"}
         </Button>
       </form>
 
       <div className="relative">
         <div className="absolute inset-0 flex items-center">
-          <span className="w-full border-t" />
+          <span className="w-full border-t border-border" />
         </div>
-        <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-card px-2 text-muted-foreground">Or</span>
+        <div className="relative flex justify-center text-[12px] font-semibold uppercase tracking-wide">
+          <span className="bg-card px-3 text-muted-foreground">Or</span>
         </div>
       </div>
 
@@ -102,11 +106,11 @@ export function AuthForm() {
         Continue with Google
       </Button>
 
-      <p className="text-center text-sm text-muted-foreground">
+      <p className="text-center text-[14px] text-muted-foreground">
         {mode === "signin" ? "Don't have an account?" : "Already have an account?"}{" "}
         <button
           type="button"
-          className="text-primary underline hover:text-primary/90"
+          className="font-semibold text-primary hover:text-primary-hover"
           onClick={() => setMode(mode === "signin" ? "signup" : "signin")}
         >
           {mode === "signin" ? "Sign up" : "Sign in"}
