@@ -1,6 +1,7 @@
-import { createFileRoute, redirect } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
+import { useEffect, useRef } from "react";
 import { listThreads, createThread } from "@/lib/chat.functions";
 
 export const Route = createFileRoute("/_authenticated/chat/")({
@@ -18,33 +19,34 @@ export const Route = createFileRoute("/_authenticated/chat/")({
 });
 
 function ChatIndex() {
+  const navigate = useNavigate();
   const listThreadsFn = useServerFn(listThreads);
   const createThreadFn = useServerFn(createThread);
+  const handled = useRef(false);
 
   const { data: threads, isLoading } = useQuery({
     queryKey: ["threads"],
     queryFn: listThreadsFn,
   });
 
-  if (isLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-      </div>
-    );
-  }
+  useEffect(() => {
+    if (isLoading || handled.current) return;
+    handled.current = true;
 
-  if (threads && threads.length > 0) {
-    throw redirect({ to: "/chat/$threadId", params: { threadId: threads[0]!.id } });
-  }
+    const first = threads?.[0];
+    if (first) {
+      navigate({ to: "/chat/$threadId", params: { threadId: first.id }, replace: true });
+      return;
+    }
 
-  createThreadFn({ data: { title: "General study session", subject: "All subjects" } })
-    .then((thread) => {
-      throw redirect({ to: "/chat/$threadId", params: { threadId: thread.id } });
-    })
-    .catch(() => {
-      // handled by router error boundary
-    });
+    createThreadFn({ data: { title: "General study session", subject: "All subjects" } })
+      .then((thread) => {
+        navigate({ to: "/chat/$threadId", params: { threadId: thread.id }, replace: true });
+      })
+      .catch(() => {
+        handled.current = false;
+      });
+  }, [isLoading, threads, navigate, createThreadFn]);
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background">
@@ -52,3 +54,4 @@ function ChatIndex() {
     </div>
   );
 }
+
