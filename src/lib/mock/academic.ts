@@ -208,6 +208,3 @@ export const ASSESSMENTS: Assessment[] = [
 ];
 
 export const SUBJECTS_MISSING_GRADES = ["Political Education", "SPF Chemistry"];
-
-/** Subjects that still have no recorded grade this school year. */
-export const SUBJECTS_MISSING_GRADES = ["Political Education"];
