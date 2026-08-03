@@ -15,8 +15,8 @@ function StateBlock({
   tone: string;
   heading: string;
   description: string;
-  action?: ReactNode;
-  className?: string;
+  action?: ReactNode | undefined;
+  className?: string | undefined;
 }) {
   return (
     <div
