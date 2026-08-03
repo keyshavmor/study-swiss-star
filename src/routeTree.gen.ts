@@ -18,6 +18,7 @@ import { Route as ApiChatRouteImport } from './routes/api/chat'
 import { Route as AuthenticatedChatIndexRouteImport } from './routes/_authenticated/chat.index'
 import { Route as AuthenticatedChatThreadIdRouteImport } from './routes/_authenticated/chat.$threadId'
 import { Route as AuthenticatedSchoolIndexRouteImport } from './routes/_authenticated/school.index'
+import { Route as AuthenticatedSchoolSubjectRouteImport } from './routes/_authenticated/school.$subject'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -65,6 +66,12 @@ const AuthenticatedSchoolIndexRoute =
     path: '/school/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedSchoolSubjectRoute =
+  AuthenticatedSchoolSubjectRouteImport.update({
+    id: '/school/$subject',
+    path: '/school/$subject',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -73,6 +80,7 @@ export interface FileRoutesByFullPath {
   '/planner': typeof AuthenticatedPlannerRoute
   '/api/chat': typeof ApiChatRoute
   '/chat/$threadId': typeof AuthenticatedChatThreadIdRoute
+  '/school/$subject': typeof AuthenticatedSchoolSubjectRoute
   '/chat/': typeof AuthenticatedChatIndexRoute
   '/school/': typeof AuthenticatedSchoolIndexRoute
 }
@@ -83,6 +91,7 @@ export interface FileRoutesByTo {
   '/planner': typeof AuthenticatedPlannerRoute
   '/api/chat': typeof ApiChatRoute
   '/chat/$threadId': typeof AuthenticatedChatThreadIdRoute
+  '/school/$subject': typeof AuthenticatedSchoolSubjectRoute
   '/chat': typeof AuthenticatedChatIndexRoute
   '/school': typeof AuthenticatedSchoolIndexRoute
 }
@@ -95,6 +104,7 @@ export interface FileRoutesById {
   '/_authenticated/planner': typeof AuthenticatedPlannerRoute
   '/api/chat': typeof ApiChatRoute
   '/_authenticated/chat/$threadId': typeof AuthenticatedChatThreadIdRoute
+  '/_authenticated/school/$subject': typeof AuthenticatedSchoolSubjectRoute
   '/_authenticated/chat/': typeof AuthenticatedChatIndexRoute
   '/_authenticated/school/': typeof AuthenticatedSchoolIndexRoute
 }
@@ -107,6 +117,7 @@ export interface FileRouteTypes {
     | '/planner'
     | '/api/chat'
     | '/chat/$threadId'
+    | '/school/$subject'
     | '/chat/'
     | '/school/'
   fileRoutesByTo: FileRoutesByTo
@@ -117,6 +128,7 @@ export interface FileRouteTypes {
     | '/planner'
     | '/api/chat'
     | '/chat/$threadId'
+    | '/school/$subject'
     | '/chat'
     | '/school'
   id:
@@ -128,6 +140,7 @@ export interface FileRouteTypes {
     | '/_authenticated/planner'
     | '/api/chat'
     | '/_authenticated/chat/$threadId'
+    | '/_authenticated/school/$subject'
     | '/_authenticated/chat/'
     | '/_authenticated/school/'
   fileRoutesById: FileRoutesById
@@ -204,6 +217,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSchoolIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/school/$subject': {
+      id: '/_authenticated/school/$subject'
+      path: '/school/$subject'
+      fullPath: '/school/$subject'
+      preLoaderRoute: typeof AuthenticatedSchoolSubjectRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
@@ -211,6 +231,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedHomeRoute: typeof AuthenticatedHomeRoute
   AuthenticatedPlannerRoute: typeof AuthenticatedPlannerRoute
   AuthenticatedChatThreadIdRoute: typeof AuthenticatedChatThreadIdRoute
+  AuthenticatedSchoolSubjectRoute: typeof AuthenticatedSchoolSubjectRoute
   AuthenticatedChatIndexRoute: typeof AuthenticatedChatIndexRoute
   AuthenticatedSchoolIndexRoute: typeof AuthenticatedSchoolIndexRoute
 }
@@ -219,6 +240,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedHomeRoute: AuthenticatedHomeRoute,
   AuthenticatedPlannerRoute: AuthenticatedPlannerRoute,
   AuthenticatedChatThreadIdRoute: AuthenticatedChatThreadIdRoute,
+  AuthenticatedSchoolSubjectRoute: AuthenticatedSchoolSubjectRoute,
   AuthenticatedChatIndexRoute: AuthenticatedChatIndexRoute,
   AuthenticatedSchoolIndexRoute: AuthenticatedSchoolIndexRoute,
 }
