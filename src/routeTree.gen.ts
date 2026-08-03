@@ -14,6 +14,7 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedHomeRouteImport } from './routes/_authenticated/home'
 import { Route as AuthenticatedPlannerRouteImport } from './routes/_authenticated/planner'
+import { Route as AuthenticatedStatsRouteImport } from './routes/_authenticated/stats'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
 import { Route as AuthenticatedChatIndexRouteImport } from './routes/_authenticated/chat.index'
 import { Route as AuthenticatedChatThreadIdRouteImport } from './routes/_authenticated/chat.$threadId'
@@ -42,6 +43,11 @@ const AuthenticatedHomeRoute = AuthenticatedHomeRouteImport.update({
 const AuthenticatedPlannerRoute = AuthenticatedPlannerRouteImport.update({
   id: '/planner',
   path: '/planner',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedStatsRoute = AuthenticatedStatsRouteImport.update({
+  id: '/stats',
+  path: '/stats',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const ApiChatRoute = ApiChatRouteImport.update({
@@ -78,6 +84,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/home': typeof AuthenticatedHomeRoute
   '/planner': typeof AuthenticatedPlannerRoute
+  '/stats': typeof AuthenticatedStatsRoute
   '/api/chat': typeof ApiChatRoute
   '/chat/$threadId': typeof AuthenticatedChatThreadIdRoute
   '/school/$subject': typeof AuthenticatedSchoolSubjectRoute
@@ -89,6 +96,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/home': typeof AuthenticatedHomeRoute
   '/planner': typeof AuthenticatedPlannerRoute
+  '/stats': typeof AuthenticatedStatsRoute
   '/api/chat': typeof ApiChatRoute
   '/chat/$threadId': typeof AuthenticatedChatThreadIdRoute
   '/school/$subject': typeof AuthenticatedSchoolSubjectRoute
@@ -102,6 +110,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/_authenticated/home': typeof AuthenticatedHomeRoute
   '/_authenticated/planner': typeof AuthenticatedPlannerRoute
+  '/_authenticated/stats': typeof AuthenticatedStatsRoute
   '/api/chat': typeof ApiChatRoute
   '/_authenticated/chat/$threadId': typeof AuthenticatedChatThreadIdRoute
   '/_authenticated/school/$subject': typeof AuthenticatedSchoolSubjectRoute
@@ -115,6 +124,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/home'
     | '/planner'
+    | '/stats'
     | '/api/chat'
     | '/chat/$threadId'
     | '/school/$subject'
@@ -126,6 +136,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/home'
     | '/planner'
+    | '/stats'
     | '/api/chat'
     | '/chat/$threadId'
     | '/school/$subject'
@@ -138,6 +149,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/_authenticated/home'
     | '/_authenticated/planner'
+    | '/_authenticated/stats'
     | '/api/chat'
     | '/_authenticated/chat/$threadId'
     | '/_authenticated/school/$subject'
@@ -189,6 +201,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPlannerRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/stats': {
+      id: '/_authenticated/stats'
+      path: '/stats'
+      fullPath: '/stats'
+      preLoaderRoute: typeof AuthenticatedStatsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/api/chat': {
       id: '/api/chat'
       path: '/api/chat'
@@ -230,6 +249,7 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedHomeRoute: typeof AuthenticatedHomeRoute
   AuthenticatedPlannerRoute: typeof AuthenticatedPlannerRoute
+  AuthenticatedStatsRoute: typeof AuthenticatedStatsRoute
   AuthenticatedChatThreadIdRoute: typeof AuthenticatedChatThreadIdRoute
   AuthenticatedSchoolSubjectRoute: typeof AuthenticatedSchoolSubjectRoute
   AuthenticatedChatIndexRoute: typeof AuthenticatedChatIndexRoute
@@ -239,6 +259,7 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedHomeRoute: AuthenticatedHomeRoute,
   AuthenticatedPlannerRoute: AuthenticatedPlannerRoute,
+  AuthenticatedStatsRoute: AuthenticatedStatsRoute,
   AuthenticatedChatThreadIdRoute: AuthenticatedChatThreadIdRoute,
   AuthenticatedSchoolSubjectRoute: AuthenticatedSchoolSubjectRoute,
   AuthenticatedChatIndexRoute: AuthenticatedChatIndexRoute,
