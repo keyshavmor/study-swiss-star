@@ -28,7 +28,7 @@ function TrendBadge({ trend, change }: { trend: Subject["trend"]; change: number
     <span className={cn("inline-flex items-center gap-1.5 text-[13px] font-medium", className)}>
       <Icon className="h-4 w-4" />
       {trend}
-      {change !== null && (
+      {change !== null && change !== 0 && (
         <span className="tabular">
           ({change >= 0 ? "+" : ""}
           {change.toFixed(1)})
