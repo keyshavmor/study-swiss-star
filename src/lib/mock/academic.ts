@@ -52,7 +52,7 @@ export const SCHOOL_YEARS: SchoolYear[] = [
   {
     id: "2022-23",
     label: "Academic Year 2022–23",
-    gradeLevel: "7th Grade",
+    gradeLevel: "Grade 7",
     average: 4.8,
     monthlyChange: 0.1,
     strongestSubject: "Biology",
@@ -63,7 +63,7 @@ export const SCHOOL_YEARS: SchoolYear[] = [
   {
     id: "2023-24",
     label: "Academic Year 2023–24",
-    gradeLevel: "8th Grade",
+    gradeLevel: "Grade 8",
     average: 4.9,
     monthlyChange: 0.05,
     strongestSubject: "German",
@@ -74,7 +74,7 @@ export const SCHOOL_YEARS: SchoolYear[] = [
   {
     id: "2024-25",
     label: "Academic Year 2024–25",
-    gradeLevel: "9th Grade",
+    gradeLevel: "Grade 9",
     average: 5.0,
     monthlyChange: 0.15,
     strongestSubject: "English",
@@ -85,7 +85,7 @@ export const SCHOOL_YEARS: SchoolYear[] = [
   {
     id: "2025-26",
     label: "Academic Year 2025–26",
-    gradeLevel: "10th Grade",
+    gradeLevel: "Grade 10",
     average: 5.1,
     monthlyChange: 0.2,
     strongestSubject: "Pedagogics and Psychology",
@@ -93,9 +93,20 @@ export const SCHOOL_YEARS: SchoolYear[] = [
     assessments: 17,
     highestGrade: 5.75,
   },
+  {
+    id: "2026-27",
+    label: "Academic Year 2026–27",
+    gradeLevel: "Grade 11",
+    average: 5.2,
+    monthlyChange: 0.1,
+    strongestSubject: "Biology",
+    focusSubject: "French",
+    assessments: 0,
+    highestGrade: 5.5,
+  },
 ];
 
-export const CURRENT_YEAR_ID = "2025-26";
+export const CURRENT_YEAR_ID = "2026-27";
 
 export const MONTHLY_AVERAGES: { month: string; average: number }[] = [
   { month: "Aug", average: 4.8 },
