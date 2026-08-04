@@ -191,7 +191,6 @@ export function SubjectCard({ subject }: { subject: Subject }) {
                 <Link
                   to="/school/$subject"
                   params={{ subject: subject.slug }}
-                  search={{ mode: "statistics" }}
                   className="inline-flex items-center gap-1.5 text-[14px] font-medium text-primary hover:underline"
                 >
                   View Full {subject.name} Statistics
