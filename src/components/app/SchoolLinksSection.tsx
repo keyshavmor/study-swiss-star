@@ -75,7 +75,7 @@ export function SchoolLinksSection({ className }: { className?: string }) {
 
       {links.length === 0 ? (
         <EmptyState
-          icon={<Link2 className="h-5 w-5" />}
+          icon={Link2}
           heading="No school links yet"
           description="Add the websites you use most — timetable, learning platform, school email or library."
           action={
