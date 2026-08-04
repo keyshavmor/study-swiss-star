@@ -12,8 +12,8 @@ export function AverageWithRounded({
 }: {
   exact: number | null;
   rounded: number | null;
-  size?: "sm" | "md" | "lg";
-  className?: string;
+  size?: "sm" | "md" | "lg" | undefined;
+  className?: string | undefined;
 }) {
   const exactSize = size === "lg" ? "text-[40px]" : size === "md" ? "text-[26px]" : "text-[18px]";
   const roundedSize = size === "lg" ? "text-[24px]" : size === "md" ? "text-[17px]" : "text-[14px]";
@@ -47,7 +47,7 @@ export function AverageWithRounded({
   );
 }
 
-export function RoundingInfo({ className }: { className?: string }) {
+export function RoundingInfo({ className }: { className?: string | undefined }) {
   return (
     <TooltipProvider delayDuration={120}>
       <Tooltip>
@@ -91,8 +91,8 @@ export function GradeLineChart({
   className,
 }: {
   data: { label: string; value: number }[];
-  height?: number;
-  className?: string;
+  height?: number | undefined;
+  className?: string | undefined;
 }) {
   const min = 1;
   const max = 6;
