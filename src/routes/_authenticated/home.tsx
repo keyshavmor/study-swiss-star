@@ -4,6 +4,7 @@ import { AppShell } from "@/components/app/AppShell";
 import { DemoModeBanner } from "@/components/app/DemoMode";
 import { formatDate, summariseYear } from "@/lib/grade-math";
 import { CURRENT_YEAR_ID } from "@/lib/mock/academic";
+import { SUBJECTS } from "@/lib/mock/subjects";
 import { occurrencesInRange, useAppData } from "@/lib/store/app-data";
 
 export const Route = createFileRoute("/_authenticated/home")({
