@@ -1,12 +1,30 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Apple, Bell, CalendarDays, Check, Plus } from "lucide-react";
+import { Apple, Bell, CalendarDays, Check, MapPin, Plus, TriangleAlert } from "lucide-react";
 import { useState } from "react";
 import { AppShell, PageHeading } from "@/components/app/AppShell";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import type { EventCategory } from "@/lib/mock/planner";
-import { EVENT_CATEGORIES, PLANNER_EVENTS, WEEKDAYS } from "@/lib/mock/planner";
+import {
+  EVENT_CATEGORIES,
+  EXTRACURRICULARS,
+  PLANNER_CONFLICTS,
+  PLANNER_EVENTS,
+  WEEKDAYS,
+  WEEK_AVAILABILITY,
+} from "@/lib/mock/planner";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/planner")({
@@ -58,12 +76,7 @@ function PlannerPage() {
       <PageHeading
         title="Planner"
         description="Week of 18–24 September · exams, study sessions and activities in one calm view."
-        action={
-          <Button>
-            <Plus className="h-4 w-4" />
-            Add Event
-          </Button>
-        }
+        action={<AddActivityDialog />}
       />
 
       <div className="mb-5 flex flex-wrap gap-2">
@@ -165,6 +178,78 @@ function PlannerPage() {
           </div>
 
           <div className="app-card p-5">
+            <h2 className="text-[17px] font-semibold tracking-tight">Weekly availability</h2>
+            <p className="mt-1 text-[13.5px] text-muted-foreground">
+              How the week is spent, including travel to activities.
+            </p>
+            <div className="mt-4 flex h-2.5 w-full overflow-hidden rounded-full">
+              {WEEK_AVAILABILITY.map((slice) => (
+                <span
+                  key={slice.label}
+                  style={{ backgroundColor: slice.color, width: `${(slice.hours / 68) * 100}%` }}
+                />
+              ))}
+            </div>
+            <dl className="mt-3 space-y-2 text-[14.5px]">
+              {WEEK_AVAILABILITY.map((slice) => (
+                <div
+                  key={slice.label}
+                  className="flex items-baseline justify-between gap-4 border-b border-border pb-2 last:border-0 last:pb-0"
+                >
+                  <dt className="inline-flex items-center gap-2 text-muted-foreground">
+                    <span
+                      className="h-2.5 w-2.5 rounded-full"
+                      style={{ backgroundColor: slice.color }}
+                    />
+                    {slice.label}
+                  </dt>
+                  <dd className="tabular font-medium">{slice.hours} h</dd>
+                </div>
+              ))}
+            </dl>
+          </div>
+
+          <div className="app-card p-5">
+            <h2 className="text-[17px] font-semibold tracking-tight">Extracurricular activities</h2>
+            <ul className="mt-3 space-y-2.5">
+              {EXTRACURRICULARS.map((activity) => (
+                <li key={activity.id} className="rounded-[16px] bg-surface-2 p-3.5">
+                  <p className="text-[14.5px] font-medium">{activity.name}</p>
+                  <p className="tabular text-[12.5px] text-muted-foreground">
+                    {activity.days.join(", ")} · {activity.start}–{activity.end}
+                  </p>
+                  <p className="mt-1 inline-flex items-center gap-1.5 text-[12.5px] text-muted-foreground">
+                    <MapPin className="h-3.5 w-3.5" />
+                    {activity.location} · {activity.travelMinutes} min travel each way
+                  </p>
+                </li>
+              ))}
+            </ul>
+            <AddActivityDialog variant="secondary" className="mt-4 w-full" />
+          </div>
+
+          {PLANNER_CONFLICTS.length > 0 && (
+            <div className="app-card p-5">
+              <div className="flex items-center gap-2.5">
+                <TriangleAlert className="h-5 w-5 text-chart-4" />
+                <h2 className="text-[17px] font-semibold tracking-tight">Conflicts</h2>
+              </div>
+              <ul className="mt-3 space-y-3">
+                {PLANNER_CONFLICTS.map((conflict) => (
+                  <li key={conflict.id} className="rounded-[16px] bg-surface-2 p-3.5">
+                    <p className="text-[14.5px] font-medium">{conflict.title}</p>
+                    <p className="mt-1 text-[13px] text-muted-foreground">{conflict.detail}</p>
+                    <p className="mt-1 text-[13px] text-muted-foreground">{conflict.suggestion}</p>
+                    <Button size="sm" variant="secondary" className="mt-3">
+                      Reschedule study session
+                    </Button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          <div className="app-card p-5">
             <div className="flex items-center gap-2.5">
               <Bell className="h-5 w-5" />
               <h2 className="text-[17px] font-semibold tracking-tight">This week</h2>
@@ -191,6 +276,66 @@ function PlannerPage() {
         </aside>
       </div>
     </AppShell>
+  );
+}
+
+function AddActivityDialog({
+  variant = "default",
+  className,
+}: {
+  variant?: "default" | "secondary";
+  className?: string;
+}) {
+  const [open, setOpen] = useState(false);
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button variant={variant} className={className}>
+          <Plus className="h-4 w-4" />
+          Add Activity
+        </Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Add activity</DialogTitle>
+          <DialogDescription>
+            Activities and their travel time are subtracted from available study time.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="grid gap-4">
+          <div className="grid gap-2">
+            <Label htmlFor="activity-name">Activity name</Label>
+            <Input id="activity-name" placeholder="Handball training" />
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-2">
+              <Label htmlFor="activity-start">Start</Label>
+              <Input id="activity-start" type="time" defaultValue="18:30" />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="activity-end">End</Label>
+              <Input id="activity-end" type="time" defaultValue="20:00" />
+            </div>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-2">
+              <Label htmlFor="activity-travel">Travel time (min)</Label>
+              <Input id="activity-travel" type="number" defaultValue={25} />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="activity-location">Location</Label>
+              <Input id="activity-location" placeholder="Sporthalle Zentrum" />
+            </div>
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="secondary" onClick={() => setOpen(false)}>
+            Cancel
+          </Button>
+          <Button onClick={() => setOpen(false)}>Save activity</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 
