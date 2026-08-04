@@ -195,3 +195,62 @@ export const DAILY_OVERVIEW = {
   studyTimeToday: "1 h 30 min planned",
   nextActivity: "Handball training · 18:30",
 };
+
+/** Recurring extracurricular activities, including travel time. */
+export interface Extracurricular {
+  id: string;
+  name: string;
+  days: string[];
+  start: string;
+  end: string;
+  travelMinutes: number;
+  location: string;
+}
+
+export const EXTRACURRICULARS: Extracurricular[] = [
+  {
+    id: "x1",
+    name: "Handball training",
+    days: ["Monday", "Thursday"],
+    start: "18:30",
+    end: "20:00",
+    travelMinutes: 25,
+    location: "Sporthalle Zentrum",
+  },
+  {
+    id: "x2",
+    name: "Piano lesson",
+    days: ["Wednesday"],
+    start: "18:00",
+    end: "19:00",
+    travelMinutes: 15,
+    location: "Musikschule",
+  },
+  {
+    id: "x3",
+    name: "Debate club",
+    days: ["Friday"],
+    start: "17:00",
+    end: "18:15",
+    travelMinutes: 10,
+    location: "School, room B12",
+  },
+];
+
+/** Simulated weekly time budget in hours. */
+export const WEEK_AVAILABILITY = [
+  { label: "School", hours: 32, color: "#6558D9" },
+  { label: "Travel", hours: 6.5, color: "#666B76" },
+  { label: "Extracurricular", hours: 5.75, color: "#4A8FD6" },
+  { label: "Study time", hours: 6.3, color: "#58A87C" },
+  { label: "Free time", hours: 17.45, color: "#D69A4A" },
+];
+
+export const PLANNER_CONFLICTS = [
+  {
+    id: "c1",
+    title: "Handball training overlaps a study session",
+    detail: "Monday 18:30 — the biology revision block ends at 18:45.",
+    suggestion: "Move the revision block to 16:30–17:30.",
+  },
+];
