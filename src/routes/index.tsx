@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowRight, CalendarDays, GraduationCap } from "lucide-react";
+import { LiveClock } from "@/components/app/LiveClock";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
 export const Route = createFileRoute("/")({
@@ -33,7 +34,10 @@ function TitleScreen() {
           </span>
           <span className="text-[15px] font-semibold tracking-tight">Study Assistant</span>
         </div>
-        <ThemeToggle />
+        <div className="flex items-center gap-3">
+          <LiveClock />
+          <ThemeToggle />
+        </div>
       </header>
 
       <main className="mx-auto max-w-6xl px-6 pb-24 pt-10 sm:pt-16">

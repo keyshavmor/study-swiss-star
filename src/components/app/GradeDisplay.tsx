@@ -1,6 +1,13 @@
 import { Info } from "lucide-react";
+import { FailingBadge } from "@/components/app/Badges";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { ROUNDED_TOOLTIP, ROUNDING_EXAMPLES, formatHalf } from "@/lib/mock/grades";
+import {
+  PASSING_THRESHOLD,
+  ROUNDED_TOOLTIP,
+  ROUNDING_EXAMPLES,
+  formatHalf,
+  isFailing,
+} from "@/lib/mock/grades";
 import { cn } from "@/lib/utils";
 
 /** Exact subject average next to its value rounded to the nearest 0.5. */
@@ -27,22 +34,41 @@ export function AverageWithRounded({
   }
 
   return (
-    <div className={cn("flex items-end gap-4", className)}>
-      <div>
-        <p className={cn("tabular font-bold leading-none tracking-tight", exactSize)}>
-          {exact.toFixed(2)}
-        </p>
-        <p className="mt-1.5 text-[12.5px] text-muted-foreground">Subject average</p>
+    <div className={cn("flex flex-col gap-2.5", className)}>
+      <div className="flex items-end gap-4">
+        <div>
+          <p
+            className={cn(
+              "tabular font-bold leading-none tracking-tight",
+              exactSize,
+              isFailing(exact) && "text-warning",
+            )}
+          >
+            {exact.toFixed(2)}
+          </p>
+          <p className="mt-1.5 text-[12.5px] text-muted-foreground">Subject average</p>
+        </div>
+        <div className="pointer-events-auto">
+          <p
+            className={cn(
+              "tabular font-semibold leading-none",
+              roundedSize,
+              isFailing(rounded) ? "text-warning" : "text-grade-muted",
+            )}
+          >
+            {formatHalf(rounded)}
+          </p>
+          <p className="mt-1.5 inline-flex items-center gap-1 text-[12.5px] text-grade-muted">
+            Rounded to 0.5
+            <RoundingInfo />
+          </p>
+        </div>
       </div>
-      <div className="pointer-events-auto">
-        <p className={cn("tabular font-semibold leading-none text-grade-muted", roundedSize)}>
-          {formatHalf(rounded)}
-        </p>
-        <p className="mt-1.5 inline-flex items-center gap-1 text-[12.5px] text-grade-muted">
-          Rounded to 0.5
-          <RoundingInfo />
-        </p>
-      </div>
+      {isFailing(exact) && (
+        <div className="pointer-events-auto">
+          <FailingBadge />
+        </div>
+      )}
     </div>
   );
 }
@@ -77,14 +103,19 @@ export function RoundingInfo({ className }: { className?: string | undefined }) 
 export function RoundedValue({ value }: { value: number | null }) {
   if (value === null) return <span className="text-grade-muted">—</span>;
   return (
-    <span className="tabular inline-flex items-center gap-1 font-medium text-grade-muted">
+    <span
+      className={cn(
+        "tabular inline-flex items-center gap-1 font-medium",
+        isFailing(value) ? "text-warning" : "text-grade-muted",
+      )}
+    >
       {formatHalf(value)}
       <RoundingInfo />
     </span>
   );
 }
 
-/** Simple 1.0–6.0 Swiss-scale line chart. */
+/** Simple 1.0–6.0 Swiss-scale line chart with a 4.0 passing threshold line. */
 export function GradeLineChart({
   data,
   height = 160,
@@ -97,13 +128,15 @@ export function GradeLineChart({
   const min = 1;
   const max = 6;
   const gridLines = [6, 5, 4, 3, 2, 1];
-  const points = data
-    .map((d, i) => {
-      const x = (i / Math.max(1, data.length - 1)) * 100;
-      const y = 100 - ((d.value - min) / (max - min)) * 100;
-      return `${x},${y}`;
-    })
-    .join(" ");
+  const toXY = (value: number, index: number) => ({
+    x: (index / Math.max(1, data.length - 1)) * 100,
+    y: 100 - ((value - min) / (max - min)) * 100,
+  });
+  const points = data.map((d, i) => {
+    const { x, y } = toXY(d.value, i);
+    return `${x},${y}`;
+  });
+  const thresholdY = 100 - ((PASSING_THRESHOLD - min) / (max - min)) * 100;
 
   return (
     <div className={cn("w-full", className)}>
@@ -114,7 +147,9 @@ export function GradeLineChart({
           aria-hidden
         >
           {gridLines.map((g) => (
-            <span key={g}>{g.toFixed(1)}</span>
+            <span key={g} className={g === 4 ? "text-warning" : undefined}>
+              {g.toFixed(1)}
+            </span>
           ))}
         </div>
         <div className="relative min-w-0 flex-1">
@@ -129,10 +164,20 @@ export function GradeLineChart({
             className="relative w-full"
             style={{ height }}
             role="img"
-            aria-label={`Grade trend from ${data[0]?.label ?? ""} to ${data[data.length - 1]?.label ?? ""} on the Swiss 1.0 to 6.0 scale`}
+            aria-label={`Grade trend from ${data[0]?.label ?? ""} to ${data[data.length - 1]?.label ?? ""} on the Swiss 1.0 to 6.0 scale, with a passing threshold at 4.0`}
           >
+            <line
+              x1="0"
+              x2="100"
+              y1={thresholdY}
+              y2={thresholdY}
+              stroke="var(--warning)"
+              strokeWidth="1"
+              strokeDasharray="4 3"
+              vectorEffect="non-scaling-stroke"
+            />
             <polyline
-              points={points}
+              points={points.join(" ")}
               fill="none"
               stroke="var(--primary)"
               strokeWidth="2"
@@ -141,11 +186,32 @@ export function GradeLineChart({
               vectorEffect="non-scaling-stroke"
             />
           </svg>
+          {/* Data point markers — orange below the passing threshold. */}
+          <div className="pointer-events-none absolute inset-0" style={{ height }} aria-hidden>
+            {data.map((d, i) => {
+              const { x, y } = toXY(d.value, i);
+              return (
+                <span
+                  key={`${d.label}-${i}`}
+                  className="absolute h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full"
+                  style={{
+                    left: `${x}%`,
+                    top: `${y}%`,
+                    backgroundColor: isFailing(d.value) ? "var(--warning)" : "var(--primary)",
+                  }}
+                />
+              );
+            })}
+          </div>
           <div className="mt-1.5 flex justify-between text-[11.5px] text-muted-foreground">
             {data.map((d) => (
               <span key={d.label}>{d.label}</span>
             ))}
           </div>
+          <p className="mt-1 inline-flex items-center gap-1.5 text-[11.5px] text-warning">
+            <span className="h-px w-4 border-t border-dashed border-warning" />
+            Passing threshold 4.0
+          </p>
         </div>
       </div>
     </div>

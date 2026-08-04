@@ -1,15 +1,16 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { GraduationCap } from "lucide-react";
 import { AuthForm } from "@/components/AuthForm";
+import { LiveClock } from "@/components/app/LiveClock";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({
     meta: [
-      { title: "Sign in — StudyMate" },
-      { name: "description", content: "Sign in to StudyMate to start your exam prep." },
-      { property: "og:title", content: "Sign in — StudyMate" },
-      { property: "og:description", content: "Sign in to StudyMate to start your exam prep." },
+      { title: "Sign in — Alim's Study Assistant" },
+      { name: "description", content: "Sign in to Alim's Study Assistant to start your exam prep." },
+      { property: "og:title", content: "Sign in — Alim's Study Assistant" },
+      { property: "og:description", content: "Sign in to Alim's Study Assistant to start your exam prep." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -25,7 +26,8 @@ export const Route = createFileRoute("/auth")({
 function AuthPage() {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center px-6 py-12">
-      <div className="absolute right-6 top-6">
+      <div className="absolute right-6 top-6 flex items-center gap-3">
+        <LiveClock />
         <ThemeToggle />
       </div>
       <div className="w-full max-w-[400px]">

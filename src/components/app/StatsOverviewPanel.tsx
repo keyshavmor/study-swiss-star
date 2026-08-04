@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { ArrowUpRight } from "lucide-react";
+import { DemoBadge } from "@/components/app/Badges";
 import { GradeLineChart } from "@/components/app/GradeDisplay";
 import { Button } from "@/components/ui/button";
 import { CURRENT_YEAR_ID, SCHOOL_YEARS } from "@/lib/mock/academic";
@@ -9,6 +10,7 @@ import {
   YEAR_MONTHLY_SERIES,
   YEAR_SUMMARY,
   formatHalf,
+  isFailing,
   roundToHalf,
 } from "@/lib/mock/grades";
 import { cn } from "@/lib/utils";
@@ -52,7 +54,10 @@ export function StatsOverviewPanel({
 
   return (
     <aside className={cn("app-card p-5", className)}>
-      <h2 className="text-[18px] font-semibold tracking-tight">Statistics</h2>
+      <div className="flex flex-wrap items-center gap-2">
+        <h2 className="text-[18px] font-semibold tracking-tight">Statistics</h2>
+        <DemoBadge label="Demo data" />
+      </div>
       <p className="mt-1 text-[13.5px] text-muted-foreground">
         {year.label} · {year.gradeLevel}
       </p>
@@ -60,10 +65,20 @@ export function StatsOverviewPanel({
       <div className="mt-4 rounded-[18px] bg-surface-2 p-4">
         <p className="text-[13px] text-muted-foreground">Yearly average</p>
         <div className="mt-1 flex items-end gap-3">
-          <p className="tabular text-[34px] font-bold leading-none tracking-tight">
+          <p
+            className={cn(
+              "tabular text-[34px] font-bold leading-none tracking-tight",
+              isFailing(exact) && "text-warning",
+            )}
+          >
             {exact.toFixed(2)}
           </p>
-          <p className="tabular text-[19px] font-semibold leading-none text-grade-muted">
+          <p
+            className={cn(
+              "tabular text-[19px] font-semibold leading-none",
+              isFailing(roundToHalf(exact)) ? "text-warning" : "text-grade-muted",
+            )}
+          >
             {formatHalf(roundToHalf(exact))}
           </p>
         </div>

@@ -333,3 +333,17 @@
   background-color: transparent;
   padding: 0;
 }
+
+/* Academic warning (failing grade) tokens */
+:root {
+  --warning: #c96a00;
+  --warning-soft: rgba(201, 106, 0, 0.1);
+}
+.dark {
+  --warning: #ff9f43;
+  --warning-soft: rgba(255, 159, 67, 0.14);
+}
+@theme inline {
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+}

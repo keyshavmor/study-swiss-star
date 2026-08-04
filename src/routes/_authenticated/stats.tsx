@@ -1,7 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Info, Plus } from "lucide-react";
 import { useState } from "react";
+import { AddGradeDialog } from "@/components/app/AddGradeDialog";
 import { AppShell, PageHeading } from "@/components/app/AppShell";
+import { DemoBadge, LockedBadge } from "@/components/app/Badges";
 import { MiniTrendChart } from "@/components/app/StatsOverviewPanel";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -21,7 +23,9 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { ASSESSMENTS, CURRENT_YEAR_ID, SCHOOL_YEARS } from "@/lib/mock/academic";
+import { isFailing } from "@/lib/mock/grades";
 import { SUBJECTS } from "@/lib/mock/subjects";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/stats")({
   head: () => ({
@@ -56,10 +60,14 @@ function StatsPage() {
         title="Statistics"
         description="Averages, trends and every recorded assessment in one place."
         action={
-          <Button>
-            <Plus className="h-4 w-4" />
-            Add Grade
-          </Button>
+          <AddGradeDialog
+            trigger={
+              <Button>
+                <Plus className="h-4 w-4" />
+                Add Grade
+              </Button>
+            }
+          />
         }
       />
 
@@ -92,7 +100,11 @@ function StatsPage() {
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <KPI label="School-year average" value={year.average.toFixed(1)} />
+        <KPI
+          label="School-year average"
+          value={year.average.toFixed(1)}
+          failing={isFailing(year.average)}
+        />
         <KPI label="Monthly change" value={`+${year.monthlyChange.toFixed(2)}`} accent />
         <KPI label="Assessments" value={String(year.assessments)} />
         <KPI label="Highest grade" value={year.highestGrade.toFixed(2)} />
@@ -121,7 +133,12 @@ function StatsPage() {
                     />
                   </div>
                 </div>
-                <span className="tabular text-[14px] font-semibold">
+                <span
+                  className={cn(
+                    "tabular text-[14px] font-semibold",
+                    isFailing(s.average) && "text-warning",
+                  )}
+                >
                   {s.average?.toFixed(1) ?? "—"}
                 </span>
               </li>
@@ -132,7 +149,10 @@ function StatsPage() {
 
       <section className="app-card mt-5 p-5">
         <div className="mb-4 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
-          <h2 className="text-[18px] font-semibold tracking-tight">Assessment records</h2>
+          <div className="flex flex-wrap items-center gap-2">
+            <h2 className="text-[18px] font-semibold tracking-tight">Assessment records</h2>
+            <DemoBadge label="Demo data" />
+          </div>
           <Badge variant="secondary">{rows.length} entries</Badge>
         </div>
 
@@ -148,6 +168,7 @@ function StatsPage() {
                 <TableHead className="text-right">%</TableHead>
                 <TableHead className="text-right">Grade</TableHead>
                 <TableHead>Source</TableHead>
+                <TableHead>Status</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -163,13 +184,21 @@ function StatsPage() {
                   <TableCell className="tabular text-right">
                     {a.percentage === null ? "—" : `${a.percentage}%`}
                   </TableCell>
-                  <TableCell className="tabular text-right font-semibold">
+                  <TableCell
+                    className={cn(
+                      "tabular text-right font-semibold",
+                      isFailing(a.grade) && "text-warning",
+                    )}
+                  >
                     {a.grade.toFixed(2)}
                   </TableCell>
                   <TableCell>
                     <Badge variant="secondary" className="whitespace-nowrap text-[11.5px]">
                       {a.source}
                     </Badge>
+                  </TableCell>
+                  <TableCell className="whitespace-nowrap">
+                    <LockedBadge label="Permanent" />
                   </TableCell>
                 </TableRow>
               ))}
@@ -180,25 +209,39 @@ function StatsPage() {
         <div className="mt-5 rounded-[18px] bg-surface-2 p-4 text-[14.5px]">
           <p className="font-medium">Grade = 1.0 + 5.0 × (achieved points ÷ maximum points)</p>
           <p className="mt-1 text-muted-foreground">
-            Minimum 1.0 · Maximum 6.0 · 0% → 1.0 · 50% → 3.5 · 80% → 5.0 · 100% → 6.0
+            Minimum 1.0 · Maximum 6.0 · Passing 4.0 · 0% → 1.0 · 50% → 3.5 · 80% → 5.0 · 100% → 6.0
           </p>
         </div>
 
         <p className="mt-3 inline-flex items-start gap-2 text-[13px] text-muted-foreground">
           <Info className="mt-0.5 h-4 w-4 shrink-0" />
-          Prototype data — nothing is calculated or stored.
+          Demonstration data — recorded assessments are permanent and cannot be edited or deleted.
         </p>
       </section>
     </AppShell>
   );
 }
 
-function KPI({ label, value, accent }: { label: string; value: string; accent?: boolean }) {
+function KPI({
+  label,
+  value,
+  accent,
+  failing,
+}: {
+  label: string;
+  value: string;
+  accent?: boolean;
+  failing?: boolean;
+}) {
   return (
     <div className="app-card p-5">
       <p className="text-[13px] text-muted-foreground">{label}</p>
       <p
-        className={`tabular mt-1 text-[30px] font-bold tracking-tight ${accent ? "text-chart-3" : ""}`}
+        className={cn(
+          "tabular mt-1 text-[30px] font-bold tracking-tight",
+          accent && "text-chart-3",
+          failing && "text-warning",
+        )}
       >
         {value}
       </p>
