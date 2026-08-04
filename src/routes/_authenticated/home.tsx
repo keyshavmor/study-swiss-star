@@ -28,7 +28,10 @@ export const Route = createFileRoute("/_authenticated/home")({
 
 function HomePage() {
   const { assessments, events } = useAppData();
-  const year = summariseYear(assessments, CURRENT_YEAR_ID);
+  const year = summariseYear(
+    assessments.filter((a) => a.yearId === CURRENT_YEAR_ID),
+    SUBJECTS,
+  );
   const todayIso = new Date().toISOString().slice(0, 10);
   const in30 = new Date();
   in30.setDate(in30.getDate() + 30);
