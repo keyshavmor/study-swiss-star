@@ -11,11 +11,14 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { AppShell } from "@/components/app/AppShell";
+import { DemoBadge, FailingBadge, LockedBadge } from "@/components/app/Badges";
+import { AverageWithRounded, GradeLineChart } from "@/components/app/GradeDisplay";
 import { MaterialsPanel } from "@/components/app/MaterialsPanel";
 import { EmptyState } from "@/components/app/States";
 import { Button } from "@/components/ui/button";
 import type { SubjectMode } from "@/lib/mock/materials";
 import { SUBJECT_MODES } from "@/lib/mock/materials";
+import { getSubjectGrades, isFailing } from "@/lib/mock/grades";
 import { getSubject } from "@/lib/mock/subjects";
 import { cn } from "@/lib/utils";
 
@@ -61,6 +64,7 @@ const MODE_ICONS: Record<SubjectMode, typeof MessageSquare> = {
 function SubjectDashboard() {
   const { subject } = Route.useLoaderData();
   const [mode, setMode] = useState<SubjectMode>("Chat");
+  const grades = getSubjectGrades(subject.slug);
 
   return (
     <AppShell wide>
@@ -79,9 +83,13 @@ function SubjectDashboard() {
               style={{ backgroundColor: subject.accent }}
             />
             <div className="min-w-0">
-              <h1 className="truncate text-[26px] font-bold tracking-[-0.025em] sm:text-[32px]">
-                {subject.name}
-              </h1>
+              <div className="flex min-w-0 items-center gap-2.5">
+                <h1 className="truncate text-[26px] font-bold tracking-[-0.025em] sm:text-[32px]">
+                  {subject.name}
+                </h1>
+                <DemoBadge />
+                {isFailing(grades.exactAverage) && <FailingBadge />}
+              </div>
               <p className="text-[14px] text-muted-foreground">
                 {subject.language}
                 {subject.languageBadge ? ` · ${subject.languageBadge}` : ""}
@@ -89,7 +97,11 @@ function SubjectDashboard() {
             </div>
           </div>
           <dl className="hidden gap-6 text-right sm:flex">
-            <Meta label="Average" value={subject.average?.toFixed(1) ?? "—"} />
+            <Meta
+              label="Average"
+              value={subject.average?.toFixed(1) ?? "—"}
+              failing={isFailing(subject.average)}
+            />
             <Meta
               label="Next exam"
               value={subject.nextExamInDays ? `${subject.nextExamInDays} days` : "None"}
@@ -137,6 +149,48 @@ function SubjectDashboard() {
                 <Link to="/chat">Open study chat</Link>
               </Button>
             </div>
+          ) : mode === "Statistics" ? (
+            <div className="mt-4 space-y-5">
+              <AverageWithRounded
+                exact={grades.exactAverage}
+                rounded={grades.roundedAverage}
+                size="lg"
+              />
+              {grades.tests.length > 1 && (
+                <GradeLineChart
+                  data={grades.tests.map((t) => ({ label: t.monthYear, value: t.grade }))}
+                />
+              )}
+              <div className="space-y-2">
+                <p className="text-[13px] text-muted-foreground">
+                  Recorded tests are permanent and read-only.
+                </p>
+                {grades.tests.map((test) => (
+                  <div
+                    key={test.id}
+                    className="grid grid-cols-[minmax(0,1fr)_auto] gap-3 rounded-[14px] bg-surface-2 px-3.5 py-3"
+                  >
+                    <div className="min-w-0">
+                      <p className="truncate text-[14px] font-medium">{test.title}</p>
+                      <p className="text-[12.5px] text-muted-foreground">
+                        {test.date} · {test.type} · {test.source}
+                      </p>
+                      <div className="mt-1.5">
+                        <LockedBadge />
+                      </div>
+                    </div>
+                    <p
+                      className={cn(
+                        "tabular text-[15px] font-semibold",
+                        isFailing(test.grade) && "text-warning",
+                      )}
+                    >
+                      {test.grade.toFixed(1)}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
           ) : (
             <EmptyState
               className="mt-6 border-0 bg-surface-2"
@@ -153,11 +207,13 @@ function SubjectDashboard() {
   );
 }
 
-function Meta({ label, value }: { label: string; value: string }) {
+function Meta({ label, value, failing }: { label: string; value: string; failing?: boolean }) {
   return (
     <div>
       <dt className="text-[12.5px] text-muted-foreground">{label}</dt>
-      <dd className="tabular text-[15.5px] font-semibold">{value}</dd>
+      <dd className={cn("tabular text-[15.5px] font-semibold", failing && "text-warning")}>
+        {value}
+      </dd>
     </div>
   );
 }
