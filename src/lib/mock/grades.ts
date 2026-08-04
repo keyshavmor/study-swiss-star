@@ -37,6 +37,22 @@ export const ROUNDING_EXAMPLES = [
   "5.28 → 5.5",
 ];
 
+/** Swiss scale: grades below 4.0 are failing. */
+export const PASSING_THRESHOLD = 4.0;
+
+export function isFailing(value: number | null | undefined): boolean {
+  return typeof value === "number" && value < PASSING_THRESHOLD;
+}
+
+export const FAILING_TOOLTIP =
+  "In the Swiss grading system used here, grades below 4.0 are failing grades.";
+
+export const LOCK_TOOLTIP =
+  "This test has been permanently recorded and cannot be edited or deleted.";
+
+export const DEMO_TOOLTIP =
+  "This example is included to demonstrate the interface and cannot be removed.";
+
 export const ROUNDED_TOOLTIP =
   "This is the subject average rounded to the nearest 0.5. The rounded value is used when calculating the yearly average.";
 
@@ -85,10 +101,10 @@ const SEEDS: Record<string, Seed[]> = {
     { title: "Oral exam: Cold War", date: "8 May 2026", type: "Oral exam", grade: 4.5, source: "Teacher grade" },
   ],
   french: [
-    { title: "Vocabulaire et grammaire", date: "2 October 2025", type: "Written exam", grade: 4.0, points: [24, 40], source: "Calculated from points" },
-    { title: "Compréhension écrite", date: "4 December 2025", type: "Written exam", grade: 4.5, points: [30, 42], source: "Calculated from points" },
-    { title: "Présentation orale: ma région", date: "26 February 2026", type: "Oral exam", grade: 4.5, source: "Teacher grade" },
-    { title: "Rédaction", date: "21 May 2026", type: "Essay", grade: 4.5, source: "Teacher grade" },
+    { title: "Vocabulaire et grammaire", date: "2 October 2025", type: "Written exam", grade: 3.5, points: [20, 40], source: "Calculated from points" },
+    { title: "Compréhension écrite", date: "4 December 2025", type: "Written exam", grade: 3.6, points: [22, 42], source: "Calculated from points" },
+    { title: "Présentation orale: ma région", date: "26 February 2026", type: "Oral exam", grade: 4.0, source: "Teacher grade" },
+    { title: "Rédaction", date: "21 May 2026", type: "Essay", grade: 4.4, source: "Teacher grade" },
   ],
   german: [
     { title: "Textanalyse", date: "22 September 2025", type: "Essay", grade: 5.2, points: [38, 45], source: "Calculated from points" },

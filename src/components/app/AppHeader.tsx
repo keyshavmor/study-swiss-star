@@ -1,7 +1,9 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { Bell, GraduationCap, Menu, User } from "lucide-react";
 import { useState } from "react";
+import { LiveClock } from "@/components/app/LiveClock";
 import { ThemeToggle } from "@/components/ThemeToggle";
+
 import { Button } from "@/components/ui/button";
 import {
   Popover,
@@ -95,7 +97,9 @@ export function AppHeader() {
         </div>
 
         <div className="flex shrink-0 items-center gap-2">
+          <LiveClock className="mr-1 hidden sm:flex" />
           <ThemeToggle className="hidden sm:inline-flex" />
+
           <Popover>
             <PopoverTrigger asChild>
               <Button variant="ghost" size="icon" className="relative" aria-label="Notifications">

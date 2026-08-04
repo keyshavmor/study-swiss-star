@@ -1,18 +1,13 @@
 import { Link } from "@tanstack/react-router";
 import * as Icons from "lucide-react";
-import {
-  ArrowRight,
-  ChevronDown,
-  Minus,
-  Plus,
-  TrendingDown,
-  TrendingUp,
-  Upload,
-} from "lucide-react";
+import { ArrowRight, ChevronDown, Minus, Plus, TrendingDown, TrendingUp, Upload } from "lucide-react";
 import { useState } from "react";
+import { AddGradeDialog } from "@/components/app/AddGradeDialog";
+import { DemoBadge, FailingBadge, LockedBadge } from "@/components/app/Badges";
 import { AverageWithRounded } from "@/components/app/GradeDisplay";
+import { TranscriptImportDialog } from "@/components/app/TranscriptImportDialog";
 import { Button } from "@/components/ui/button";
-import { getSubjectGrades } from "@/lib/mock/grades";
+import { getSubjectGrades, isFailing } from "@/lib/mock/grades";
 import type { Subject } from "@/lib/mock/subjects";
 import { SUBJECTS } from "@/lib/mock/subjects";
 import { cn } from "@/lib/utils";
@@ -68,9 +63,15 @@ export function SubjectCard({ subject }: { subject: Subject }) {
   const [open, setOpen] = useState(false);
   const Icon = (Icons as unknown as Record<string, Icons.LucideIcon>)[subject.icon] ?? Icons.BookOpen;
   const grades = getSubjectGrades(subject.slug);
+  const failing = isFailing(grades.exactAverage);
 
   return (
-    <article className="app-card app-card-interactive group relative flex flex-col gap-4 p-5">
+    <article
+      className={cn(
+        "app-card app-card-interactive group relative flex flex-col gap-4 p-5",
+        failing && "border-warning/40",
+      )}
+    >
       {/* Whole-card link overlay — content sits above it and re-enables pointer events where needed. */}
       <Link
         to="/school/$subject"
@@ -89,7 +90,12 @@ export function SubjectCard({ subject }: { subject: Subject }) {
               <Icon className="h-5 w-5" />
             </span>
             <div className="min-w-0">
-              <p className="truncate text-[16.5px] font-semibold tracking-tight">{subject.name}</p>
+              <div className="flex min-w-0 items-center gap-2">
+                <p className="truncate text-[16.5px] font-semibold tracking-tight">{subject.name}</p>
+                <span className="pointer-events-auto">
+                  <DemoBadge />
+                </span>
+              </div>
               <p className="text-[13px] text-muted-foreground">
                 {subject.language}
                 {subject.languageBadge ? ` · ${subject.languageBadge}` : ""}
@@ -103,14 +109,23 @@ export function SubjectCard({ subject }: { subject: Subject }) {
           <div className="rounded-[18px] bg-surface-2 p-4">
             <p className="text-[14px] text-muted-foreground">No school-test grades recorded yet.</p>
             <div className="pointer-events-auto mt-3 flex flex-wrap gap-2">
-              <Button size="sm" variant="secondary" onClick={(e) => e.preventDefault()}>
-                <Plus className="h-4 w-4" />
-                Add Grade
-              </Button>
-              <Button size="sm" variant="ghost" onClick={(e) => e.preventDefault()}>
-                <Upload className="h-4 w-4" />
-                Upload Transcript
-              </Button>
+              <AddGradeDialog
+                subjectSlug={subject.slug}
+                trigger={
+                  <Button size="sm" variant="secondary">
+                    <Plus className="h-4 w-4" />
+                    Add Grade
+                  </Button>
+                }
+              />
+              <TranscriptImportDialog
+                trigger={
+                  <Button size="sm" variant="ghost">
+                    <Upload className="h-4 w-4" />
+                    Upload Transcript
+                  </Button>
+                }
+              />
             </div>
           </div>
         ) : (
@@ -120,7 +135,12 @@ export function SubjectCard({ subject }: { subject: Subject }) {
               <div className="min-w-0">
                 <p className="text-[12.5px] text-muted-foreground">Last three tests</p>
                 <p className="tabular text-[14px] font-medium">
-                  {grades.lastThree.map((g) => g.toFixed(1)).join(" → ")}
+                  {grades.lastThree.map((g, i) => (
+                    <span key={`${g}-${i}`}>
+                      <span className={cn(isFailing(g) && "text-warning")}>{g.toFixed(1)}</span>
+                      {i < grades.lastThree.length - 1 && <span> → </span>}
+                    </span>
+                  ))}
                 </p>
               </div>
               <Sparkline values={grades.lastThree} />
@@ -131,7 +151,14 @@ export function SubjectCard({ subject }: { subject: Subject }) {
         <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-[14px]">
           <div>
             <dt className="text-muted-foreground">Latest test</dt>
-            <dd className="tabular font-semibold">{grades.latest?.grade.toFixed(1) ?? "—"}</dd>
+            <dd
+              className={cn(
+                "tabular font-semibold",
+                isFailing(grades.latest?.grade ?? null) && "text-warning",
+              )}
+            >
+              {grades.latest?.grade.toFixed(1) ?? "—"}
+            </dd>
           </div>
           <div>
             <dt className="text-muted-foreground">Tests recorded</dt>
@@ -167,6 +194,9 @@ export function SubjectCard({ subject }: { subject: Subject }) {
 
             {open && (
               <div className="mt-3 space-y-2">
+                <p className="text-[12.5px] text-muted-foreground">
+                  Recorded tests are permanent and read-only.
+                </p>
                 {grades.tests.map((test) => (
                   <div key={test.id} className="rounded-[14px] bg-surface-2 px-3.5 py-3">
                     <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-3">
@@ -176,14 +206,28 @@ export function SubjectCard({ subject }: { subject: Subject }) {
                           {test.date} · {test.type} · {test.monthYear}
                         </p>
                         <p className="text-[12.5px] text-muted-foreground">{test.source}</p>
+                        <div className="mt-1.5 flex flex-wrap items-center gap-2">
+                          <LockedBadge />
+                          <DemoBadge label="Demo record" />
+                        </div>
                       </div>
                       <div className="text-right">
-                        <p className="tabular text-[15px] font-semibold">
+                        <p
+                          className={cn(
+                            "tabular text-[15px] font-semibold",
+                            isFailing(test.grade) && "text-warning",
+                          )}
+                        >
                           {test.grade.toFixed(1)}
                         </p>
                         <p className="tabular text-[12.5px] text-muted-foreground">
                           {test.points === null ? "—" : `${test.points} / ${test.maxPoints}`}
                         </p>
+                        {isFailing(test.grade) && (
+                          <div className="mt-1.5 flex justify-end">
+                            <FailingBadge label="Failing" />
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -206,6 +250,16 @@ export function SubjectCard({ subject }: { subject: Subject }) {
 }
 
 export function SubjectGrid({ subjects = SUBJECTS }: { subjects?: Subject[] }) {
+  if (subjects.length === 0) {
+    return (
+      <div className="app-card p-8 text-center">
+        <p className="text-[15px] font-medium">No subjects match this filter.</p>
+        <p className="mt-1 text-[13.5px] text-muted-foreground">
+          Adjust the sorting or filter options to see subjects again.
+        </p>
+      </div>
+    );
+  }
   return (
     <div className="grid gap-4 sm:grid-cols-2 2xl:grid-cols-3">
       {subjects.map((subject) => (
