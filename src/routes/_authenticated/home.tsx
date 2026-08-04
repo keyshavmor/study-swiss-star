@@ -1,7 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowRight, CalendarDays, Clock, GraduationCap, Sparkle, TrendingUp } from "lucide-react";
 import { AppShell } from "@/components/app/AppShell";
-import { DAILY_OVERVIEW } from "@/lib/mock/planner";
+import { DemoModeBanner } from "@/components/app/DemoMode";
+import { formatDate, summariseYear } from "@/lib/grade-math";
+import { CURRENT_YEAR_ID } from "@/lib/mock/academic";
+import { SUBJECTS } from "@/lib/mock/subjects";
+import { occurrencesInRange, useAppData } from "@/lib/store/app-data";
 
 export const Route = createFileRoute("/_authenticated/home")({
   head: () => ({
@@ -24,7 +28,28 @@ export const Route = createFileRoute("/_authenticated/home")({
 });
 
 function HomePage() {
+  const { assessments, events } = useAppData();
+  const year = summariseYear(
+    assessments.filter((a) => a.yearId === CURRENT_YEAR_ID),
+    SUBJECTS,
+  );
+  const todayIso = new Date().toISOString().slice(0, 10);
+  const in30 = new Date();
+  in30.setDate(in30.getDate() + 30);
+  const upcoming = occurrencesInRange(events, todayIso, in30.toISOString().slice(0, 10));
+  const nextExam = upcoming.find((o) => o.event.category === "School exam");
+  const todayItems = upcoming.filter((o) => o.date === todayIso);
+  const studyToday = todayItems
+    .filter((o) => o.event.category === "Study session")
+    .reduce((sum, o) => {
+      const [sh, sm] = o.event.start.split(":").map(Number);
+      const [eh, em] = o.event.end.split(":").map(Number);
+      return sum + (eh! * 60 + em!) - (sh! * 60 + sm!);
+    }, 0);
+  const nextActivity = todayItems.find((o) => o.event.category === "Extracurricular activity");
+
   return (
+
     <AppShell>
       <h1 className="text-[34px] font-bold leading-[1.05] tracking-[-0.03em] sm:text-[46px]">
         Alim's Study Assistant
@@ -56,25 +81,35 @@ function HomePage() {
           <Stat
             icon={<TrendingUp className="h-[18px] w-[18px]" />}
             label="School-year average"
-            value={DAILY_OVERVIEW.yearAverage.toFixed(1)}
+            value={year.exactYearAverage === null ? "—" : year.exactYearAverage.toFixed(2)}
           />
           <Stat
             icon={<GraduationCap className="h-[18px] w-[18px]" />}
             label="Next exam"
-            value={DAILY_OVERVIEW.nextExam}
+            value={
+              nextExam
+                ? `${nextExam.event.title} · ${formatDate(nextExam.date)}`
+                : "None planned"
+            }
           />
           <Stat
             icon={<Clock className="h-[18px] w-[18px]" />}
             label="Study time today"
-            value={DAILY_OVERVIEW.studyTimeToday}
+            value={studyToday === 0 ? "Nothing planned" : `${Math.floor(studyToday / 60)} h ${studyToday % 60} min`}
           />
           <Stat
             icon={<Sparkle className="h-[18px] w-[18px]" />}
             label="Activity"
-            value={DAILY_OVERVIEW.nextActivity}
+            value={
+              nextActivity
+                ? `${nextActivity.event.title} · ${nextActivity.event.start}`
+                : "None today"
+            }
           />
         </div>
+        <DemoModeBanner className="mt-5" />
       </section>
+
     </AppShell>
   );
 }

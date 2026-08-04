@@ -1,10 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ChevronRight, Info, Plus, TriangleAlert, Upload } from "lucide-react";
+import { ChevronRight, Plus, TriangleAlert, Upload } from "lucide-react";
 import { useMemo, useState } from "react";
-import { AddGradeDialog } from "@/components/app/AddGradeDialog";
 import { AppShell, PageHeading } from "@/components/app/AppShell";
-import { DemoBadge, FailingBadge } from "@/components/app/Badges";
+import { AssessmentDialog } from "@/components/app/AssessmentDialog";
+import { FailingBadge } from "@/components/app/Badges";
+import { DemoModeBanner, DemoModeButton } from "@/components/app/DemoMode";
 import { RoundingInfo } from "@/components/app/GradeDisplay";
+import { EmptyState } from "@/components/app/States";
 import { StatsOverviewPanel } from "@/components/app/StatsOverviewPanel";
 import { SubjectGrid } from "@/components/app/SubjectCard";
 import { TranscriptImportDialog } from "@/components/app/TranscriptImportDialog";
@@ -23,16 +25,16 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { CURRENT_YEAR_ID, SCHOOL_YEARS } from "@/lib/mock/academic";
+import { summariseSubject, summariseYear } from "@/lib/grade-math";
 import {
   PASSING_THRESHOLD,
   ROUNDING_EXAMPLES,
-  YEAR_SUMMARY,
   formatHalf,
-  getSubjectGrades,
   isFailing,
   roundToHalf,
 } from "@/lib/mock/grades";
 import { SUBJECTS } from "@/lib/mock/subjects";
+import { useAppData } from "@/lib/store/app-data";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/school/")({
@@ -42,12 +44,12 @@ export const Route = createFileRoute("/_authenticated/school/")({
       {
         name: "description",
         content:
-          "All subjects with exact and rounded averages, grade history, upcoming exams and the yearly average breakdown.",
+          "All subjects with exact and rounded averages, editable grade history and the yearly average breakdown.",
       },
       { property: "og:title", content: "School — Alim's Study Assistant" },
       {
         property: "og:description",
-        content: "Subject averages, grade history and yearly average breakdown.",
+        content: "Subject averages, editable grade history and yearly average breakdown.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -56,7 +58,7 @@ export const Route = createFileRoute("/_authenticated/school/")({
   component: SchoolPage,
 });
 
-type SortKey = "name" | "average-desc" | "average-asc" | "recent" | "next-exam";
+type SortKey = "name" | "average-desc" | "average-asc" | "recent";
 type FilterKey = "all" | "failing" | "with-grades" | "no-grades";
 
 const SORT_OPTIONS: { value: SortKey; label: string }[] = [
@@ -64,26 +66,34 @@ const SORT_OPTIONS: { value: SortKey; label: string }[] = [
   { value: "average-desc", label: "Average — highest first" },
   { value: "average-asc", label: "Average — lowest first" },
   { value: "recent", label: "Most recent test activity" },
-  { value: "next-exam", label: "Next exam date" },
 ];
 
 const FILTER_OPTIONS: { value: FilterKey; label: string }[] = [
   { value: "all", label: "All subjects" },
   { value: "failing", label: "Below passing grade" },
-  { value: "with-grades", label: "With recorded grades" },
+  { value: "with-grades", label: "With grades" },
   { value: "no-grades", label: "Without grades" },
 ];
 
 function SchoolPage() {
+  const { assessments, demoMode } = useAppData();
   const [yearId, setYearId] = useState(CURRENT_YEAR_ID);
   const [sort, setSort] = useState<SortKey>("name");
   const [filter, setFilter] = useState<FilterKey>("all");
   const year = SCHOOL_YEARS.find((y) => y.id === yearId)!;
-  const isCurrent = yearId === CURRENT_YEAR_ID;
 
-  const rows = SUBJECTS.map((s) => ({ subject: s, grades: getSubjectGrades(s.slug) }));
-  const included = rows.filter((row) => row.grades.included);
+  const yearTests = useMemo(
+    () => assessments.filter((a) => a.yearId === yearId),
+    [assessments, yearId],
+  );
+
+  const rows = useMemo(
+    () => SUBJECTS.map((s) => ({ subject: s, grades: summariseSubject(yearTests, s.slug) })),
+    [yearTests],
+  );
+  const included = rows.filter((row) => row.grades.exactAverage !== null);
   const failingSubjects = included.filter((row) => isFailing(row.grades.exactAverage));
+  const summary = useMemo(() => summariseYear(yearTests, SUBJECTS), [yearTests]);
 
   const visibleSubjects = useMemo(() => {
     const filtered = rows.filter(({ grades }) => {
@@ -99,9 +109,10 @@ function SchoolPage() {
         case "average-asc":
           return (a.grades.exactAverage ?? 99) - (b.grades.exactAverage ?? 99);
         case "recent":
-          return b.grades.tests.length - a.grades.tests.length;
-        case "next-exam":
-          return (a.subject.nextExamInDays ?? 999) - (b.subject.nextExamInDays ?? 999);
+          return (
+            (b.grades.latest?.date ?? "").localeCompare(a.grades.latest?.date ?? "") ||
+            a.subject.name.localeCompare(b.subject.name)
+          );
         default:
           return a.subject.name.localeCompare(b.subject.name);
       }
@@ -109,8 +120,7 @@ function SchoolPage() {
     return sorted.map((row) => row.subject);
   }, [rows, sort, filter]);
 
-  const exactYear = isCurrent ? YEAR_SUMMARY.exactYearAverage : year.average;
-  const previous = isCurrent ? YEAR_SUMMARY.previousMonthAverage : year.average - year.monthlyChange;
+  const exactYear = summary.exactYearAverage;
 
   return (
     <AppShell wide>
@@ -128,11 +138,11 @@ function SchoolPage() {
         }
         action={
           <div className="flex gap-2">
-            <AddGradeDialog
+            <AssessmentDialog
               trigger={
-                <Button variant="secondary" className="hidden sm:inline-flex">
+                <Button className="hidden sm:inline-flex">
                   <Plus className="h-4 w-4" />
-                  Add Grade
+                  Add Test
                 </Button>
               }
             />
@@ -144,9 +154,12 @@ function SchoolPage() {
                 </Button>
               }
             />
+            <DemoModeButton className="hidden sm:inline-flex" />
           </div>
         }
       />
+
+      <DemoModeBanner />
 
       <div className="mb-5 flex flex-wrap gap-2">
         {SCHOOL_YEARS.map((option) => (
@@ -218,84 +231,94 @@ function SchoolPage() {
           <SubjectGrid subjects={visibleSubjects} />
 
           <section className="app-card mt-6 p-5">
-            <div className="flex flex-wrap items-center gap-2">
-              <h2 className="text-[18px] font-semibold tracking-tight">Current year average</h2>
-              <DemoBadge label="Demo data" />
-            </div>
+            <h2 className="text-[18px] font-semibold tracking-tight">Current year average</h2>
             <p className="mt-1 text-[13.5px] text-muted-foreground">
-              {year.label} · calculated from rounded subject grades.
+              {year.label} · calculated from your own rounded subject grades.
             </p>
 
-            <div className="mt-4 grid gap-4 sm:grid-cols-3">
-              <Metric
-                label="Exact yearly average"
-                value={exactYear.toFixed(2)}
-                failing={isFailing(exactYear)}
+            {exactYear === null ? (
+              <EmptyState
+                className="mt-4 border-0 bg-surface-2"
+                heading="No grades yet"
+                description="Add your first test to see subject and yearly averages here."
+                action={
+                  <AssessmentDialog
+                    trigger={
+                      <Button>
+                        <Plus className="h-4 w-4" />
+                        Add Test
+                      </Button>
+                    }
+                  />
+                }
               />
-              <Metric
-                label="Rounded yearly average"
-                value={formatHalf(roundToHalf(exactYear))}
-                muted
-                info
-                failing={isFailing(roundToHalf(exactYear))}
-              />
-              <Metric
-                label="Change vs last month"
-                value={`${exactYear - previous >= 0 ? "+" : ""}${(exactYear - previous).toFixed(2)}`}
-                accent
-              />
-            </div>
+            ) : (
+              <>
+                <div className="mt-4 grid gap-4 sm:grid-cols-3">
+                  <Metric
+                    label="Exact yearly average"
+                    value={exactYear.toFixed(2)}
+                    failing={isFailing(exactYear)}
+                  />
+                  <Metric
+                    label="Rounded yearly average"
+                    value={formatHalf(roundToHalf(exactYear))}
+                    muted
+                    info
+                    failing={isFailing(roundToHalf(exactYear))}
+                  />
+                  <Metric label="Tests added" value={String(summary.totalTests)} />
+                </div>
 
-            <div className="mt-5 overflow-x-auto">
-              <table className="w-full min-w-[420px] text-left text-[14px]">
-                <thead className="text-[12.5px] uppercase tracking-wide text-muted-foreground">
-                  <tr>
-                    <th className="pb-2 font-medium">Subject</th>
-                    <th className="pb-2 text-right font-medium">Exact</th>
-                    <th className="pb-2 text-right font-medium">Rounded</th>
-                    <th className="pb-2 text-right font-medium">Tests</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {included.map(({ subject, grades }) => (
-                    <tr key={subject.slug} className="border-t border-border">
-                      <td className="py-2.5">
-                        <span className="inline-flex items-center gap-2">
-                          {subject.name}
-                          {isFailing(grades.exactAverage) && <FailingBadge label="Failing" />}
-                        </span>
-                      </td>
-                      <td
-                        className={cn(
-                          "tabular py-2.5 text-right font-medium",
-                          isFailing(grades.exactAverage) && "text-warning",
-                        )}
-                      >
-                        {grades.exactAverage!.toFixed(2)}
-                      </td>
-                      <td
-                        className={cn(
-                          "tabular py-2.5 text-right font-medium",
-                          isFailing(grades.roundedAverage) ? "text-warning" : "text-grade-muted",
-                        )}
-                      >
-                        {formatHalf(grades.roundedAverage!)}
-                      </td>
-                      <td className="tabular py-2.5 text-right text-muted-foreground">
-                        {grades.tests.length}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                <div className="mt-5 overflow-x-auto">
+                  <table className="w-full min-w-[420px] text-left text-[14px]">
+                    <thead className="text-[12.5px] uppercase tracking-wide text-muted-foreground">
+                      <tr>
+                        <th className="pb-2 font-medium">Subject</th>
+                        <th className="pb-2 text-right font-medium">Exact</th>
+                        <th className="pb-2 text-right font-medium">Rounded</th>
+                        <th className="pb-2 text-right font-medium">Tests</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {included.map(({ subject, grades }) => (
+                        <tr key={subject.slug} className="border-t border-border">
+                          <td className="py-2.5">
+                            <span className="inline-flex items-center gap-2">
+                              {subject.name}
+                              {isFailing(grades.exactAverage) && <FailingBadge label="Failing" />}
+                            </span>
+                          </td>
+                          <td
+                            className={cn(
+                              "tabular py-2.5 text-right font-medium",
+                              isFailing(grades.exactAverage) && "text-warning",
+                            )}
+                          >
+                            {grades.exactAverage!.toFixed(2)}
+                          </td>
+                          <td
+                            className={cn(
+                              "tabular py-2.5 text-right font-medium",
+                              isFailing(grades.roundedAverage) ? "text-warning" : "text-grade-muted",
+                            )}
+                          >
+                            {formatHalf(grades.roundedAverage!)}
+                          </td>
+                          <td className="tabular py-2.5 text-right text-muted-foreground">
+                            {grades.tests.length}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
 
-            <p className="mt-4 text-[14px] text-muted-foreground">
-              Subjects included: {YEAR_SUMMARY.includedCount} of {YEAR_SUMMARY.totalCount}
-              {YEAR_SUMMARY.missing.length > 0 && (
-                <> · No grades yet: {YEAR_SUMMARY.missing.join(", ")}</>
-              )}
-            </p>
+                <p className="mt-4 text-[14px] text-muted-foreground">
+                  Subjects included: {included.length} of {SUBJECTS.length}
+                </p>
+              </>
+            )}
 
             <Accordion type="single" collapsible className="mt-2">
               <AccordionItem value="method" className="border-0">
@@ -304,7 +327,7 @@ function SchoolPage() {
                 </AccordionTrigger>
                 <AccordionContent>
                   <ol className="list-decimal space-y-1 pl-5 text-[14.5px] text-muted-foreground">
-                    <li>Calculate the exact average of all school tests in each subject.</li>
+                    <li>Calculate the exact average of all tests in each subject.</li>
                     <li>Round every subject average to the nearest 0.5.</li>
                     <li>Average those rounded subject grades to get the yearly average.</li>
                     <li>Subjects without grades are excluded from the calculation.</li>
@@ -337,11 +360,11 @@ function SchoolPage() {
               </AccordionItem>
             </Accordion>
 
-            <p className="mt-3 inline-flex items-start gap-2 text-[13px] text-muted-foreground">
-              <Info className="mt-0.5 h-4 w-4 shrink-0" />
-              Demonstration figures — example subjects and grades are part of the prototype and
-              cannot be removed.
-            </p>
+            {demoMode && (
+              <p className="mt-3 text-[13px] text-muted-foreground">
+                Demo Mode is on — these figures come from example content you can edit freely.
+              </p>
+            )}
           </section>
         </div>
 
