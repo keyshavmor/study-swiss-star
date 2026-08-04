@@ -141,7 +141,7 @@ function ProfilePage() {
             <Row label="Assessments recorded" value={String(yearAssessments.length)} />
             <Row
               label="Subjects with grades"
-              value={String(summary.rows.filter((r) => r.exactAverage !== null).length)}
+              value={String(summary.subjectAverages.length)}
             />
           </Section>
 
