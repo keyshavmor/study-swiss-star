@@ -356,13 +356,6 @@ export function occurrencesInRange(
     const exceptions = event.exceptions ?? [];
     const overrides = event.overrides ?? {};
 
-    // Occurrences whose override moved them INTO the range from outside it.
-    for (const [anchor, override] of Object.entries(overrides)) {
-      const target = override.date;
-      if (!target || target >= fromIso) continue;
-      void anchor;
-    }
-
     for (let iso = fromIso; iso <= toIso; iso = addDays(iso, 1)) {
       if (!matchesRecurrence(event, iso)) continue;
       if (exceptions.includes(iso)) continue;
