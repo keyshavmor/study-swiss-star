@@ -189,10 +189,100 @@ export interface Material {
   archived?: boolean;
 }
 
+export const LINK_CATEGORIES = [
+  "School Website",
+  "Email",
+  "Learning Platform",
+  "Timetable",
+  "Library",
+  "Subject Resource",
+  "Teacher Resource",
+  "Other",
+] as const;
+
+export type LinkCategory = (typeof LINK_CATEGORIES)[number];
+
+export const LINK_ACCENTS = [
+  "#6558D9",
+  "#4A8FD6",
+  "#3F9E6B",
+  "#D69A4A",
+  "#C96A00",
+  "#2FA3A3",
+  "#9A7AD9",
+  "#666B76",
+] as const;
+
+export interface SchoolLink {
+  id: string;
+  name: string;
+  url: string;
+  category: LinkCategory;
+  description?: string;
+  /** Two-letter override for the tile initials. */
+  icon?: string;
+  subjectSlug?: string;
+  accent: string;
+  /** Manual sort position. */
+  order: number;
+  added: string;
+  opens: number;
+}
+
+/**
+ * Student profile. Values the student has not entered stay empty so the
+ * prototype never invents personal information.
+ */
+export interface StudentProfile {
+  photo: string;
+  fullName: string;
+  preferredName: string;
+  dateOfBirth: string;
+  schoolName: string;
+  schoolType: string;
+  className: string;
+  classTeacher: string;
+  focusSubject: string;
+  schoolEmail: string;
+  studentNumber: string;
+  username: string;
+  language: string;
+}
+
+export const EMPTY_PROFILE: StudentProfile = {
+  photo: "",
+  fullName: "",
+  preferredName: "",
+  dateOfBirth: "",
+  schoolName: "",
+  schoolType: "",
+  className: "",
+  classTeacher: "",
+  focusSubject: "",
+  schoolEmail: "",
+  studentNumber: "",
+  username: "",
+  language: "English",
+};
+
 export interface DataState {
   assessments: Assessment[];
   events: PlannerEvent[];
   materials: Material[];
+  links: SchoolLink[];
+  profile: StudentProfile;
+  /** Notification IDs the student has read or dismissed. */
+  readNotifications: string[];
+  dismissedNotifications: string[];
 }
 
-export const EMPTY_STATE: DataState = { assessments: [], events: [], materials: [] };
+export const EMPTY_STATE: DataState = {
+  assessments: [],
+  events: [],
+  materials: [],
+  links: [],
+  profile: EMPTY_PROFILE,
+  readNotifications: [],
+  dismissedNotifications: [],
+};
+
