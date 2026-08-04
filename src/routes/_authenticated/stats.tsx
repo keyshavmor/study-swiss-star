@@ -1,9 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Info, Plus } from "lucide-react";
-import { useState } from "react";
-import { AddGradeDialog } from "@/components/app/AddGradeDialog";
+import { Plus } from "lucide-react";
+import { useMemo, useState } from "react";
 import { AppShell, PageHeading } from "@/components/app/AppShell";
-import { DemoBadge, LockedBadge } from "@/components/app/Badges";
+import { AssessmentActions } from "@/components/app/AssessmentActions";
+import { AssessmentDialog } from "@/components/app/AssessmentDialog";
+import { DemoModeBanner, DemoModeButton } from "@/components/app/DemoMode";
+import { EmptyState } from "@/components/app/States";
 import { MiniTrendChart } from "@/components/app/StatsOverviewPanel";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -22,9 +24,18 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { ASSESSMENTS, CURRENT_YEAR_ID, SCHOOL_YEARS } from "@/lib/mock/academic";
+import { CURRENT_YEAR_ID, SCHOOL_YEARS } from "@/lib/mock/academic";
+import {
+  formatDate,
+  gradeOf,
+  monthlySeries,
+  percentageOf,
+  summariseSubject,
+  summariseYear,
+} from "@/lib/grade-math";
 import { isFailing } from "@/lib/mock/grades";
-import { SUBJECTS } from "@/lib/mock/subjects";
+import { SUBJECTS, getSubject } from "@/lib/mock/subjects";
+import { useAppData } from "@/lib/store/app-data";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/stats")({
@@ -34,7 +45,7 @@ export const Route = createFileRoute("/_authenticated/stats")({
       {
         name: "description",
         content:
-          "Academic statistics: school-year averages, subject comparison, grade history and assessment records.",
+          "Academic statistics: school-year averages, subject comparison and every test you added, all editable.",
       },
       { property: "og:title", content: "Statistics — Alim's Study Assistant" },
       {
@@ -49,27 +60,47 @@ export const Route = createFileRoute("/_authenticated/stats")({
 });
 
 function StatsPage() {
+  const { assessments } = useAppData();
   const [yearId, setYearId] = useState(CURRENT_YEAR_ID);
   const [subject, setSubject] = useState("all");
   const year = SCHOOL_YEARS.find((y) => y.id === yearId)!;
-  const rows = ASSESSMENTS.filter((a) => subject === "all" || a.subject === subject);
+
+  const yearTests = useMemo(
+    () => assessments.filter((a) => a.yearId === yearId),
+    [assessments, yearId],
+  );
+  const summary = useMemo(() => summariseYear(yearTests, SUBJECTS), [yearTests]);
+  const series = useMemo(() => monthlySeries(yearTests), [yearTests]);
+  const rows = yearTests
+    .filter((a) => subject === "all" || a.subjectSlug === subject)
+    .sort((a, b) => b.date.localeCompare(a.date));
+
+  const subjectsWithGrades = SUBJECTS.map((s) => ({
+    subject: s,
+    summary: summariseSubject(yearTests, s.slug),
+  })).filter((x) => x.summary.exactAverage !== null);
 
   return (
     <AppShell wide>
       <PageHeading
         title="Statistics"
-        description="Averages, trends and every recorded assessment in one place."
+        description="Averages, trends and every test you added — all of it editable."
         action={
-          <AddGradeDialog
-            trigger={
-              <Button>
-                <Plus className="h-4 w-4" />
-                Add Grade
-              </Button>
-            }
-          />
+          <div className="flex gap-2">
+            <AssessmentDialog
+              trigger={
+                <Button>
+                  <Plus className="h-4 w-4" />
+                  Add Test
+                </Button>
+              }
+            />
+            <DemoModeButton className="hidden sm:inline-flex" />
+          </div>
         }
       />
+
+      <DemoModeBanner />
 
       <div className="mb-6 flex flex-wrap gap-3">
         <Select value={yearId} onValueChange={setYearId}>
@@ -91,7 +122,7 @@ function StatsPage() {
           <SelectContent>
             <SelectItem value="all">All subjects</SelectItem>
             {SUBJECTS.map((s) => (
-              <SelectItem key={s.slug} value={s.name}>
+              <SelectItem key={s.slug} value={s.slug}>
                 {s.name}
               </SelectItem>
             ))}
@@ -99,125 +130,158 @@ function StatsPage() {
         </Select>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <KPI
-          label="School-year average"
-          value={year.average.toFixed(1)}
-          failing={isFailing(year.average)}
+      {yearTests.length === 0 ? (
+        <EmptyState
+          heading={`No tests in ${year.label}`}
+          description="Add a test, or upload a transcript, to build your statistics for this school year."
+          action={
+            <AssessmentDialog
+              trigger={
+                <Button>
+                  <Plus className="h-4 w-4" />
+                  Add Test
+                </Button>
+              }
+            />
+          }
         />
-        <KPI label="Monthly change" value={`+${year.monthlyChange.toFixed(2)}`} accent />
-        <KPI label="Assessments" value={String(year.assessments)} />
-        <KPI label="Highest grade" value={year.highestGrade.toFixed(2)} />
-      </div>
-
-      <div className="mt-5 grid gap-5 xl:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
-        <section className="app-card p-5">
-          <h2 className="text-[18px] font-semibold tracking-tight">Average over time</h2>
-          <MiniTrendChart className="mt-4" />
-        </section>
-
-        <section className="app-card p-5">
-          <h2 className="text-[18px] font-semibold tracking-tight">Subject comparison</h2>
-          <ul className="mt-4 space-y-3">
-            {SUBJECTS.slice(0, 8).map((s) => (
-              <li key={s.slug} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
-                <div className="min-w-0">
-                  <p className="truncate text-[14px] font-medium">{s.name}</p>
-                  <div className="mt-1 h-2 rounded-full bg-surface-2">
-                    <div
-                      className="h-2 rounded-full"
-                      style={{
-                        width: `${(((s.average ?? 1) - 1) / 5) * 100}%`,
-                        backgroundColor: s.accent,
-                      }}
-                    />
-                  </div>
-                </div>
-                <span
-                  className={cn(
-                    "tabular text-[14px] font-semibold",
-                    isFailing(s.average) && "text-warning",
-                  )}
-                >
-                  {s.average?.toFixed(1) ?? "—"}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </section>
-      </div>
-
-      <section className="app-card mt-5 p-5">
-        <div className="mb-4 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
-          <div className="flex flex-wrap items-center gap-2">
-            <h2 className="text-[18px] font-semibold tracking-tight">Assessment records</h2>
-            <DemoBadge label="Demo data" />
+      ) : (
+        <>
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <KPI
+              label="School-year average"
+              value={summary.exactYearAverage?.toFixed(2) ?? "—"}
+              failing={isFailing(summary.exactYearAverage)}
+            />
+            <KPI label="Tests added" value={String(summary.totalTests)} />
+            <KPI label="Highest grade" value={summary.highestGrade?.toFixed(2) ?? "—"} />
+            <KPI
+              label="Lowest grade"
+              value={summary.lowestGrade?.toFixed(2) ?? "—"}
+              failing={isFailing(summary.lowestGrade)}
+            />
           </div>
-          <Badge variant="secondary">{rows.length} entries</Badge>
-        </div>
 
-        <div className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Date</TableHead>
-                <TableHead>Subject</TableHead>
-                <TableHead>Assessment</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead className="text-right">Points</TableHead>
-                <TableHead className="text-right">%</TableHead>
-                <TableHead className="text-right">Grade</TableHead>
-                <TableHead>Source</TableHead>
-                <TableHead>Status</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {rows.map((a) => (
-                <TableRow key={a.id}>
-                  <TableCell className="whitespace-nowrap text-muted-foreground">{a.date}</TableCell>
-                  <TableCell className="whitespace-nowrap font-medium">{a.subject}</TableCell>
-                  <TableCell>{a.title}</TableCell>
-                  <TableCell className="whitespace-nowrap text-muted-foreground">{a.type}</TableCell>
-                  <TableCell className="tabular text-right">
-                    {a.points === null ? "—" : `${a.points}/${a.maxPoints}`}
-                  </TableCell>
-                  <TableCell className="tabular text-right">
-                    {a.percentage === null ? "—" : `${a.percentage}%`}
-                  </TableCell>
-                  <TableCell
-                    className={cn(
-                      "tabular text-right font-semibold",
-                      isFailing(a.grade) && "text-warning",
-                    )}
-                  >
-                    {a.grade.toFixed(2)}
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="secondary" className="whitespace-nowrap text-[11.5px]">
-                      {a.source}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="whitespace-nowrap">
-                    <LockedBadge label="Permanent" />
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
+          <div className="mt-5 grid gap-5 xl:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
+            <section className="app-card p-5">
+              <h2 className="text-[18px] font-semibold tracking-tight">Average over time</h2>
+              <MiniTrendChart className="mt-4" data={series} />
+            </section>
 
-        <div className="mt-5 rounded-[18px] bg-surface-2 p-4 text-[14.5px]">
-          <p className="font-medium">Grade = 1.0 + 5.0 × (achieved points ÷ maximum points)</p>
-          <p className="mt-1 text-muted-foreground">
-            Minimum 1.0 · Maximum 6.0 · Passing 4.0 · 0% → 1.0 · 50% → 3.5 · 80% → 5.0 · 100% → 6.0
-          </p>
-        </div>
+            <section className="app-card p-5">
+              <h2 className="text-[18px] font-semibold tracking-tight">Subject comparison</h2>
+              {subjectsWithGrades.length === 0 ? (
+                <p className="mt-3 text-[14px] text-muted-foreground">No subject averages yet.</p>
+              ) : (
+                <ul className="mt-4 space-y-3">
+                  {subjectsWithGrades.map(({ subject: s, summary: sum }) => (
+                    <li
+                      key={s.slug}
+                      className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3"
+                    >
+                      <div className="min-w-0">
+                        <p className="truncate text-[14px] font-medium">{s.name}</p>
+                        <div className="mt-1 h-2 rounded-full bg-surface-2">
+                          <div
+                            className="h-2 rounded-full"
+                            style={{
+                              width: `${(((sum.exactAverage ?? 1) - 1) / 5) * 100}%`,
+                              backgroundColor: s.accent,
+                            }}
+                          />
+                        </div>
+                      </div>
+                      <span
+                        className={cn(
+                          "tabular text-[14px] font-semibold",
+                          isFailing(sum.exactAverage) && "text-warning",
+                        )}
+                      >
+                        {sum.exactAverage!.toFixed(1)}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </section>
+          </div>
 
-        <p className="mt-3 inline-flex items-start gap-2 text-[13px] text-muted-foreground">
-          <Info className="mt-0.5 h-4 w-4 shrink-0" />
-          Demonstration data — recorded assessments are permanent and cannot be edited or deleted.
-        </p>
-      </section>
+          <section className="app-card mt-5 p-5">
+            <div className="mb-4 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
+              <h2 className="text-[18px] font-semibold tracking-tight">Your tests</h2>
+              <Badge variant="secondary">{rows.length} entries</Badge>
+            </div>
+
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Subject</TableHead>
+                    <TableHead>Test</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead className="text-right">Points</TableHead>
+                    <TableHead className="text-right">%</TableHead>
+                    <TableHead className="text-right">Grade</TableHead>
+                    <TableHead>Source</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {rows.map((a) => {
+                    const grade = gradeOf(a);
+                    const pct = percentageOf(a);
+                    return (
+                      <TableRow key={a.id}>
+                        <TableCell className="whitespace-nowrap text-muted-foreground">
+                          {formatDate(a.date)}
+                        </TableCell>
+                        <TableCell className="whitespace-nowrap font-medium">
+                          {getSubject(a.subjectSlug)?.name ?? a.subjectSlug}
+                        </TableCell>
+                        <TableCell>{a.title}</TableCell>
+                        <TableCell className="whitespace-nowrap text-muted-foreground">
+                          {a.type}
+                        </TableCell>
+                        <TableCell className="tabular text-right">
+                          {a.points === null ? "—" : `${a.points}/${a.maxPoints}`}
+                        </TableCell>
+                        <TableCell className="tabular text-right">
+                          {pct === null ? "—" : `${pct}%`}
+                        </TableCell>
+                        <TableCell
+                          className={cn(
+                            "tabular text-right font-semibold",
+                            isFailing(grade) && "text-warning",
+                          )}
+                        >
+                          {grade === null ? "—" : grade.toFixed(2)}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="secondary" className="whitespace-nowrap text-[11.5px]">
+                            {a.source}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <AssessmentActions record={a} />
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+
+            <div className="mt-5 rounded-[18px] bg-surface-2 p-4 text-[14.5px]">
+              <p className="font-medium">Grade = 1.0 + 5.0 × (achieved points ÷ maximum points)</p>
+              <p className="mt-1 text-muted-foreground">
+                Minimum 1.0 · Maximum 6.0 · Passing 4.0 · 0% → 1.0 · 50% → 3.5 · 80% → 5.0 · 100% →
+                6.0
+              </p>
+            </div>
+          </section>
+        </>
+      )}
     </AppShell>
   );
 }

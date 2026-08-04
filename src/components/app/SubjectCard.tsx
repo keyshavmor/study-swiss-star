@@ -2,28 +2,35 @@ import { Link } from "@tanstack/react-router";
 import * as Icons from "lucide-react";
 import { ArrowRight, ChevronDown, Minus, Plus, TrendingDown, TrendingUp, Upload } from "lucide-react";
 import { useState } from "react";
-import { AddGradeDialog } from "@/components/app/AddGradeDialog";
-import { DemoBadge, FailingBadge, LockedBadge } from "@/components/app/Badges";
+import { AssessmentActions } from "@/components/app/AssessmentActions";
+import { AssessmentDialog } from "@/components/app/AssessmentDialog";
+import { DemoBadge, FailingBadge } from "@/components/app/Badges";
 import { AverageWithRounded } from "@/components/app/GradeDisplay";
 import { TranscriptImportDialog } from "@/components/app/TranscriptImportDialog";
 import { Button } from "@/components/ui/button";
-import { getSubjectGrades, isFailing } from "@/lib/mock/grades";
+import { formatDate, formatMonthYear, gradeOf, summariseSubject } from "@/lib/grade-math";
+import { isFailing } from "@/lib/mock/grades";
 import type { Subject } from "@/lib/mock/subjects";
 import { SUBJECTS } from "@/lib/mock/subjects";
+import { useAppData } from "@/lib/store/app-data";
 import { cn } from "@/lib/utils";
 
-function TrendBadge({ trend, change }: { trend: Subject["trend"]; change: number | null }) {
-  const map = {
+function TrendBadge({ trend, change }: { trend: string | null; change: number | null }) {
+  if (!trend) return null;
+  const map: Record<string, { icon: Icons.LucideIcon; className: string }> = {
     Improving: { icon: TrendingUp, className: "text-chart-3" },
     Stable: { icon: Minus, className: "text-muted-foreground" },
     "Needs focus": { icon: TrendingDown, className: "text-chart-4" },
-  } as const;
-  const { icon: Icon, className } = map[trend];
+  };
+  const entry = map[trend] ?? map["Stable"]!;
+  const Icon = entry.icon;
   return (
-    <span className={cn("inline-flex items-center gap-1.5 text-[13px] font-medium", className)}>
+    <span
+      className={cn("inline-flex items-center gap-1.5 text-[13px] font-medium", entry.className)}
+    >
       <Icon className="h-4 w-4" />
       {trend}
-      {change !== null && change !== 0 && (
+      {change !== null && Math.abs(change) >= 0.05 && (
         <span className="tabular">
           ({change >= 0 ? "+" : ""}
           {change.toFixed(1)})
@@ -35,14 +42,8 @@ function TrendBadge({ trend, change }: { trend: Subject["trend"]; change: number
 
 function Sparkline({ values }: { values: number[] }) {
   if (values.length < 2) return null;
-  const min = 1;
-  const max = 6;
   const points = values
-    .map((v, i) => {
-      const x = (i / (values.length - 1)) * 100;
-      const y = 100 - ((v - min) / (max - min)) * 100;
-      return `${x},${y}`;
-    })
+    .map((v, i) => `${(i / (values.length - 1)) * 100},${100 - ((v - 1) / 5) * 100}`)
     .join(" ");
   return (
     <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="h-8 w-20" aria-hidden>
@@ -61,9 +62,16 @@ function Sparkline({ values }: { values: number[] }) {
 
 export function SubjectCard({ subject }: { subject: Subject }) {
   const [open, setOpen] = useState(false);
+  const { assessments, materials, demoMode, events } = useAppData();
   const Icon = (Icons as unknown as Record<string, Icons.LucideIcon>)[subject.icon] ?? Icons.BookOpen;
-  const grades = getSubjectGrades(subject.slug);
+  const grades = summariseSubject(assessments, subject.slug);
   const failing = isFailing(grades.exactAverage);
+  const fileCount = materials.filter((m) => m.subjectSlug === subject.slug && !m.archived).length;
+  const nextExam = events
+    .filter((e) => e.subjectSlug === subject.slug && e.category === "School exam")
+    .map((e) => e.date)
+    .sort()
+    .find((d) => d >= new Date().toISOString().slice(0, 10));
 
   return (
     <article
@@ -72,7 +80,6 @@ export function SubjectCard({ subject }: { subject: Subject }) {
         failing && "border-warning/40",
       )}
     >
-      {/* Whole-card link overlay — content sits above it and re-enables pointer events where needed. */}
       <Link
         to="/school/$subject"
         params={{ subject: subject.slug }}
@@ -92,9 +99,11 @@ export function SubjectCard({ subject }: { subject: Subject }) {
             <div className="min-w-0">
               <div className="flex min-w-0 items-center gap-2">
                 <p className="truncate text-[16.5px] font-semibold tracking-tight">{subject.name}</p>
-                <span className="pointer-events-auto">
-                  <DemoBadge />
-                </span>
+                {demoMode && (
+                  <span className="pointer-events-auto">
+                    <DemoBadge />
+                  </span>
+                )}
               </div>
               <p className="text-[13px] text-muted-foreground">
                 {subject.language}
@@ -107,18 +116,19 @@ export function SubjectCard({ subject }: { subject: Subject }) {
 
         {grades.exactAverage === null ? (
           <div className="rounded-[18px] bg-surface-2 p-4">
-            <p className="text-[14px] text-muted-foreground">No school-test grades recorded yet.</p>
+            <p className="text-[14px] text-muted-foreground">No tests added yet.</p>
             <div className="pointer-events-auto mt-3 flex flex-wrap gap-2">
-              <AddGradeDialog
+              <AssessmentDialog
                 subjectSlug={subject.slug}
                 trigger={
                   <Button size="sm" variant="secondary">
                     <Plus className="h-4 w-4" />
-                    Add Grade
+                    Add Test
                   </Button>
                 }
               />
               <TranscriptImportDialog
+                subjectSlug={subject.slug}
                 trigger={
                   <Button size="sm" variant="ghost">
                     <Upload className="h-4 w-4" />
@@ -154,29 +164,29 @@ export function SubjectCard({ subject }: { subject: Subject }) {
             <dd
               className={cn(
                 "tabular font-semibold",
-                isFailing(grades.latest?.grade ?? null) && "text-warning",
+                isFailing(grades.latest ? gradeOf(grades.latest) : null) && "text-warning",
               )}
             >
-              {grades.latest?.grade.toFixed(1) ?? "—"}
+              {grades.latest ? (gradeOf(grades.latest)?.toFixed(1) ?? "—") : "—"}
             </dd>
           </div>
           <div>
-            <dt className="text-muted-foreground">Tests recorded</dt>
+            <dt className="text-muted-foreground">Tests added</dt>
             <dd className="tabular font-semibold">{grades.tests.length}</dd>
           </div>
           <div>
             <dt className="text-muted-foreground">Next exam</dt>
-            <dd className="font-medium">{subject.nextExam ?? "None planned"}</dd>
+            <dd className="font-medium">{nextExam ? formatDate(nextExam) : "None planned"}</dd>
           </div>
           <div>
             <dt className="text-muted-foreground">Materials</dt>
             <dd className="font-medium">
-              {subject.materials} files · {subject.materialStatus}
+              {fileCount === 0 ? "None added" : `${fileCount} file${fileCount === 1 ? "" : "s"}`}
             </dd>
           </div>
         </dl>
 
-        <TrendBadge trend={subject.trend} change={grades.monthlyChange} />
+        <TrendBadge trend={grades.trend} change={grades.monthlyChange} />
 
         {grades.tests.length > 0 && (
           <div className="pointer-events-auto border-t border-border pt-3">
@@ -194,52 +204,65 @@ export function SubjectCard({ subject }: { subject: Subject }) {
 
             {open && (
               <div className="mt-3 space-y-2">
-                <p className="text-[12.5px] text-muted-foreground">
-                  Recorded tests are permanent and read-only.
-                </p>
-                {grades.tests.map((test) => (
-                  <div key={test.id} className="rounded-[14px] bg-surface-2 px-3.5 py-3">
-                    <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-3">
-                      <div className="min-w-0">
-                        <p className="truncate text-[14px] font-medium">{test.title}</p>
-                        <p className="text-[12.5px] text-muted-foreground">
-                          {test.date} · {test.type} · {test.monthYear}
-                        </p>
-                        <p className="text-[12.5px] text-muted-foreground">{test.source}</p>
-                        <div className="mt-1.5 flex flex-wrap items-center gap-2">
-                          <LockedBadge />
-                          <DemoBadge label="Demo record" />
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <p
-                          className={cn(
-                            "tabular text-[15px] font-semibold",
-                            isFailing(test.grade) && "text-warning",
+                {grades.tests.map((test) => {
+                  const grade = gradeOf(test);
+                  return (
+                    <div key={test.id} className="rounded-[14px] bg-surface-2 px-3.5 py-3">
+                      <div className="grid grid-cols-[minmax(0,1fr)_auto_auto] items-start gap-3">
+                        <div className="min-w-0">
+                          <p className="truncate text-[14px] font-medium">{test.title}</p>
+                          <p className="text-[12.5px] text-muted-foreground">
+                            {formatDate(test.date)} · {test.type} · {formatMonthYear(test.date)}
+                          </p>
+                          <p className="text-[12.5px] text-muted-foreground">{test.source}</p>
+                          {!test.includeInStats && (
+                            <p className="mt-1 text-[12px] text-muted-foreground">
+                              Not included in statistics
+                            </p>
                           )}
-                        >
-                          {test.grade.toFixed(1)}
-                        </p>
-                        <p className="tabular text-[12.5px] text-muted-foreground">
-                          {test.points === null ? "—" : `${test.points} / ${test.maxPoints}`}
-                        </p>
-                        {isFailing(test.grade) && (
-                          <div className="mt-1.5 flex justify-end">
-                            <FailingBadge label="Failing" />
-                          </div>
-                        )}
+                        </div>
+                        <div className="text-right">
+                          <p
+                            className={cn(
+                              "tabular text-[15px] font-semibold",
+                              isFailing(grade) && "text-warning",
+                            )}
+                          >
+                            {grade === null ? "—" : grade.toFixed(1)}
+                          </p>
+                          <p className="tabular text-[12.5px] text-muted-foreground">
+                            {test.points === null ? "—" : `${test.points} / ${test.maxPoints}`}
+                          </p>
+                          {isFailing(grade) && (
+                            <div className="mt-1.5 flex justify-end">
+                              <FailingBadge label="Failing" />
+                            </div>
+                          )}
+                        </div>
+                        <AssessmentActions record={test} />
                       </div>
                     </div>
-                  </div>
-                ))}
-                <Link
-                  to="/school/$subject"
-                  params={{ subject: subject.slug }}
-                  className="inline-flex items-center gap-1.5 text-[14px] font-medium text-primary hover:underline"
-                >
-                  View Full {subject.name} Statistics
-                  <ArrowRight className="h-4 w-4" />
-                </Link>
+                  );
+                })}
+                <div className="flex flex-wrap items-center gap-3 pt-1">
+                  <AssessmentDialog
+                    subjectSlug={subject.slug}
+                    trigger={
+                      <Button size="sm" variant="secondary">
+                        <Plus className="h-4 w-4" />
+                        Add Test
+                      </Button>
+                    }
+                  />
+                  <Link
+                    to="/school/$subject"
+                    params={{ subject: subject.slug }}
+                    className="inline-flex items-center gap-1.5 text-[14px] font-medium text-primary hover:underline"
+                  >
+                    View Full {subject.name} Statistics
+                    <ArrowRight className="h-4 w-4" />
+                  </Link>
+                </div>
               </div>
             )}
           </div>

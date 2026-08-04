@@ -1,7 +1,7 @@
-import { Lock, TriangleAlert } from "lucide-react";
+import { TriangleAlert } from "lucide-react";
 import type { ReactNode } from "react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { DEMO_TOOLTIP, FAILING_TOOLTIP, LOCK_TOOLTIP, isFailing } from "@/lib/mock/grades";
+import { DEMO_TOOLTIP, FAILING_TOOLTIP, isFailing } from "@/lib/mock/grades";
 import { cn } from "@/lib/utils";
 
 function WithTooltip({ tip, children }: { tip: string; children: ReactNode }) {
@@ -19,31 +19,14 @@ function WithTooltip({ tip, children }: { tip: string; children: ReactNode }) {
   );
 }
 
-/** Shown on every permanently recorded assessment. */
-export function LockedBadge({
-  label = "Permanent recorded test",
+/** Marks optional example content shown only while Demo Mode is on. */
+export function DemoBadge({
+  label = "Example data",
   className,
 }: {
   label?: string;
   className?: string;
 }) {
-  return (
-    <WithTooltip tip={LOCK_TOOLTIP}>
-      <span
-        className={cn(
-          "inline-flex items-center gap-1 text-[12px] font-medium text-grade-muted",
-          className,
-        )}
-      >
-        <Lock className="h-3 w-3" />
-        {label}
-      </span>
-    </WithTooltip>
-  );
-}
-
-/** Marks protected demonstration content. */
-export function DemoBadge({ label = "Demo", className }: { label?: string; className?: string }) {
   return (
     <WithTooltip tip={DEMO_TOOLTIP}>
       <span

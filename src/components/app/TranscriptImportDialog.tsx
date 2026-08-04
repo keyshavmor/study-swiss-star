@@ -1,9 +1,7 @@
-import { Lock, TriangleAlert, Upload } from "lucide-react";
+import { Upload } from "lucide-react";
 import { useState } from "react";
 import type { ReactNode } from "react";
-import { LockedBadge } from "@/components/app/Badges";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -14,64 +12,98 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { isFailing } from "@/lib/mock/grades";
-import { cn } from "@/lib/utils";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { CURRENT_YEAR_ID } from "@/lib/mock/academic";
+import { SUBJECTS } from "@/lib/mock/subjects";
+import { useAppData } from "@/lib/store/app-data";
+import type { Assessment } from "@/lib/store/types";
 import { toast } from "sonner";
 
-interface ExtractedRow {
-  id: string;
-  subject: string;
+interface Row {
+  key: string;
+  subjectSlug: string;
+  title: string;
   grade: string;
   date: string;
-  semester: string;
-  year: string;
-  confidence: "High" | "Medium" | "Low";
 }
 
-const EXTRACTED: ExtractedRow[] = [
-  {
-    id: "x1",
-    subject: "Mathematics",
-    grade: "5.0",
-    date: "18 September 2025",
-    semester: "Semester 1",
-    year: "2025–26",
-    confidence: "High",
-  },
-  {
-    id: "x2",
-    subject: "French",
-    grade: "3.5",
-    date: "2 October 2025",
-    semester: "Semester 1",
-    year: "2025–26",
-    confidence: "Medium",
-  },
-  {
-    id: "x3",
-    subject: "History",
-    grade: "4.5",
-    date: "21 November 2025",
-    semester: "Semester 1",
-    year: "2025–26",
-    confidence: "Low",
-  },
-];
+function blankRow(index: number): Row {
+  return {
+    key: `r${index}`,
+    subjectSlug: SUBJECTS[0]!.slug,
+    title: "",
+    grade: "",
+    date: new Date().toISOString().slice(0, 10),
+  };
+}
 
 /**
- * Prototype transcript import: Upload → Review extracted grades → Correct
- * uncertain values → Confirm → grades become permanent read-only records.
+ * Transcript upload prototype. Extracted rows are editable before import and
+ * stay fully editable afterwards, exactly like manually added tests.
  */
-export function TranscriptImportDialog({ trigger }: { trigger: ReactNode }) {
+export function TranscriptImportDialog({
+  trigger,
+  subjectSlug,
+}: {
+  trigger: ReactNode;
+  subjectSlug?: string;
+}) {
+  const { addAssessment } = useAppData();
   const [open, setOpen] = useState(false);
-  const [step, setStep] = useState<"upload" | "review" | "done">("upload");
-  const [rows, setRows] = useState<ExtractedRow[]>(EXTRACTED);
-  const [confirmed, setConfirmed] = useState(false);
+  const [step, setStep] = useState<"upload" | "review">("upload");
+  const [rows, setRows] = useState<Row[]>([]);
 
   function reset() {
     setStep("upload");
-    setRows(EXTRACTED);
-    setConfirmed(false);
+    setRows([]);
+  }
+
+  function startReview() {
+    setRows([
+      { ...blankRow(1), subjectSlug: subjectSlug ?? SUBJECTS[0]!.slug },
+      { ...blankRow(2), subjectSlug: subjectSlug ?? SUBJECTS[0]!.slug },
+    ]);
+    setStep("review");
+  }
+
+  function update(key: string, patch: Partial<Row>) {
+    setRows((prev) => prev.map((r) => (r.key === key ? { ...r, ...patch } : r)));
+  }
+
+  const valid = rows.filter((r) => r.title.trim() !== "" && r.grade.trim() !== "");
+
+  function importRows() {
+    valid.forEach((r) => {
+      const payload: Omit<Assessment, "id"> = {
+        subjectSlug: r.subjectSlug,
+        title: r.title.trim(),
+        type: "Written exam",
+        topic: "",
+        date: r.date,
+        yearId: CURRENT_YEAR_ID,
+        points: null,
+        maxPoints: null,
+        teacherGrade: Number(r.grade),
+        weight: 1,
+        notes: "",
+        source: "Imported from transcript",
+        includeInStats: true,
+        importedFrom: "Transcript upload",
+      };
+      addAssessment(payload);
+    });
+    setOpen(false);
+    reset();
+    toast.success(`${valid.length} grade${valid.length === 1 ? "" : "s"} imported`, {
+      description: "Imported grades can be edited or deleted like any other test.",
+    });
   }
 
   return (
@@ -86,131 +118,113 @@ export function TranscriptImportDialog({ trigger }: { trigger: ReactNode }) {
       <DialogContent className="max-h-[88vh] overflow-y-auto sm:max-w-[620px]">
         <DialogHeader>
           <DialogTitle>
-            {step === "upload"
-              ? "Upload transcript"
-              : step === "review"
-                ? "Review extracted grades"
-                : "Import complete"}
+            {step === "upload" ? "Upload transcript" : "Review extracted grades"}
           </DialogTitle>
           <DialogDescription>
             {step === "upload"
-              ? "Prototype only — no file is uploaded or parsed."
-              : step === "review"
-                ? "Correct uncertain values now. After confirmation they can no longer be changed."
-                : "These grades are now permanent academic records."}
+              ? "Prototype only — no file is parsed. You enter the grades you want to import."
+              : "Check every row. Imported grades stay editable afterwards."}
           </DialogDescription>
         </DialogHeader>
 
-        {step === "upload" && (
+        {step === "upload" ? (
           <div className="rounded-[18px] border border-dashed border-border-strong bg-surface-2 p-8 text-center">
             <Upload className="mx-auto h-6 w-6 text-muted-foreground" />
             <p className="mt-3 text-[14.5px] font-medium">Drop a transcript PDF or photo here</p>
             <p className="mt-1 text-[13px] text-muted-foreground">
-              A sample transcript is used in this prototype.
+              Extraction is simulated — you confirm each grade yourself.
             </p>
           </div>
-        )}
-
-        {step !== "upload" && (
-          <div className="space-y-2.5">
+        ) : (
+          <div className="space-y-3">
             {rows.map((row) => (
-              <div key={row.id} className="rounded-[16px] bg-surface-2 p-3.5">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <p className="text-[14.5px] font-medium">{row.subject}</p>
-                  <span className="text-[12px] text-muted-foreground">
-                    Extraction confidence: {row.confidence}
-                  </span>
+              <div key={row.key} className="grid gap-3 rounded-[16px] bg-surface-2 p-3.5">
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="grid gap-2">
+                    <Label>Subject</Label>
+                    <Select
+                      value={row.subjectSlug}
+                      onValueChange={(v) => update(row.key, { subjectSlug: v })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {SUBJECTS.map((s) => (
+                          <SelectItem key={s.slug} value={s.slug}>
+                            {s.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor={`${row.key}-title`}>Assessment title</Label>
+                    <Input
+                      id={`${row.key}-title`}
+                      value={row.title}
+                      onChange={(e) => update(row.key, { title: e.target.value })}
+                      placeholder="Semester test"
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor={`${row.key}-grade`}>Grade</Label>
+                    <Input
+                      id={`${row.key}-grade`}
+                      inputMode="decimal"
+                      value={row.grade}
+                      onChange={(e) => update(row.key, { grade: e.target.value })}
+                      placeholder="5.0"
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor={`${row.key}-date`}>Date</Label>
+                    <Input
+                      id={`${row.key}-date`}
+                      type="date"
+                      value={row.date}
+                      onChange={(e) => update(row.key, { date: e.target.value })}
+                    />
+                  </div>
                 </div>
-                <p className="mt-0.5 text-[12.5px] text-muted-foreground">
-                  {row.date} · {row.semester} · {row.year}
-                </p>
-                <div className="mt-2.5 flex items-center gap-3">
-                  {step === "review" ? (
-                    <>
-                      <Input
-                        aria-label={`${row.subject} grade`}
-                        value={row.grade}
-                        inputMode="decimal"
-                        className="h-10 w-24"
-                        onChange={(e) =>
-                          setRows((prev) =>
-                            prev.map((r) =>
-                              r.id === row.id ? { ...r, grade: e.target.value } : r,
-                            ),
-                          )
-                        }
-                      />
-                      <span className="text-[12.5px] text-muted-foreground">
-                        Editable until import is confirmed
-                      </span>
-                    </>
-                  ) : (
-                    <>
-                      <span
-                        className={cn(
-                          "tabular text-[16px] font-semibold",
-                          isFailing(Number(row.grade)) && "text-warning",
-                        )}
-                      >
-                        {row.grade}
-                      </span>
-                      <LockedBadge label="Locked record" />
-                    </>
-                  )}
-                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="justify-self-start text-destructive"
+                  onClick={() => setRows((prev) => prev.filter((r) => r.key !== row.key))}
+                >
+                  Remove row
+                </Button>
               </div>
             ))}
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => setRows((prev) => [...prev, blankRow(prev.length + 1)])}
+            >
+              Add another row
+            </Button>
           </div>
-        )}
-
-        {step === "review" && (
-          <>
-            <p className="flex items-start gap-2 rounded-[14px] bg-warning-soft p-3.5 text-[13.5px] leading-relaxed text-warning">
-              <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0" />
-              After confirmation, these grades will become permanent academic records and cannot be
-              changed or removed.
-            </p>
-            <label className="flex cursor-pointer items-start gap-3 text-[13.5px] leading-relaxed">
-              <Checkbox
-                checked={confirmed}
-                onCheckedChange={(v) => setConfirmed(v === true)}
-                className="mt-0.5"
-              />
-              I have reviewed the extracted grades and understand that they will become permanent
-              records.
-            </label>
-          </>
         )}
 
         <DialogFooter>
-          {step === "upload" && (
+          {step === "upload" ? (
             <>
               <Button variant="ghost" onClick={() => setOpen(false)}>
                 Cancel
               </Button>
-              <Button onClick={() => setStep("review")}>Review Extracted Grades</Button>
+              <Button onClick={startReview}>Continue</Button>
             </>
-          )}
-          {step === "review" && (
+          ) : (
             <>
               <Button variant="ghost" onClick={() => setStep("upload")}>
-                Go Back
+                Go back
               </Button>
-              <Button
-                disabled={!confirmed}
-                onClick={() => {
-                  setStep("done");
-                  toast.success("Transcript imported", {
-                    description: "The imported grades are now locked and read-only.",
-                  });
-                }}
-              >
-                <Lock className="h-4 w-4" />
-                Confirm Import
+              <Button disabled={valid.length === 0} onClick={importRows}>
+                Import {valid.length || ""} grade{valid.length === 1 ? "" : "s"}
               </Button>
             </>
           )}
-          {step === "done" && <Button onClick={() => setOpen(false)}>Done</Button>}
         </DialogFooter>
       </DialogContent>
     </Dialog>

@@ -11,15 +11,20 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { AppShell } from "@/components/app/AppShell";
-import { DemoBadge, FailingBadge, LockedBadge } from "@/components/app/Badges";
+import { AssessmentActions } from "@/components/app/AssessmentActions";
+import { AssessmentDialog } from "@/components/app/AssessmentDialog";
+import { FailingBadge } from "@/components/app/Badges";
+import { DemoModeBanner } from "@/components/app/DemoMode";
 import { AverageWithRounded, GradeLineChart } from "@/components/app/GradeDisplay";
 import { MaterialsPanel } from "@/components/app/MaterialsPanel";
 import { EmptyState } from "@/components/app/States";
 import { Button } from "@/components/ui/button";
 import type { SubjectMode } from "@/lib/mock/materials";
 import { SUBJECT_MODES } from "@/lib/mock/materials";
-import { getSubjectGrades, isFailing } from "@/lib/mock/grades";
+import { formatDate, formatMonthYear, gradeOf, summariseSubject } from "@/lib/grade-math";
+import { isFailing } from "@/lib/mock/grades";
 import { getSubject } from "@/lib/mock/subjects";
+import { useAppData } from "@/lib/store/app-data";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/school/$subject")({
@@ -64,7 +69,14 @@ const MODE_ICONS: Record<SubjectMode, typeof MessageSquare> = {
 function SubjectDashboard() {
   const { subject } = Route.useLoaderData();
   const [mode, setMode] = useState<SubjectMode>("Chat");
-  const grades = getSubjectGrades(subject.slug);
+  const { assessments, materials, events } = useAppData();
+  const grades = summariseSubject(assessments, subject.slug);
+  const fileCount = materials.filter((m) => m.subjectSlug === subject.slug && !m.archived).length;
+  const nextExam = events
+    .filter((e) => e.subjectSlug === subject.slug && e.category === "School exam")
+    .map((e) => e.date)
+    .sort()
+    .find((d) => d >= new Date().toISOString().slice(0, 10));
 
   return (
     <AppShell wide>
@@ -87,7 +99,6 @@ function SubjectDashboard() {
                 <h1 className="truncate text-[26px] font-bold tracking-[-0.025em] sm:text-[32px]">
                   {subject.name}
                 </h1>
-                <DemoBadge />
                 {isFailing(grades.exactAverage) && <FailingBadge />}
               </div>
               <p className="text-[14px] text-muted-foreground">
@@ -99,17 +110,19 @@ function SubjectDashboard() {
           <dl className="hidden gap-6 text-right sm:flex">
             <Meta
               label="Average"
-              value={subject.average?.toFixed(1) ?? "—"}
-              failing={isFailing(subject.average)}
+              value={grades.exactAverage?.toFixed(1) ?? "—"}
+              failing={isFailing(grades.exactAverage)}
             />
+            <Meta label="Next exam" value={nextExam ? formatDate(nextExam) : "None planned"} />
             <Meta
-              label="Next exam"
-              value={subject.nextExamInDays ? `${subject.nextExamInDays} days` : "None"}
+              label="Materials"
+              value={fileCount === 0 ? "None added" : `${fileCount} file${fileCount === 1 ? "" : "s"}`}
             />
-            <Meta label="Materials" value={subject.materialStatus} />
           </dl>
         </div>
+        <DemoModeBanner className="mt-5" />
       </div>
+
 
       <div className="grid gap-5 xl:grid-cols-[220px_minmax(0,1fr)_360px]">
         <nav className="app-card h-fit p-2 xl:sticky xl:top-24">
@@ -151,46 +164,72 @@ function SubjectDashboard() {
             </div>
           ) : mode === "Statistics" ? (
             <div className="mt-4 space-y-5">
-              <AverageWithRounded
-                exact={grades.exactAverage}
-                rounded={grades.roundedAverage}
-                size="lg"
-              />
-              {grades.tests.length > 1 && (
-                <GradeLineChart
-                  data={grades.tests.map((t) => ({ label: t.monthYear, value: t.grade }))}
+              {grades.tests.length === 0 ? (
+                <EmptyState
+                  className="border-0 bg-surface-2"
+                  heading="No tests yet"
+                  description={`Add your first ${subject.name} test to see averages and trends.`}
+                  action={
+                    <AssessmentDialog
+                      subjectSlug={subject.slug}
+                      trigger={<Button>Add Test</Button>}
+                    />
+                  }
                 />
-              )}
-              <div className="space-y-2">
-                <p className="text-[13px] text-muted-foreground">
-                  Recorded tests are permanent and read-only.
-                </p>
-                {grades.tests.map((test) => (
-                  <div
-                    key={test.id}
-                    className="grid grid-cols-[minmax(0,1fr)_auto] gap-3 rounded-[14px] bg-surface-2 px-3.5 py-3"
-                  >
-                    <div className="min-w-0">
-                      <p className="truncate text-[14px] font-medium">{test.title}</p>
-                      <p className="text-[12.5px] text-muted-foreground">
-                        {test.date} · {test.type} · {test.source}
-                      </p>
-                      <div className="mt-1.5">
-                        <LockedBadge />
-                      </div>
-                    </div>
-                    <p
-                      className={cn(
-                        "tabular text-[15px] font-semibold",
-                        isFailing(test.grade) && "text-warning",
-                      )}
-                    >
-                      {test.grade.toFixed(1)}
-                    </p>
+              ) : (
+                <>
+                  <AverageWithRounded
+                    exact={grades.exactAverage}
+                    rounded={grades.roundedAverage}
+                    size="lg"
+                  />
+                  {grades.counted.length > 1 && (
+                    <GradeLineChart
+                      data={grades.counted.map((t) => ({
+                        label: formatMonthYear(t.date),
+                        value: gradeOf(t) as number,
+                      }))}
+                    />
+                  )}
+                  <div className="space-y-2">
+                    {grades.tests.map((test) => {
+                      const grade = gradeOf(test);
+                      return (
+                        <div
+                          key={test.id}
+                          className="grid grid-cols-[minmax(0,1fr)_auto_auto] items-start gap-3 rounded-[14px] bg-surface-2 px-3.5 py-3"
+                        >
+                          <div className="min-w-0">
+                            <p className="truncate text-[14px] font-medium">{test.title}</p>
+                            <p className="text-[12.5px] text-muted-foreground">
+                              {formatDate(test.date)} · {test.type} · {test.source}
+                            </p>
+                          </div>
+                          <p
+                            className={cn(
+                              "tabular text-[15px] font-semibold",
+                              isFailing(grade) && "text-warning",
+                            )}
+                          >
+                            {grade === null ? "—" : grade.toFixed(1)}
+                          </p>
+                          <AssessmentActions record={test} />
+                        </div>
+                      );
+                    })}
+                    <AssessmentDialog
+                      subjectSlug={subject.slug}
+                      trigger={
+                        <Button size="sm" variant="secondary">
+                          Add Test
+                        </Button>
+                      }
+                    />
                   </div>
-                ))}
-              </div>
+                </>
+              )}
             </div>
+
           ) : (
             <EmptyState
               className="mt-6 border-0 bg-surface-2"
