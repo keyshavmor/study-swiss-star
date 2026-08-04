@@ -44,7 +44,7 @@ export function BackLink({
   className,
 }: {
   to: string;
-  params?: Record<string, string>;
+  params?: Record<string, string> | undefined;
   label: string;
   className?: string;
 }) {
@@ -69,7 +69,7 @@ export function PageNav({
   crumbs,
   className,
 }: {
-  back: { to: string; params?: Record<string, string>; label: string };
+  back: { to: string; params?: Record<string, string> | undefined; label: string };
   crumbs: Crumb[];
   className?: string;
 }) {
