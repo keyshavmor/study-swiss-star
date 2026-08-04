@@ -112,7 +112,7 @@ function PlannerPage() {
   } = useAppData();
 
   const [view, setView] = useState<PlannerView>("Timetable");
-  const [anchor, setAnchor] = useState(() => search.date ?? todayIso());
+  const [anchor, setAnchor] = useState<string>(() => search.date ?? todayIso());
   const [active, setActive] = useState<EventCategory[]>([...EVENT_CATEGORIES]);
   const [fullDay, setFullDay] = useState(false);
   const [remindersOn, setRemindersOn] = useState(false);
@@ -191,7 +191,7 @@ function PlannerPage() {
   const activities = events.filter((e) => e.category === "Extracurricular activity");
 
   function shift(delta: number) {
-    setAnchor((current) => {
+    setAnchor((current: string) => {
       if (view === "Day") return addDays(current, delta);
       if (view === "Month") return addMonths(current, delta);
       return addDays(current, delta * 7);
