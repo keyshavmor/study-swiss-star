@@ -1,10 +1,18 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
+import { addDays, daysBetween, startOfWeek, weekdayIndex } from "@/lib/date-utils";
 import { createDemoState } from "@/lib/store/demo-data";
-import type { Assessment, DataState, Material, PlannerEvent } from "@/lib/store/types";
-import { EMPTY_STATE } from "@/lib/store/types";
+import type {
+  Assessment,
+  DataState,
+  Material,
+  PlannerEvent,
+  SchoolLink,
+  StudentProfile,
+} from "@/lib/store/types";
+import { EMPTY_PROFILE, EMPTY_STATE } from "@/lib/store/types";
 
-const STORAGE_KEY = "asa.data.v1";
+const STORAGE_KEY = "asa.data.v2";
 const DEMO_KEY = "asa.demo.v1";
 
 function uid(prefix: string) {
@@ -25,6 +33,12 @@ interface DataContextValue extends DataState {
 
   addEvent: (input: Omit<PlannerEvent, "id">) => PlannerEvent;
   updateEvent: (id: string, patch: Partial<PlannerEvent>) => void;
+  updateOccurrence: (
+    id: string,
+    isoDate: string,
+    patch: { date?: string; start?: string; end?: string; title?: string },
+  ) => void;
+  splitSeriesFrom: (id: string, isoDate: string, patch: Partial<PlannerEvent>) => void;
   duplicateEvent: (id: string) => void;
   removeEvent: (id: string) => void;
   removeOccurrence: (id: string, isoDate: string) => void;
@@ -37,6 +51,20 @@ interface DataContextValue extends DataState {
   removeMaterial: (id: string) => void;
   restoreMaterial: (record: Material) => void;
 
+  addLink: (input: Omit<SchoolLink, "id" | "order" | "opens">) => SchoolLink;
+  updateLink: (id: string, patch: Partial<SchoolLink>) => void;
+  duplicateLink: (id: string) => void;
+  removeLink: (id: string) => void;
+  restoreLink: (record: SchoolLink) => void;
+  reorderLinks: (orderedIds: string[]) => void;
+  registerLinkOpen: (id: string) => void;
+
+  updateProfile: (patch: Partial<StudentProfile>) => void;
+
+  markNotificationRead: (key: string) => void;
+  markAllNotificationsRead: (keys: string[]) => void;
+  dismissNotification: (key: string) => void;
+
   clearAll: () => void;
 }
 
@@ -45,13 +73,18 @@ const DataContext = createContext<DataContextValue | null>(null);
 function readStored(): DataState {
   if (typeof window === "undefined") return EMPTY_STATE;
   try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
+    const raw =
+      window.localStorage.getItem(STORAGE_KEY) ?? window.localStorage.getItem("asa.data.v1");
     if (!raw) return EMPTY_STATE;
     const parsed = JSON.parse(raw) as Partial<DataState>;
     return {
       assessments: parsed.assessments ?? [],
       events: parsed.events ?? [],
       materials: parsed.materials ?? [],
+      links: parsed.links ?? [],
+      profile: { ...EMPTY_PROFILE, ...(parsed.profile ?? {}) },
+      readNotifications: parsed.readNotifications ?? [],
+      dismissedNotifications: parsed.dismissedNotifications ?? [],
     };
   } catch {
     return EMPTY_STATE;
@@ -93,7 +126,10 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
       demoMode,
       setDemoMode,
       hasAnyData:
-        state.assessments.length > 0 || state.events.length > 0 || state.materials.length > 0,
+        state.assessments.length > 0 ||
+        state.events.length > 0 ||
+        state.materials.length > 0 ||
+        state.links.length > 0,
 
       addAssessment: (input) => {
         const record: Assessment = { ...input, id: uid("a") };
@@ -125,12 +161,45 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
         setState((s) => ({ ...s, events: [...s.events, record] }));
         return record;
       },
-      updateEvent: (id, patch) => setState((s) => ({ ...s, events: patchList(s.events, id, patch) })),
+      updateEvent: (id, patch) =>
+        setState((s) => ({ ...s, events: patchList(s.events, id, patch) })),
+      updateOccurrence: (id, isoDate, patch) =>
+        setState((s) => ({
+          ...s,
+          events: s.events.map((e) =>
+            e.id === id
+              ? { ...e, overrides: { ...(e.overrides ?? {}), [isoDate]: { ...(e.overrides?.[isoDate] ?? {}), ...patch } } }
+              : e,
+          ),
+        })),
+      /** Ends the original series the day before `isoDate` and starts a new one. */
+      splitSeriesFrom: (id, isoDate, patch) =>
+        setState((s) => {
+          const found = s.events.find((x) => x.id === id);
+          if (!found) return s;
+          const tail: PlannerEvent = {
+            ...found,
+            ...patch,
+            id: uid("e"),
+            date: patch.date ?? isoDate,
+            exceptions: [],
+            overrides: {},
+          };
+          const head: PlannerEvent = { ...found, until: addDays(isoDate, -1) };
+          const keepHead = head.date <= head.until!;
+          return {
+            ...s,
+            events: [...s.events.filter((x) => x.id !== id), ...(keepHead ? [head] : []), tail],
+          };
+        }),
       duplicateEvent: (id) =>
         setState((s) => {
           const found = s.events.find((x) => x.id === id);
           if (!found) return s;
-          return { ...s, events: [...s.events, { ...found, id: uid("e"), title: `${found.title} (copy)` }] };
+          return {
+            ...s,
+            events: [...s.events, { ...found, id: uid("e"), title: `${found.title} (copy)` }],
+          };
         }),
       removeEvent: (id) => setState((s) => ({ ...s, events: s.events.filter((x) => x.id !== id) })),
       removeOccurrence: (id, isoDate) =>
@@ -143,12 +212,7 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
       endSeriesBefore: (id, isoDate) =>
         setState((s) => ({
           ...s,
-          events: s.events.map((e) => {
-            if (e.id !== id) return e;
-            const day = new Date(`${isoDate}T00:00:00`);
-            day.setDate(day.getDate() - 1);
-            return { ...e, until: day.toISOString().slice(0, 10) };
-          }),
+          events: s.events.map((e) => (e.id === id ? { ...e, until: addDays(isoDate, -1) } : e)),
         })),
       restoreEvent: (record) => setState((s) => ({ ...s, events: [...s.events, record] })),
       getEvent: (id) => state.events.find((x) => x.id === id),
@@ -165,7 +229,66 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
       restoreMaterial: (record) =>
         setState((s) => ({ ...s, materials: [...s.materials, record] })),
 
-      clearAll: () => setState(() => ({ assessments: [], events: [], materials: [] })),
+      addLink: (input) => {
+        const record: SchoolLink = {
+          ...input,
+          id: uid("l"),
+          order: state.links.length,
+          opens: 0,
+        };
+        setState((s) => ({ ...s, links: [...s.links, record] }));
+        return record;
+      },
+      updateLink: (id, patch) => setState((s) => ({ ...s, links: patchList(s.links, id, patch) })),
+      duplicateLink: (id) =>
+        setState((s) => {
+          const found = s.links.find((x) => x.id === id);
+          if (!found) return s;
+          return {
+            ...s,
+            links: [
+              ...s.links,
+              { ...found, id: uid("l"), name: `${found.name} (copy)`, order: s.links.length },
+            ],
+          };
+        }),
+      removeLink: (id) => setState((s) => ({ ...s, links: s.links.filter((x) => x.id !== id) })),
+      restoreLink: (record) => setState((s) => ({ ...s, links: [...s.links, record] })),
+      reorderLinks: (orderedIds) =>
+        setState((s) => ({
+          ...s,
+          links: s.links.map((l) => {
+            const next = orderedIds.indexOf(l.id);
+            return next === -1 ? l : { ...l, order: next };
+          }),
+        })),
+      registerLinkOpen: (id) =>
+        setState((s) => ({
+          ...s,
+          links: s.links.map((l) => (l.id === id ? { ...l, opens: l.opens + 1 } : l)),
+        })),
+
+      updateProfile: (patch) =>
+        setState((s) => ({ ...s, profile: { ...s.profile, ...patch } })),
+
+      markNotificationRead: (key) =>
+        setState((s) =>
+          s.readNotifications.includes(key)
+            ? s
+            : { ...s, readNotifications: [...s.readNotifications, key] },
+        ),
+      markAllNotificationsRead: (keys) =>
+        setState((s) => ({
+          ...s,
+          readNotifications: Array.from(new Set([...s.readNotifications, ...keys])),
+        })),
+      dismissNotification: (key) =>
+        setState((s) => ({
+          ...s,
+          dismissedNotifications: Array.from(new Set([...s.dismissedNotifications, key])),
+        })),
+
+      clearAll: () => setState(() => ({ ...EMPTY_STATE, profile: { ...EMPTY_PROFILE } })),
     };
   }, [state, setState, demoMode, setDemoMode]);
 
@@ -178,31 +301,100 @@ export function useAppData(): DataContextValue {
   return ctx;
 }
 
-/** Expands weekly recurrence into concrete occurrences inside a date range. */
+export interface Occurrence {
+  event: PlannerEvent;
+  /** The date this occurrence is shown on (after any per-occurrence move). */
+  date: string;
+  /** The original anchor date of this occurrence — the key for overrides. */
+  originalDate: string;
+  start: string;
+  end: string;
+  title: string;
+}
+
+/** Does a series land on `iso`, ignoring exceptions/overrides? */
+function matchesRecurrence(event: PlannerEvent, iso: string): boolean {
+  if (iso < event.date) return false;
+  if (event.until && iso > event.until) return false;
+
+  switch (event.recurrence) {
+    case "none":
+      return iso === event.date;
+    case "daily":
+      return true;
+    case "weekly":
+    case "biweekly": {
+      const days = event.weekdays?.length ? event.weekdays : [weekdayIndex(event.date)];
+      if (!days.includes(weekdayIndex(iso))) return false;
+      if (event.recurrence === "weekly") return true;
+      // Anchor bi-weekly on the Monday of the first week so it never drifts.
+      const weeks = Math.round(daysBetween(startOfWeek(event.date), startOfWeek(iso)) / 7);
+      return weeks % 2 === 0;
+    }
+    case "monthly":
+      return iso.slice(8) === event.date.slice(8);
+    default:
+      return false;
+  }
+}
+
+/**
+ * Expands recurrence into concrete occurrences inside an inclusive date range.
+ *
+ * Recurrence is evaluated per calendar day against the weekday/day-of-month of
+ * the anchor date, so an event never drifts across weeks, months or DST.
+ */
 export function occurrencesInRange(
   events: PlannerEvent[],
   fromIso: string,
   toIso: string,
-): { event: PlannerEvent; date: string }[] {
-  const out: { event: PlannerEvent; date: string }[] = [];
-  const from = new Date(`${fromIso}T00:00:00`);
-  const to = new Date(`${toIso}T00:00:00`);
+): Occurrence[] {
+  const out: Occurrence[] = [];
+  const moved: Occurrence[] = [];
 
   for (const event of events) {
-    const start = new Date(`${event.date}T00:00:00`);
-    if (event.recurrence === "none") {
-      if (start >= from && start <= to) out.push({ event, date: event.date });
-      continue;
+    const exceptions = event.exceptions ?? [];
+    const overrides = event.overrides ?? {};
+
+    // Occurrences whose override moved them INTO the range from outside it.
+    for (const [anchor, override] of Object.entries(overrides)) {
+      const target = override.date;
+      if (!target || target >= fromIso) continue;
+      void anchor;
     }
-    const until = event.until ? new Date(`${event.until}T00:00:00`) : null;
-    const cursor = new Date(start);
-    while (cursor < from) cursor.setDate(cursor.getDate() + 7);
-    while (cursor <= to) {
-      if (until && cursor > until) break;
-      const iso = cursor.toISOString().slice(0, 10);
-      if (!(event.exceptions ?? []).includes(iso)) out.push({ event, date: iso });
-      cursor.setDate(cursor.getDate() + 7);
+
+    for (let iso = fromIso; iso <= toIso; iso = addDays(iso, 1)) {
+      if (!matchesRecurrence(event, iso)) continue;
+      if (exceptions.includes(iso)) continue;
+      const override = overrides[iso];
+      out.push({
+        event,
+        originalDate: iso,
+        date: override?.date ?? iso,
+        start: override?.start ?? event.start,
+        end: override?.end ?? event.end,
+        title: override?.title ?? event.title,
+      });
+    }
+
+    // Occurrences anchored just outside the range but moved into it.
+    for (const [anchor, override] of Object.entries(overrides)) {
+      if (!override.date) continue;
+      if (anchor >= fromIso && anchor <= toIso) continue;
+      if (override.date < fromIso || override.date > toIso) continue;
+      if (!matchesRecurrence(event, anchor) || exceptions.includes(anchor)) continue;
+      moved.push({
+        event,
+        originalDate: anchor,
+        date: override.date,
+        start: override.start ?? event.start,
+        end: override.end ?? event.end,
+        title: override.title ?? event.title,
+      });
     }
   }
-  return out.sort((a, b) => a.date.localeCompare(b.date) || a.event.start.localeCompare(b.event.start));
+
+  return [...out, ...moved]
+    .filter((o) => o.date >= fromIso && o.date <= toIso)
+    .sort((a, b) => a.date.localeCompare(b.date) || a.start.localeCompare(b.start));
 }
