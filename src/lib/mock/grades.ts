@@ -47,11 +47,8 @@ export function isFailing(value: number | null | undefined): boolean {
 export const FAILING_TOOLTIP =
   "In the Swiss grading system used here, grades below 4.0 are failing grades.";
 
-export const LOCK_TOOLTIP =
-  "This test has been permanently recorded and cannot be edited or deleted.";
-
 export const DEMO_TOOLTIP =
-  "This example is included to demonstrate the interface and cannot be removed.";
+  "Example content shown while Demo Mode is on. Turn Demo Mode off to return to your own data.";
 
 export const ROUNDED_TOOLTIP =
   "This is the subject average rounded to the nearest 0.5. The rounded value is used when calculating the yearly average.";
