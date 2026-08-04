@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AppShell, PageHeading } from "@/components/app/AppShell";
+import { PageNav } from "@/components/app/Breadcrumbs";
 import { EmptyState } from "@/components/app/States";
 import { Button } from "@/components/ui/button";
 
@@ -16,6 +17,7 @@ export const Route = createFileRoute("/_authenticated/help")({
   }),
   component: () => (
     <AppShell>
+      <PageNav back={{ to: "/home", label: "Home" }} crumbs={[{ label: "Home", to: "/home" }, { label: "Help" }]} />
       <PageHeading title="Help" description="Short guides for every part of the assistant." />
       <div className="grid gap-4 sm:grid-cols-2">
         {[
