@@ -1,7 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Plus } from "lucide-react";
 import { useMemo, useState } from "react";
+import { AcademicYearSelector } from "@/components/app/AcademicYearSelector";
 import { AppShell, PageHeading } from "@/components/app/AppShell";
+import { PageNav } from "@/components/app/Breadcrumbs";
 import { AssessmentActions } from "@/components/app/AssessmentActions";
 import { AssessmentDialog } from "@/components/app/AssessmentDialog";
 import { DemoModeBanner, DemoModeButton } from "@/components/app/DemoMode";
@@ -24,7 +26,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { CURRENT_YEAR_ID, SCHOOL_YEARS } from "@/lib/mock/academic";
+import { useAcademicYear } from "@/lib/store/academic-year";
 import {
   formatDate,
   gradeOf,
@@ -61,9 +63,8 @@ export const Route = createFileRoute("/_authenticated/stats")({
 
 function StatsPage() {
   const { assessments } = useAppData();
-  const [yearId, setYearId] = useState(CURRENT_YEAR_ID);
+  const { yearId, year } = useAcademicYear();
   const [subject, setSubject] = useState("all");
-  const year = SCHOOL_YEARS.find((y) => y.id === yearId)!;
 
   const yearTests = useMemo(
     () => assessments.filter((a) => a.yearId === yearId),
@@ -82,6 +83,10 @@ function StatsPage() {
 
   return (
     <AppShell wide>
+      <PageNav
+        back={{ to: "/school", label: "School" }}
+        crumbs={[{ label: "Home", to: "/home" }, { label: "School", to: "/school" }, { label: "Statistics" }]}
+      />
       <PageHeading
         title="Statistics"
         description="Averages, trends and every test you added — all of it editable."
@@ -103,18 +108,7 @@ function StatsPage() {
       <DemoModeBanner />
 
       <div className="mb-6 flex flex-wrap gap-3">
-        <Select value={yearId} onValueChange={setYearId}>
-          <SelectTrigger className="w-[240px]">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {SCHOOL_YEARS.map((y) => (
-              <SelectItem key={y.id} value={y.id}>
-                {y.label} · {y.gradeLevel}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <AcademicYearSelector />
         <Select value={subject} onValueChange={setSubject}>
           <SelectTrigger className="w-[220px]">
             <SelectValue />

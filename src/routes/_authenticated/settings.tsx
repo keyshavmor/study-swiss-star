@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AppShell, PageHeading } from "@/components/app/AppShell";
+import { PageNav } from "@/components/app/Breadcrumbs";
 import { Switch } from "@/components/ui/switch";
 
 export const Route = createFileRoute("/_authenticated/settings")({
@@ -15,6 +16,7 @@ export const Route = createFileRoute("/_authenticated/settings")({
   }),
   component: () => (
     <AppShell>
+      <PageNav back={{ to: "/home", label: "Home" }} crumbs={[{ label: "Home", to: "/home" }, { label: "Settings" }]} />
       <PageHeading title="Settings" description="Preferences for the prototype interface." />
       <div className="app-card max-w-2xl divide-y divide-border p-5">
         {["Exam reminders", "Daily study summary", "Apple Reminders sync", "Sound effects"].map(

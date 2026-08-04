@@ -1,7 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ChevronRight, Plus, TriangleAlert, Upload } from "lucide-react";
 import { useMemo, useState } from "react";
+import { AcademicYearSelector } from "@/components/app/AcademicYearSelector";
 import { AppShell, PageHeading } from "@/components/app/AppShell";
+import { PageNav } from "@/components/app/Breadcrumbs";
 import { AssessmentDialog } from "@/components/app/AssessmentDialog";
 import { FailingBadge } from "@/components/app/Badges";
 import { DemoModeBanner, DemoModeButton } from "@/components/app/DemoMode";
@@ -24,7 +26,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { CURRENT_YEAR_ID, SCHOOL_YEARS } from "@/lib/mock/academic";
+import { useAcademicYear } from "@/lib/store/academic-year";
 import { summariseSubject, summariseYear } from "@/lib/grade-math";
 import {
   PASSING_THRESHOLD,
@@ -77,10 +79,9 @@ const FILTER_OPTIONS: { value: FilterKey; label: string }[] = [
 
 function SchoolPage() {
   const { assessments, demoMode } = useAppData();
-  const [yearId, setYearId] = useState(CURRENT_YEAR_ID);
+  const { yearId, year } = useAcademicYear();
   const [sort, setSort] = useState<SortKey>("name");
   const [filter, setFilter] = useState<FilterKey>("all");
-  const year = SCHOOL_YEARS.find((y) => y.id === yearId)!;
 
   const yearTests = useMemo(
     () => assessments.filter((a) => a.yearId === yearId),
@@ -124,18 +125,13 @@ function SchoolPage() {
 
   return (
     <AppShell wide>
+      <PageNav
+        back={{ to: "/home", label: "Home" }}
+        crumbs={[{ label: "Home", to: "/home" }, { label: "School" }]}
+      />
       <PageHeading
         title="School"
         description={`${year.label} · ${year.gradeLevel} — ${SUBJECTS.length} subjects`}
-        breadcrumb={
-          <span className="inline-flex items-center gap-1">
-            <Link to="/home" className="hover:text-foreground">
-              Home
-            </Link>
-            <ChevronRight className="h-3.5 w-3.5" />
-            <span className="text-foreground">School</span>
-          </span>
-        }
         action={
           <div className="flex gap-2">
             <AssessmentDialog
@@ -161,22 +157,8 @@ function SchoolPage() {
 
       <DemoModeBanner />
 
-      <div className="mb-5 flex flex-wrap gap-2">
-        {SCHOOL_YEARS.map((option) => (
-          <button
-            key={option.id}
-            type="button"
-            onClick={() => setYearId(option.id)}
-            className={cn(
-              "rounded-full border px-3.5 py-1.5 text-[13.5px] font-medium transition-colors duration-200",
-              option.id === yearId
-                ? "border-border-strong bg-surface text-foreground"
-                : "border-border text-muted-foreground hover:bg-hover",
-            )}
-          >
-            {option.label.replace("Academic Year ", "")} · {option.gradeLevel}
-          </button>
-        ))}
+      <div className="mb-5">
+        <AcademicYearSelector />
       </div>
 
       <div className="mb-5 flex flex-wrap items-center gap-3">

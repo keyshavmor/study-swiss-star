@@ -1,19 +1,22 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Bell, GraduationCap, Menu, User } from "lucide-react";
+import { GraduationCap, LogOut, Menu, Settings, User } from "lucide-react";
 import { useState } from "react";
 import { DemoModeButton } from "@/components/app/DemoMode";
+import { NotificationCenter } from "@/components/app/NotificationCenter";
 import { LiveClock } from "@/components/app/LiveClock";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
 import { Button } from "@/components/ui/button";
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { formatDate } from "@/lib/grade-math";
-import { occurrencesInRange, useAppData } from "@/lib/store/app-data";
+import { useAppData } from "@/lib/store/app-data";
 import { cn } from "@/lib/utils";
 
 const NAV = [
@@ -28,12 +31,8 @@ const NAV = [
 export function AppHeader() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const [open, setOpen] = useState(false);
-  const { events } = useAppData();
-  const today = new Date();
-  const fromIso = today.toISOString().slice(0, 10);
-  const to = new Date(today);
-  to.setDate(to.getDate() + 7);
-  const upcoming = occurrencesInRange(events, fromIso, to.toISOString().slice(0, 10)).slice(0, 8);
+  const { profile } = useAppData();
+  const displayName = profile.preferredName || profile.fullName || "Your profile";
 
   const isActive = (to: string) => pathname === to || pathname.startsWith(`${to}/`);
 
@@ -66,6 +65,13 @@ export function AppHeader() {
                     {item.label}
                   </Link>
                 ))}
+                <Link
+                  to="/profile"
+                  onClick={() => setOpen(false)}
+                  className="rounded-xl px-4 py-3 text-[16px] font-medium text-muted-foreground transition-colors hover:bg-hover hover:text-foreground"
+                >
+                  Profile
+                </Link>
                 <Link
                   to="/settings"
                   onClick={() => setOpen(false)}
@@ -109,47 +115,46 @@ export function AppHeader() {
           <DemoModeButton className="hidden lg:inline-flex" />
           <ThemeToggle className="hidden sm:inline-flex" />
 
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button variant="ghost" size="icon" className="relative" aria-label="Notifications">
-                <Bell className="h-5 w-5" />
-                {upcoming.length > 0 && (
-                  <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-primary" />
-                )}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent align="end" className="w-[340px] p-0">
-              <div className="flex items-center justify-between border-b border-border px-4 py-3">
-                <span className="text-[15px] font-semibold">Upcoming</span>
-                <span className="text-[13px] text-muted-foreground">Next 7 days</span>
-              </div>
-              {upcoming.length === 0 ? (
-                <p className="px-4 py-5 text-[13.5px] text-muted-foreground">
-                  Nothing coming up. Items you add to the planner appear here.
-                </p>
-              ) : (
-                <ul className="max-h-[360px] overflow-y-auto">
-                  {upcoming.map(({ event, date }) => (
-                    <li key={`${event.id}-${date}`} className="border-b border-border px-4 py-3 last:border-0">
-                      <p className="text-[14px] font-medium">{event.title}</p>
-                      <p className="mt-0.5 text-[13px] text-muted-foreground">{event.category}</p>
-                      <p className="tabular mt-1 text-[12px] text-muted-foreground">
-                        {formatDate(date)} · {event.start}–{event.end}
-                      </p>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </PopoverContent>
-          </Popover>
+          <NotificationCenter />
 
-          <Link
-            to="/profile"
-            aria-label="Profile"
-            className="flex h-10 w-10 items-center justify-center rounded-full border border-border bg-surface-2 text-muted-foreground transition-colors hover:text-foreground"
-          >
-            <User className="h-[18px] w-[18px]" />
-          </Link>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                aria-label="Profile menu"
+                className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border border-border bg-surface-2 text-muted-foreground transition-colors hover:text-foreground"
+              >
+                {profile.photo ? (
+                  <img src={profile.photo} alt="" className="h-full w-full object-cover" />
+                ) : (
+                  <User className="h-[18px] w-[18px]" />
+                )}
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuLabel className="truncate">{displayName}</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem asChild>
+                <Link to="/profile">
+                  <User className="h-4 w-4" />
+                  View profile
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link to="/settings">
+                  <Settings className="h-4 w-4" />
+                  Settings
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem asChild>
+                <Link to="/auth">
+                  <LogOut className="h-4 w-4" />
+                  Sign out
+                </Link>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
     </header>

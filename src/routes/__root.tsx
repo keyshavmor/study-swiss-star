@@ -12,6 +12,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/hooks/use-theme";
 import { supabase } from "@/integrations/supabase/client";
 import { AppDataProvider } from "@/lib/store/app-data";
+import { AcademicYearProvider } from "@/lib/store/academic-year";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
@@ -137,8 +138,10 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
         <AppDataProvider>
-          <Outlet />
-          <Toaster />
+          <AcademicYearProvider>
+            <Outlet />
+            <Toaster />
+          </AcademicYearProvider>
         </AppDataProvider>
       </ThemeProvider>
     </QueryClientProvider>

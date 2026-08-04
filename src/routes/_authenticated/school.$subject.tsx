@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { AppShell } from "@/components/app/AppShell";
+import { PageNav } from "@/components/app/Breadcrumbs";
 import { AssessmentActions } from "@/components/app/AssessmentActions";
 import { AssessmentDialog } from "@/components/app/AssessmentDialog";
 import { FailingBadge } from "@/components/app/Badges";
@@ -80,14 +81,15 @@ function SubjectDashboard() {
 
   return (
     <AppShell wide>
+      <PageNav
+        back={{ to: "/school", label: "School" }}
+        crumbs={[
+          { label: "Home", to: "/home" },
+          { label: "School", to: "/school" },
+          { label: subject.name },
+        ]}
+      />
       <div className="mb-6">
-        <div className="mb-2 flex items-center gap-1 text-[13.5px] text-muted-foreground">
-          <Link to="/school" className="hover:text-foreground">
-            School
-          </Link>
-          <ChevronRight className="h-3.5 w-3.5" />
-          <span className="text-foreground">{subject.name}</span>
-        </div>
         <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4">
           <div className="flex min-w-0 items-center gap-3">
             <span

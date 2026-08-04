@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AppShell, PageHeading } from "@/components/app/AppShell";
+import { PageNav } from "@/components/app/Breadcrumbs";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 
@@ -16,6 +17,7 @@ export const Route = createFileRoute("/_authenticated/feedback")({
   }),
   component: () => (
     <AppShell>
+      <PageNav back={{ to: "/home", label: "Home" }} crumbs={[{ label: "Home", to: "/home" }, { label: "Feedback" }]} />
       <PageHeading title="Feedback" description="Tell us what should work better." />
       <div className="app-card max-w-2xl p-5">
         <Textarea rows={6} placeholder="What would you improve?" />

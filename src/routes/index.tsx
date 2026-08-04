@@ -51,10 +51,10 @@ function TitleScreen() {
 
         <div className="mt-12 grid gap-6 sm:mt-16 md:grid-cols-2">
           <LandingCard
-            to="/chat"
+            to="/school"
             icon={<GraduationCap className="h-7 w-7" />}
             title="School"
-            description="Study sessions per subject with an assistant that explains, quizzes and revises with you."
+            description="Your subjects, grades, study materials and AI study sessions in one place."
             action="Open School"
           />
           <LandingCard
