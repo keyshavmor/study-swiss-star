@@ -37,6 +37,19 @@ The app is split into two main layers:
    - Full CRUD for tests, planner events, school links, and materials.
    - Swiss Gymnasium grading engine (6-point scale, rounded to 0.5).
    - 24-hour weekly timetable, planner views, academic stats, and school subject dashboard.
+   - Academic year 2026–27 · Grade 11 is the default context.
+
+### School Subjects
+
+The School dashboard shows exactly **15 top-level subjects** for the Swiss Gymnasium curriculum:
+
+Mathematics, Physics, English, History, French, German, Biology, Chemistry, **SPF Biology & Chemistry**, Philosophy, Political Education, Pedagogics and Psychology, Economics, Art, Sport.
+
+SPF Biology & Chemistry is a combined subject: its displayed grade is the average of the underlying SPF Biology and SPF Chemistry components, and it counts as **one** subject in the yearly average. The combined card shows both component averages underneath the main grade.
+
+- **German-language subjects**: German, Biology, Chemistry, SPF Biology & Chemistry, Philosophy, Political Education, Pedagogics and Psychology, Economics, Art, Sport.
+- **English-language subjects**: Mathematics, Physics, English, History.
+- **French-language subject**: French (Simple French · B1 level).
 
 ---
 
@@ -54,6 +67,8 @@ The app is split into two main layers:
 | Backend | Lovable Cloud / Supabase |
 | Auth | Supabase Auth + `@lovable.dev/cloud-auth-js` |
 | AI | Lovable AI Gateway via `ai` SDK |
+| Charts | `recharts` |
+| Markdown | `react-markdown` |
 | Icons | `lucide-react` |
 
 ---
@@ -93,6 +108,16 @@ TanStack Start uses two backend patterns:
 - **Prototype data (local)** — assessments, planner events, materials, school links, and profile. Stored in `localStorage` via `AppDataProvider` and editable by the user. No backend or cloud sync for these.
 - **Demo mode** — A global toggle (`DemoMode`) populates the local state with sample data so the app looks realistic without a backend.
 
+### Swiss Grading Engine
+
+The grade logic is implemented in `src/lib/grade-math.ts` and `src/lib/mock/grades.ts`:
+
+- Swiss 6-point scale: 1 (lowest) to 6 (highest), passing at 4.0.
+- Teacher-entered grades can override point-based grades.
+- Averages are rounded to the nearest 0.5.
+- Failing grades (< 4.0) are rendered in the warning orange `#C96A00`.
+- Combined subject summaries (SPF Biology & Chemistry) average the component subject averages and appear as one contribution in the yearly average.
+
 ### Design System
 
 The visual direction is a calm, premium, pre-Liquid-Glass Apple aesthetic:
@@ -119,7 +144,7 @@ The visual direction is a calm, premium, pre-Liquid-Glass Apple aesthetic:
 │   │   └── ui/              # shadcn/Radix UI primitives
 │   ├── hooks/               # Custom React hooks
 │   ├── integrations/        # Third-party integrations (Supabase, Lovable AI)
-│   ├── lib/                 # Utility libraries, mock data, state
+│   ├── lib/                 # Utility libraries, mock data, state, grade math
 │   ├── routes/              # TanStack Start file-based routes
 │   ├── router.tsx           # Router factory
 │   ├── server.ts            # SSR error wrapper
@@ -151,17 +176,17 @@ The visual direction is a calm, premium, pre-Liquid-Glass Apple aesthetic:
 | `ai-elements/prompt-input.tsx` | Chat input field |
 | `ai-elements/shimmer.tsx` | Loading shimmer for streaming responses |
 | `app/AcademicYearSelector.tsx` | Global academic year switcher |
-| `app/AppHeader.tsx` | Top navigation bar with notifications and profile |
+| `app/AppHeader.tsx` | Top navigation bar with notifications, clock, and profile |
 | `app/AppShell.tsx` | Page layout wrapper with header, sidebar, and mobile nav |
-| `app/AssessmentActions.tsx` | Dropdown actions for a grade/test record |
+| `app/AssessmentActions.tsx` | Dropdown actions for a grade/test record (move, duplicate, delete) |
 | `app/AssessmentDialog.tsx` | Add/Edit test or grade dialog |
 | `app/Badges.tsx` | Reusable badges (Demo, Failing, Locked, etc.) |
 | `app/Breadcrumbs.tsx` | `PageNav`, `BackLink`, and breadcrumb trails |
 | `app/DemoMode.tsx` | Demo mode banner and toggle |
 | `app/EditProfileDialog.tsx` | Student profile editor |
 | `app/EventDetailDialog.tsx` | Detail view for a planner occurrence |
-| `app/EventDialog.tsx` | Add/Edit planner event form with recurrence |
-| `app/GradeDisplay.tsx` | Exact/rounded average + line chart |
+| `app/EventDialog.tsx` | Add/Edit planner event form with recurrence and scope |
+| `app/GradeDisplay.tsx` | Exact/rounded average + performance line chart |
 | `app/LiveClock.tsx` | Global 24-hour live clock |
 | `app/MaterialsPanel.tsx` | Subject materials list panel |
 | `app/MobileNavigation.tsx` | Bottom navigation for mobile |
@@ -170,7 +195,7 @@ The visual direction is a calm, premium, pre-Liquid-Glass Apple aesthetic:
 | `app/SchoolLinksSection.tsx` | School links tile grid for Home |
 | `app/States.tsx` | Empty states and loading states |
 | `app/StatsOverviewPanel.tsx` | Academic summary side panel |
-| `app/SubjectCard.tsx` | Subject card with grade history and sparkline |
+| `app/SubjectCard.tsx` | Subject card with grade history, sparkline, and SPF breakdown |
 | `app/Timetable.tsx` | 24-hour weekly drag-and-drop timetable |
 | `app/TranscriptImportDialog.tsx` | Simulated transcript OCR import flow |
 
@@ -190,6 +215,10 @@ Standard shadcn/ui primitives built on Radix UI. Notable files:
 | `tabs.tsx` | Tab groups |
 | `calendar.tsx` | Date picker calendar |
 | `badge.tsx` | Badge variants |
+| `chart.tsx` | Recharts wrapper helpers |
+| `slider.tsx` | Slider inputs |
+| `switch.tsx` | Toggle switches |
+| `toggle-group.tsx` | Segmented toggle controls |
 
 ### `src/hooks/`
 
@@ -215,15 +244,15 @@ Standard shadcn/ui primitives built on Radix UI. Notable files:
 |------|---------|
 | `ai-gateway.server.ts` | Lovable AI Gateway provider factory |
 | `chat.functions.ts` | Server functions for thread/message CRUD |
-| `date-utils.ts` | ISO date string helpers |
+| `date-utils.ts` | ISO date string helpers (timezone-safe) |
 | `error-capture.ts` | Error capture utilities |
 | `error-page.ts` | SSR-friendly error HTML page |
-| `grade-math.ts` | Swiss grade math (averages, rounding to 0.5) |
+| `grade-math.ts` | Swiss grade math (averages, rounding, combined subject logic) |
 | `lovable-error-reporting.ts` | Lovable error reporting integration |
 | `mock/academic.ts` | Academic years and grade levels |
-| `mock/grades.ts` | Seed grade records and helpers |
+| `mock/grades.ts` | Seed grade records and rounding helpers |
 | `mock/materials.ts` | Subject modes and material mock data |
-| `mock/subjects.ts` | Swiss Gymnasium subject list |
+| `mock/subjects.ts` | Swiss Gymnasium subject list, language mapping, and SPF combined subject |
 | `notifications.ts` | Build notification feed from planner events |
 | `store/academic-year.tsx` | Global academic year context |
 | `store/app-data.tsx` | Editable local state provider |
@@ -249,8 +278,8 @@ TanStack Start file-based routes.
 | `_authenticated/home.tsx` | `/home` | Main dashboard after login |
 | `_authenticated/planner.tsx` | `/planner` | Weekly planner with timetable, month, and list views |
 | `_authenticated/profile.tsx` | `/profile` | Student profile and academic summary |
-| `_authenticated/school.index.tsx` | `/school` | School subjects overview with grades and filters |
-| `_authenticated/school.$subject.tsx` | `/school/:subject` | Subject-specific dashboard with study modes |
+| `_authenticated/school.index.tsx` | `/school` | School subjects overview with grades, filters, and sorting |
+| `_authenticated/school.$subject.tsx` | `/school/:subject` | Subject-specific dashboard with study modes and SPF component switch |
 | `_authenticated/settings.tsx` | `/settings` | Settings page |
 | `_authenticated/stats.tsx` | `/stats` | Academic statistics and records |
 | `api/chat.ts` | `/api/chat` | Streaming AI chat HTTP endpoint |
@@ -280,6 +309,7 @@ TanStack Start file-based routes.
 - **Local state** — the UI prototype stores data in `localStorage` via `AppDataProvider` so it is editable without a backend.
 - **Design tokens** — all colors, spacing, radii, and shadows are defined as semantic CSS variables in `src/styles.css`.
 - **No `src/server/` imports in client code** — server-only helpers are named `*.server.ts` and never imported by components.
+- **Combined subjects** — `SCHOOL_SUBJECTS` in `src/lib/mock/subjects.ts` is the canonical top-level list; individual SPF Biology and SPF Chemistry are components, not top-level cards.
 
 ---
 
