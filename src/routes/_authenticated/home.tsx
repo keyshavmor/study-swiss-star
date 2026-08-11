@@ -6,7 +6,7 @@ import { DemoModeBanner } from "@/components/app/DemoMode";
 import { SchoolLinksSection } from "@/components/app/SchoolLinksSection";
 import { addDays, durationLabel, minutesOf, todayIso } from "@/lib/date-utils";
 import { formatDate, summariseYear } from "@/lib/grade-math";
-import { SUBJECTS } from "@/lib/mock/subjects";
+import { SCHOOL_SUBJECTS } from "@/lib/mock/subjects";
 import { useAcademicYear } from "@/lib/store/academic-year";
 import { occurrencesInRange, useAppData } from "@/lib/store/app-data";
 
@@ -37,7 +37,7 @@ function HomePage() {
 
   const year = summariseYear(
     assessments.filter((a) => a.yearId === yearId),
-    SUBJECTS,
+    SCHOOL_SUBJECTS,
   );
 
   const today = todayIso();

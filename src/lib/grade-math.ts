@@ -100,6 +100,74 @@ export function summariseSubject(all: Assessment[], subjectSlug: string): Subjec
   };
 }
 
+
+export interface SubjectView {
+  slug: string;
+  name?: string;
+  components?: string[];
+}
+
+export interface CombinedSummary extends SubjectSummary {
+  parts: { slug: string; summary: SubjectSummary }[];
+}
+
+/**
+ * Summary for a school subject. Combined subjects (e.g. SPF) average the
+ * exact averages of their components: (bio + chem) / 2.
+ */
+export function summariseSubjectView(all: Assessment[], subject: SubjectView): CombinedSummary {
+  if (!subject.components?.length) {
+    return { ...summariseSubject(all, subject.slug), parts: [] };
+  }
+  const parts = subject.components.map((slug) => ({ slug, summary: summariseSubject(all, slug) }));
+  const tests = parts.flatMap((p) => p.summary.tests).sort(byDateAsc);
+  const counted = parts.flatMap((p) => p.summary.counted).sort(byDateAsc);
+  const averages = parts
+    .map((p) => p.summary.exactAverage)
+    .filter((v): v is number => v !== null);
+
+  if (averages.length === 0) {
+    return {
+      tests,
+      counted,
+      exactAverage: null,
+      roundedAverage: null,
+      latest: tests[tests.length - 1] ?? null,
+      lastThree: [],
+      monthlyChange: null,
+      trend: null,
+      parts,
+    };
+  }
+
+  const exact = averages.reduce((s, v) => s + v, 0) / averages.length;
+  const grades = counted.map((t) => gradeOf(t) as number);
+  let monthlyChange: number | null = null;
+  if (grades.length >= 2) {
+    const previous = grades.slice(0, -1);
+    const previousAvg = previous.reduce((s, g) => s + g, 0) / previous.length;
+    monthlyChange = exact - previousAvg;
+  }
+  const trend =
+    monthlyChange === null || Math.abs(monthlyChange) < 0.05
+      ? "Stable"
+      : monthlyChange > 0
+        ? "Improving"
+        : "Needs focus";
+
+  return {
+    tests,
+    counted,
+    exactAverage: exact,
+    roundedAverage: roundToHalf(exact),
+    latest: counted[counted.length - 1] ?? null,
+    lastThree: grades.slice(-3),
+    monthlyChange,
+    trend,
+    parts,
+  };
+}
+
 export interface YearSummary {
   subjectAverages: { slug: string; name: string; exact: number; rounded: number }[];
   exactYearAverage: number | null;
@@ -112,11 +180,11 @@ export interface YearSummary {
 
 export function summariseYear(
   all: Assessment[],
-  subjects: { slug: string; name: string }[],
+  subjects: { slug: string; name: string; components?: string[] }[],
 ): YearSummary {
   const subjectAverages = subjects
     .map((s) => {
-      const summary = summariseSubject(all, s.slug);
+      const summary = summariseSubjectView(all, s);
       if (summary.exactAverage === null) return null;
       return {
         slug: s.slug,

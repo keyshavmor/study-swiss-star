@@ -27,7 +27,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useAcademicYear } from "@/lib/store/academic-year";
-import { summariseSubject, summariseYear } from "@/lib/grade-math";
+import { summariseSubjectView, summariseYear } from "@/lib/grade-math";
 import {
   PASSING_THRESHOLD,
   ROUNDING_EXAMPLES,
@@ -35,7 +35,7 @@ import {
   isFailing,
   roundToHalf,
 } from "@/lib/mock/grades";
-import { SUBJECTS } from "@/lib/mock/subjects";
+import { SCHOOL_SUBJECTS } from "@/lib/mock/subjects";
 import { useAppData } from "@/lib/store/app-data";
 import { cn } from "@/lib/utils";
 
@@ -89,12 +89,12 @@ function SchoolPage() {
   );
 
   const rows = useMemo(
-    () => SUBJECTS.map((s) => ({ subject: s, grades: summariseSubject(yearTests, s.slug) })),
+    () => SCHOOL_SUBJECTS.map((s) => ({ subject: s, grades: summariseSubjectView(yearTests, s) })),
     [yearTests],
   );
   const included = rows.filter((row) => row.grades.exactAverage !== null);
   const failingSubjects = included.filter((row) => isFailing(row.grades.exactAverage));
-  const summary = useMemo(() => summariseYear(yearTests, SUBJECTS), [yearTests]);
+  const summary = useMemo(() => summariseYear(yearTests, SCHOOL_SUBJECTS), [yearTests]);
 
   const visibleSubjects = useMemo(() => {
     const filtered = rows.filter(({ grades }) => {
@@ -131,7 +131,7 @@ function SchoolPage() {
       />
       <PageHeading
         title="School"
-        description={`${year.label} · ${year.gradeLevel} — ${SUBJECTS.length} subjects`}
+        description={`${year.label} · ${year.gradeLevel} — ${SCHOOL_SUBJECTS.length} subjects`}
         action={
           <div className="flex gap-2">
             <AssessmentDialog
@@ -193,7 +193,7 @@ function SchoolPage() {
           </Select>
         </div>
         <span className="text-[13px] text-muted-foreground">
-          {visibleSubjects.length} of {SUBJECTS.length} subjects
+          {visibleSubjects.length} of {SCHOOL_SUBJECTS.length} subjects
         </span>
       </div>
 
@@ -297,7 +297,7 @@ function SchoolPage() {
                 </div>
 
                 <p className="mt-4 text-[14px] text-muted-foreground">
-                  Subjects included: {included.length} of {SUBJECTS.length}
+                  Subjects included: {included.length} of {SCHOOL_SUBJECTS.length}
                 </p>
               </>
             )}

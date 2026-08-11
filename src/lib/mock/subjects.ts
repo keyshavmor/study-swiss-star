@@ -20,6 +20,9 @@ export interface Subject {
   materials: number;
   materialStatus: MaterialStatus;
   accent: string;
+  /** Set on combined school subjects (e.g. SPF) that group other subject slugs. */
+  components?: string[];
+  subtitle?: string;
 }
 
 export const SUBJECTS: Subject[] = [
@@ -206,7 +209,96 @@ export const SUBJECTS: Subject[] = [
     materialStatus: "Partial",
     accent: "#C77CA8",
   },
+  {
+    slug: "economics",
+    name: "Economics",
+    icon: "TrendingUp",
+    language: "German",
+    average: null,
+    latestGrade: null,
+    nextExam: null,
+    nextExamInDays: null,
+    trend: "Stable",
+    materials: 0,
+    materialStatus: "Missing",
+    accent: "#4A8FD6",
+  },
+  {
+    slug: "art",
+    name: "Art",
+    icon: "Palette",
+    language: "German",
+    average: null,
+    latestGrade: null,
+    nextExam: null,
+    nextExamInDays: null,
+    trend: "Stable",
+    materials: 0,
+    materialStatus: "Missing",
+    accent: "#C77CA8",
+  },
+  {
+    slug: "sport",
+    name: "Sport",
+    icon: "Dumbbell",
+    language: "German",
+    average: null,
+    latestGrade: null,
+    nextExam: null,
+    nextExamInDays: null,
+    trend: "Stable",
+    materials: 0,
+    materialStatus: "Missing",
+    accent: "#3FA08C",
+  },
 ];
+
+/** The combined Schwerpunktfach shown as a single card on the School page. */
+export const SPF_COMBINED: Subject = {
+  slug: "spf",
+  name: "SPF Biology & Chemistry",
+  icon: "Microscope",
+  language: "German",
+  subtitle: "Schwerpunktfach · German",
+  components: ["spf-biology", "spf-chemistry"],
+  average: null,
+  latestGrade: null,
+  nextExam: null,
+  nextExamInDays: null,
+  trend: "Stable",
+  materials: 0,
+  materialStatus: "Partial",
+  accent: "#4FA07C",
+};
+
+const ORDER = [
+  "mathematics",
+  "physics",
+  "english",
+  "history",
+  "french",
+  "german",
+  "biology",
+  "chemistry",
+  "spf",
+  "philosophy",
+  "political-education",
+  "pedagogics-psychology",
+  "economics",
+  "art",
+  "sport",
+];
+
+/** Top-level School subjects: SPF Biology and SPF Chemistry appear as one card. */
+export const SCHOOL_SUBJECTS: Subject[] = ORDER.map(
+  (slug) => (slug === "spf" ? SPF_COMBINED : SUBJECTS.find((s) => s.slug === slug)!),
+).filter(Boolean);
+
+export function getSchoolSubject(slug: string): Subject | undefined {
+  if (slug === "spf") return SPF_COMBINED;
+  return getSubject(slug);
+}
+
 
 export function getSubject(slug: string): Subject | undefined {
   return SUBJECTS.find((subject) => subject.slug === slug);
