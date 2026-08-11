@@ -32,11 +32,11 @@ import {
   gradeOf,
   monthlySeries,
   percentageOf,
-  summariseSubject,
+  summariseSubjectView,
   summariseYear,
 } from "@/lib/grade-math";
 import { isFailing } from "@/lib/mock/grades";
-import { SUBJECTS, getSubject } from "@/lib/mock/subjects";
+import { SCHOOL_SUBJECTS, getSubject } from "@/lib/mock/subjects";
 import { useAppData } from "@/lib/store/app-data";
 import { cn } from "@/lib/utils";
 
@@ -70,15 +70,20 @@ function StatsPage() {
     () => assessments.filter((a) => a.yearId === yearId),
     [assessments, yearId],
   );
-  const summary = useMemo(() => summariseYear(yearTests, SUBJECTS), [yearTests]);
+  const summary = useMemo(() => summariseYear(yearTests, SCHOOL_SUBJECTS), [yearTests]);
   const series = useMemo(() => monthlySeries(yearTests), [yearTests]);
   const rows = yearTests
-    .filter((a) => subject === "all" || a.subjectSlug === subject)
+    .filter((a) => {
+      if (subject === "all") return true;
+      const target = SCHOOL_SUBJECTS.find((s) => s.slug === subject);
+      const slugs = target?.components?.length ? target.components : [subject];
+      return slugs.includes(a.subjectSlug);
+    })
     .sort((a, b) => b.date.localeCompare(a.date));
 
-  const subjectsWithGrades = SUBJECTS.map((s) => ({
+  const subjectsWithGrades = SCHOOL_SUBJECTS.map((s) => ({
     subject: s,
-    summary: summariseSubject(yearTests, s.slug),
+    summary: summariseSubjectView(yearTests, s),
   })).filter((x) => x.summary.exactAverage !== null);
 
   return (
@@ -115,7 +120,7 @@ function StatsPage() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All subjects</SelectItem>
-            {SUBJECTS.map((s) => (
+            {SCHOOL_SUBJECTS.map((s) => (
               <SelectItem key={s.slug} value={s.slug}>
                 {s.name}
               </SelectItem>

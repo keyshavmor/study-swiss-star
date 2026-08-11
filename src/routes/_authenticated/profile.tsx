@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { formatLongDate } from "@/lib/date-utils";
 import { summariseYear } from "@/lib/grade-math";
-import { SUBJECTS } from "@/lib/mock/subjects";
+import { SCHOOL_SUBJECTS } from "@/lib/mock/subjects";
 import { useAcademicYear } from "@/lib/store/academic-year";
 import { useAppData } from "@/lib/store/app-data";
 
@@ -39,7 +39,7 @@ function ProfilePage() {
 
   const summary = summariseYear(
     assessments.filter((a) => a.yearId === yearId),
-    SUBJECTS,
+    SCHOOL_SUBJECTS,
   );
   const yearAssessments = assessments.filter((a) => a.yearId === yearId);
   const displayName = profile.fullName || "Your profile";

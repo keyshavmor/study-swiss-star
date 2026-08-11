@@ -204,8 +204,8 @@ export function GradeLineChart({
             })}
           </div>
           <div className="mt-1.5 flex justify-between text-[11.5px] text-muted-foreground">
-            {data.map((d) => (
-              <span key={d.label}>{d.label}</span>
+            {data.map((d, i) => (
+              <span key={`${d.label}-${i}`}>{d.label}</span>
             ))}
           </div>
           <p className="mt-1 inline-flex items-center gap-1.5 text-[11.5px] text-warning">

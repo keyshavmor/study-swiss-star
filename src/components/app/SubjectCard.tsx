@@ -8,10 +8,10 @@ import { DemoBadge, FailingBadge } from "@/components/app/Badges";
 import { AverageWithRounded } from "@/components/app/GradeDisplay";
 import { TranscriptImportDialog } from "@/components/app/TranscriptImportDialog";
 import { Button } from "@/components/ui/button";
-import { formatDate, formatMonthYear, gradeOf, summariseSubject } from "@/lib/grade-math";
+import { formatDate, formatMonthYear, gradeOf, summariseSubjectView } from "@/lib/grade-math";
 import { isFailing } from "@/lib/mock/grades";
 import type { Subject } from "@/lib/mock/subjects";
-import { SUBJECTS } from "@/lib/mock/subjects";
+import { SCHOOL_SUBJECTS, getSubject } from "@/lib/mock/subjects";
 import { useAppData } from "@/lib/store/app-data";
 import { cn } from "@/lib/utils";
 
@@ -64,11 +64,16 @@ export function SubjectCard({ subject }: { subject: Subject }) {
   const [open, setOpen] = useState(false);
   const { assessments, materials, demoMode, events } = useAppData();
   const Icon = (Icons as unknown as Record<string, Icons.LucideIcon>)[subject.icon] ?? Icons.BookOpen;
-  const grades = summariseSubject(assessments, subject.slug);
+  const grades = summariseSubjectView(assessments, subject);
+  const slugs = subject.components?.length ? subject.components : [subject.slug];
   const failing = isFailing(grades.exactAverage);
-  const fileCount = materials.filter((m) => m.subjectSlug === subject.slug && !m.archived).length;
+  const fileCount = materials.filter(
+    (m) => slugs.includes(m.subjectSlug) && !m.archived,
+  ).length;
   const nextExam = events
-    .filter((e) => e.subjectSlug === subject.slug && e.category === "School exam")
+    .filter(
+      (e) => e.subjectSlug && slugs.includes(e.subjectSlug) && e.category === "School exam",
+    )
     .map((e) => e.date)
     .sort()
     .find((d) => d >= new Date().toISOString().slice(0, 10));
@@ -106,8 +111,8 @@ export function SubjectCard({ subject }: { subject: Subject }) {
                 )}
               </div>
               <p className="text-[13px] text-muted-foreground">
-                {subject.language}
-                {subject.languageBadge ? ` · ${subject.languageBadge}` : ""}
+                {subject.subtitle ??
+                  `${subject.language}${subject.languageBadge ? ` · ${subject.languageBadge}` : ""}`}
               </p>
             </div>
           </div>
@@ -140,7 +145,31 @@ export function SubjectCard({ subject }: { subject: Subject }) {
           </div>
         ) : (
           <div className="rounded-[18px] bg-surface-2 p-4">
+            {subject.components?.length ? (
+              <p className="text-[12.5px] text-muted-foreground">Combined average</p>
+            ) : null}
             <AverageWithRounded exact={grades.exactAverage} rounded={grades.roundedAverage} />
+            {grades.parts.length > 0 && (
+              <dl className="mt-3 space-y-1.5 border-t border-border pt-3">
+                {grades.parts.map((part) => (
+                  <div key={part.slug} className="flex items-center justify-between gap-3">
+                    <dt className="truncate text-[13.5px] text-muted-foreground">
+                      {getSubject(part.slug)?.name ?? part.slug}
+                    </dt>
+                    <dd
+                      className={cn(
+                        "tabular text-[14px] font-semibold",
+                        isFailing(part.summary.exactAverage) && "text-warning",
+                      )}
+                    >
+                      {part.summary.exactAverage === null
+                        ? "—"
+                        : part.summary.exactAverage.toFixed(2)}
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+            )}
             <div className="mt-3 flex items-end justify-between gap-3">
               <div className="min-w-0">
                 <p className="text-[12.5px] text-muted-foreground">Last three tests</p>
@@ -272,7 +301,7 @@ export function SubjectCard({ subject }: { subject: Subject }) {
   );
 }
 
-export function SubjectGrid({ subjects = SUBJECTS }: { subjects?: Subject[] }) {
+export function SubjectGrid({ subjects = SCHOOL_SUBJECTS }: { subjects?: Subject[] }) {
   if (subjects.length === 0) {
     return (
       <div className="app-card p-8 text-center">

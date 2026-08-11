@@ -22,15 +22,21 @@ import { EmptyState } from "@/components/app/States";
 import { Button } from "@/components/ui/button";
 import type { SubjectMode } from "@/lib/mock/materials";
 import { SUBJECT_MODES } from "@/lib/mock/materials";
-import { formatDate, formatMonthYear, gradeOf, summariseSubject } from "@/lib/grade-math";
+import {
+  formatDate,
+  formatMonthYear,
+  gradeOf,
+  summariseSubject,
+  summariseSubjectView,
+} from "@/lib/grade-math";
 import { isFailing } from "@/lib/mock/grades";
-import { getSubject } from "@/lib/mock/subjects";
+import { getSchoolSubject, getSubject } from "@/lib/mock/subjects";
 import { useAppData } from "@/lib/store/app-data";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/school/$subject")({
   loader: ({ params }) => {
-    const subject = getSubject(params.subject);
+    const subject = getSchoolSubject(params.subject);
     if (!subject) throw notFound();
     return { subject };
   },
@@ -69,12 +75,17 @@ const MODE_ICONS: Record<SubjectMode, typeof MessageSquare> = {
 
 function SubjectDashboard() {
   const { subject } = Route.useLoaderData();
+  const components = subject.components ?? [];
+  const [activeSlug, setActiveSlug] = useState<string>(components[0] ?? subject.slug);
+  const [statsView, setStatsView] = useState<"combined" | "component">("combined");
   const [mode, setMode] = useState<SubjectMode>("Chat");
   const { assessments, materials, events } = useAppData();
-  const grades = summariseSubject(assessments, subject.slug);
-  const fileCount = materials.filter((m) => m.subjectSlug === subject.slug && !m.archived).length;
+  const active = (components.length ? getSubject(activeSlug) : subject) ?? subject;
+  const combined = summariseSubjectView(assessments, subject);
+  const grades = summariseSubject(assessments, active.slug);
+  const fileCount = materials.filter((m) => m.subjectSlug === active.slug && !m.archived).length;
   const nextExam = events
-    .filter((e) => e.subjectSlug === subject.slug && e.category === "School exam")
+    .filter((e) => e.subjectSlug === active.slug && e.category === "School exam")
     .map((e) => e.date)
     .sort()
     .find((d) => d >= new Date().toISOString().slice(0, 10));
@@ -101,11 +112,13 @@ function SubjectDashboard() {
                 <h1 className="truncate text-[26px] font-bold tracking-[-0.025em] sm:text-[32px]">
                   {subject.name}
                 </h1>
-                {isFailing(grades.exactAverage) && <FailingBadge />}
+                {isFailing(components.length ? combined.exactAverage : grades.exactAverage) && (
+                  <FailingBadge />
+                )}
               </div>
               <p className="text-[14px] text-muted-foreground">
-                {subject.language}
-                {subject.languageBadge ? ` · ${subject.languageBadge}` : ""}
+                {subject.subtitle ??
+                  `${subject.language}${subject.languageBadge ? ` · ${subject.languageBadge}` : ""}`}
               </p>
             </div>
           </div>
@@ -124,6 +137,73 @@ function SubjectDashboard() {
         </div>
         <DemoModeBanner className="mt-5" />
       </div>
+
+      {components.length > 0 && (
+        <div className="mb-5 grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,360px)]">
+          <div className="app-card p-4">
+            <p className="text-[13px] text-muted-foreground">Active subject</p>
+            <div
+              role="tablist"
+              aria-label="Switch SPF component"
+              className="mt-2.5 flex gap-2 rounded-[16px] bg-surface-2 p-1.5"
+            >
+              {components.map((slug: string) => {
+                const componentSubject = getSubject(slug);
+                const selected = slug === active.slug;
+                return (
+                  <button
+                    key={slug}
+                    type="button"
+                    role="tab"
+                    aria-selected={selected}
+                    onClick={() => setActiveSlug(slug)}
+                    className={cn(
+                      "flex-1 rounded-[14px] px-4 py-3 text-[15px] font-semibold transition-colors duration-200",
+                      selected
+                        ? "bg-card text-foreground shadow-sm"
+                        : "text-muted-foreground hover:text-foreground",
+                    )}
+                  >
+                    {componentSubject?.name ?? slug}
+                  </button>
+                );
+              })}
+            </div>
+            <p className="mt-2.5 text-[13px] text-muted-foreground">
+              Everything below — tests, materials, chat, quizzes and statistics — belongs to{" "}
+              {active.name}.
+            </p>
+          </div>
+
+          <div className="app-card p-4">
+            <p className="text-[13px] text-muted-foreground">SPF Overall</p>
+            <AverageWithRounded exact={combined.exactAverage} rounded={combined.roundedAverage} />
+            <dl className="mt-3 space-y-1.5 border-t border-border pt-3">
+              {combined.parts.map((part) => (
+                <div key={part.slug} className="flex items-center justify-between gap-3">
+                  <dt className="truncate text-[13.5px] text-muted-foreground">
+                    {getSubject(part.slug)?.name ?? part.slug}
+                  </dt>
+                  <dd
+                    className={cn(
+                      "tabular text-[14px] font-semibold",
+                      isFailing(part.summary.exactAverage) && "text-warning",
+                    )}
+                  >
+                    {part.summary.exactAverage === null
+                      ? "—"
+                      : part.summary.exactAverage.toFixed(2)}
+                  </dd>
+                </div>
+              ))}
+            </dl>
+            <p className="mt-2.5 text-[13px] text-muted-foreground">
+              {combined.tests.length} test{combined.tests.length === 1 ? "" : "s"} total · combined
+              average = (SPF Biology + SPF Chemistry) ÷ 2
+            </p>
+          </div>
+        </div>
+      )}
 
 
       <div className="grid gap-5 xl:grid-cols-[220px_minmax(0,1fr)_360px]">
@@ -153,16 +233,106 @@ function SubjectDashboard() {
         </nav>
 
         <section className="app-card min-h-[420px] p-5">
-          <h2 className="text-[19px] font-semibold tracking-tight">{mode}</h2>
+          <h2 className="text-[19px] font-semibold tracking-tight">
+            {mode}
+            {components.length > 0 && mode !== "Statistics" && (
+              <span className="ml-2 text-[14px] font-medium text-muted-foreground">
+                {active.name}
+              </span>
+            )}
+          </h2>
+          {components.length > 0 && mode === "Statistics" && (
+            <div className="mt-3 flex flex-wrap gap-2 rounded-[16px] bg-surface-2 p-1.5">
+              <button
+                type="button"
+                onClick={() => setStatsView("combined")}
+                className={cn(
+                  "rounded-[14px] px-4 py-2.5 text-[14px] font-semibold transition-colors duration-200",
+                  statsView === "combined"
+                    ? "bg-card text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground",
+                )}
+              >
+                Combined SPF
+              </button>
+              {components.map((slug: string) => {
+                const selected = statsView === "component" && slug === active.slug;
+                return (
+                  <button
+                    key={slug}
+                    type="button"
+                    onClick={() => {
+                      setStatsView("component");
+                      setActiveSlug(slug);
+                    }}
+                    className={cn(
+                      "rounded-[14px] px-4 py-2.5 text-[14px] font-semibold transition-colors duration-200",
+                      selected
+                        ? "bg-card text-foreground shadow-sm"
+                        : "text-muted-foreground hover:text-foreground",
+                    )}
+                  >
+                    {getSubject(slug)?.name ?? slug}
+                  </button>
+                );
+              })}
+            </div>
+          )}
           {mode === "Chat" ? (
             <div className="mt-4">
               <p className="text-[15px] text-muted-foreground">
-                Ask questions about {subject.name} and get answers grounded in your uploaded
+                Ask questions about {active.name} and get answers grounded in your uploaded
                 materials, the official syllabus and approved online sources.
               </p>
               <Button asChild className="mt-5">
                 <Link to="/chat">Open study chat</Link>
               </Button>
+            </div>
+          ) : mode === "Statistics" && components.length > 0 && statsView === "combined" ? (
+            <div className="mt-4 space-y-5">
+              <div>
+                <p className="text-[13px] text-muted-foreground">Combined average</p>
+                <AverageWithRounded
+                  exact={combined.exactAverage}
+                  rounded={combined.roundedAverage}
+                  size="lg"
+                />
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                {combined.parts.map((part) => (
+                  <div key={part.slug} className="rounded-[14px] bg-surface-2 p-4">
+                    <p className="text-[13px] text-muted-foreground">
+                      {getSubject(part.slug)?.name ?? part.slug}
+                    </p>
+                    <p
+                      className={cn(
+                        "tabular mt-1 text-[24px] font-bold tracking-tight",
+                        isFailing(part.summary.exactAverage) && "text-warning",
+                      )}
+                    >
+                      {part.summary.exactAverage === null
+                        ? "—"
+                        : part.summary.exactAverage.toFixed(2)}
+                    </p>
+                    <p className="text-[13px] text-muted-foreground">
+                      {part.summary.tests.length} test
+                      {part.summary.tests.length === 1 ? "" : "s"} · {part.summary.trend ?? "No trend yet"}
+                    </p>
+                  </div>
+                ))}
+              </div>
+              {combined.counted.length > 1 && (
+                <GradeLineChart
+                  data={combined.counted.map((t) => ({
+                    label: formatMonthYear(t.date),
+                    value: gradeOf(t) as number,
+                  }))}
+                />
+              )}
+              <p className="text-[13.5px] text-muted-foreground">
+                {combined.tests.length} tests total · combined trend:{" "}
+                {combined.trend ?? "No trend yet"}
+              </p>
             </div>
           ) : mode === "Statistics" ? (
             <div className="mt-4 space-y-5">
@@ -170,10 +340,10 @@ function SubjectDashboard() {
                 <EmptyState
                   className="border-0 bg-surface-2"
                   heading="No tests yet"
-                  description={`Add your first ${subject.name} test to see averages and trends.`}
+                  description={`Add your first ${active.name} test to see averages and trends.`}
                   action={
                     <AssessmentDialog
-                      subjectSlug={subject.slug}
+                      subjectSlug={active.slug}
                       trigger={<Button>Add Test</Button>}
                     />
                   }
@@ -220,7 +390,7 @@ function SubjectDashboard() {
                       );
                     })}
                     <AssessmentDialog
-                      subjectSlug={subject.slug}
+                      subjectSlug={active.slug}
                       trigger={
                         <Button size="sm" variant="secondary">
                           Add Test

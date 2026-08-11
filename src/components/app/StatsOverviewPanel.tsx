@@ -4,7 +4,7 @@ import { GradeLineChart } from "@/components/app/GradeDisplay";
 import { CURRENT_YEAR_ID, SCHOOL_YEARS } from "@/lib/mock/academic";
 import { monthlySeries, summariseYear } from "@/lib/grade-math";
 import { formatHalf, isFailing, roundToHalf } from "@/lib/mock/grades";
-import { SUBJECTS } from "@/lib/mock/subjects";
+import { SCHOOL_SUBJECTS } from "@/lib/mock/subjects";
 import { useAppData } from "@/lib/store/app-data";
 import { cn } from "@/lib/utils";
 
@@ -50,7 +50,7 @@ export function StatsOverviewPanel({
     () => assessments.filter((a) => a.yearId === yearId),
     [assessments, yearId],
   );
-  const summary = useMemo(() => summariseYear(yearTests, SUBJECTS), [yearTests]);
+  const summary = useMemo(() => summariseYear(yearTests, SCHOOL_SUBJECTS), [yearTests]);
   const series = useMemo(() => monthlySeries(yearTests), [yearTests]);
   const exact = summary.exactYearAverage;
   const change =
