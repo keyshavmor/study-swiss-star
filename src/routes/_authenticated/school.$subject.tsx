@@ -125,7 +125,11 @@ function SubjectDashboard() {
           <dl className="hidden gap-6 text-right sm:flex">
             <Meta
               label={components.length ? "Combined average" : "Average"}
-              value={(components.length ? combined : grades).exactAverage?.toFixed(2) ?? "—"}
+              value={
+                components.length
+                  ? (combined.exactAverage?.toFixed(2) ?? "—")
+                  : (grades.exactAverage?.toFixed(1) ?? "—")
+              }
               failing={isFailing((components.length ? combined : grades).exactAverage)}
             />
             <Meta label="Next exam" value={nextExam ? formatDate(nextExam) : "None planned"} />
