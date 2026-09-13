@@ -57,21 +57,21 @@ Standalone: [`02-routes-navigation.mmd`](wireframes/02-routes-navigation.mmd)
 
 ```mermaid
 flowchart TD
-  Root[/ Public title screen] --> Auth[/auth]
+  Root["/ — Public title screen"] --> Auth["/auth"]
   Root --> Protected{Authenticated route gate}
-  Auth -->|valid session| Home[/home]
+  Auth -->|valid session| Home["/home"]
   Protected --> Home
-  Home --> School[/school]
-  Home --> Planner[/planner]
-  School --> Subject[/school/$subject]
-  School --> Stats[/stats]
-  Subject --> ChatEntry[/chat]
-  ChatEntry -->|select or create thread| Thread[/chat/$threadId]
-  Home --> Profile[/profile]
-  Home --> Settings[/settings]
-  Home --> Help[/help]
-  Home --> Feedback[/feedback]
-  Home --> Diagnostics[/diagnostics]
+  Home --> School["/school"]
+  Home --> Planner["/planner"]
+  School --> Subject["/school/$subject"]
+  School --> Stats["/stats"]
+  Subject --> ChatEntry["/chat"]
+  ChatEntry -->|select or create thread| Thread["/chat/$threadId"]
+  Home --> Profile["/profile"]
+  Home --> Settings["/settings"]
+  Home --> Help["/help"]
+  Home --> Feedback["/feedback"]
+  Home --> Diagnostics["/diagnostics"]
   Header[Desktop header navigation] --> Home
   Header --> School
   Header --> Planner
