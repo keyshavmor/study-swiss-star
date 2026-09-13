@@ -1,0 +1,21 @@
+flowchart TD
+  Subject[Subject workspace] --> Quiz[Generate quiz\nPLANNED]
+  Subject --> Exam[Generate mock exam\nPLANNED]
+  Subject --> Grade[Grade answer\nPLANNED]
+  Quiz -.-> QAPI[POST /api/quiz/generate]
+  Exam -.-> EAPI[POST /api/mock-exam/generate]
+  Grade -.-> GAPI[POST /api/grade]
+  QAPI -.-> Retrieve[Python retrieves goals and materials]
+  EAPI -.-> Retrieve
+  GAPI -.-> Rubric[Python retrieves rubric and references]
+  Retrieve -.-> Model[Ollama or vLLM]
+  Rubric -.-> Model
+  Model -.-> QuizUI[Quiz questions + sources]
+  Model -.-> ExamUI[Exam questions + points + rubrics]
+  Model -.-> Result[Points + strengths + gaps + advice + sources]
+  QuizUI -.-> Answers[Student answers and sees score]
+  ExamUI -.-> Grade
+  Result -.-> Formula[Exact grade = 1 + 5 times points / max\nclamped 1 to 6]
+  Formula -.-> Display[Frontend rounds to 0.5 and marks below 4.0]
+  Display -.-> Confirm{Save as practice assessment?}
+  Confirm -. yes .-> Local[(Browser storage via AppDataProvider)]

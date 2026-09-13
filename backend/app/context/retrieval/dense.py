@@ -1,3 +1,5 @@
+"""Deterministic and OpenAI-compatible embedding adapters plus dense retrieval."""
+
 from __future__ import annotations
 
 import asyncio
@@ -16,19 +18,28 @@ from .common import chunk_to_item
 
 
 class Embedder(Protocol):
+    """Produce one numeric embedding for input text."""
+
     model_name: str
 
-    async def embed(self, text: str) -> list[float]: ...
+    async def embed(self, text: str) -> list[float]:
+        """Return one vector for the supplied text."""
+
+        ...
 
 
 class HashingEmbedder:
     """No-network fallback for development; inject a local model embedder in production."""
 
     def __init__(self, dimensions: int = 384) -> None:
+        """Set the stable fallback vector width."""
+
         self.dimensions = dimensions
         self.model_name = f"hashing-fallback-{dimensions}d"
 
     async def embed(self, text: str) -> list[float]:
+        """Create a repeatable normalized bag-of-hashes vector without network access."""
+
         vector = [0.0] * self.dimensions
         tokens = terms(text)
         features = tokens + [f"{a}_{b}" for a, b in pairwise(tokens)]
@@ -42,7 +53,7 @@ class HashingEmbedder:
 
 
 class EmbeddingUnavailableError(RuntimeError):
-    pass
+    """Raised when an explicitly configured local embedding service fails."""
 
 
 class OpenAICompatibleEmbedder:
@@ -56,15 +67,21 @@ class OpenAICompatibleEmbedder:
         api_key: str = "local",
         timeout_seconds: float = 30.0,
     ) -> None:
+        """Configure a loopback embeddings endpoint."""
+
         self.base_url = base_url.rstrip("/")
         self.model_name = model
         self.api_key = api_key
         self.timeout_seconds = timeout_seconds
 
     async def embed(self, text: str) -> list[float]:
+        """Request an embedding without blocking the event loop."""
+
         return await asyncio.to_thread(self._embed_sync, text)
 
     def _embed_sync(self, text: str) -> list[float]:
+        """Perform and validate one synchronous embeddings request."""
+
         payload = json.dumps({"model": self.model_name, "input": text}).encode("utf-8")
         request = urllib.request.Request(
             f"{self.base_url}/embeddings",
@@ -97,15 +114,21 @@ class OpenAICompatibleEmbedder:
 
 
 def cosine(left: list[float], right: list[float]) -> float:
+    """Compute cosine similarity, returning zero for missing or zero vectors."""
+
     if len(left) != len(right) or not left:
         return 0.0
     return sum(a * b for a, b in zip(left, right, strict=True))
 
 
 class DenseRetriever:
+    """Rank locally stored chunks by embedding similarity."""
+
     def __init__(
         self, store: SQLiteContextStore, embedder: Embedder, *, max_chunks: int = 500
     ) -> None:
+        """Configure the local corpus, embedder, and candidate ceiling."""
+
         self.store = store
         self.embedder = embedder
         self.max_chunks = max_chunks
@@ -119,6 +142,8 @@ class DenseRetriever:
         document_ids: set[str] | None = None,
         limit: int = 10,
     ) -> list[ContextItem]:
+        """Embed the query and return the best matching filtered chunks."""
+
         query_embedding = await self.embedder.embed(query)
         chunks = self.store.list_chunks(
             subject=subject,

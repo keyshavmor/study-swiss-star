@@ -1,3 +1,4 @@
+-- Create private chat threads/messages and enforce per-user row-level access.
 
 CREATE TABLE public.threads (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),

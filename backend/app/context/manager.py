@@ -1,3 +1,5 @@
+"""Orchestrate intent analysis, retrieval, budgeting, compilation, and memory writes."""
+
 from __future__ import annotations
 
 import json
@@ -7,7 +9,7 @@ from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from .artifacts import ArtifactManager
-from .budget import ContextBudgeter
+from .budget import ContextBudgeter, ContextBudgetError
 from .compiler import ContextCompiler
 from .config import ContextConfig
 from .intent import HeuristicQueryAnalyzer
@@ -25,6 +27,7 @@ from .retrieval import (
 from .store import SQLiteContextStore
 from .text import normalize_text
 from .tokenization import ApproximateTokenCounter, TokenCounter
+from .web import CachedWebRetriever, WebRetrievalError
 
 logger = logging.getLogger("alim.context")
 
@@ -41,7 +44,10 @@ class ContextManager:
         embedder: Embedder | None = None,
         retriever: HybridRetriever | None = None,
         reranker: HeuristicReranker | None = None,
+        web_retriever: CachedWebRetriever | None = None,
     ) -> None:
+        """Wire persistence, retrieval, memory, budgeting, and compilation services."""
+
         self.config = config or ContextConfig.from_env()
         self.store = store or SQLiteContextStore(self.config.database_path)
         self.counter = token_counter or ApproximateTokenCounter()
@@ -69,8 +75,11 @@ class ContextManager:
         self.artifacts = ArtifactManager(self.store, self.counter)
         self.budgeter = ContextBudgeter(self.config.budget)
         self.compiler = ContextCompiler(self.counter)
+        self.web = web_retriever or CachedWebRetriever(self.store, self.counter, self.config.web)
 
     def _create_embedder(self) -> Embedder:
+        """Choose the configured local endpoint or deterministic hashing fallback."""
+
         embedding = self.config.embedding
         if embedding.model:
             return OpenAICompatibleEmbedder(
@@ -91,7 +100,10 @@ class ContextManager:
         subject: str | None = None,
         language: str | None = None,
         material_ids: list[str] | None = None,
+        allow_web: bool = True,
     ) -> CompiledContext:
+        """Retrieve only intent-relevant data and compile it within the hard token budget."""
+
         query = self.analyzer.analyze(user_message, subject_hint=subject, language_hint=language)
         debug: dict[str, Any] = {
             "intent": query.intent,
@@ -192,6 +204,18 @@ class ContextManager:
             items.extend(syllabus)
         debug["syllabus_chunks_retrieved"] = len(syllabus)
 
+        web_items: list[ContextItem] = []
+        debug["web"] = {"requested": query.requires_web, "allowed": allow_web, "cache_hit": False}
+        if self.config.web.enabled and allow_web and query.requires_web:
+            try:
+                web_items, cache_hit = await self.web.retrieve(user_message)
+                debug["web"].update({"cache_hit": cache_hit, "results_retrieved": len(web_items)})
+                items.extend(web_items)
+            except WebRetrievalError as error:
+                debug["web"].update({"results_retrieved": 0, "error": str(error)})
+        else:
+            debug["web"]["results_retrieved"] = 0
+
         artifact_items = self.artifacts.retrieve(
             student_id, user_message, limit=self.config.retrieval.artifact_limit
         )
@@ -241,6 +265,46 @@ class ContextManager:
         compiled = self.compiler.compile(
             query_context=query, user_message=user_message, items=budget.kept, debug=debug
         )
+        while compiled.total_tokens > budget.input_limit:
+            removable = sorted(
+                (item for item in budget.kept if item.priority != ContextPriority.P0),
+                key=lambda item: (
+                    -int(item.priority),
+                    item.importance_score,
+                    item.relevance_score,
+                    -item.token_count,
+                    item.id,
+                ),
+            )
+            if not removable:
+                raise ContextBudgetError(
+                    "Critical context and prompt framing exceed the configured input budget"
+                )
+            item = removable[0]
+            budget.kept.remove(item)
+            budget.removed.append(item)
+            section = (
+                "summary"
+                if item.type == ContextType.CONVERSATION and item.metadata.get("kind") == "summary"
+                else item.type.value
+            )
+            budget.section_tokens[section] = max(
+                0, budget.section_tokens.get(section, 0) - item.token_count
+            )
+            debug["token_budget"].update(
+                {
+                    "sections": budget.section_tokens,
+                    "items_removed": len(budget.removed),
+                    "removed_item_ids": [value.id for value in budget.removed],
+                }
+            )
+            compiled = self.compiler.compile(
+                query_context=query,
+                user_message=user_message,
+                items=budget.kept,
+                debug=debug,
+            )
+        debug["token_budget"]["used"] = compiled.total_tokens
         if self.config.debug:
             logger.info("context_compiled %s", json.dumps(debug, ensure_ascii=False, default=str))
         return compiled
@@ -258,6 +322,8 @@ class ContextManager:
         subject: str | None = None,
         topic: str | None = None,
     ) -> dict[str, Any]:
+        """Persist a completed turn, extract safe memory, and compact long conversations."""
+
         self.conversations.append(
             student_id=student_id,
             conversation_id=conversation_id,
@@ -287,6 +353,8 @@ class ContextManager:
         }
 
     def record_event(self, *, student_id: str, event: dict[str, Any]) -> Any:
+        """Store one learning event through the episodic-memory boundary."""
+
         return self.episodes.record(student_id=student_id, **event)
 
     def add_working_memory(
@@ -300,6 +368,8 @@ class ContextManager:
         critical: bool = False,
         metadata: dict[str, Any] | None = None,
     ) -> str:
+        """Add short-lived task state that can be marked mandatory for the next turn."""
+
         item_id = f"work_{uuid.uuid4().hex}"
         now = datetime.now(UTC)
         self.store.add_working_memory(
@@ -317,6 +387,8 @@ class ContextManager:
 
     @staticmethod
     def _deduplicate_all(items: list[ContextItem]) -> list[ContextItem]:
+        """Remove repeated IDs/content while preserving the highest-priority item."""
+
         seen_ids: set[str] = set()
         seen_content: set[str] = set()
         result: list[ContextItem] = []

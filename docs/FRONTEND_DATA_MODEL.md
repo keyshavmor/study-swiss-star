@@ -4,7 +4,7 @@ Stable TypeScript types for the frontend ↔ Python contract. Names are fixed so
 mirror them 1:1 with Pydantic models. Wire format is `snake_case`; existing local prototype types
 keep their current camelCase field names until a type is explicitly migrated.
 
-The implemented chat/context response types live in `src/lib/context-backend.types.ts`. Types for
+The implemented chat/context response types live in `frontend/src/lib/context-backend.types.ts`. Types for
 the still-planned quiz/exam/planner endpoints should move to a shared API-types module when those
 features are implemented.
 
@@ -12,24 +12,24 @@ features are implemented.
 
 | Type | Existing source file | Current storage owner | Future owner | Pydantic model |
 | --- | --- | --- | --- | --- |
-| `Subject` | `src/lib/mock/subjects.ts` | static module | FE (list) + PY (index meta) | `SubjectModel` |
+| `Subject` | `frontend/src/lib/mock/subjects.ts` | static module | FE (list) + PY (index meta) | `SubjectModel` |
 | `SubjectComponent` | implicit (`Subject.components`) | static module | FE + PY | `SubjectComponentModel` |
 | `LearningGoal` | — (new) | — | PY | `LearningGoalModel` |
-| `Material` | `src/lib/store/types.ts` | localStorage | LS + PY | `MaterialModel` |
+| `Material` | `frontend/src/lib/store/types.ts` | localStorage | LS + PY | `MaterialModel` |
 | `MaterialSource` | — (new) | — | PY | `MaterialSourceModel` |
-| `Assessment` | `src/lib/store/types.ts` | localStorage | LS | `AssessmentModel` |
-| `PlannerEvent` | `src/lib/store/types.ts` | localStorage | LS | `PlannerEventModel` |
-| `SchoolLink` | `src/lib/store/types.ts` | localStorage | LS | `SchoolLinkModel` |
-| `StudentProfile` | `src/lib/store/types.ts` | localStorage | LS | `StudentProfileModel` |
-| `AcademicYear` | `src/lib/mock/academic.ts` | static + context | FE | `AcademicYearModel` |
-| `ChatThread` | `src/lib/chat.functions.ts` | Supabase | SB (Stage 1) | `ChatThreadModel` |
-| `ChatMessage` | `src/lib/chat.functions.ts` | Supabase | SB + PY metadata | `ChatMessageModel` |
+| `Assessment` | `frontend/src/lib/store/types.ts` | localStorage | LS | `AssessmentModel` |
+| `PlannerEvent` | `frontend/src/lib/store/types.ts` | localStorage | LS | `PlannerEventModel` |
+| `SchoolLink` | `frontend/src/lib/store/types.ts` | localStorage | LS | `SchoolLinkModel` |
+| `StudentProfile` | `frontend/src/lib/store/types.ts` | localStorage | LS | `StudentProfileModel` |
+| `AcademicYear` | `frontend/src/lib/mock/academic.ts` | static + context | FE | `AcademicYearModel` |
+| `ChatThread` | `frontend/src/lib/chat.functions.ts` | Supabase | SB (Stage 1) | `ChatThreadModel` |
+| `ChatMessage` | `frontend/src/lib/chat.functions.ts` | Supabase | SB + PY metadata | `ChatMessageModel` |
 | `ChatRequest` | — (new) | — | PY | `ChatRequest` |
 | `ChatResponse` | — (new) | — | PY | `ChatResponse` |
 | `SourceSnippet` | — (new) | — | PY | `SourceSnippet` |
 | `Quiz` / `QuizQuestion` | — (new) | — | PY | `Quiz` / `QuizQuestion` |
 | `MockExam` / `MockExamQuestion` | — (new) | — | PY | `MockExam` / `MockExamQuestion` |
-| `GradingRequest` / `GradingResult` | partly `src/lib/grade-math.ts` | FE math | PY eval + FE display | `GradingRequest` / `GradingResult` |
+| `GradingRequest` / `GradingResult` | partly `frontend/src/lib/grade-math.ts` | FE math | PY eval + FE display | `GradingRequest` / `GradingResult` |
 | `StudyPlan` / `StudyPlanItem` | — (new) | — | PY → LS | `StudyPlan` / `StudyPlanItem` |
 | `FeedbackEntry` | — (new) | local form | PY | `FeedbackEntry` |
 | `ModelStatus` | — (new) | — | PY | `ModelStatus` |
@@ -76,7 +76,7 @@ export interface Subject {
 }
 ```
 
-Existing local shape: `Subject` in `src/lib/mock/subjects.ts` uses `slug`, `name`, `language`
+Existing local shape: `Subject` in `frontend/src/lib/mock/subjects.ts` uses `slug`, `name`, `language`
 (`"German" | "English" | "French"`), `components?: string[]`. The API client maps
 `slug ↔ subject_id` and `"German" ↔ "de"`.
 
@@ -127,7 +127,7 @@ export interface MaterialSource {
 }
 ```
 
-Existing local shape: `Material` in `src/lib/store/types.ts` (`id`, `subjectSlug`, `added`).
+Existing local shape: `Material` in `frontend/src/lib/store/types.ts` (`id`, `subjectSlug`, `added`).
 
 ## Grades & planner (localStorage-owned)
 
@@ -166,7 +166,7 @@ export interface Assessment {
 ```
 
 `PlannerEvent`, `SchoolLink`, `StudentProfile` remain exactly as defined in
-`src/lib/store/types.ts` (`PlannerEvent` includes `recurrence`, `weekdays`, `until`, `exceptions`,
+`frontend/src/lib/store/types.ts` (`PlannerEvent` includes `recurrence`, `weekdays`, `until`, `exceptions`,
 `overrides`, `generated`). They stay localStorage-owned; Pydantic mirrors are only needed if
 Stage 3 syncs them.
 
@@ -339,7 +339,7 @@ export interface GradingResult {
 ```
 
 Display rule: the frontend keeps `swiss_grade` exact where it shows exact grades, and reuses
-`roundToHalf` from `src/lib/grade-math.ts` for rounded displays and averages. Values < 4.0 use the
+`roundToHalf` from `frontend/src/lib/grade-math.ts` for rounded displays and averages. Values < 4.0 use the
 `--warning` token (`#C96A00`).
 
 ## Study plan
@@ -387,7 +387,7 @@ export interface FeedbackEntry {
 }
 
 export interface ModelStatus {
-  provider: "ollama" | "vllm" | "openai_compatible" | string;
+  provider: "ollama" | "llama.cpp" | "openai_compatible" | string;
   model: string;
   endpoint: string;
   mode: "local" | "remote";

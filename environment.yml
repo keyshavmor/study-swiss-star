@@ -1,0 +1,17 @@
+# Shared, architecture-neutral tools. The setup script installs the matching
+# llama.cpp CUDA, Metal/Accelerate, or CPU build after it detects the host.
+name: alim-study
+channels:
+  - conda-forge
+dependencies:
+  # Python and Node versions are available on linux-64 and osx-arm64.
+  - python=3.11
+  - nodejs>=22,<23
+  - pip
+  - git
+  - git-lfs
+  - cmake>=3.28
+  - ninja
+  - pip:
+      # uv owns the locked Python application dependencies in backend/uv.lock.
+      - uv>=0.8,<1

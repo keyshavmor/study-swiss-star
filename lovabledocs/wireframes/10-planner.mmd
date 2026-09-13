@@ -1,0 +1,20 @@
+flowchart TD
+  Open[Open /planner] --> Events[Read PlannerEvent records]
+  Events --> Expand[occurrencesInRange\ncalendar-safe recurrence expansion]
+  Expand --> Views[Timetable Day Month List]
+  Expand --> Totals[Classes exams study activity totals]
+  Expand --> Conflict[Detect overlapping events]
+  Views --> Interact[Select drag add edit duplicate complete delete]
+  Interact --> Scope{Recurring event?}
+  Scope -->|No| Series[Update event]
+  Scope -->|Yes one| Override[Store occurrence override or exception]
+  Scope -->|Yes future| Split[End head and create tail series]
+  Scope -->|Yes all| Series
+  Series --> Store[(Browser storage\nIMPLEMENTED LOCAL)]
+  Override --> Store
+  Split --> Store
+  Generate[Generate study plan action\nPLANNED] -.-> Context[Send exams + free slots + limits]
+  Context -.-> Python[POST /api/study-plan/generate]
+  Python -.-> Review[Review proposal; no automatic write]
+  Review -.-> Confirm[Student confirms]
+  Confirm -.-> Store

@@ -3,9 +3,8 @@
 ## Status
 
 Implemented in `backend/app/context/` and connected to the authenticated TanStack `/api/chat`
-route. This is the main context-selection layer whenever `ALIM_AI_BACKEND` is unset or set to
-`context`. The previous Lovable AI Gateway remains available only with `ALIM_AI_BACKEND=lovable`,
-or as an opt-in fallback with `ALIM_ENABLE_LOVABLE_FALLBACK=true`.
+route. It is the only context-selection and AI-generation path; backend outages return an explicit
+503 instead of silently sending study data to a cloud model.
 
 ## Request path
 
@@ -18,6 +17,7 @@ StudyChat
        -> selected memory/retrieval branches only
        -> dense + BM25 retrieval
        -> reciprocal-rank fusion, deduplication, heuristic reranking
+       -> optional intent-gated web retrieval + local cache
        -> per-section and global token budgeting
        -> ContextCompiler
   -> configured local OpenAI-compatible model
@@ -43,6 +43,7 @@ frontend transcript by default.
 | Conversation | `conversation_messages`, `conversation_summaries` | Recent messages + rolling summary + relevant older messages |
 | Working | `working_memory` | Conversation/task scoped, expiry-based; P0 only when explicitly critical |
 | Artifact | `context_artifacts` | Summary/location in prompt; full content remains in SQLite and searchable |
+| Web | `web_cache` | Explicit current/web intent only; provenance-labelled, untrusted P2 context |
 
 Original conversation messages are not deleted when a summary is created. Student mastery,
 weakness, and misconception memories require repeated evidence by default. Casual chat and weak or
@@ -73,6 +74,11 @@ never removed; compilation fails clearly if P0 plus the current request cannot f
 
 All defaults can be overridden with `ALIM_*` environment variables; see
 `backend/.env.example`. `ModelConfig` can override model context/output limits per call.
+
+Qwen3.8-27B supports 262,144 native tokens, but Alim selects a safer total ceiling from hardware:
+65,536 on the 48 GB M4 Pro, 32,768 on a 24 GB RTX 3090, or 16,384 on Linux CPU fallback. One
+quarter is reserved for output. Web results have their own 6,000-token ceiling and are removed
+before critical working state when the global input limit is reached.
 
 ## Observability
 

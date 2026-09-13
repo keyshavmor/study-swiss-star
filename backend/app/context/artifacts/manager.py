@@ -1,3 +1,5 @@
+"""Creation and relevance retrieval for reusable tutoring artifacts."""
+
 from __future__ import annotations
 
 import uuid
@@ -10,7 +12,11 @@ from ..tokenization import TokenCounter
 
 
 class ArtifactManager:
+    """Persist full artifacts while injecting only compact summaries into prompts."""
+
     def __init__(self, store: SQLiteContextStore, counter: TokenCounter) -> None:
+        """Configure artifact persistence and summary token counting."""
+
         self.store = store
         self.counter = counter
 
@@ -26,6 +32,8 @@ class ArtifactManager:
         searchable: bool = True,
         artifact_id: str | None = None,
     ) -> ContextArtifact:
+        """Store an artifact and return its public metadata record."""
+
         artifact_id = artifact_id or f"artifact_{uuid.uuid4().hex}"
         artifact = ContextArtifact(
             id=artifact_id,
@@ -42,6 +50,8 @@ class ArtifactManager:
         return artifact
 
     def retrieve(self, student_id: str, query: str, *, limit: int) -> list[ContextItem]:
+        """Return the student's most relevant searchable artifact summaries."""
+
         scored: list[ContextItem] = []
         for artifact in self.store.list_artifacts(student_id):
             score = lexical_overlap(

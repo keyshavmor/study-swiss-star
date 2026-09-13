@@ -1,3 +1,5 @@
+"""Evidence-controlled durable student memory and relevance retrieval."""
+
 from __future__ import annotations
 
 import re
@@ -25,9 +27,13 @@ ALLOWED_MEMORY_TYPES = {
 
 
 class StudentMemoryManager:
+    """Store only explicit or repeated learner facts and retrieve them selectively."""
+
     def __init__(
         self, store: SQLiteContextStore, counter: TokenCounter, config: MemoryConfig
     ) -> None:
+        """Configure durable learner-memory extraction thresholds."""
+
         self.store = store
         self.counter = counter
         self.config = config
@@ -41,6 +47,8 @@ class StudentMemoryManager:
         topics: list[str],
         limit: int,
     ) -> list[ContextItem]:
+        """Rank eligible memories without exposing private internal evidence metadata."""
+
         memories = self.store.list_memories(student_id, subject=subject)
         topic_set = {topic.casefold() for topic in topics}
         scored: list[ContextItem] = []
@@ -158,6 +166,8 @@ class StudentMemoryManager:
 
     @staticmethod
     def _explicit_candidate(message: str) -> dict[str, Any] | None:
+        """Extract an explicitly stated preference or learner fact when safe."""
+
         patterns = [
             (
                 r"\b(?:my goal is|i want to achieve|mein ziel ist|mon objectif est)\s+(.+)",

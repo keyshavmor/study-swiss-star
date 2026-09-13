@@ -1,3 +1,5 @@
+"""Small deterministic text-normalization helpers shared by local retrieval."""
+
 from __future__ import annotations
 
 import re
@@ -7,14 +9,20 @@ _words = re.compile(r"[\wÀ-ÿ]+", re.UNICODE)
 
 
 def terms(text: str) -> list[str]:
+    """Return case-folded searchable words while retaining accented letters."""
+
     return [word.casefold() for word in _words.findall(text) if len(word) > 1]
 
 
 def term_set(text: str) -> set[str]:
+    """Return unique normalized terms for lexical scoring."""
+
     return set(terms(text))
 
 
 def lexical_overlap(left: str, right: str) -> float:
+    """Compute Jaccard overlap between two normalized term sets."""
+
     a, b = term_set(left), term_set(right)
     if not a or not b:
         return 0.0
@@ -22,10 +30,14 @@ def lexical_overlap(left: str, right: str) -> float:
 
 
 def normalize_text(text: str) -> str:
+    """Create a stable representation for exact content deduplication."""
+
     return " ".join(terms(text))
 
 
 def unique_preserving_order(values: Iterable[str]) -> list[str]:
+    """Deduplicate strings without changing their first-seen order."""
+
     seen: set[str] = set()
     result: list[str] = []
     for value in values:

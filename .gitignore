@@ -1,5 +1,5 @@
 # Logs
-logs
+logs/*.log
 *.log
 npm-debug.log*
 yarn-debug.log*
@@ -21,6 +21,18 @@ __pycache__/
 .pytest_cache/
 .ruff_cache/
 .venv/
+
+# Local model weights and runtime-generated application data
+models/Qwen3.8-27B/
+models/.qwen3.8-27b.download.lock
+app-data/context/*
+!app-data/context/.gitkeep
+logs/*
+!logs/README.md
+!logs/.gitkeep
+tests/results/*
+!tests/results/README.md
+!tests/results/VERIFICATION.md
 
 # Wrangler / Cloudflare
 .wrangler/

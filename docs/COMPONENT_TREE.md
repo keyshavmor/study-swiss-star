@@ -10,7 +10,7 @@ Classification of every significant component in the existing frontend.
 | 🟪 LAYOUT | Layout / navigation shell |
 | 🟨 LOCAL | Reads/writes `AppDataProvider` (localStorage / mock data) |
 | 🟩 AUTH | Supabase auth / session |
-| 🟧 AIGW | Lovable AI Gateway path |
+| 🟧 EDITOR | Lovable project/auth integration (not AI generation) |
 | 🟥 PY | Python-backend-connected or planned |
 | 📊 GRADE | Grading / statistics |
 | 📄 DOC | Material / document handling |
@@ -67,8 +67,8 @@ __root.tsx                                 🟪 LAYOUT  providers: Query, Theme,
     ├── feedback.tsx                       🟦 UI → 🟥 PY (POST /api/feedback)
     ├── help.tsx                           🟦 UI
     ├── diagnostics.tsx                    🟨 LOCAL → 🟥 PY (health + model status)
-    ├── chat.index.tsx                     🟩 AUTH 🟧 AIGW (thread bootstrap)
-    └── chat.$threadId.tsx                 🟥 PY (🟧 AIGW optional fallback)
+    ├── chat.index.tsx                     🟩 AUTH (thread bootstrap)
+    └── chat.$threadId.tsx                 🟥 PY
         └── StudyChat.tsx                  🟥 PY 🟩 AUTH
             ├── ThreadList.tsx             🟩 AUTH (Supabase threads)
             ├── ai-elements/conversation.tsx 🟦 UI
@@ -85,12 +85,12 @@ components/ui/*                            🟦 UI      shadcn/Radix primitives,
 ### `AuthForm.tsx` — 🟩 AUTH
 - **Purpose:** email/password sign-in and sign-up, Google OAuth, redirect after auth.
 - **Props:** none (route-level).
-- **Data source:** `supabase.auth` from `src/integrations/supabase/client.ts`.
+- **Data source:** `supabase.auth` from `frontend/src/integrations/supabase/client.ts`.
 - **Future backend:** none. Python never sees credentials.
 - **Integration notes:** do not modify. If local demo without auth is required, add a separate
   guest path — never weaken the `_authenticated` gate.
 
-### `StudyChat.tsx` — 🟥 PY / 🟧 optional fallback
+### `StudyChat.tsx` — 🟥 PY
 - **Purpose:** full chat shell: sidebar, thread dialog, transcript, composer, sign out.
 - **Props:** `{ threadId?: string }`.
 - **Data source:** `listThreads`/`listMessages`/`createThread`/`deleteThread` server fns (Supabase);
@@ -170,7 +170,7 @@ components/ui/*                            🟦 UI      shadcn/Radix primitives,
 - **Integration notes:** keep the review step; never write grades without confirmation.
 
 ### `app/DemoMode.tsx` — 🟨 LOCAL
-- **Purpose:** demo-data toggle + banner, seeded from `src/lib/store/demo-data.ts`.
+- **Purpose:** demo-data toggle + banner, seeded from `frontend/src/lib/store/demo-data.ts`.
 - **Future backend:** must keep working with the backend offline; also gates mock AI answers.
 
 ### `app/States.tsx` — 🟦 UI

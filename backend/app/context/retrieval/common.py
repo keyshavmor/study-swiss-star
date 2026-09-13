@@ -1,9 +1,13 @@
+"""Conversions shared by local retrieval implementations."""
+
 from __future__ import annotations
 
 from ..models import ContextItem, ContextPriority, ContextType, DocumentChunk
 
 
 def chunk_to_item(chunk: DocumentChunk, score: float) -> ContextItem:
+    """Convert a stored document chunk into a budgetable context item."""
+
     item_type = (
         ContextType.SYLLABUS
         if (chunk.document_type or "").casefold() in {"syllabus", "learning_goal", "learning goals"}

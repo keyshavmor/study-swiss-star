@@ -1,3 +1,5 @@
+"""Local BM25-style lexical retrieval over persisted learning-material chunks."""
+
 from __future__ import annotations
 
 import math
@@ -10,6 +12,8 @@ from .common import chunk_to_item
 
 
 class SparseRetriever:
+    """Rank filtered chunks with deterministic lexical relevance."""
+
     def __init__(
         self,
         store: SQLiteContextStore,
@@ -18,6 +22,8 @@ class SparseRetriever:
         b: float = 0.75,
         max_chunks: int = 500,
     ) -> None:
+        """Configure BM25 constants and the maximum local corpus scan."""
+
         self.store = store
         self.k1 = k1
         self.b = b
@@ -32,6 +38,8 @@ class SparseRetriever:
         document_ids: set[str] | None = None,
         limit: int = 10,
     ) -> list[ContextItem]:
+        """Return the highest-scoring lexical matches."""
+
         chunks = self.store.list_chunks(
             subject=subject,
             document_types=document_types,

@@ -1,3 +1,5 @@
+"""Ingest text, Markdown, PDF, and DOCX learning material into local retrieval."""
+
 from __future__ import annotations
 
 import uuid
@@ -11,10 +13,12 @@ from ..context.tokenization import TokenCounter
 
 
 class UnsupportedDocumentError(ValueError):
-    pass
+    """Raised when a document type or optional parser is unavailable."""
 
 
 class DocumentIngestor:
+    """Extract, overlap-chunk, embed, and persist source material."""
+
     def __init__(
         self,
         store: SQLiteContextStore,
@@ -24,6 +28,8 @@ class DocumentIngestor:
         chunk_tokens: int = 500,
         overlap_tokens: int = 60,
     ) -> None:
+        """Configure persistence, token counting, embedding, and chunk overlap."""
+
         self.store = store
         self.counter = counter
         self.embedder = embedder
@@ -48,6 +54,8 @@ class DocumentIngestor:
         page: int | None = None,
         metadata: dict[str, Any] | None = None,
     ) -> list[DocumentChunk]:
+        """Chunk and index plain text with supplied provenance metadata."""
+
         if not content.strip():
             raise ValueError("Document contains no extractable text")
         document_id = document_id or f"doc_{uuid.uuid4().hex}"
@@ -78,6 +86,8 @@ class DocumentIngestor:
         return chunks
 
     async def ingest_file(self, path: str | Path, **metadata: Any) -> list[DocumentChunk]:
+        """Extract a supported local file before delegating to text ingestion."""
+
         file_path = Path(path)
         suffix = file_path.suffix.casefold()
         if suffix in {".txt", ".md", ".markdown"}:
@@ -121,6 +131,8 @@ class DocumentIngestor:
         raise UnsupportedDocumentError(f"Unsupported document type: {suffix or '(none)'}")
 
     def _split(self, content: str) -> list[str]:
+        """Split text on word boundaries while retaining bounded overlap."""
+
         words = content.split()
         if not words:
             return []

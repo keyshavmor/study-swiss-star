@@ -125,16 +125,21 @@ sequenceDiagram
     participant SB as Supabase
     participant PY as Python FastAPI
     participant RAG as Context Manager/SQLite
+    participant WEB as Budgeted web retrieval
     participant FILES as Subject files
-    participant LLM as Ollama/vLLM
+    participant LLM as Qwen3.8-27B/llama.cpp
     Student->>UI: type question, submit
     UI->>UI: Shimmer "Thinking…", composer disabled
     UI->>SF: sendMessage(question)
     SF->>SB: persist user message (Stage 1 writer)
-    SF->>PY: POST /api/chat {thread_id, current question, subject/language/year/grade, include_sources:true, stream:false}
+    SF->>PY: POST /api/chat {thread_id, current question, subject/language/year/grade, include_sources:true, allow_web:true, stream:false}
     PY->>RAG: intent-gated dense + BM25 retrieval, RRF, rerank, deduplicate, budget
+    opt explicit latest/current/web intent
+        PY->>WEB: search relevant current information
+        WEB-->>PY: URL + title + fetched_at + bounded extract
+    end
     RAG-->>PY: CompiledContext + provenance
-    PY->>LLM: exactly two compiled messages (system/context + current user request)
+    PY->>LLM: exactly two budget-checked messages (system/context + current user request)
     LLM-->>PY: completed answer
     PY-->>SF: {answer, sources[], exam_tip, used_model, retrieval_summary}
     SF->>SB: persist assistant message
@@ -151,7 +156,7 @@ sequenceDiagram
     participant SF as Frontend server bridge
     participant PY as Python FastAPI
     participant RAG as Hybrid context retrieval
-    participant LLM as Ollama/vLLM
+    participant LLM as Qwen3.8-27B/llama.cpp
     Student->>UI: /school/biology → "Generate quiz" (8 questions, standard)
     UI-->>Student: panel shimmer "Generating quiz…" (up to 120 s)
     SF->>PY: POST /api/quiz/generate {subject_id, language:"de", learning_goal_ids, question_count:8}
@@ -175,7 +180,7 @@ sequenceDiagram
     participant SF as Frontend server bridge
     participant PY as Python FastAPI
     participant RAG as Hybrid context retrieval
-    participant LLM as Ollama/vLLM
+    participant LLM as Qwen3.8-27B/llama.cpp
     Student->>UI: "Generate mock exam" (90 min, 40 points, topic Genetik)
     SF->>PY: POST /api/mock-exam/generate {subject_id:"spf", component_subject_id:"spf-biology", ...}
     PY->>RAG: retrieve syllabus + grading criteria + material chunks
@@ -196,7 +201,7 @@ sequenceDiagram
     participant SF as Frontend server bridge
     participant PY as Python FastAPI
     participant RAG as Hybrid context retrieval
-    participant LLM as Ollama/vLLM
+    participant LLM as Qwen3.8-27B/llama.cpp
     participant LS as localStorage/AppDataProvider
     Student->>UI: submit answer for exam question (max 8 points)
     UI-->>Student: "Marking…" spinner
@@ -222,7 +227,7 @@ sequenceDiagram
     participant LS as localStorage/AppDataProvider
     participant SF as Frontend server bridge
     participant PY as Python FastAPI
-    participant LLM as Ollama/vLLM
+    participant LLM as Qwen3.8-27B/llama.cpp
     Student->>UI: /planner → "Generate study plan"
     UI->>LS: upcoming exams + timetable + free slots (date-utils occurrencesInRange)
     LS-->>UI: exam_dates[], available_slots[]
@@ -321,13 +326,8 @@ sequenceDiagram
     SF-->>UI: offline
     UI-->>Student: BackendStatusBanner "Study AI backend offline — grades, planner and materials still work." [Retry]
     Note over UI: AI buttons disabled with tooltips; /school /stats /planner /profile fully usable from LS
-    alt VITE_USE_MOCK_AI=true
-        Student->>UI: ask a question
-        UI->>UI: mock adapter returns canned answer + "Demo source" snippets after ~600 ms
-        UI-->>Student: answer tagged "Mock mode"
-    else VITE_ENABLE_LOVABLE_AI_FALLBACK=true
-        UI->>UI: route to /api/chat (Lovable AI Gateway) and label the answer "Cloud fallback"
-    end
+    Student->>UI: ask a question
+    UI-->>Student: explicit service-unavailable error; no provider fallback
     Student->>UI: Retry
     UI->>SF: GET /health → ok → banner clears, AI re-enabled
 ```

@@ -1,3 +1,5 @@
+"""Priority- and section-aware enforcement of the model context window."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -7,11 +9,13 @@ from .models import ContextItem, ContextPriority, ContextType, ModelConfig
 
 
 class ContextBudgetError(ValueError):
-    pass
+    """Raised when even mandatory prompt content cannot fit the input allowance."""
 
 
 @dataclass(slots=True)
 class BudgetResult:
+    """Items kept/removed plus auditable token accounting."""
+
     kept: list[ContextItem]
     removed: list[ContextItem]
     input_limit: int
@@ -20,7 +24,11 @@ class BudgetResult:
 
 
 class ContextBudgeter:
+    """Apply per-section caps first and the global input ceiling second."""
+
     def __init__(self, config: ContextBudgetConfig) -> None:
+        """Store section and global token ceilings."""
+
         self.config = config
 
     def apply(
@@ -30,6 +38,8 @@ class ContextBudgeter:
         fixed_tokens: int,
         model_config: ModelConfig,
     ) -> BudgetResult:
+        """Keep the highest-value context without exceeding model input capacity."""
+
         maximum = model_config.max_context_tokens or self.config.max_context_tokens
         reserve = model_config.reserve_output_tokens or self.config.reserve_output_tokens
         input_limit = maximum - reserve
@@ -98,11 +108,15 @@ class ContextBudgeter:
 
     @staticmethod
     def _section(item: ContextItem) -> str:
+        """Map an item to the configuration section that constrains it."""
+
         if item.type == ContextType.CONVERSATION and item.metadata.get("kind") == "summary":
             return "summary"
         return item.type.value
 
     def _allowance(self, section: str) -> int:
+        """Return the maximum tokens allocated to one context section."""
+
         return {
             "knowledge": self.config.knowledge_tokens,
             "syllabus": self.config.syllabus_tokens,
@@ -112,4 +126,5 @@ class ContextBudgeter:
             "summary": self.config.summary_tokens,
             "artifact": self.config.artifact_tokens,
             "working_memory": self.config.working_memory_tokens,
+            "web": self.config.web_tokens,
         }.get(section, self.config.memory_tokens)

@@ -19,6 +19,10 @@ This checklist reflects the repository after the Context Manager implementation.
 - [x] Added structured debug data that is hidden from normal chat responses.
 - [x] Added unit/integration tests for budgeting, priority, fusion, deduplication, compaction,
   memory filtering, artifacts, query analysis, and the four requested example flows.
+- [x] Added Qwen3.8-27B Q4 GGUF validation/download/resume tooling for feasible local inference.
+- [x] Added managed llama.cpp preload/readiness/shutdown with CUDA/Metal/CPU adaptation.
+- [x] Added intent-gated, cached, provenance-labelled, budgeted web retrieval.
+- [x] Reorganized frontend, materials, models, app data, logs, Supabase, and tests by ownership.
 
 ## Completed chat integration
 
@@ -27,7 +31,7 @@ This checklist reflects the repository after the Context Manager implementation.
 - [x] Changed the authenticated TanStack chat route to forward only the current request and context
   identifiers to FastAPI by default.
 - [x] Added server-only backend configuration and timeouts.
-- [x] Preserved the Lovable AI Gateway as explicit mode and opt-in fallback.
+- [x] Removed cloud AI generation fallback; all answers use the local Qwen backend.
 - [x] Added source metadata to assistant UI-message parts and render it with `SourceSnippetList`.
 - [x] Passed academic year and numeric grade level from `AcademicYearProvider`.
 
@@ -47,16 +51,17 @@ This checklist reflects the repository after the Context Manager implementation.
 
 - [x] Python unit and integration suite passes without a model server.
 - [x] Python files compile.
-- [ ] Frontend typecheck/lint/build passes in an environment with Bun dependencies installed.
+- [x] Frontend typecheck and production build pass after the directory move.
+- [x] Process-level E2E verifies model preload, Qwen routing, web sources, and token budget.
 - [ ] Manual local-model chat works in German, English, and French B1.
 - [ ] Manual source rendering survives a page refresh from Supabase message parts.
-- [ ] Backend-off behavior is checked with fallback disabled and enabled.
+- [x] Backend-off behavior returns an explicit service-unavailable response and never leaks to a cloud model.
 - [ ] Light/dark and mobile layouts are checked for the source disclosure.
 
 ## Hard constraints
 
 - Do not remove or weaken Supabase authentication.
-- Do not remove the Lovable gateway until the user explicitly requests it.
+- Keep Lovable project metadata and authentication integration; these are independent of AI generation.
 - Do not edit generated route/Supabase files or published Git history.
 - Do not change the 15-subject/SPF/Swiss-grade rules as part of backend work.
 - Do not put model credentials in `VITE_*` variables.

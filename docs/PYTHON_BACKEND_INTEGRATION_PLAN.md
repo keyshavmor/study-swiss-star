@@ -15,7 +15,7 @@ subject model, Swiss grade logic, and Supabase authentication remain unchanged.
 - Local OpenAI-compatible model client with no cloud requirement.
 - Authenticated TanStack `/api/chat` proxy to Python in default context mode.
 - Source metadata transport and `SourceSnippetList` rendering.
-- Legacy Lovable gateway retained as explicit mode/opt-in fallback.
+- Local `Qwen/Qwen3.8-27B` is the only generation path; Lovable remains only for project tooling and authentication integration.
 - Unit and integration coverage for the requested context scenarios.
 
 The implementation and its limitations are documented in `CONTEXT_MANAGER.md`.
@@ -26,10 +26,8 @@ Server-side frontend variables:
 
 | Variable | Default | Meaning |
 | --- | --- | --- |
-| `ALIM_AI_BACKEND` | `context` | `context` uses Python; `lovable` uses the legacy gateway |
 | `ALIM_CONTEXT_BACKEND_URL` | `http://127.0.0.1:8001` | FastAPI base URL |
 | `ALIM_CONTEXT_BACKEND_TIMEOUT_MS` | `90000` | Chat proxy timeout |
-| `ALIM_ENABLE_LOVABLE_FALLBACK` | `false` | Permit cloud fallback after Python failure |
 
 Python variables are listed in `backend/.env.example`. They include model endpoint/name, SQLite
 path, context/output budgets, retrieval counts/weights, summary thresholds, and memory thresholds.
@@ -59,11 +57,11 @@ They are deliberately not `VITE_*`, so model credentials never enter the browser
 
 ## Files that remain protected
 
-- `src/routeTree.gen.ts` (generated)
+- `frontend/src/routeTree.gen.ts` (generated)
 - generated Supabase integration files
 - existing Supabase migrations unless a deliberate cloud-storage change is made
-- `src/components/ui/*` and `src/components/ai-elements/*`
-- `src/lib/grade-math.ts`, subject definitions, and design tokens
+- `frontend/src/components/ui/*` and `frontend/src/components/ai-elements/*`
+- `frontend/src/lib/grade-math.ts`, subject definitions, and design tokens
 
 No Supabase migration was needed for the local context store. Its schema is created idempotently by
 `SQLiteContextStore`; `context_schema_version` records the current local schema version.

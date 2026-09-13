@@ -1,3 +1,5 @@
+"""Minimal OpenAI-compatible client for the repository-local Qwen server."""
+
 from __future__ import annotations
 
 import asyncio
@@ -10,14 +12,18 @@ from time import monotonic
 from typing import Any
 
 from ..context.models import CompiledContext
+from ..model_spec import MODEL_NAME, RESERVED_OUTPUT_TOKENS
+from ..platform import local_model_base_url
 
 
 class ModelUnavailableError(RuntimeError):
-    pass
+    """Raised when the local model endpoint cannot provide a valid completion."""
 
 
 @dataclass(slots=True)
 class LLMResponse:
+    """Normalized model answer returned to the FastAPI layer."""
+
     content: str
     model: str
     latency_ms: int
@@ -34,23 +40,35 @@ class LocalOpenAICompatibleClient:
         api_key: str | None = None,
         timeout_seconds: float | None = None,
     ) -> None:
-        self.base_url = (
-            base_url or os.getenv("ALIM_LLM_BASE_URL", "http://127.0.0.1:11434/v1")
-        ).rstrip("/")
-        self.model = model or os.getenv("ALIM_LLM_MODEL", "llama3.1:8b-instruct")
+        """Configure the loopback OpenAI-compatible endpoint and timeout."""
+
+        self.base_url = (base_url or local_model_base_url()).rstrip("/")
+        self.model = model or os.getenv("ALIM_LLM_MODEL", MODEL_NAME)
         self.api_key = api_key or os.getenv("ALIM_LLM_API_KEY", "local")
         self.timeout_seconds = timeout_seconds or float(os.getenv("ALIM_LLM_TIMEOUT_SECONDS", "90"))
 
     async def complete(self, context: CompiledContext) -> LLMResponse:
+        """Generate an answer in a worker thread so HTTP I/O does not block FastAPI."""
+
+        self.last_context = context
         return await asyncio.to_thread(self._complete_sync, context)
 
     def _complete_sync(self, context: CompiledContext) -> LLMResponse:
+        """Send one non-streaming chat-completions request to the local server."""
+
         started = monotonic()
         payload = {
             "model": self.model,
             "messages": context.prompt_messages,
             "stream": False,
-            "temperature": 0.2,
+            "max_tokens": int(
+                context.retrieval_debug.get("token_budget", {}).get(
+                    "reserved_output", RESERVED_OUTPUT_TOKENS
+                )
+            ),
+            "temperature": 1.0,
+            "top_p": 0.95,
+            "top_k": 20,
         }
         response = self._request("/chat/completions", payload)
         try:
@@ -66,6 +84,8 @@ class LocalOpenAICompatibleClient:
         )
 
     async def status(self) -> dict[str, Any]:
+        """Probe model reachability for health and diagnostics endpoints."""
+
         started = monotonic()
         try:
             await asyncio.to_thread(self._request, "/models", None, "GET", 3.0)
@@ -94,6 +114,8 @@ class LocalOpenAICompatibleClient:
         method: str = "POST",
         timeout_seconds: float | None = None,
     ) -> dict[str, Any]:
+        """Perform one authenticated JSON request against the loopback model API."""
+
         data = json.dumps(payload).encode("utf-8") if payload is not None else None
         request = urllib.request.Request(
             self.base_url + path,

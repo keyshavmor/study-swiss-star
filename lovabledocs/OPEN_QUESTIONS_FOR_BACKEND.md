@@ -24,4 +24,4 @@ features remain open; implemented decisions are recorded here to prevent contrac
 | 17 | Should the backend enforce the language, or trust the `language` field? | Wrong-language answers are a real risk with local models | **Trust and enforce the field**; the backend must not infer language from the question. |
 | 18 | Is a French B1 simplification pass required? | French must stay at CEFR B1 | Backend applies a B1 constraint in the system prompt for `language: "fr"`. |
 | 19 | Does the frontend ever need direct access to the retrieval store or model server? | Security and coupling | **Resolved: no.** The authenticated TanStack route talks to FastAPI. |
-| 20 | When can the Lovable AI Gateway path be removed? | Fallback maintenance cost | Only after Python chat is confirmed working **and** the user explicitly asks. |
+| 20 | Which model owns AI generation? | Multiple generation paths cause privacy and provenance drift | **Resolved:** all AI generation uses local `Qwen/Qwen3.8-27B`; there is no cloud-generation fallback. |

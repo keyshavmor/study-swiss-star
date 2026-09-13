@@ -1,424 +1,204 @@
-# Alim's Study Assistant
+# Alim — Swiss Gymnasium study application
 
-AI-powered study platform for Swiss Gymnasium students (ages 15–16). The repository contains a
-TanStack Start/React frontend, Supabase authentication and transcript storage, and a local Python
-context backend that retrieves and budgets the information sent to a local LLM.
+Alim is a local-first tutoring application with a TanStack Start frontend, a Python context
+compiler, Supabase authentication/chat persistence, and the official open-weight
+`Qwen/Qwen3.8-27B` model served locally through the cross-platform `llama.cpp` runtime.
 
----
+## Repository layout
 
-## Table of Contents
-
-- [Overview](#overview)
-- [Technology Stack](#technology-stack)
-- [Architecture](#architecture)
-  - [Frontend](#frontend)
-  - [Backend](#backend)
-  - [Data & Storage](#data--storage)
-  - [Design System](#design-system)
-- [Project Structure](#project-structure)
-- [Directory & File Tree](#directory--file-tree)
-- [Key Conventions](#key-conventions)
-- [Running Locally](#running-locally)
-- [Environment Variables](#environment-variables)
-- [Scripts](#scripts)
-- [License](#license)
-
----
-
-## Overview
-
-The app is split into two main layers:
-
-1. **Authenticated Study Assistant**
-   - Threaded AI chat compiled by the local Python Context Manager and served by a local
-     OpenAI-compatible model.
-   - The Lovable AI Gateway remains an explicit legacy/fallback mode.
-   - Persistent cloud storage for chat threads and messages via Supabase, scoped to the signed-in user.
-   - Google / Email authentication via `@lovable.dev/cloud-auth-js`.
-
-2. **Polished UI Prototype**
-   - Local-only interactive mock data for grades, planner, subjects, materials, and profile.
-   - Full CRUD for tests, planner events, school links, and materials.
-   - Swiss Gymnasium grading engine (6-point scale, rounded to 0.5).
-   - 24-hour weekly timetable, planner views, academic stats, and school subject dashboard.
-   - Academic year 2026–27 · Grade 11 is the default context.
-
-### School Subjects
-
-The School dashboard shows exactly **15 top-level subjects** for the Swiss Gymnasium curriculum:
-
-Mathematics, Physics, English, History, French, German, Biology, Chemistry, **SPF Biology & Chemistry**, Philosophy, Political Education, Pedagogics and Psychology, Economics, Art, Sport.
-
-SPF Biology & Chemistry is a combined subject: its displayed grade is the average of the underlying SPF Biology and SPF Chemistry components, and it counts as **one** subject in the yearly average. The combined card shows both component averages underneath the main grade.
-
-- **German-language subjects**: German, Biology, Chemistry, SPF Biology & Chemistry, Philosophy, Political Education, Pedagogics and Psychology, Economics, Art, Sport.
-- **English-language subjects**: Mathematics, Physics, English, History.
-- **French-language subject**: French (Simple French · B1 level).
-
----
-
-## Technology Stack
-
-| Layer | Technology |
-|-------|------------|
-| Framework | TanStack Start v1 (full-stack React, SSR/SSG) |
-| Build Tool | Vite 8 |
-| Language | TypeScript 5.8 |
-| UI | React 19, Tailwind CSS v4, Radix UI primitives |
-| Routing | TanStack Router (file-based) |
-| State (server) | TanStack Query + `createServerFn` |
-| State (client) | React Context + `localStorage` |
-| Backend | Python 3.11+ / FastAPI + TanStack server route |
-| Auth | Supabase Auth + `@lovable.dev/cloud-auth-js` |
-| AI | Local OpenAI-compatible model; optional Lovable fallback |
-| Context storage | Local SQLite |
-| Charts | `recharts` |
-| Markdown | `react-markdown` |
-| Icons | `lucide-react` |
-
----
-
-## Architecture
-
-### Frontend
-
-The UI is organized around file-based routes under `src/routes/`. Each route file defines its own URL, layout, loader, and meta tags. Shared providers are mounted in the root route (`src/routes/__root.tsx`), which wraps every page in:
-
-- `QueryClientProvider` — TanStack Query cache.
-- `ThemeProvider` — light/dark mode and theme toggle.
-- `AppDataProvider` — local editable state for the prototype.
-- `AcademicYearProvider` — global year/grade context.
-
-Reusable UI lives in `src/components/`:
-
-- `src/components/app/*` — app-specific components (shell, chat, planner, grades, etc.).
-- `src/components/ui/*` — shadcn/Radix UI primitives (buttons, dialogs, inputs, etc.).
-- `src/components/ai-elements/*` — lower-level AI chat primitives (conversation, message, prompt input, shimmer).
-
-### Backend
-
-TanStack Start uses two backend patterns:
-
-1. **Server Functions** (`createServerFn`)
-   - Used for app-internal logic.
-   - `src/lib/chat.functions.ts` — CRUD for threads and messages (protected by `requireSupabaseAuth`).
-
-2. **Server Routes** (`createFileRoute` with a `server` block)
-   - Used for raw HTTP endpoints.
-   - `src/routes/api/chat.ts` — authenticated chat gateway. It persists the current user message,
-     forwards only that current request and identifiers to the local Context Manager, converts the
-     completed answer to the AI SDK UI stream, and persists the assistant response. The legacy
-     Lovable provider is retained behind configuration.
-
-3. **Local Python service** (`backend/app`)
-   - `ContextManager` performs intent analysis, hybrid retrieval, reranking, deduplication,
-     memory selection, conversation compaction, token budgeting, and final prompt compilation.
-   - FastAPI exposes the compiled path on `http://127.0.0.1:8001` and calls the configured local
-     OpenAI-compatible model.
-
-### Data & Storage
-
-- **Chat data (persistent)** — `threads` and `messages` tables in Supabase. Row Level Security (RLS) ensures users can only access their own rows.
-- **Context data (local)** — document chunks, cached embeddings, student/episodic/conversation
-  memory, summaries, working memory, and artifacts live in `.local/alim-context.db` by default.
-- **Prototype data (local)** — assessments, planner events, materials, school links, and profile. Stored in `localStorage` via `AppDataProvider` and editable by the user. No backend or cloud sync for these.
-- **Demo mode** — A global toggle (`DemoMode`) populates the local state with sample data so the app looks realistic without a backend.
-
-### Swiss Grading Engine
-
-The grade logic is implemented in `src/lib/grade-math.ts` and `src/lib/mock/grades.ts`:
-
-- Swiss 6-point scale: 1 (lowest) to 6 (highest), passing at 4.0.
-- Teacher-entered grades can override point-based grades.
-- Averages are rounded to the nearest 0.5.
-- Failing grades (< 4.0) are rendered in the warning orange `#C96A00`.
-- Combined subject summaries (SPF Biology & Chemistry) average the component subject averages and appear as one contribution in the yearly average.
-
-### Design System
-
-The visual direction is a calm, premium, pre-Liquid-Glass Apple aesthetic:
-
-- Light background: `#F7F8FA`
-- Dark background: `#0D0E12`
-- Primary purple accent: `#6558D9`
-- Failing-grade warning: `#C96A00`
-- Solid neutral surfaces (no glassmorphism).
-- Helvetica Neue / system sans-serif stack.
-- 14 px border radius, generous padding, very subtle shadows.
-- Custom tokens defined in `src/styles.css` via Tailwind v4 `@theme` and CSS variables.
-
----
-
-## Project Structure
-
-```
-.
-├── src/
-│   ├── components/          # React components
-│   │   ├── ai-elements/     # Low-level AI chat primitives
-│   │   ├── app/             # App-specific feature components
-│   │   └── ui/              # shadcn/Radix UI primitives
-│   ├── hooks/               # Custom React hooks
-│   ├── integrations/        # Third-party integrations (Supabase, Lovable AI)
-│   ├── lib/                 # Utility libraries, mock data, state, grade math
-│   ├── routes/              # TanStack Start file-based routes
-│   ├── router.tsx           # Router factory
-│   ├── server.ts            # SSR error wrapper
-│   ├── start.ts             # TanStack Start app config + middleware
-│   └── styles.css           # Global design tokens and Tailwind imports
-├── backend/                 # Local Python Context Manager, FastAPI facade, and tests
-├── docs/                    # Current architecture and integration documentation
-├── lovabledocs/             # Mirror of docs/ for the Lovable editor
-├── supabase/                # Supabase configuration
-├── public/                  # Static assets
-├── package.json             # Dependencies and scripts
-├── vite.config.ts           # Vite / TanStack Start config
-├── tsconfig.json            # TypeScript configuration
-├── eslint.config.js         # ESLint config
-└── README.md                # This file
+```text
+study-swiss-star/
+├── backend/       Python API, context compiler, model lifecycle, startup orchestration
+├── frontend/      TanStack Start/React application and frontend documentation mirror
+├── material/      Source learning material before ingestion
+├── logs/          Runtime logs (generated logs are ignored)
+├── models/        Qwen download/check script and local model-weight directory
+├── supabase/      Supabase configuration and database migrations
+├── app-data/      Reusable local context database, caches, memory, and artifacts
+├── tests/         Backend, API, and process-level E2E tests plus test-result location
+├── docs/          Canonical architecture and operating documentation
+├── lovabledocs/   Byte-for-byte documentation mirror used by Lovable
+└── environment.yml Shared Conda bootstrap; setup code selects the platform runtime build
 ```
 
----
+Lovable metadata remains at the repository root because moving it would disconnect the project.
+Published Git history must not be rebased or force-pushed.
 
-## Directory & File Tree
+## Required model
 
-### `src/components/`
+The only core generation model is the Apache-2.0
+[`Qwen/Qwen3.8-27B`](https://huggingface.co/Qwen/Qwen3.8-27B) checkpoint. Alim downloads the
+`Q4_K_M` GGUF conversion maintained by the upstream llama.cpp organization. It is derived from the
+official checkpoint, is approximately 17.67 GiB, and is practical on both the 24 GB RTX 3090 and
+the 48 GB M4 Pro. The unquantized BF16 checkpoint is about 54 GB and cannot fit on either target
+machine once runtime memory is included.
 
-| Path | Purpose |
-|------|---------|
-| `AuthForm.tsx` | Sign-in / sign-up form for Google and email auth |
-| `StudyChat.tsx` | Main AI chat interface using `useChat` |
-| `ThemeToggle.tsx` | Sun/moon light/dark mode toggle |
-| `ThreadList.tsx` | Sidebar list of chat threads with CRUD actions |
-| `ai-elements/conversation.tsx` | Conversation container wrapper |
-| `ai-elements/message.tsx` | Individual AI message rendering |
-| `ai-elements/prompt-input.tsx` | Chat input field |
-| `ai-elements/shimmer.tsx` | Loading shimmer for streaming responses |
-| `app/AcademicYearSelector.tsx` | Global academic year switcher |
-| `app/AppHeader.tsx` | Top navigation bar with notifications, clock, and profile |
-| `app/AppShell.tsx` | Page layout wrapper with header, sidebar, and mobile nav |
-| `app/AssessmentActions.tsx` | Dropdown actions for a grade/test record (move, duplicate, delete) |
-| `app/AssessmentDialog.tsx` | Add/Edit test or grade dialog |
-| `app/Badges.tsx` | Reusable badges (Demo, Failing, Locked, etc.) |
-| `app/Breadcrumbs.tsx` | `PageNav`, `BackLink`, and breadcrumb trails |
-| `app/DemoMode.tsx` | Demo mode banner and toggle |
-| `app/EditProfileDialog.tsx` | Student profile editor |
-| `app/EventDetailDialog.tsx` | Detail view for a planner occurrence |
-| `app/EventDialog.tsx` | Add/Edit planner event form with recurrence and scope |
-| `app/GradeDisplay.tsx` | Exact/rounded average + performance line chart |
-| `app/LiveClock.tsx` | Global 24-hour live clock |
-| `app/MaterialsPanel.tsx` | Subject materials list panel |
-| `app/MobileNavigation.tsx` | Bottom navigation for mobile |
-| `app/NotificationCenter.tsx` | Header bell + notification feed |
-| `app/SchoolLinkDialog.tsx` | Add/Edit school link dialog |
-| `app/SchoolLinksSection.tsx` | School links tile grid for Home |
-| `app/States.tsx` | Empty states and loading states |
-| `app/StatsOverviewPanel.tsx` | Academic summary side panel |
-| `app/SubjectCard.tsx` | Subject card with grade history, sparkline, and SPF breakdown |
-| `app/Timetable.tsx` | 24-hour weekly drag-and-drop timetable |
-| `app/TranscriptImportDialog.tsx` | Simulated transcript OCR import flow |
+Qwen supports 262,144 native tokens. Alim chooses a safer working window from detected hardware:
 
-### `src/components/ui/`
+| Host | Runtime acceleration | Default total context | Reserved output |
+| --- | --- | ---: | ---: |
+| Apple Silicon with at least 40 GiB unified memory | Metal | 65,536 | 16,384 |
+| NVIDIA GPU with 20–31 GiB VRAM | CUDA | 32,768 | 8,192 |
+| Linux without usable NVIDIA drivers | CPU fallback | 16,384 | 4,096 |
 
-Standard shadcn/ui primitives built on Radix UI. Notable files:
+Explicit `ALIM_MAX_CONTEXT_TOKENS` and `ALIM_RESERVED_OUTPUT_TOKENS` values override detection.
 
-| Path | Purpose |
-|------|---------|
-| `button.tsx` | Primary button variants with custom sizing |
-| `dialog.tsx` | Modal/dialog primitives |
-| `dropdown-menu.tsx` | Dropdown menu primitives |
-| `form.tsx` | `react-hook-form` integration helpers |
-| `input.tsx`, `textarea.tsx` | Form inputs |
-| `select.tsx` | Select dropdowns |
-| `sonner.tsx` | Toast notifications |
-| `tabs.tsx` | Tab groups |
-| `calendar.tsx` | Date picker calendar |
-| `badge.tsx` | Badge variants |
-| `chart.tsx` | Recharts wrapper helpers |
-| `slider.tsx` | Slider inputs |
-| `switch.tsx` | Toggle switches |
-| `toggle-group.tsx` | Segmented toggle controls |
-
-### `src/hooks/`
-
-| Path | Purpose |
-|------|---------|
-| `use-mobile.tsx` | Mobile breakpoint detection |
-| `use-theme.tsx` | Light/dark theme provider and hook |
-
-### `src/integrations/`
-
-| Path | Purpose |
-|------|---------|
-| `lovable/index.ts` | Lovable AI integration helpers |
-| `supabase/auth-attacher.ts` | Client-side bearer-token middleware for server functions |
-| `supabase/auth-middleware.ts` | `requireSupabaseAuth` server middleware |
-| `supabase/client.server.ts` | Server-side Supabase client factory |
-| `supabase/client.ts` | Browser Supabase client (auto-generated) |
-| `supabase/types.ts` | Supabase generated types (auto-generated) |
-
-### `src/lib/`
-
-| Path | Purpose |
-|------|---------|
-| `ai-gateway.server.ts` | Lovable AI Gateway provider factory |
-| `chat.functions.ts` | Server functions for thread/message CRUD |
-| `context-backend.server.ts` | Server-only local Python API client and mode selection |
-| `context-backend.types.ts` | Shared context-response/source types |
-| `date-utils.ts` | ISO date string helpers (timezone-safe) |
-| `error-capture.ts` | Error capture utilities |
-| `error-page.ts` | SSR-friendly error HTML page |
-| `grade-math.ts` | Swiss grade math (averages, rounding, combined subject logic) |
-| `lovable-error-reporting.ts` | Lovable error reporting integration |
-| `mock/academic.ts` | Academic years and grade levels |
-| `mock/grades.ts` | Seed grade records and rounding helpers |
-| `mock/materials.ts` | Subject modes and material mock data |
-| `mock/subjects.ts` | Swiss Gymnasium subject list, language mapping, and SPF combined subject |
-| `notifications.ts` | Build notification feed from planner events |
-| `store/academic-year.tsx` | Global academic year context |
-| `store/app-data.tsx` | Editable local state provider |
-| `store/demo-data.ts` | Demo data seed generator |
-| `store/types.ts` | Data models (Assessment, PlannerEvent, Material, SchoolLink, etc.) |
-| `utils.ts` | `cn()` helper and small utilities |
-
-### `src/routes/`
-
-TanStack Start file-based routes.
-
-| Path | URL | Purpose |
-|------|-----|---------|
-| `__root.tsx` | `/*` | Root layout with providers, auth listener, error boundaries |
-| `index.tsx` | `/` | Marketing/title screen with entry cards |
-| `auth.tsx` | `/auth` | Sign-in / sign-up page |
-| `_authenticated/route.tsx` | `/_authenticated/*` | Protected layout; redirects to `/auth` if not signed in |
-| `_authenticated/chat.index.tsx` | `/chat` | Redirects to a new or existing thread |
-| `_authenticated/chat.$threadId.tsx` | `/chat/:threadId` | Specific AI chat thread |
-| `_authenticated/diagnostics.tsx` | `/diagnostics` | Diagnostics page |
-| `_authenticated/feedback.tsx` | `/feedback` | Feedback page |
-| `_authenticated/help.tsx` | `/help` | Help page |
-| `_authenticated/home.tsx` | `/home` | Main dashboard after login |
-| `_authenticated/planner.tsx` | `/planner` | Weekly planner with timetable, month, and list views |
-| `_authenticated/profile.tsx` | `/profile` | Student profile and academic summary |
-| `_authenticated/school.index.tsx` | `/school` | School subjects overview with grades, filters, and sorting |
-| `_authenticated/school.$subject.tsx` | `/school/:subject` | Subject-specific dashboard with study modes and SPF component switch |
-| `_authenticated/settings.tsx` | `/settings` | Settings page |
-| `_authenticated/stats.tsx` | `/stats` | Academic statistics and records |
-| `api/chat.ts` | `/api/chat` | Authenticated local-context chat gateway and optional cloud fallback |
-
-### Root config files
-
-| File | Purpose |
-|------|---------|
-| `vite.config.ts` | TanStack Start / Vite configuration |
-| `tsconfig.json` | TypeScript compiler options |
-| `eslint.config.js` | Lint rules |
-| `package.json` | Dependencies and npm/bun scripts |
-| `bunfig.toml` | Bun configuration |
-| `components.json` | shadcn/ui configuration |
-| `src/server.ts` | SSR entry point wrapper for error handling |
-| `src/start.ts` | TanStack Start app instance and middleware |
-| `src/router.tsx` | Router factory with QueryClient |
-| `src/routeTree.gen.ts` | Auto-generated route tree (do not edit) |
-
----
-
-## Key Conventions
-
-- **File-based routing** — every `.tsx` file in `src/routes/` becomes a URL. Layout routes start with `_` and render `<Outlet />`.
-- **Server functions** — declared in `src/lib/*.functions.ts` using `createServerFn` from `@tanstack/react-start`. They are thin wrappers; heavy logic lives in imported helpers.
-- **Auth protection** — server functions that touch user data use `requireSupabaseAuth`. Public routes that need auth wrap children in `_authenticated/route.tsx`.
-- **Local state** — the UI prototype stores data in `localStorage` via `AppDataProvider` so it is editable without a backend.
-- **Design tokens** — all colors, spacing, radii, and shadows are defined as semantic CSS variables in `src/styles.css`.
-- **No server-only imports in client code** — server-only helpers are named `*.server.ts`; shared
-  type declarations live in non-server modules.
-- **One context boundary** — only Python's `ContextCompiler` constructs model messages. The
-  frontend route does not forward the complete UI transcript to the local model.
-- **Combined subjects** — `SCHOOL_SUBJECTS` in `src/lib/mock/subjects.ts` is the canonical top-level list; individual SPF Biology and SPF Chemistry are components, not top-level cards.
-
----
-
-## Running Locally
-
-The app is a standard TanStack Start project. It can be run with Bun or Node.js (npm/pnpm).
-
-### Prerequisites
-
-- Bun 1.2+ or Node.js 22+
-- Python 3.11+ and `uv`
-- A local OpenAI-compatible model endpoint (Ollama is the default)
-- A Lovable Cloud / Supabase project for the chat feature
-
-### Steps
+Check, estimate, or download the checkpoint:
 
 ```bash
-# Clone the repository
-git clone <this-repository-url>
-cd <repository-name>
-
-# Install dependencies
-bun install
-# or
-npm install
-
-# Install and start the local context backend (second terminal)
-cd backend
-uv sync --extra dev --extra documents
-uv run uvicorn app.main:app --reload --host 127.0.0.1 --port 8001
-
-# Start the frontend from the repository root
-cd ..
-bun run dev
-# or
-npm run dev
+uv run --project backend python models/download_qwen3_8_27b.py --check
+uv run --project backend python models/download_qwen3_8_27b.py --dry-run
+uv run --project backend python models/download_qwen3_8_27b.py
 ```
 
-The frontend is available at `http://localhost:8080`; FastAPI documentation is at
-`http://127.0.0.1:8001/docs`. School, Planner, Stats, and Profile remain usable from local state
-when the Python service or model is offline.
+The downloader checks first, skips a complete checkpoint, resumes partial snapshots, serializes
+concurrent Linux/macOS downloads, and validates the selected GGUF afterward.
+Weights are stored only in `models/Qwen3.8-27B/` and ignored by Git.
 
----
+## Environment setup
 
-## Environment Variables
+The platform-aware bootstrap uses one Conda environment for Python, Node, npm, `uv`, and
+`llama-server`. It selects CUDA on a Linux host whose NVIDIA driver responds, Metal/Accelerate on
+Apple Silicon, or a functional CPU fallback on Linux.
 
-Supabase variables are managed by Lovable; `ALIM_*` values belong to the local server/backend
-environment. Do not commit real secrets.
+```bash
+python3 backend/scripts/setup_environment.py
+conda activate alim-study
+```
 
-| Variable | Required for | Description |
-|----------|--------------|-------------|
-| `SUPABASE_URL` | Chat, Auth | Supabase project URL |
-| `SUPABASE_PUBLISHABLE_KEY` | Chat, Auth | Supabase anon/publishable key |
-| `LOVABLE_API_KEY` | Optional fallback | Lovable AI Gateway key |
-| `VITE_SUPABASE_URL` | Auth client | Public Supabase URL for the browser |
-| `VITE_SUPABASE_PUBLISHABLE_KEY` | Auth client | Public Supabase key for the browser |
-| `ALIM_AI_BACKEND` | Frontend server | `context` (default) or `lovable` |
-| `ALIM_CONTEXT_BACKEND_URL` | Frontend server | Python API URL; default `http://127.0.0.1:8001` |
-| `ALIM_ENABLE_LOVABLE_FALLBACK` | Frontend server | Opt-in cloud fallback (`false` by default) |
-| `ALIM_CONTEXT_DB` | Python backend | Local SQLite path; default `.local/alim-context.db` |
-| `ALIM_LLM_BASE_URL` | Python backend | Local OpenAI-compatible base URL |
-| `ALIM_LLM_MODEL` | Python backend | Local model identifier |
-| `ALIM_EMBEDDING_MODEL` | Python backend | Optional local embedding model; hashing fallback when unset |
+If `conda activate` is not initialized in the shell, use the supplied Anaconda activation script:
 
-The Supabase client configuration and auth middleware are auto-generated by the Lovable platform; do not edit them manually.
+```bash
+source ~/anaconda3/bin/activate alim-study
+```
 
-See [`docs/CONTEXT_MANAGER.md`](docs/CONTEXT_MANAGER.md) and `backend/.env.example` for the full
-retrieval, memory, budget, and local model configuration.
+Preview the commands or include the 17.67 GiB model download in the same setup run:
 
----
+```bash
+python3 backend/scripts/setup_environment.py --dry-run
+python3 backend/scripts/setup_environment.py --with-model
+python3 backend/scripts/setup_environment.py --check
+```
 
-## Scripts
+On Ubuntu/Debian, repair/install NVIDIA drivers before setup if CUDA is desired; rerunning setup
+after a driver repair replaces the CPU llama.cpp build with its CUDA build. On an M4 Pro, Conda
+selects the native `osx-arm64` Accelerate/Metal build. Rosetta is neither required nor recommended.
 
-| Script | Command | Purpose |
-|--------|---------|---------|
-| `dev` | `bun run dev` | Start Vite dev server |
-| `build` | `bun run build` | Production build |
-| `build:dev` | `bun run build:dev` | Development build |
-| `preview` | `bun run preview` | Preview production build |
-| `lint` | `bun run lint` | Run ESLint |
-| `format` | `bun run format` | Format code with Prettier |
-| Python tests | `PYTHONPATH=backend python3 -m unittest discover -s backend/tests -v` | Run context unit/integration tests |
+## Starting the complete app
 
----
+After the checkpoint and runtime are installed:
 
-## License
+```bash
+python backend/scripts/start_app.py
+```
 
-This project is private and owned by its creator. It was built with [Lovable](https://lovable.dev).
+Startup performs this sequence:
+
+1. Validate `models/Qwen3.8-27B` without network access.
+2. Detect Linux/CUDA, Linux/CPU, or Apple-Silicon/Metal settings.
+3. Start or reuse local `llama-server` on `127.0.0.1:8000` with automatic memory fitting.
+4. Wait until `/v1/models` confirms `Qwen/Qwen3.8-27B` is loaded in memory.
+5. Complete FastAPI startup on `127.0.0.1:8001`.
+6. Start the frontend on port 8080.
+
+The first tutoring request therefore does not pay model-loading latency. If the checkpoint is
+missing, `llama-server` is unavailable, or preload fails, backend startup fails with an actionable message
+rather than silently selecting another model. Logs are written under `logs/`.
+
+For independent development, start the services from the repository root:
+
+```bash
+ALIM_MODEL_AUTOSTART=false uv run --project backend uvicorn app.main:app --app-dir backend --host 127.0.0.1 --port 8001
+cd frontend && npm run dev
+```
+
+Disabling autostart is intended for tests or when an already-loaded compatible server is managed
+externally. The production default is `ALIM_MODEL_AUTOSTART=true`.
+
+## Context compilation and internet retrieval
+
+The frontend sends only the current question and scoped identifiers to FastAPI. The backend
+selectively retrieves student memory, learning events, relevant conversation history, syllabus,
+local learning material, artifacts, working state, and—only for explicitly current/web-oriented
+questions—fresh internet context.
+
+Internet retrieval is enabled by default through a zero-key Wikipedia/MediaWiki adapter. Results
+carry URL and fetch-time provenance, are treated as untrusted reference text, and are cached in
+`app-data/context/alim-context.db`. Network failure does not prevent a locally answerable request.
+`allow_web=false` disables browsing per request and `ALIM_WEB_ENABLED=false` disables it globally.
+Conversational search instructions such as “browse online and explain … in one sentence” are
+removed before lookup so named topics—not presentation wording—drive result relevance.
+
+All sources enter the same priority budget. Web context has a 6,000-token section ceiling by
+default and can never push the compiled input beyond:
+
+```text
+input limit = detected/overridden total context - reserved output
+
+M4 Pro default:       65,536 - 16,384 = 49,152 input tokens
+RTX 3090 default:     32,768 -  8,192 = 24,576 input tokens
+Linux CPU fallback:   16,384 -  4,096 = 12,288 input tokens
+```
+
+Low-priority web/history material is removed before P0 task state. The exact compiled total is
+checked before the request is sent to Qwen.
+
+## Configuration
+
+| Variable | Default | Purpose |
+| --- | --- | --- |
+| `ALIM_MODEL_PATH` | `models/Qwen3.8-27B` | Q4 GGUF checkpoint directory |
+| `ALIM_MODEL_AUTOSTART` | `true` | Preload and manage llama.cpp during backend lifespan |
+| `ALIM_MODEL_SERVER_EXECUTABLE` | `llama-server` | Runtime executable selected by setup |
+| `ALIM_MODEL_PORT` | `8000` | Local model-server port |
+| `ALIM_LLM_BASE_URL` | `http://127.0.0.1:8000/v1` | OpenAI-compatible Qwen endpoint |
+| `ALIM_LLM_MODEL` | `Qwen/Qwen3.8-27B` | Required served model name |
+| `ALIM_CONTEXT_DB` | `app-data/context/alim-context.db` | Reusable local context state |
+| `ALIM_MAX_CONTEXT_TOKENS` | hardware-adaptive | Total model context budget |
+| `ALIM_RESERVED_OUTPUT_TOKENS` | one quarter, up to 16,384 | Guaranteed output allowance |
+| `ALIM_WEB_ENABLED` | `true` | Permit intent-gated internet retrieval |
+| `ALIM_WEB_TOKENS` | `6000` | Maximum web-context section size |
+| `ALIM_WEB_MAX_RESULTS` | `4` | Maximum fetched results per query |
+
+See `backend/.env.example` and [context documentation](docs/CONTEXT_MANAGER.md) for all tuning
+values.
+
+## Testing
+
+```bash
+PYTHONPATH=backend:. uv run --project backend pytest tests/backend -q
+PYTHONPATH=backend:. uv run --project backend pytest tests/e2e -q
+uv run --project backend ruff check backend tests models
+uv run --project backend ruff format --check backend tests models
+
+cd frontend
+npm run typecheck
+npm run build
+```
+
+The automated suite never contacts Lovable or Supabase. It validates both simulated operating-system
+profiles, checkpoint presence, managed preload/readiness, exact Qwen routing, web provenance, the
+final context ceiling, API behavior, linting, type checking, and the production frontend build.
+The reproducible real-weight smoke procedure is documented in `tests/README.md`; unlike the fast
+process fixture, it loads the 17.67 GiB checkpoint and is run deliberately on an inference host.
+
+## Data ownership and privacy
+
+- Supabase stores authenticated threads and messages.
+- Browser prototype state remains in `localStorage`.
+- `app-data/` stores reusable local RAG/memory/artifact/web-cache state.
+- `material/` contains operator-supplied learning sources.
+- `models/` contains local open weights.
+- Internet retrieval sends the search text to the configured search provider; disable it globally
+  or per request when that disclosure is not acceptable.
+- The backend does not silently fall back to an external AI model.
+
+## Further documentation
+
+- [Context manager](docs/CONTEXT_MANAGER.md)
+- [Qwen runtime and internet context](docs/QWEN_MODEL_RUNTIME_AND_WEB.md)
+- [Local development](docs/LOCAL_DEV_WITH_PYTHON_BACKEND.md)
+- [Linux and Apple Silicon setup](docs/CROSS_PLATFORM_SETUP.md)
+- [API contracts](docs/API_EXPECTATIONS.md)
+- [Frontend architecture](docs/FRONTEND_ARCHITECTURE.md)
+- [State and storage](docs/STATE_AND_STORAGE.md)

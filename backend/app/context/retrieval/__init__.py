@@ -1,3 +1,5 @@
+"""Sparse, dense, hybrid, and reranking interfaces."""
+
 from .dense import (
     DenseRetriever,
     Embedder,

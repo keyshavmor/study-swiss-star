@@ -1,3 +1,5 @@
+"""Timestamped learning-event recording and relevance retrieval."""
+
 from __future__ import annotations
 
 import uuid
@@ -22,7 +24,11 @@ ALLOWED_EVENT_TYPES = {
 
 
 class EpisodicMemoryManager:
+    """Manage assessments and activities used in progress-aware tutoring."""
+
     def __init__(self, store: SQLiteContextStore, counter: TokenCounter) -> None:
+        """Configure the event store and token counter."""
+
         self.store = store
         self.counter = counter
 
@@ -39,6 +45,8 @@ class EpisodicMemoryManager:
         metadata: dict[str, Any] | None = None,
         event_id: str | None = None,
     ) -> LearningEvent:
+        """Normalize and persist one learning event."""
+
         if event_type not in ALLOWED_EVENT_TYPES:
             raise ValueError(f"Unsupported learning event type: {event_type}")
         if not content.strip():
@@ -66,6 +74,8 @@ class EpisodicMemoryManager:
         topics: list[str],
         limit: int,
     ) -> list[ContextItem]:
+        """Rank past events by subject, topic, wording, importance, and recency."""
+
         events = self.store.list_events(student_id, subject=subject)
         topic_set = {topic.casefold() for topic in topics}
         now = datetime.now(UTC)

@@ -1,3 +1,5 @@
+"""Thread-safe SQLite persistence for all reusable local context and web cache data."""
+
 from __future__ import annotations
 
 import json
@@ -19,14 +21,20 @@ from .models import (
 
 
 def _iso(value: datetime | None) -> str | None:
+    """Serialize a timestamp in UTC for SQLite."""
+
     return value.astimezone(UTC).isoformat() if value else None
 
 
 def _dt(value: str | None) -> datetime | None:
+    """Restore an optional ISO timestamp from SQLite."""
+
     return datetime.fromisoformat(value) if value else None
 
 
 def _json(value: Any) -> str:
+    """Serialize compact Unicode JSON for structured SQLite columns."""
+
     return json.dumps(value, ensure_ascii=False, separators=(",", ":"))
 
 
@@ -34,6 +42,8 @@ class SQLiteContextStore:
     """Local-first structured store. Original messages and artifact bodies are never discarded."""
 
     def __init__(self, path: str | Path = ":memory:") -> None:
+        """Open a thread-shareable SQLite database and apply its schema."""
+
         self.path = str(path)
         if self.path != ":memory:":
             Path(self.path).parent.mkdir(parents=True, exist_ok=True)
@@ -43,9 +53,13 @@ class SQLiteContextStore:
         self._migrate()
 
     def close(self) -> None:
+        """Close the underlying SQLite connection."""
+
         self._connection.close()
 
     def _migrate(self) -> None:
+        """Create idempotent schema version one and its supporting indexes."""
+
         with self._lock, self._connection:
             self._connection.executescript(
                 """
@@ -177,6 +191,13 @@ class SQLiteContextStore:
                 );
                 CREATE INDEX IF NOT EXISTS working_memory_lookup_idx
                     ON working_memory(student_id, conversation_id, task_id, expires_at);
+
+                CREATE TABLE IF NOT EXISTS web_cache (
+                    query TEXT PRIMARY KEY,
+                    results TEXT NOT NULL,
+                    fetched_at TEXT NOT NULL,
+                    expires_at TEXT NOT NULL
+                );
                 """
             )
             self._connection.execute(
@@ -185,6 +206,8 @@ class SQLiteContextStore:
             )
 
     def add_chunks(self, chunks: Iterable[DocumentChunk], *, student_id: str | None = None) -> None:
+        """Insert or replace a batch of learning-material chunks atomically."""
+
         with self._lock, self._connection:
             for chunk in chunks:
                 self._connection.execute(
@@ -236,6 +259,8 @@ class SQLiteContextStore:
                 )
 
     def update_chunk_embedding(self, chunk_id: str, embedding: list[float]) -> None:
+        """Persist a lazily computed embedding for an existing chunk."""
+
         with self._lock, self._connection:
             self._connection.execute(
                 "UPDATE document_chunks SET embedding=? WHERE id=?", (_json(embedding), chunk_id)
@@ -249,6 +274,8 @@ class SQLiteContextStore:
         document_ids: set[str] | None = None,
         limit: int = 500,
     ) -> list[DocumentChunk]:
+        """List recent chunks filtered by subject, document type, or document ID."""
+
         clauses: list[str] = []
         values: list[Any] = []
         if subject:
@@ -271,6 +298,8 @@ class SQLiteContextStore:
 
     @staticmethod
     def _chunk(row: sqlite3.Row) -> DocumentChunk:
+        """Hydrate one document chunk from a SQLite row."""
+
         return DocumentChunk(
             id=row["id"],
             document_id=row["document_id"],
@@ -292,6 +321,8 @@ class SQLiteContextStore:
         )
 
     def upsert_memory(self, memory: StudentMemory) -> None:
+        """Create or update one evidence-backed student memory."""
+
         with self._lock, self._connection:
             self._connection.execute(
                 """INSERT INTO student_memories
@@ -321,6 +352,8 @@ class SQLiteContextStore:
             )
 
     def list_memories(self, student_id: str, *, subject: str | None = None) -> list[StudentMemory]:
+        """Return a student's memories ordered by importance and freshness."""
+
         query = "SELECT * FROM student_memories WHERE student_id=?"
         values: list[Any] = [student_id]
         if subject:
@@ -349,6 +382,8 @@ class SQLiteContextStore:
         ]
 
     def add_event(self, event: LearningEvent) -> None:
+        """Persist an idempotent learning event."""
+
         with self._lock, self._connection:
             self._connection.execute(
                 """INSERT OR REPLACE INTO learning_events
@@ -368,6 +403,8 @@ class SQLiteContextStore:
             )
 
     def list_events(self, student_id: str, *, subject: str | None = None) -> list[LearningEvent]:
+        """Return newest learning events for a student and optional subject."""
+
         query = "SELECT * FROM learning_events WHERE student_id=?"
         values: list[Any] = [student_id]
         if subject:
@@ -391,6 +428,8 @@ class SQLiteContextStore:
         ]
 
     def add_message(self, message: ConversationMessage) -> None:
+        """Persist a message once, using its ID for idempotency."""
+
         with self._lock, self._connection:
             self._connection.execute(
                 """INSERT OR IGNORE INTO conversation_messages
@@ -409,6 +448,8 @@ class SQLiteContextStore:
             )
 
     def list_messages(self, student_id: str, conversation_id: str) -> list[ConversationMessage]:
+        """Return one conversation in stable chronological order."""
+
         rows = self._connection.execute(
             """SELECT * FROM conversation_messages
             WHERE student_id=? AND conversation_id=? ORDER BY created_at ASC, rowid ASC""",
@@ -429,6 +470,8 @@ class SQLiteContextStore:
         ]
 
     def add_summary(self, summary: ConversationSummary) -> None:
+        """Persist a new rolling conversation summary."""
+
         with self._lock, self._connection:
             self._connection.execute(
                 """INSERT INTO conversation_summaries
@@ -446,6 +489,8 @@ class SQLiteContextStore:
             )
 
     def latest_summary(self, student_id: str, conversation_id: str) -> ConversationSummary | None:
+        """Return the newest summary for a conversation, if one exists."""
+
         row = self._connection.execute(
             """SELECT * FROM conversation_summaries
             WHERE student_id=? AND conversation_id=? ORDER BY created_at DESC, rowid DESC LIMIT 1""",
@@ -464,6 +509,8 @@ class SQLiteContextStore:
         )
 
     def add_artifact(self, artifact: ContextArtifact, content: str) -> None:
+        """Persist both compact artifact metadata and its full reusable content."""
+
         with self._lock, self._connection:
             self._connection.execute(
                 """INSERT OR REPLACE INTO context_artifacts
@@ -486,6 +533,8 @@ class SQLiteContextStore:
             )
 
     def list_artifacts(self, student_id: str) -> list[ContextArtifact]:
+        """Return searchable global and student-owned artifacts."""
+
         rows = self._connection.execute(
             """SELECT * FROM context_artifacts
             WHERE (student_id=? OR student_id IS NULL) AND searchable=1 ORDER BY created_at DESC""",
@@ -521,6 +570,8 @@ class SQLiteContextStore:
         created_at: datetime,
         expires_at: datetime | None,
     ) -> None:
+        """Persist active task state with an optional expiry time."""
+
         with self._lock, self._connection:
             self._connection.execute(
                 """INSERT OR REPLACE INTO working_memory
@@ -542,6 +593,8 @@ class SQLiteContextStore:
     def list_working_memory(
         self, student_id: str, conversation_id: str, *, now: datetime
     ) -> list[dict[str, Any]]:
+        """Return unexpired global or conversation-scoped task state."""
+
         rows = self._connection.execute(
             """SELECT * FROM working_memory WHERE student_id=?
             AND (conversation_id=? OR conversation_id IS NULL)
@@ -551,9 +604,36 @@ class SQLiteContextStore:
         return [dict(row) | {"metadata": json.loads(row["metadata"])} for row in rows]
 
     def purge_expired_working_memory(self, *, now: datetime) -> int:
+        """Delete expired working state and return the affected row count."""
+
         with self._lock, self._connection:
             cursor = self._connection.execute(
                 "DELETE FROM working_memory WHERE expires_at IS NOT NULL AND expires_at<=?",
                 (_iso(now),),
             )
             return cursor.rowcount
+
+    def get_web_cache(self, query: str, *, now: datetime) -> list[dict[str, Any]] | None:
+        """Return fresh cached web results for a normalized query."""
+
+        row = self._connection.execute(
+            "SELECT results FROM web_cache WHERE query=? AND expires_at>?", (query, _iso(now))
+        ).fetchone()
+        return json.loads(row["results"]) if row else None
+
+    def set_web_cache(
+        self,
+        query: str,
+        results: list[dict[str, Any]],
+        *,
+        fetched_at: datetime,
+        expires_at: datetime,
+    ) -> None:
+        """Replace cached web results and their expiry metadata."""
+
+        with self._lock, self._connection:
+            self._connection.execute(
+                """INSERT OR REPLACE INTO web_cache(query, results, fetched_at, expires_at)
+                VALUES (?, ?, ?, ?)""",
+                (query, _json(results), _iso(fetched_at), _iso(expires_at)),
+            )

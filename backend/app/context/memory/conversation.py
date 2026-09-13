@@ -1,3 +1,5 @@
+"""Conversation persistence, deterministic compaction, and relevant-turn retrieval."""
+
 from __future__ import annotations
 
 import uuid
@@ -17,20 +19,29 @@ from ..tokenization import TokenCounter
 
 
 class ConversationSummarizer(Protocol):
+    """Create compact context from a sequence of older messages."""
+
     async def summarize(
         self, previous_summary: str | None, messages: list[ConversationMessage]
-    ) -> str: ...
+    ) -> str:
+        """Return a compact representation of prior summary and messages."""
+
+        ...
 
 
 class DeterministicConversationSummarizer:
     """Local fallback that keeps task/learning facts without another model call."""
 
     def __init__(self, max_entries: int = 18) -> None:
+        """Set the maximum number of meaningful entries retained per summary."""
+
         self.max_entries = max_entries
 
     async def summarize(
         self, previous_summary: str | None, messages: list[ConversationMessage]
     ) -> str:
+        """Build a bounded role-labelled extract without invoking another model."""
+
         entries: list[str] = []
         if previous_summary:
             entries.append("Previous compacted context:\n" + previous_summary.strip())
@@ -50,6 +61,8 @@ class DeterministicConversationSummarizer:
 
 
 class ConversationMemoryManager:
+    """Store full threads while retrieving recent, summarized, and relevant history."""
+
     def __init__(
         self,
         store: SQLiteContextStore,
@@ -57,6 +70,8 @@ class ConversationMemoryManager:
         config: ConversationConfig,
         summarizer: ConversationSummarizer | None = None,
     ) -> None:
+        """Configure full-message storage, counting, and summarization policy."""
+
         self.store = store
         self.counter = counter
         self.config = config
@@ -72,6 +87,8 @@ class ConversationMemoryManager:
         message_id: str | None = None,
         metadata: dict | None = None,
     ) -> ConversationMessage:
+        """Append one idempotent conversation message."""
+
         if role not in {"user", "assistant", "system"}:
             raise ValueError(f"Unsupported conversation role: {role}")
         message = ConversationMessage(
@@ -89,6 +106,8 @@ class ConversationMemoryManager:
     async def compact_if_needed(
         self, student_id: str, conversation_id: str
     ) -> ConversationSummary | None:
+        """Summarize older turns after configured count or token thresholds are crossed."""
+
         messages = self.store.list_messages(student_id, conversation_id)
         previous = self.store.latest_summary(student_id, conversation_id)
         covered = set(previous.covered_message_ids if previous else [])
@@ -118,6 +137,8 @@ class ConversationMemoryManager:
     def retrieve(
         self, student_id: str, conversation_id: str, query: str
     ) -> tuple[list[ContextItem], dict[str, int]]:
+        """Return a bounded mix of summary, recent turns, and relevant older messages."""
+
         messages = self.store.list_messages(student_id, conversation_id)
         recent = messages[-self.config.recent_message_count :]
         recent_ids = {message.id for message in recent}
@@ -168,6 +189,8 @@ class ConversationMemoryManager:
 
     @staticmethod
     def _message_item(message: ConversationMessage, priority: ContextPriority) -> ContextItem:
+        """Convert a persisted message into a ranked prompt context item."""
+
         return ContextItem(
             id=message.id,
             type=ContextType.CONVERSATION,

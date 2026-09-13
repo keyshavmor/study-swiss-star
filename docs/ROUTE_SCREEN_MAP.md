@@ -1,15 +1,15 @@
 # Route & Screen Map
 
-Every route in `src/routes/`, its data today, and its future Python-backend dependency.
-Auth-gated routes live under `src/routes/_authenticated/` and are protected by
-`src/routes/_authenticated/route.tsx`.
+Every route in `frontend/src/routes/`, its data today, and its future Python-backend dependency.
+Auth-gated routes live under `frontend/src/routes/_authenticated/` and are protected by
+`frontend/src/routes/_authenticated/route.tsx`.
 
 ## Overview table
 
 | URL | Route file | Screen | Auth | Frontend-only possible? |
 | --- | --- | --- | --- | --- |
-| `/` | `src/routes/index.tsx` | Title screen | No | Yes |
-| `/auth` | `src/routes/auth.tsx` | Sign in / sign up | No | No (Supabase) |
+| `/` | `frontend/src/routes/index.tsx` | Title screen | No | Yes |
+| `/auth` | `frontend/src/routes/auth.tsx` | Sign in / sign up | No | No (Supabase) |
 | `/home` | `_authenticated/home.tsx` | Home dashboard | Yes | Yes (today) |
 | `/chat` | `_authenticated/chat.index.tsx` | Chat redirect | Yes | No |
 | `/chat/$threadId` | `_authenticated/chat.$threadId.tsx` | Study chat | Yes | No |
@@ -22,19 +22,19 @@ Auth-gated routes live under `src/routes/_authenticated/` and are protected by
 | `/help` | `_authenticated/help.tsx` | Help | Yes | Yes |
 | `/settings` | `_authenticated/settings.tsx` | Settings | Yes | Partly |
 | `/diagnostics` | `_authenticated/diagnostics.tsx` | Diagnostics | Yes | No (needs health) |
-| `POST /api/chat` | `src/routes/api/chat.ts` | Server route | Bearer | No |
+| `POST /api/chat` | `frontend/src/routes/api/chat.ts` | Server route | Bearer | No |
 
 ## Detail
 
 ### `/` — Title screen
-- **File:** `src/routes/index.tsx` · **Auth:** no
+- **File:** `frontend/src/routes/index.tsx` · **Auth:** no
 - **Purpose:** entry screen with "School" and "Planner" cards, theme toggle.
 - **Components:** `ThemeToggle`, `LiveClock`, `Button`, `Card`.
 - **Data source / storage:** static JSX; theme in `localStorage`.
 - **Future backend:** none. **Endpoints:** none. **Can stay frontend-only: yes.**
 
 ### `/auth` — Sign in / sign up
-- **File:** `src/routes/auth.tsx` · **Auth:** no (redirects when signed in)
+- **File:** `frontend/src/routes/auth.tsx` · **Auth:** no (redirects when signed in)
 - **Components:** `AuthForm.tsx`, `Input`, `Button`.
 - **Data source:** `supabase.auth.signInWithPassword` / `signUp` / Google OAuth.
 - **Storage:** Supabase session in browser storage.
@@ -58,7 +58,7 @@ Auth-gated routes live under `src/routes/_authenticated/` and are protected by
   `GET /api/chat/threads` + `POST /api/chat/threads`. **Frontend-only: no.**
 
 ### `/chat/$threadId` — Study chat
-- **File:** `_authenticated/chat.$threadId.tsx` → `src/components/StudyChat.tsx`
+- **File:** `_authenticated/chat.$threadId.tsx` → `frontend/src/components/StudyChat.tsx`
 - **Components:** `StudyChat`, `ThreadList`, `ai-elements/conversation|message|prompt-input|shimmer`, `ReactMarkdown`, `ThemeToggle`.
 - **Data source today:** `listThreads`, `listMessages`, `createThread`, `deleteThread` server
   functions; `useChat` → authenticated `POST /api/chat` → local Python Context Manager by default.
@@ -72,8 +72,8 @@ Auth-gated routes live under `src/routes/_authenticated/` and are protected by
 - **File:** `_authenticated/school.index.tsx`
 - **Purpose:** 15 top-level subject cards, sort/filter, yearly average, failing-subject alerts.
 - **Components:** `SubjectCard`, `StatsOverviewPanel`, `GradeDisplay`, `Badges`, `AcademicYearSelector`, `AssessmentDialog`, `TranscriptImportDialog`, `DemoMode`.
-- **Data source:** `SUBJECTS` in `src/lib/mock/subjects.ts` + assessments from `AppDataProvider`,
-  aggregated by `src/lib/grade-math.ts` (`summariseSubjectView`, `summariseYear`).
+- **Data source:** `SUBJECTS` in `frontend/src/lib/mock/subjects.ts` + assessments from `AppDataProvider`,
+  aggregated by `frontend/src/lib/grade-math.ts` (`summariseSubjectView`, `summariseYear`).
 - **Storage:** static module + `localStorage`.
 - **Future backend:** optional `GET /api/subjects` to align subject metadata/materials counts with
   what the RAG index actually contains. Grades stay local.
@@ -95,7 +95,7 @@ Auth-gated routes live under `src/routes/_authenticated/` and are protected by
 ### `/planner` — Weekly planner
 - **File:** `_authenticated/planner.tsx`
 - **Components:** `Timetable`, `EventDialog`, `EventDetailDialog`, `States`, conflict panel.
-- **Data source / storage:** `AppDataProvider` events + recurrence expansion in `src/lib/date-utils.ts`; `localStorage`.
+- **Data source / storage:** `AppDataProvider` events + recurrence expansion in `frontend/src/lib/date-utils.ts`; `localStorage`.
 - **Future backend:** AI study-plan generation only.
 - **Endpoints:** `POST /api/study-plan/generate`. **Frontend-only: yes** except generation.
 
@@ -132,10 +132,10 @@ Auth-gated routes live under `src/routes/_authenticated/` and are protected by
 - **Endpoints:** `GET /health`, `GET /api/model/status`. **Frontend-only: no.**
 
 ### `POST /api/chat` — server route
-- **File:** `src/routes/api/chat.ts`
+- **File:** `frontend/src/routes/api/chat.ts`
 - **Auth:** `Authorization: Bearer <supabase access token>`, validated with `auth.getClaims`.
-- **Today:** verifies thread ownership, inserts the user message, and in default context mode proxies
+- **Today:** verifies thread ownership, inserts the user message, and proxies
   only the current question and identifiers to `POST http://127.0.0.1:8001/api/chat`. It converts
   the response to an AI SDK UI stream, including source metadata, and inserts the assistant message.
-- **Fallback:** the Lovable gateway path remains available with `ALIM_AI_BACKEND=lovable` or the
-  opt-in `ALIM_ENABLE_LOVABLE_FALLBACK=true`.
+- **Failure policy:** returns 503 when the local Qwen backend is unavailable; there is no cloud AI
+  fallback.

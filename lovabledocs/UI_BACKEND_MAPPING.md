@@ -13,16 +13,16 @@ Legend for **Owner (later)**: `PY` = Python FastAPI, `SB` = Supabase, `LS` = loc
 | Field | Ask AI chat question |
 | --- | --- |
 | Route | `/chat/$threadId`, later also `/school/$subject` |
-| Component | `src/components/StudyChat.tsx` (`PromptInput` → `chat.sendMessage`) |
+| Component | `frontend/src/components/StudyChat.tsx` (`PromptInput` → `chat.sendMessage`) |
 | Action | Student submits a question |
-| Now | `useChat` + `DefaultChatTransport` → authenticated TanStack `POST /api/chat` → local FastAPI Context Manager; optional Lovable mode/fallback |
+| Now | `useChat` + `DefaultChatTransport` → authenticated TanStack `POST /api/chat` → local FastAPI Context Manager → preloaded Qwen runtime |
 | Data source now | Supabase display transcript + local SQLite context memory |
 | Owner later | **PY** (already owns prompt construction) |
 | Endpoint | `POST /api/chat` (FastAPI) |
 | Request | `thread_id, subject_id, component_subject_id, language, academic_year, grade_level, question, learning_goal_id, material_ids, top_k, include_sources, stream` |
 | Response | `thread_id, message_id, answer, sources[], exam_tip, used_model, retrieval_summary, language, created_at` |
 | Loading | `chat.status === "submitted" \| "streaming"` → existing `Shimmer` "Thinking…" + disabled composer |
-| Error | Existing `onError` toast; a Python/model outage returns 503 unless cloud fallback is explicitly enabled |
+| Error | Existing `onError` toast; a Python/model outage returns 503 and never changes model providers |
 | Empty | Existing "Ready to study?" panel |
 | Mock fallback | Not implemented |
 
@@ -64,7 +64,7 @@ Legend for **Owner (later)**: `PY` = Python FastAPI, `SB` = Supabase, `LS` = loc
 
 | Field | Save chat message |
 | --- | --- |
-| Now | `src/routes/api/chat.ts` inserts the user message before streaming and the assistant message in `onFinish` |
+| Now | `frontend/src/routes/api/chat.ts` inserts the user message before streaming and the assistant message in `onFinish` |
 | Owner later | **SB (transcript) + PY (AI metadata)** — Python stores `sources`, `used_model`, `retrieval_summary` alongside `message_id` |
 | Endpoint | implicit in `POST /api/chat`; no separate call |
 | Risk | double-writes if both sides persist. Decide once — see `OPEN_QUESTIONS_FOR_BACKEND.md` Q1. |
@@ -72,7 +72,7 @@ Legend for **Owner (later)**: `PY` = Python FastAPI, `SB` = Supabase, `LS` = loc
 | Field | Show RAG source snippets |
 | --- | --- |
 | Route | `/chat/$threadId`, `/school/$subject` |
-| Component | `src/components/app/SourceSnippetList.tsx` under each assistant message |
+| Component | `frontend/src/components/app/SourceSnippetList.tsx` under each assistant message |
 | Now | Implemented using the `data-context-metadata` AI SDK part |
 | Owner later | **PY** |
 | Endpoint | `sources[]` on the `POST /api/chat` response |
@@ -88,7 +88,7 @@ Legend for **Owner (later)**: `PY` = Python FastAPI, `SB` = Supabase, `LS` = loc
 | --- | --- |
 | Route | `/school`, `/stats` |
 | Component | `school.index.tsx`, `SubjectCard.tsx` |
-| Now | static `SUBJECTS` in `src/lib/mock/subjects.ts` + grades from `AppDataProvider` |
+| Now | static `SUBJECTS` in `frontend/src/lib/mock/subjects.ts` + grades from `AppDataProvider` |
 | Owner later | **FE for display, PY for index metadata** |
 | Endpoint | `GET /api/subjects` |
 | Response | `[{subject_id, display_name, language, components[], indexed_materials, learning_goal_count}]` |
@@ -159,7 +159,7 @@ Legend for **Owner (later)**: `PY` = Python FastAPI, `SB` = Supabase, `LS` = loc
 | Field | Grade student answer |
 | --- | --- |
 | Component | grader panel on `/school/$subject`; result may be saved as an `Assessment` |
-| Now | frontend-only `pointsToGrade` in `src/lib/grade-math.ts` |
+| Now | frontend-only `pointsToGrade` in `frontend/src/lib/grade-math.ts` |
 | Owner later | **PY** for evaluation, **FE** for display rounding |
 | Endpoint | `POST /api/grade` |
 | Request | `subject_id, component_subject_id, language, question, student_answer, max_points, rubric_id, exam_id, question_id` |
@@ -206,14 +206,14 @@ Legend for **Owner (later)**: `PY` = Python FastAPI, `SB` = Supabase, `LS` = loc
 
 | Field | Backend-unavailable banner |
 | --- | --- |
-| Component | new `src/components/app/BackendStatusBanner.tsx` in `AppShell` |
+| Component | new `frontend/src/components/app/BackendStatusBanner.tsx` in `AppShell` |
 | Behaviour | Non-blocking amber bar: "Study AI backend offline — grades, planner and materials still work." Includes Retry. Disables AI-only actions; never blocks localStorage features. |
 
 | Field | Local / remote model status |
 | --- | --- |
 | Component | `/settings` + `/diagnostics` rows, optional small chip in the chat header |
 | Endpoint | `GET /api/model/status` |
-| Display | `Ollama · llama3.1:8b · local · 42 ms` or `vLLM · remote GPU · 210 ms`; shows `used_model` from the last answer for provenance. |
+| Display | `llama.cpp · Qwen/Qwen3.8-27B · local · preloaded · 42 ms`; shows `used_model` from the last answer for provenance. |
 
 ---
 

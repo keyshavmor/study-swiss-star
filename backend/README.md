@@ -1,49 +1,41 @@
-# Alim local context backend
+# Alim backend
 
-This directory contains the local-first Python service that compiles a bounded, relevant context
-for every tutoring request. The React app's authenticated `/api/chat` route calls this service by
-default; set `ALIM_AI_BACKEND=lovable` in the frontend server environment to use the legacy cloud
-gateway instead.
+This FastAPI service compiles bounded tutoring context and routes it only to the locally served
+`Qwen/Qwen3.8-27B` model. Startup manages `llama-server` and does not accept traffic until the
+expected model alias is resident and listed by `/v1/models`.
+
+## Key modules
+
+| Location | Responsibility |
+| --- | --- |
+| `app/main.py` | API models, endpoints, startup/shutdown lifecycle, errors |
+| `app/platform.py` | Linux CUDA/CPU and Apple-Silicon Metal detection |
+| `app/model_spec.py` | Canonical model identity and offline GGUF validation |
+| `app/services/model_runtime.py` | Managed llama.cpp process and readiness checks |
+| `app/context/` | Intent analysis, retrieval, memory, web cache, budgeting, prompt compilation |
+| `scripts/setup_environment.py` | Cross-platform Conda/runtime/frontend setup |
+| `scripts/start_app.py` | Coordinated model, API, and frontend startup |
 
 ## Run
 
-```bash
-cd backend
-uv sync --extra dev --extra documents
-uv run uvicorn app.main:app --reload --host 127.0.0.1 --port 8001
-```
-
-The local OpenAI-compatible model defaults to `http://127.0.0.1:11434/v1`. Copy the values from
-`.env.example` into your shell or backend environment and change `ALIM_LLM_MODEL` as needed. Set
-`ALIM_EMBEDDING_MODEL` to use that server's `/embeddings` endpoint for semantic dense retrieval;
-leave it unset for the deterministic hashing fallback.
-
-Core tests do not require FastAPI or a running model:
+From the repository root after platform setup and model download:
 
 ```bash
-PYTHONPATH=backend python3 -m unittest discover -s backend/tests -v
+conda activate alim-study
+python backend/scripts/start_app.py
 ```
 
-## Public context API
+For API-only development with an externally managed model server:
 
-- `ContextManager.build_context(...)` analyzes intent, retrieves only required memory classes,
-  reranks and deduplicates candidates, enforces section/global budgets, and returns the exact two
-  messages that should be sent to the model.
-- `ContextManager.process_response(...)` preserves the transcript, runs controlled memory writing,
-  and compacts long conversations when thresholds are reached.
-- `ContextManager.record_event(...)` records explicit learning events.
-- `ContextManager.artifacts.create(...)` stores large results outside the prompt and makes their
-  compact summaries retrievable.
+```bash
+ALIM_MODEL_AUTOSTART=false uv run --project backend \
+  uvicorn app.main:app --app-dir backend --host 127.0.0.1 --port 8001
+```
 
-The FastAPI façade exposes `/health`, `/api/model/status`, `/api/chat`,
-`/api/context/compile`, `/api/context/documents/text`, `/api/context/events`, and
-`/api/context/artifacts`.
+The API exposes `/health`, `/api/model/status`, `/api/chat`, `/api/context/compile`,
+`/api/context/documents/text`, `/api/context/events`, and `/api/context/artifacts`. Local state
+defaults to `app-data/context/alim-context.db`. Web retrieval is intent-gated, cached,
+provenance-labelled, and constrained by the same hard budget as local evidence.
 
-## Storage and privacy
-
-The default database is `.local/alim-context.db` (ignored by Git). It stores document chunks,
-cached embeddings, student memories, learning events, original conversation messages, rolling
-summaries, artifacts, and expiring working memory. Core operation uses only this local SQLite file,
-the configured local model/embedding endpoints, and a deterministic hashing fallback. No student
-data is sent to an external AI API by the Python backend unless an operator deliberately configures
-an external-compatible endpoint.
+Tests live in repository-level `tests/backend/` and `tests/e2e/`; they do not require Lovable or
+Supabase.

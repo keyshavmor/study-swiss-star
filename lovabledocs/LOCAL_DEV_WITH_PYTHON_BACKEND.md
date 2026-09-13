@@ -1,83 +1,99 @@
-# Local Development with the Python Backend
+# Local development
 
-Run the frontend, in-repository FastAPI service, and local model side by side.
-
-## Port map
+## Ports
 
 | Service | URL |
 | --- | --- |
-| TanStack/Vite frontend | `http://localhost:8080` |
-| Python FastAPI backend | `http://127.0.0.1:8001` |
-| Ollama/OpenAI-compatible model | `http://127.0.0.1:11434/v1` by default |
+| TanStack frontend | `http://localhost:8080` |
+| FastAPI context backend | `http://127.0.0.1:8001` |
+| Preloaded Qwen3.8-27B/llama.cpp | `http://127.0.0.1:8000/v1` |
 
-## 1. Model server
+## Recreate the environment
 
-Start an OpenAI-compatible local model. For Ollama:
-
-```bash
-ollama serve
-```
-
-Set `ALIM_LLM_MODEL` to a model you have installed. The Python backend, never the browser, talks to
-this endpoint.
-
-## 2. Python backend
+Run the same bootstrap on Ubuntu/Debian or an Apple Silicon Mac:
 
 ```bash
-cd backend
-uv sync --extra dev --extra documents
-uv run uvicorn app.main:app --reload --host 127.0.0.1 --port 8001
+python3 backend/scripts/setup_environment.py --dry-run  # optional preview
+python3 backend/scripts/setup_environment.py
+conda activate alim-study
 ```
 
-Verify `http://127.0.0.1:8001/health` and `http://127.0.0.1:8001/docs`. Configuration defaults are
-in `backend/.env.example`; export overrides in the backend process environment. The SQLite database
-is created at `backend/.local/alim-context.db` when uvicorn is started from `backend/`.
+It reads `environment.yml`, installs Python/Node/npm/uv, selects the llama.cpp build for detected
+CUDA, Metal/Accelerate, or Linux CPU, syncs `backend/uv.lock`, and installs
+`frontend/package-lock.json`. Add `--with-model` to download the 17.67 GiB model in the same run.
 
-The dependency-free core tests can be run from the repository root:
+If Conda is not already on `PATH`, the script also checks `~/anaconda3/bin/conda` and
+`~/miniconda3/bin/conda`. Intel macOS is intentionally rejected; the supported Mac target is native
+Apple Silicon without Rosetta.
+
+`uv` owns Python dependency locking in `backend/uv.lock`; npm owns frontend dependency locking in
+`frontend/package-lock.json`. `frontend/bun.lock` remains available for Lovable/Bun workflows, but a
+dependency update should not regenerate both locks accidentally.
+
+## Download the required model
 
 ```bash
-PYTHONPATH=backend python3 -m unittest discover -s backend/tests -v
+uv run --project backend python models/download_qwen3_8_27b.py --check
+uv run --project backend python models/download_qwen3_8_27b.py --dry-run
+uv run --project backend python models/download_qwen3_8_27b.py
 ```
 
-## 3. Frontend
+The first command is offline. The latter commands require outbound HTTPS access to Hugging Face.
+The resulting `models/Qwen3.8-27B/` directory is not committed.
 
-From the repository root:
+## Start everything
 
 ```bash
-bun install
-bun run dev
+python backend/scripts/start_app.py
 ```
 
-The repository currently tracks both `bun.lock` and `package-lock.json`. Bun is used in project
-documentation; avoid regenerating both lockfiles in one dependency change.
+The backend validates and preloads Qwen before becoming ready. The frontend can render while the
+model loads, but AI calls return only after FastAPI startup completes. Inspect `logs/backend.log`,
+`logs/frontend.log`, and `logs/qwen3.8-27b-llama-server.log` if startup fails.
 
-The authenticated TanStack chat route uses Python by default. Optional server-runtime overrides:
+To run components independently for UI/API development, point FastAPI at an already-running
+Qwen-compatible endpoint and disable process ownership explicitly:
 
-```env
-ALIM_AI_BACKEND=context
-ALIM_CONTEXT_BACKEND_URL=http://127.0.0.1:8001
-ALIM_CONTEXT_BACKEND_TIMEOUT_MS=90000
-ALIM_ENABLE_LOVABLE_FALLBACK=false
-ALIM_EMBEDDING_MODEL=nomic-embed-text # optional; omit for hashing fallback
+```bash
+ALIM_MODEL_AUTOSTART=false uv run --project backend uvicorn app.main:app --app-dir backend --host 127.0.0.1 --port 8001
+cd frontend
+npm run dev
 ```
 
-Use `ALIM_AI_BACKEND=lovable` only to select the legacy gateway. If
-`ALIM_ENABLE_LOVABLE_FALLBACK=true`, a Python connection/model failure may send the request to the
-cloud Lovable gateway; this is off by default for privacy.
+## Web context
 
-Supabase variables are still required for sign-in and chat transcript persistence. Non-chat
-prototype screens continue to use localStorage.
+Web retrieval is on by default and activates only for explicit current/browsing requests. Set
+`allow_web:false` on an API request or `ALIM_WEB_ENABLED=false` globally to prevent network access.
+Fetched text is cached under `app-data/`, labelled untrusted, and limited to the web section and
+global context budgets.
+
+## Tests
+
+```bash
+PYTHONPATH=backend:. uv run --project backend pytest tests/backend -q
+PYTHONPATH=backend:. uv run --project backend pytest tests/e2e -q
+uv run --project backend ruff check backend tests models
+
+cd frontend
+npm run typecheck
+npm run lint
+npm run build
+```
+
+The E2E suite uses a disposable protocol fixture, not the 27B checkpoint. A real model smoke test
+requires the checkpoint and `llama-server`. CUDA is fastest on Linux; a broken/missing NVIDIA driver
+selects a slower but functional CPU runtime. On the M4 Pro, Metal uses unified memory automatically.
 
 ## Troubleshooting
 
 | Symptom | Check |
 | --- | --- |
-| Chat returns 503 | `curl http://127.0.0.1:8001/health`; confirm FastAPI and the model are running |
-| Model shows unreachable | Confirm `ALIM_LLM_BASE_URL` and `ALIM_LLM_MODEL` |
-| No course sources | Ingest text through `/api/context/documents/text`; confirm subject IDs match frontend slugs |
-| Wrong answer language | Confirm the thread subject is one of the known frontend subject names |
-| Sign-in fails offline | Supabase auth still requires connectivity; no guest-auth bypass was added |
-| Debug data absent | Set `ALIM_CONTEXT_DEBUG=true` and call `/api/context/compile` with `debug:true` |
-
-Keep FastAPI bound to `127.0.0.1`. Core context functionality uses local SQLite, local embeddings,
-and the configured local model; it does not require an external AI API.
+| Startup says checkpoint missing | Run the downloader `--check`, then download/resume |
+| `llama-server` is missing | Activate `alim-study`; run the setup script again |
+| Model server exits during preload | Check `logs/qwen3.8-27b-llama-server.log`; on Linux also run `nvidia-smi` |
+| Linux unexpectedly uses CPU | Repair the NVIDIA driver, rerun setup to select the CUDA build, then restart |
+| Apple Mac uses the wrong architecture | Confirm `uname -m` is `arm64` and do not run the shell through Rosetta |
+| Chat returns 503 | Confirm `/health` and `/v1/models` list `Qwen/Qwen3.8-27B` |
+| No internet sources | Use explicit “latest/current/browse” language and confirm web access is enabled |
+| Prompt too large | Inspect debug budget data; reduce section limits or selected material |
+| Sign-in fails offline | Supabase authentication still requires connectivity |

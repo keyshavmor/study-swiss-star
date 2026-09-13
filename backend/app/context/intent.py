@@ -1,3 +1,5 @@
+"""Deterministic tutoring-intent, subject, topic, language, and web-request analysis."""
+
 from __future__ import annotations
 
 import re
@@ -54,6 +56,8 @@ TOPIC_PATTERNS: dict[str, tuple[str, ...]] = {
 
 
 class HeuristicQueryAnalyzer:
+    """Map user wording to bounded retrieval requirements without another model call."""
+
     def analyze(
         self,
         message: str,
@@ -61,6 +65,8 @@ class HeuristicQueryAnalyzer:
         subject_hint: str | None = None,
         language_hint: str | None = None,
     ) -> QueryContext:
+        """Analyze one message while respecting explicit subject/language hints."""
+
         normalized = message.casefold()
         subject = subject_hint or self._match_alias(normalized, SUBJECT_ALIASES)
         topics = unique_preserving_order(
@@ -129,6 +135,13 @@ class HeuristicQueryAnalyzer:
             re.search(r"syllabus|lehrplan|learning goal|lernziel|chapter|kapitel", normalized)
             or intent in {"exam_generation", "study_planning"}
         )
+        requires_web = bool(
+            re.search(
+                r"\b(latest|current|today|recent|news|online|internet|browse|web search|"
+                r"look up|aktuell|heute|nachrichten|internet|recherche|en ligne)\b",
+                normalized,
+            )
+        )
         language = language_hint or self._language_for_subject(subject)
         return QueryContext(
             intent=intent,
@@ -140,11 +153,14 @@ class HeuristicQueryAnalyzer:
             requires_episode_memory=requires_episodes,
             requires_conversation_history=intent != "general_chat",
             requires_syllabus=requires_syllabus,
+            requires_web=requires_web,
             desired_output_type=output,
         )
 
     @staticmethod
     def _match_alias(text: str, aliases_by_key: dict[str, tuple[str, ...]]) -> str | None:
+        """Return the key with the longest alias found in normalized text."""
+
         matches = [
             (len(alias), key)
             for key, aliases in aliases_by_key.items()
@@ -155,6 +171,8 @@ class HeuristicQueryAnalyzer:
 
     @staticmethod
     def _language_for_subject(subject: str | None) -> str | None:
+        """Apply the Swiss curriculum's default instruction language by subject."""
+
         if subject in {"mathematics", "physics", "english", "history"}:
             return "en"
         if subject == "french":

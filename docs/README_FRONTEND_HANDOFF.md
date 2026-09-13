@@ -51,5 +51,5 @@ This folder documents the current Lovable / TanStack Start frontend, the in-repo
 ## Non-goals for this phase
 
 - No UI rewrite, no design-system change, no route restructuring.
-- Supabase auth/chat persistence and Lovable AI Gateway stay in place.
+- Supabase auth/chat persistence stays in place; AI generation is local Qwen-only.
 - No RAG/LLM orchestration in TypeScript; the TanStack chat route is only an authenticated proxy.

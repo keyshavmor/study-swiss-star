@@ -1,3 +1,5 @@
+"""Fuse sparse and dense rankings, then remove duplicate evidence."""
+
 from __future__ import annotations
 
 import asyncio
@@ -15,6 +17,8 @@ def reciprocal_rank_fusion(
     k: int = 60,
     limit: int = 10,
 ) -> list[ContextItem]:
+    """Merge ranked lists without requiring comparable underlying scores."""
+
     if weights is None:
         weights = [1.0] * len(rankings)
     if len(weights) != len(rankings):
@@ -40,6 +44,8 @@ def reciprocal_rank_fusion(
 def deduplicate_items(
     items: list[ContextItem], *, overlap_threshold: float = 0.86
 ) -> list[ContextItem]:
+    """Remove repeated IDs and near-identical chunks from the same document."""
+
     kept: list[ContextItem] = []
     seen_ids: set[str] = set()
     seen_content: set[str] = set()
@@ -63,6 +69,8 @@ def deduplicate_items(
 
 
 class HybridRetriever:
+    """Run dense and sparse retrieval concurrently and fuse their rankings."""
+
     def __init__(
         self,
         dense: Retriever,
@@ -74,6 +82,8 @@ class HybridRetriever:
         dense_limit: int = 15,
         sparse_limit: int = 15,
     ) -> None:
+        """Configure component retrievers and reciprocal-rank fusion weights."""
+
         self.dense = dense
         self.sparse = sparse
         self.weights = [dense_weight, sparse_weight]
@@ -91,6 +101,8 @@ class HybridRetriever:
         document_ids: set[str] | None = None,
         limit: int = 10,
     ) -> list[ContextItem]:
+        """Retrieve, fuse, deduplicate, and retain debug candidate counts."""
+
         common = {
             "subject": subject,
             "document_types": document_types,

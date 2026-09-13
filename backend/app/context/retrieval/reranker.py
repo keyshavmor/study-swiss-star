@@ -1,3 +1,5 @@
+"""Final deterministic reranking informed by intent and student topics."""
+
 from __future__ import annotations
 
 from datetime import UTC, datetime
@@ -8,6 +10,8 @@ from ..text import lexical_overlap
 
 
 class Reranker(Protocol):
+    """Refine candidate order after hybrid retrieval."""
+
     async def rerank(
         self,
         query: str,
@@ -16,10 +20,15 @@ class Reranker(Protocol):
         *,
         query_context: QueryContext | None = None,
         student_topics: set[str] | None = None,
-    ) -> list[ContextItem]: ...
+    ) -> list[ContextItem]:
+        """Return candidates reordered and truncated to ``limit``."""
+
+        ...
 
 
 class HeuristicReranker:
+    """Boost query overlap, topic alignment, and exam-source relevance."""
+
     """Cheap first-pass reranker; callers can replace it with a local cross-encoder."""
 
     async def rerank(
@@ -31,6 +40,8 @@ class HeuristicReranker:
         query_context: QueryContext | None = None,
         student_topics: set[str] | None = None,
     ) -> list[ContextItem]:
+        """Score candidates and return at most ``limit`` items."""
+
         now = datetime.now(UTC)
         student_topics = {topic.casefold() for topic in (student_topics or set())}
         for item in candidates:

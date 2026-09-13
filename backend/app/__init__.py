@@ -1,1 +1,1 @@
-"""Alim local Python backend."""
+"""Alim's local FastAPI backend package."""

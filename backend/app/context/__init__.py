@@ -12,3 +12,4 @@ __all__ = [
     "ContextManager",
     "QueryContext",
 ]
+"""Public configuration and orchestration exports for bounded context compilation."""

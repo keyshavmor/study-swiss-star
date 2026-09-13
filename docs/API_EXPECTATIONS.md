@@ -62,14 +62,23 @@ quiz / mock exam / study plan 120 s · `POST /api/import/document` 300 s.
 ```json
 {
   "status": "ok",
-  "version": "0.4.1",
+  "version": "0.2.0",
   "uptime_s": 1284,
   "context_store": { "type": "sqlite", "reachable": true },
-  "model_server": { "reachable": true, "provider": "ollama" },
+  "model_server": { "reachable": true, "provider": "openai-compatible", "preloaded": true },
+  "runtime": {
+    "managed": true,
+    "engine": "llama.cpp",
+    "model_name": "Qwen/Qwen3.8-27B",
+    "max_model_len": 32768,
+    "platform": { "system": "Linux", "machine": "x86_64", "accelerator": "cuda" }
+  },
   "checked_at": "2026-08-11T08:40:12Z"
 }
 ```
 
+- `max_model_len` is hardware-adaptive (the example is an RTX 3090; the specified M4 Pro reports
+  `65536` and `metal`).
 - **Required:** `status`, `checked_at`. The implemented `status` can be `degraded` while FastAPI and
   SQLite are healthy but the local model is unreachable.
 - **Loading:** silent; no spinner. **Display:** green/amber chip in `/diagnostics`; banner only when unreachable or `status != "ok"`.
@@ -81,25 +90,24 @@ quiz / mock exam / study plan 120 s · `POST /api/import/document` 300 s.
 
 ```json
 {
-  "provider": "ollama",
-  "model": "llama3.1:8b-instruct",
-  "endpoint": "http://localhost:11434",
+  "provider": "openai-compatible",
+  "model": "Qwen/Qwen3.8-27B",
+  "endpoint": "http://127.0.0.1:8000",
   "mode": "local",
   "reachable": true,
   "latency_ms": 42,
-  "embedding_model": "nomic-embed-text",
-  "fallback_provider": "vllm-remote"
+  "embedding_model": "hashing-fallback-384d"
 }
 ```
 
 - **Required:** `provider`, `model`, `mode` (`local` \| `remote`), `reachable`.
 - **Error:** 503 `model_unavailable` → UI shows "Model server offline".
-- **Display:** `Ollama · llama3.1:8b-instruct · local · 42 ms`.
+- **Display:** `llama.cpp · Qwen/Qwen3.8-27B · local · preloaded · 42 ms`.
 
 ## 3. `GET /api/subjects`
 
 - **Purpose:** index metadata for the 15 top-level subjects. **Does not** define the subject list —
-  the frontend owns that (`src/lib/mock/subjects.ts`).
+  the frontend owns that (`frontend/src/lib/mock/subjects.ts`).
 - **Called by:** `/school` (`school.index.tsx`).
 
 ```json
@@ -223,6 +231,7 @@ Request:
   "material_ids": [],
   "top_k": 6,
   "include_sources": true,
+  "allow_web": true,
   "stream": false
 }
 ```
@@ -240,6 +249,7 @@ Request:
 | `material_ids` | no | Restricts retrieval; empty = whole subject corpus. |
 | `top_k` | no | Default 6. |
 | `include_sources` | no | Default `true`. |
+| `allow_web` | no | Default `true`; still requires intent-gated current/web language and global enablement. |
 | `stream` | no | Default `false`; `true` returns SSE. |
 
 Current implementation accepts only `stream:false`; native Python SSE remains future work.
@@ -264,7 +274,7 @@ Response (`stream: false`):
     }
   ],
   "exam_tip": "In Prüfungen wird oft ein Energiediagramm verlangt — beschrifte E_A und ΔH getrennt.",
-  "used_model": "llama3.1:8b-instruct",
+  "used_model": "Qwen/Qwen3.8-27B",
   "retrieval_summary": { "chunks_considered": 42, "chunks_used": 6, "collections": ["subject_spf-chemistry"] },
   "language": "de",
   "created_at": "2026-08-11T08:41:00Z"
@@ -281,7 +291,7 @@ event: token
 data: {"delta":"ist die Energiebarriere ..."}
 
 event: done
-data: {"message_id":"msg_01HZYB3K","sources":[...],"exam_tip":"...","used_model":"llama3.1:8b-instruct","retrieval_summary":{...},"created_at":"2026-08-11T08:41:00Z"}
+data: {"message_id":"msg_01HZYB3K","sources":[...],"exam_tip":"...","used_model":"Qwen/Qwen3.8-27B","retrieval_summary":{...},"created_at":"2026-08-11T08:41:00Z"}
 ```
 
 - **Errors:** 404 `thread_not_found`, 503 `model_unavailable`, 429 `rate_limited`.
@@ -330,7 +340,7 @@ Response:
     }
   ],
   "sources": [],
-  "used_model": "llama3.1:8b-instruct",
+  "used_model": "Qwen/Qwen3.8-27B",
   "generated_at": "2026-08-11T08:44:00Z"
 }
 ```
@@ -379,7 +389,7 @@ Response:
     }
   ],
   "sources": [],
-  "used_model": "llama3.1:8b-instruct",
+  "used_model": "Qwen/Qwen3.8-27B",
   "generated_at": "2026-08-11T08:46:00Z"
 }
 ```
@@ -424,7 +434,7 @@ Response:
     }
   ],
   "generated_at": "2026-08-11T08:47:00Z",
-  "used_model": "llama3.1:8b-instruct"
+  "used_model": "Qwen/Qwen3.8-27B"
 }
 ```
 
@@ -467,14 +477,14 @@ Response:
     { "source_id": "src_9", "material_id": "mat_7f21", "material_name": "Cold War — lecture notes.pdf", "page": 4, "snippet": "...", "score": 0.77 }
   ],
   "graded_at": "2026-08-11T08:49:00Z",
-  "used_model": "llama3.1:8b-instruct"
+  "used_model": "Qwen/Qwen3.8-27B"
 }
 ```
 
 - **Grade rule:** the backend returns the **exact** grade from `points_awarded / max_points * 5 + 1`
   (unrounded, clamped to `[1.0, 6.0]`). The frontend displays the exact value where it shows exact
   values today, and applies the existing round-to-nearest-0.5 rule for averages and rounded
-  displays (`src/lib/grade-math.ts`). Grades below 4.0 render in `#C96A00`.
+  displays (`frontend/src/lib/grade-math.ts`). Grades below 4.0 render in `#C96A00`.
 - **Display:** points, grade, strengths, missing points, advice, then sources.
 
 ## 12. `POST /api/feedback`

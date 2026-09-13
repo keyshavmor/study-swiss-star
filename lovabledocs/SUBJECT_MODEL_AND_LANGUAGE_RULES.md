@@ -1,8 +1,8 @@
 # Subject Model & Language Rules
 
 Authoritative definition of the subject model shared by the frontend and the Python backend.
-Frontend source of truth today: `src/lib/mock/subjects.ts` (field `slug`), grouping logic in
-`src/lib/grade-math.ts` (`summariseSubjectView`, `summariseYear`).
+Frontend source of truth today: `frontend/src/lib/mock/subjects.ts` (field `slug`), grouping logic in
+`frontend/src/lib/grade-math.ts` (`summariseSubjectView`, `summariseYear`).
 
 ## 1. The 15 top-level subjects
 
@@ -62,7 +62,7 @@ render in warning orange `#C96A00`.
 | --- | --- | --- |
 | Subject IDs | Shared contract | Lowercase frontend slugs (hyphenated where the source uses hyphens), exactly as above. |
 | Python backend | Backend | Uses `subject_id` / `component_subject_id` as SQLite retrieval keys. The chat proxy maps known display names to the existing frontend slugs. |
-| Frontend display | Frontend | Renders the human label from `src/lib/mock/subjects.ts` (later `GET /api/subjects`). Never renders raw IDs. The backend may return a `display_name`, but the frontend label wins for UI consistency. |
+| Frontend display | Frontend | Renders the human label from `frontend/src/lib/mock/subjects.ts` (later `GET /api/subjects`). Never renders raw IDs. The backend may return a `display_name`, but the frontend label wins for UI consistency. |
 | Slugs in URLs | Frontend | `/school/$subject` uses the same stable ID as the slug, so URLs and API IDs match 1:1. |
 
 ## 5. Language rules for AI requests
