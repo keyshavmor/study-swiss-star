@@ -43,16 +43,18 @@ Qwen supports 262,144 native tokens. Alim chooses a safer working window from de
 
 Explicit `ALIM_MAX_CONTEXT_TOKENS` and `ALIM_RESERVED_OUTPUT_TOKENS` values override detection.
 
-Check, estimate, or download the checkpoint:
+Check, estimate, download, or import an already available checkpoint:
 
 ```bash
 uv run --project backend python models/download_qwen3_8_27b.py --check
 uv run --project backend python models/download_qwen3_8_27b.py --dry-run
 uv run --project backend python models/download_qwen3_8_27b.py
+uv run --project backend python models/download_qwen3_8_27b.py --source-file /path/to/Qwen3.8-27B-Q4_K_M.gguf
 ```
 
 The downloader checks first, skips a complete checkpoint, resumes partial snapshots, serializes
-concurrent Linux/macOS downloads, and validates the selected GGUF afterward.
+concurrent Linux/macOS operations, and validates the selected GGUF afterward. `--source-file`
+performs an atomic local import and never loads the Hugging Face client.
 Weights are stored only in `models/Qwen3.8-27B/` and ignored by Git.
 
 ## Environment setup
@@ -77,6 +79,7 @@ Preview the commands or include the 17.67 GiB model download in the same setup r
 ```bash
 python3 backend/scripts/setup_environment.py --dry-run
 python3 backend/scripts/setup_environment.py --with-model
+python3 backend/scripts/setup_environment.py --model-source /path/to/Qwen3.8-27B-Q4_K_M.gguf
 python3 backend/scripts/setup_environment.py --check
 ```
 
@@ -94,16 +97,18 @@ python backend/scripts/start_app.py
 
 Startup performs this sequence:
 
-1. Validate `models/Qwen3.8-27B` without network access.
+1. Validate `models/Qwen3.8-27B` without network access and download it if absent.
 2. Detect Linux/CUDA, Linux/CPU, or Apple-Silicon/Metal settings.
 3. Start or reuse local `llama-server` on `127.0.0.1:8000` with automatic memory fitting.
 4. Wait until `/v1/models` confirms `Qwen/Qwen3.8-27B` is loaded in memory.
 5. Complete FastAPI startup on `127.0.0.1:8001`.
 6. Start the frontend on port 8080.
 
-The first tutoring request therefore does not pay model-loading latency. If the checkpoint is
-missing, `llama-server` is unavailable, or preload fails, backend startup fails with an actionable message
-rather than silently selecting another model. Logs are written under `logs/`.
+The first tutoring request therefore does not pay model-loading latency. A missing checkpoint is
+downloaded automatically from the configured open-weight repository. Set
+`ALIM_MODEL_AUTO_DOWNLOAD=false` only when a managed/offline installation must require
+pre-provisioned weights. If acquisition, `llama-server`, or preload fails, startup fails with an
+actionable message rather than silently selecting another model. Logs are written under `logs/`.
 
 For independent development, start the services from the repository root:
 
@@ -115,19 +120,26 @@ cd frontend && npm run dev
 Disabling autostart is intended for tests or when an already-loaded compatible server is managed
 externally. The production default is `ALIM_MODEL_AUTOSTART=true`.
 
-## Context compilation and internet retrieval
+## Context compilation and local-first reference retrieval
 
 The frontend sends only the current question and scoped identifiers to FastAPI. The backend
 selectively retrieves student memory, learning events, relevant conversation history, syllabus,
-local learning material, artifacts, working state, and—only for explicitly current/web-oriented
-questions—fresh internet context.
+local learning material, artifacts, working state, and reference material. The web branch activates
+for explicitly current/web-oriented questions and automatically when a study question has no
+relevant local learning-material match.
 
-Internet retrieval is enabled by default through a zero-key Wikipedia/MediaWiki adapter. Results
-carry URL and fetch-time provenance, are treated as untrusted reference text, and are cached in
-`app-data/context/alim-context.db`. Network failure does not prevent a locally answerable request.
-`allow_web=false` disables browsing per request and `ALIM_WEB_ENABLED=false` disables it globally.
-Conversational search instructions such as “browse online and explain … in one sentence” are
-removed before lookup so named topics—not presentation wording—drive result relevance.
+Reference retrieval is enabled by default through an `auto` adapter that first searches UTF-8
+Markdown, text, and HTML snapshots under `material/web/`. If there is no relevant local match, it
+automatically fetches a current reference from Wikipedia. Results carry source provenance and
+timestamps, are treated as untrusted reference text, and are cached in
+`app-data/context/alim-context.db`. `allow_web=false` disables this branch per request and
+`ALIM_WEB_ENABLED=false` disables it globally. Conversational search instructions such as “browse
+online and explain … in one sentence” are removed before lookup so named topics—not presentation
+wording—drive result relevance.
+
+Set `ALIM_WEB_PROVIDER=local` for a strictly offline deployment or
+`ALIM_WEB_PROVIDER=wikipedia` to bypass the local corpus. Automatic fallback sends only the
+compacted topical query—not chat history, student memory, or local material—to MediaWiki.
 
 All sources enter the same priority budget. Web context has a 6,000-token section ceiling by
 default and can never push the compiled input beyond:
@@ -149,6 +161,7 @@ checked before the request is sent to Qwen.
 | --- | --- | --- |
 | `ALIM_MODEL_PATH` | `models/Qwen3.8-27B` | Q4 GGUF checkpoint directory |
 | `ALIM_MODEL_AUTOSTART` | `true` | Preload and manage llama.cpp during backend lifespan |
+| `ALIM_MODEL_AUTO_DOWNLOAD` | `true` | Fetch the model automatically if local validation fails |
 | `ALIM_MODEL_SERVER_EXECUTABLE` | `llama-server` | Runtime executable selected by setup |
 | `ALIM_MODEL_PORT` | `8000` | Local model-server port |
 | `ALIM_LLM_BASE_URL` | `http://127.0.0.1:8000/v1` | OpenAI-compatible Qwen endpoint |
@@ -156,7 +169,9 @@ checked before the request is sent to Qwen.
 | `ALIM_CONTEXT_DB` | `app-data/context/alim-context.db` | Reusable local context state |
 | `ALIM_MAX_CONTEXT_TOKENS` | hardware-adaptive | Total model context budget |
 | `ALIM_RESERVED_OUTPUT_TOKENS` | one quarter, up to 16,384 | Guaranteed output allowance |
-| `ALIM_WEB_ENABLED` | `true` | Permit intent-gated internet retrieval |
+| `ALIM_WEB_ENABLED` | `true` | Permit intent-gated reference retrieval |
+| `ALIM_WEB_PROVIDER` | `auto` | Local-first with web fallback; `local` or `wikipedia` force one source |
+| `ALIM_LOCAL_WEB_ROOT` | `material/web` | Local Markdown/text/HTML snapshot directory |
 | `ALIM_WEB_TOKENS` | `6000` | Maximum web-context section size |
 | `ALIM_WEB_MAX_RESULTS` | `4` | Maximum fetched results per query |
 
@@ -189,8 +204,8 @@ process fixture, it loads the 17.67 GiB checkpoint and is run deliberately on an
 - `app-data/` stores reusable local RAG/memory/artifact/web-cache state.
 - `material/` contains operator-supplied learning sources.
 - `models/` contains local open weights.
-- Internet retrieval sends the search text to the configured search provider; disable it globally
-  or per request when that disclosure is not acceptable.
+- The default reference provider searches locally first. Only when no relevant local match exists
+  does it send the compacted topical query to MediaWiki; it never sends chat history or local files.
 - The backend does not silently fall back to an external AI model.
 
 ## Further documentation

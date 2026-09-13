@@ -2,12 +2,14 @@
 
 from __future__ import annotations
 
+import tempfile
 import unittest
+from pathlib import Path
 from unittest.mock import patch
 
 from app.context.artifacts import ArtifactManager
 from app.context.budget import ContextBudgeter
-from app.context.config import ContextBudgetConfig, MemoryConfig
+from app.context.config import ContextBudgetConfig, MemoryConfig, WebConfig
 from app.context.intent import HeuristicQueryAnalyzer
 from app.context.memory import StudentMemoryManager
 from app.context.models import ContextItem, ContextPriority, ContextType, ModelConfig
@@ -15,7 +17,14 @@ from app.context.retrieval.dense import OpenAICompatibleEmbedder
 from app.context.retrieval.hybrid import deduplicate_items, reciprocal_rank_fusion
 from app.context.store import SQLiteContextStore
 from app.context.tokenization import ApproximateTokenCounter
-from app.context.web import compact_web_query
+from app.context.web import (
+    LocalCorpusSearchClient,
+    LocalFirstSearchClient,
+    WebResult,
+    WikipediaSearchClient,
+    compact_web_query,
+    create_web_search_client,
+)
 
 
 class BudgetTests(unittest.TestCase):
@@ -143,6 +152,88 @@ class RetrievalTests(unittest.TestCase):
         ):
             vector = embedder._embed_sync("oxidative phosphorylation")
         self.assertEqual(vector, [0.25, -0.5, 0.75])
+
+
+class LocalReferenceTests(unittest.IsolatedAsyncioTestCase):
+    """Verify local-only and automatic local-first reference behavior."""
+
+    async def test_local_corpus_searches_markdown_and_html_without_network(
+        self,
+    ) -> None:
+        """Relevant offline snapshots produce provenance-labelled local results."""
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "biology.md").write_text(
+                "# Cellular respiration\nATP synthase uses a proton gradient to create ATP.",
+                encoding="utf-8",
+            )
+            (root / "history.html").write_text(
+                "<html><style>ignore me</style><body>Industrial revolution overview</body></html>",
+                encoding="utf-8",
+            )
+            config = WebConfig(provider="local", local_corpus_path=root, max_results=2)
+            client = create_web_search_client(config)
+            self.assertIsInstance(client, LocalCorpusSearchClient)
+            with patch(
+                "app.context.web.urllib.request.urlopen",
+                side_effect=AssertionError("local provider must not open the network"),
+            ):
+                results = await client.search("Explain ATP synthase", limit=2)
+            self.assertEqual(len(results), 1)
+            self.assertEqual(results[0].title, "Cellular respiration")
+            self.assertEqual(results[0].url, "local://biology.md")
+            self.assertEqual(results[0].provider, "Local corpus")
+
+    def test_unknown_reference_provider_fails_closed(self) -> None:
+        """A misspelled provider must not silently fall back to an internet service."""
+
+        with tempfile.TemporaryDirectory() as directory:
+            config = WebConfig(provider="unknown", local_corpus_path=Path(directory))
+            with self.assertRaisesRegex(ValueError, "Unsupported ALIM_WEB_PROVIDER"):
+                create_web_search_client(config)
+
+    async def test_auto_provider_uses_local_match_without_network(self) -> None:
+        """Automatic mode must not disclose a query when local evidence is available."""
+
+        with tempfile.TemporaryDirectory() as directory:
+            corpus = Path(directory)
+            (corpus / "biology.md").write_text(
+                "ATP powers cellular work.", encoding="utf-8"
+            )
+            client = LocalFirstSearchClient(
+                WebConfig(provider="auto", local_corpus_path=corpus)
+            )
+            with patch.object(
+                WikipediaSearchClient,
+                "search",
+                side_effect=AssertionError("network fallback must not run"),
+            ):
+                results = await client.search("ATP", limit=2)
+            self.assertEqual(results[0].provider, "Local corpus")
+
+    async def test_auto_provider_falls_back_when_local_material_is_missing(
+        self,
+    ) -> None:
+        """Automatic mode fetches remote evidence only after an empty local search."""
+
+        remote = WebResult(
+            title="Remote ATP",
+            url="https://example.test/atp",
+            content="Current ATP reference",
+            provider="Test internet",
+            fetched_at="2026-09-14T00:00:00+00:00",
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            client = LocalFirstSearchClient(
+                WebConfig(provider="auto", local_corpus_path=Path(directory))
+            )
+            with patch.object(
+                WikipediaSearchClient, "search", return_value=[remote]
+            ) as remote_search:
+                results = await client.search("ATP", limit=2)
+            remote_search.assert_awaited_once_with("ATP", limit=2)
+            self.assertEqual(results, [remote])
 
 
 class IntentTests(unittest.TestCase):

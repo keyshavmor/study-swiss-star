@@ -109,6 +109,36 @@ class ModelManagementTests(unittest.TestCase):
             self.assertEqual(marker["repository"], MODEL_REPOSITORY)
             self.assertEqual(marker["artifact_repository"], MODEL_ARTIFACT_REPOSITORY)
 
+    def test_local_import_never_loads_hugging_face(self) -> None:
+        """A supplied GGUF can seed a fresh installation with no network dependency."""
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = root / "portable-qwen.gguf"
+            source.write_bytes(b"GGUF-offline-test-checkpoint")
+            destination = root / "models" / "Qwen3.8-27B"
+            arguments = argparse.Namespace(
+                destination=destination,
+                source_file=source,
+                revision="offline-copy",
+                force=False,
+                json=True,
+            )
+            with patch.object(
+                download_qwen3_8_27b,
+                "hub",
+                side_effect=AssertionError(
+                    "local import must not load huggingface_hub"
+                ),
+            ):
+                self.assertEqual(download_qwen3_8_27b.import_local(arguments), 0)
+            self.assertTrue(inspect_model(destination).present)
+            marker = json.loads(
+                (destination / ".alim-model.json").read_text(encoding="utf-8")
+            )
+            self.assertEqual(marker["acquisition"], "local-file")
+            self.assertEqual(marker["source_filename"], source.name)
+
 
 if __name__ == "__main__":
     unittest.main()

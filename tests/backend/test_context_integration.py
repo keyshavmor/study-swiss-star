@@ -272,6 +272,53 @@ class ContextFlowTests(unittest.IsolatedAsyncioTestCase):
         finally:
             store.close()
 
+    async def test_missing_learning_material_automatically_uses_reference_provider(
+        self,
+    ) -> None:
+        """A normal study question gets bounded external context when local RAG is empty."""
+
+        class ReferenceClient:
+            """Return deterministic reference material without public network access."""
+
+            async def search(self, query: str, *, limit: int) -> list[WebResult]:
+                """Return one synthetic internet fallback result."""
+
+                return [
+                    WebResult(
+                        title="ATP reference",
+                        url="https://example.test/atp",
+                        content="ATP synthase uses a proton gradient.",
+                        provider="test internet",
+                        fetched_at="2026-09-14T00:00:00+00:00",
+                    )
+                ][:limit]
+
+        store = SQLiteContextStore()
+        config = make_config()
+        web = CachedWebRetriever(
+            store,
+            ApproximateTokenCounter(),
+            config.web,
+            ReferenceClient(),
+        )
+        manager = ContextManager(config, store=store, web_retriever=web)
+        try:
+            compiled = await manager.build_context(
+                student_id="student",
+                conversation_id="fallback-thread",
+                user_message="Why does ATP synthase need a proton gradient?",
+                model_config=ModelConfig(model="test"),
+            )
+            self.assertFalse(compiled.retrieval_debug["web"]["requested"])
+            self.assertTrue(compiled.retrieval_debug["web"]["missing_local_material"])
+            self.assertEqual(compiled.web_context[0].source, "https://example.test/atp")
+            self.assertLessEqual(
+                compiled.total_tokens,
+                config.budget.max_context_tokens - config.budget.reserve_output_tokens,
+            )
+        finally:
+            store.close()
+
 
 if __name__ == "__main__":
     unittest.main()

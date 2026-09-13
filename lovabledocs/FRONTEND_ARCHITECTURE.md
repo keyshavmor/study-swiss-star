@@ -138,7 +138,7 @@ graph LR
     SF --> PY[Python FastAPI<br/>localhost:8001]
     PY --> RAG[(SQLite chunks /<br/>hybrid retrieval)]
     PY --> FILES[(Subject files<br/>PDF / DOCX / MD / TXT)]
-    PY --> WEB[Intent-gated MediaWiki<br/>budgeted + cached]
+    PY --> WEB[Local-first references<br/>automatic web fallback + budget]
     PY --> LLM[Preloaded Qwen3.8-27B via llama.cpp<br/>localhost:8000]
     RAG --> PY
     LLM --> PY

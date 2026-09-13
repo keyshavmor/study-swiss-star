@@ -92,9 +92,11 @@ class EmbeddingConfig:
 
 @dataclass(slots=True, frozen=True)
 class WebConfig:
-    """Intent-gated web retrieval, cache, and response-size settings."""
+    """Intent-gated local-first reference retrieval and response-size settings."""
 
     enabled: bool = True
+    provider: str = "auto"
+    local_corpus_path: Path = field(default_factory=lambda: repository_root() / "material" / "web")
     max_results: int = 4
     timeout_seconds: float = 8.0
     cache_ttl_minutes: int = 1_440
@@ -175,6 +177,13 @@ class ContextConfig:
         )
         web = WebConfig(
             enabled=os.getenv("ALIM_WEB_ENABLED", "true").lower() == "true",
+            provider=os.getenv("ALIM_WEB_PROVIDER", "auto").strip().lower(),
+            local_corpus_path=Path(
+                os.getenv(
+                    "ALIM_LOCAL_WEB_ROOT",
+                    str(repository_root() / "material" / "web"),
+                )
+            ),
             max_results=_env_int("ALIM_WEB_MAX_RESULTS", 4),
             timeout_seconds=_env_float("ALIM_WEB_TIMEOUT_SECONDS", 8.0),
             cache_ttl_minutes=_env_int("ALIM_WEB_CACHE_TTL_MINUTES", 1_440),

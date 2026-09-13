@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import shutil
 import sys
 import time
 from contextlib import contextmanager
@@ -40,6 +41,11 @@ def parser() -> argparse.ArgumentParser:
     )
     action.add_argument(
         "--dry-run", action="store_true", help="Query the Hub without downloading"
+    )
+    action.add_argument(
+        "--source-file",
+        type=Path,
+        help="Import an existing GGUF from local storage without contacting Hugging Face",
     )
     value.add_argument("--destination", type=Path, default=default_model_path())
     value.add_argument("--revision", default="main")
@@ -137,6 +143,93 @@ def exclusive_download_lock(path: Path, timeout_seconds: float = 86_400.0):
             pass
 
 
+def write_provenance(
+    destination: Path,
+    *,
+    revision: str,
+    acquisition: str,
+    source_file: Path | None = None,
+) -> None:
+    """Record canonical identity and how the local artifact was acquired."""
+
+    marker = {
+        "repository": MODEL_REPOSITORY,
+        "artifact_repository": MODEL_ARTIFACT_REPOSITORY,
+        "filename": MODEL_FILENAME,
+        "format": "GGUF",
+        "quantization": MODEL_QUANTIZATION,
+        "revision": revision,
+        "acquisition": acquisition,
+        "downloaded_at": datetime.now(UTC).isoformat(),
+        "platform": os.uname().sysname if hasattr(os, "uname") else sys.platform,
+    }
+    if source_file is not None:
+        marker["source_filename"] = source_file.name
+    (destination / ".alim-model.json").write_text(
+        json.dumps(marker, indent=2) + "\n", encoding="utf-8"
+    )
+
+
+def import_local(args: argparse.Namespace) -> int:
+    """Atomically import a locally supplied GGUF without loading any Hub client."""
+
+    source = args.source_file.expanduser().resolve()
+    if source.is_dir():
+        source = source / MODEL_FILENAME
+    if not source.is_file():
+        raise SystemExit(f"Local model source does not exist: {source}")
+    try:
+        with source.open("rb") as handle:
+            if handle.read(4) != b"GGUF":
+                raise SystemExit(f"Local model source is not a GGUF file: {source}")
+    except OSError as error:
+        raise SystemExit(f"Local model source is unreadable: {source}") from error
+
+    before = inspect_model(args.destination)
+    if before.present and not args.force:
+        emit(
+            {
+                "status": "present",
+                "path": before.path,
+                "message": "Validated local checkpoint; import skipped.",
+            },
+            as_json=args.json,
+        )
+        return 0
+
+    args.destination.mkdir(parents=True, exist_ok=True)
+    lock_path = args.destination.parent / ".qwen3.8-27b.download"
+    with exclusive_download_lock(lock_path):
+        target = args.destination / MODEL_FILENAME
+        temporary = args.destination / f".{MODEL_FILENAME}.importing"
+        if source != target.resolve():
+            try:
+                shutil.copyfile(source, temporary)
+                os.replace(temporary, target)
+            finally:
+                temporary.unlink(missing_ok=True)
+        write_provenance(
+            args.destination,
+            revision=args.revision,
+            acquisition="local-file",
+            source_file=source,
+        )
+        result = inspect_model(args.destination)
+        if not result.present:
+            raise SystemExit(
+                f"Local import is incomplete; missing: {', '.join(result.missing)}"
+            )
+        emit(
+            {
+                "status": "imported",
+                "path": result.path,
+                "message": f"Imported and validated {source.name} without network access.",
+            },
+            as_json=args.json,
+        )
+    return 0
+
+
 def download(args: argparse.Namespace) -> int:
     """Resume the GGUF download, write provenance, and validate before success."""
 
@@ -174,18 +267,10 @@ def download(args: argparse.Namespace) -> int:
             allow_patterns=[MODEL_FILENAME],
             force_download=args.force,
         )
-        marker = {
-            "repository": MODEL_REPOSITORY,
-            "artifact_repository": MODEL_ARTIFACT_REPOSITORY,
-            "filename": MODEL_FILENAME,
-            "format": "GGUF",
-            "quantization": MODEL_QUANTIZATION,
-            "revision": args.revision,
-            "downloaded_at": datetime.now(UTC).isoformat(),
-            "platform": os.uname().sysname if hasattr(os, "uname") else sys.platform,
-        }
-        (args.destination / ".alim-model.json").write_text(
-            json.dumps(marker, indent=2) + "\n", encoding="utf-8"
+        write_provenance(
+            args.destination,
+            revision=args.revision,
+            acquisition="hugging-face",
         )
         result = inspect_model(args.destination)
         if not result.present:
@@ -224,6 +309,8 @@ def main() -> int:
         return 0 if result.present else 1
     if args.dry_run:
         return dry_run(args)
+    if args.source_file:
+        return import_local(args)
     return download(args)
 
 

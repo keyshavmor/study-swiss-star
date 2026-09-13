@@ -20,6 +20,10 @@ conda activate alim-study
 python backend/scripts/start_app.py
 ```
 
+The app also downloads the model automatically at startup if it is still absent. Disable that
+fallback with `ALIM_MODEL_AUTO_DOWNLOAD=false` only for a strictly offline or centrally managed
+installation.
+
 With an Anaconda installation that is not shell-initialized, replace the activation line with
 `source ~/anaconda3/bin/activate alim-study`.
 
@@ -32,6 +36,10 @@ The setup script performs these checks before installing anything:
    `llama.cpp=*=cpu_accelerate*`;
 5. installs the shared Python/Node environment and locked dependencies; and
 6. optionally downloads the cross-platform Q4_K_M model.
+
+For a machine without outbound access, replace `--with-model` with
+`--model-source /path/to/Qwen3.8-27B-Q4_K_M.gguf`. The setup imports and validates that local file
+without loading the Hugging Face client.
 
 Use `--dry-run` to inspect exact commands or `--check` to produce a JSON support report.
 
@@ -47,6 +55,9 @@ python3 backend/scripts/setup_environment.py
 The GGUF model file itself is portable and may be copied to
 `models/Qwen3.8-27B/Qwen3.8-27B-Q4_K_M.gguf` to avoid another 17.67 GiB download. The local SQLite
 database under `app-data/context/` is also portable when the app is stopped before copying it.
+Reference snapshots under `material/web/` are ordinary portable text/Markdown/HTML files. They are
+searched before the automatic Wikipedia fallback; use `ALIM_WEB_PROVIDER=local` for strict offline
+operation.
 
 ## Linux notes
 

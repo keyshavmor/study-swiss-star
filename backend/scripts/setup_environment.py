@@ -39,6 +39,11 @@ def parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Also download the approximately 19 GiB Q4 model after setup",
     )
+    value.add_argument(
+        "--model-source",
+        type=Path,
+        help="Import an existing local GGUF during setup instead of using Hugging Face",
+    )
     return value
 
 
@@ -63,7 +68,13 @@ def llama_matchspec(profile: HostProfile) -> str:
     return f"llama.cpp={profile.conda_llama_variant}"
 
 
-def setup_commands(conda: str, profile: HostProfile, *, with_model: bool) -> list[list[str]]:
+def setup_commands(
+    conda: str,
+    profile: HostProfile,
+    *,
+    with_model: bool,
+    model_source: Path | None = None,
+) -> list[list[str]]:
     """Return the reproducible command sequence for the detected host."""
 
     commands = [
@@ -113,21 +124,22 @@ def setup_commands(conda: str, profile: HostProfile, *, with_model: bool) -> lis
             str(REPOSITORY_ROOT / "frontend"),
         ],
     ]
-    if with_model:
-        commands.append(
-            [
-                conda,
-                "run",
-                "--name",
-                ENVIRONMENT_NAME,
-                "uv",
-                "run",
-                "--project",
-                str(REPOSITORY_ROOT / "backend"),
-                "python",
-                str(REPOSITORY_ROOT / "models" / "download_qwen3_8_27b.py"),
-            ]
-        )
+    if with_model or model_source is not None:
+        model_command = [
+            conda,
+            "run",
+            "--name",
+            ENVIRONMENT_NAME,
+            "uv",
+            "run",
+            "--project",
+            str(REPOSITORY_ROOT / "backend"),
+            "python",
+            str(REPOSITORY_ROOT / "models" / "download_qwen3_8_27b.py"),
+        ]
+        if model_source is not None:
+            model_command.extend(["--source-file", str(model_source.expanduser().resolve())])
+        commands.append(model_command)
     return commands
 
 
@@ -176,7 +188,12 @@ def main() -> int:
             bool(item.get("available")) for item in tool_statuses.values() if isinstance(item, dict)
         ]
         return 0 if available and all(available) else 1
-    commands = setup_commands(conda, profile, with_model=options.with_model)
+    commands = setup_commands(
+        conda,
+        profile,
+        with_model=options.with_model,
+        model_source=options.model_source,
+    )
     print(json.dumps({"detected_platform": profile.to_dict()}, indent=2))
     for command in commands:
         print(f"+ {shlex.join(command)}", flush=True)

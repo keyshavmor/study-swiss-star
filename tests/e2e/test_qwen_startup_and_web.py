@@ -1,4 +1,4 @@
-"""Process-level test from startup preload through web-aware bounded chat."""
+"""Process-level test from startup preload through offline-reference bounded chat."""
 
 from __future__ import annotations
 
@@ -12,8 +12,6 @@ from pathlib import Path
 from app.context.config import ContextBudgetConfig, ContextConfig, WebConfig
 from app.context.manager import ContextManager
 from app.context.store import SQLiteContextStore
-from app.context.tokenization import ApproximateTokenCounter
-from app.context.web import CachedWebRetriever, WebResult
 from app.main import create_app
 from app.model_spec import MODEL_FILENAME, MODEL_NAME
 from app.services.llm import LocalOpenAICompatibleClient
@@ -41,26 +39,6 @@ def make_checkpoint(path: Path) -> None:
     )
 
 
-class FakeWebClient:
-    """Return current-source evidence without external network access."""
-
-    calls = 0
-
-    async def search(self, query: str, *, limit: int) -> list[WebResult]:
-        """Return an oversized deterministic page to exercise trimming."""
-
-        self.calls += 1
-        return [
-            WebResult(
-                title="Current ATP research",
-                url="https://example.edu/current-atp",
-                content=("Current research evidence about ATP production. " * 25),
-                provider="E2E fixture",
-                fetched_at="2026-09-13T00:00:00+00:00",
-            )
-        ][:limit]
-
-
 class QwenStartupAndWebTests(unittest.IsolatedAsyncioTestCase):
     """Verify the full non-Supabase backend path across an actual child process."""
 
@@ -71,6 +49,13 @@ class QwenStartupAndWebTests(unittest.IsolatedAsyncioTestCase):
             root = Path(directory)
             model_path = root / "models" / "Qwen3.8-27B"
             make_checkpoint(model_path)
+            corpus = root / "material" / "web"
+            corpus.mkdir(parents=True)
+            (corpus / "current-atp-research.md").write_text(
+                "# Current ATP research\n"
+                + ("Current research evidence about ATP production. " * 25),
+                encoding="utf-8",
+            )
             port = free_port()
             runtime = ModelRuntimeManager(
                 ModelRuntimeConfig(
@@ -96,13 +81,14 @@ class QwenStartupAndWebTests(unittest.IsolatedAsyncioTestCase):
                     system_tokens=300,
                     web_tokens=300,
                 ),
-                web=WebConfig(max_results=1, max_chars_per_result=20_000),
+                web=WebConfig(
+                    provider="auto",
+                    local_corpus_path=corpus,
+                    max_results=1,
+                    max_chars_per_result=20_000,
+                ),
             )
-            web_client = FakeWebClient()
-            web = CachedWebRetriever(
-                store, ApproximateTokenCounter(), config.web, web_client
-            )
-            manager = ContextManager(config, store=store, web_retriever=web)
+            manager = ContextManager(config, store=store)
             llm = LocalOpenAICompatibleClient(
                 base_url=f"http://127.0.0.1:{port}/v1",
                 model=MODEL_NAME,
@@ -130,7 +116,7 @@ class QwenStartupAndWebTests(unittest.IsolatedAsyncioTestCase):
                     self.assertEqual(response.json()["used_model"], MODEL_NAME)
                     self.assertEqual(
                         response.json()["sources"][0]["url"],
-                        "https://example.edu/current-atp",
+                        "local://current-atp-research.md",
                     )
                     self.assertLessEqual(llm.last_context.total_tokens, 1_500)
             finally:

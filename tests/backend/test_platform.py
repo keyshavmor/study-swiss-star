@@ -19,6 +19,7 @@ from app.platform import (
 )
 from app.services.model_runtime import ModelRuntimeConfig, ModelRuntimeManager
 from scripts.setup_environment import llama_matchspec, setup_commands
+from scripts.start_app import ensure_model
 
 
 def completed(
@@ -167,6 +168,51 @@ class EnvironmentSetupTests(unittest.TestCase):
         commands = setup_commands("/conda", mac, with_model=True)
         self.assertIn("llama.cpp=*=cpu_accelerate*", commands[1])
         self.assertIn("download_qwen3_8_27b.py", commands[-1][-1])
+
+    def test_setup_can_seed_model_from_local_storage(self) -> None:
+        """Offline setup forwards a local GGUF instead of requiring a Hub download."""
+
+        mac = detect_host(
+            system="Darwin",
+            machine="arm64",
+            runner=lambda command: completed(command, 0, str(48 * GIB)),
+        )
+        commands = setup_commands(
+            "/conda",
+            mac,
+            with_model=False,
+            model_source=Path("/Volumes/Models/Qwen.gguf"),
+        )
+        self.assertIn("--source-file", commands[-1])
+        self.assertIn("/Volumes/Models/Qwen.gguf", commands[-1])
+
+
+class ApplicationStartupTests(unittest.TestCase):
+    """Verify model acquisition is automatic but remains operator-controllable."""
+
+    @patch("scripts.start_app.subprocess.run")
+    @patch("scripts.start_app.inspect_model")
+    def test_missing_model_is_downloaded_and_revalidated(self, inspect, run) -> None:
+        """Default startup fetches absent weights before launching any service."""
+
+        missing = type("Presence", (), {"present": False})()
+        present = type("Presence", (), {"present": True})()
+        inspect.side_effect = [missing, present]
+        with patch.dict("os.environ", {}, clear=True):
+            self.assertIs(ensure_model(), present)
+        run.assert_called_once()
+        self.assertIn("download_qwen3_8_27b.py", run.call_args.args[0][-1])
+
+    @patch("scripts.start_app.inspect_model")
+    def test_automatic_model_download_can_be_disabled(self, inspect) -> None:
+        """Managed/offline sites can require pre-provisioned weights explicitly."""
+
+        inspect.return_value = type("Presence", (), {"present": False})()
+        with (
+            patch.dict("os.environ", {"ALIM_MODEL_AUTO_DOWNLOAD": "false"}, clear=True),
+            self.assertRaisesRegex(SystemExit, "automatic download is disabled"),
+        ):
+            ensure_model()
 
 
 if __name__ == "__main__":

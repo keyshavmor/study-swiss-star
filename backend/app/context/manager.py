@@ -205,8 +205,15 @@ class ContextManager:
         debug["syllabus_chunks_retrieved"] = len(syllabus)
 
         web_items: list[ContextItem] = []
-        debug["web"] = {"requested": query.requires_web, "allowed": allow_web, "cache_hit": False}
-        if self.config.web.enabled and allow_web and query.requires_web:
+        missing_local_material = query.requires_documents and not knowledge and not syllabus
+        should_retrieve_web = query.requires_web or missing_local_material
+        debug["web"] = {
+            "requested": query.requires_web,
+            "missing_local_material": missing_local_material,
+            "allowed": allow_web,
+            "cache_hit": False,
+        }
+        if self.config.web.enabled and allow_web and should_retrieve_web:
             try:
                 web_items, cache_hit = await self.web.retrieve(user_message)
                 debug["web"].update({"cache_hit": cache_hit, "results_retrieved": len(web_items)})

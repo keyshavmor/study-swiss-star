@@ -5,7 +5,7 @@ The default suite is fully local and does not call Lovable or Supabase.
 - `tests/backend/` covers budgets, retrieval, memory, APIs, downloads, platform detection, setup
   selection, and llama.cpp command construction.
 - `tests/e2e/` starts a disposable OpenAI-compatible process and follows checkpoint validation →
-  startup preload → web retrieval → context budgeting → chat response.
+  startup preload → local-first retrieval → context budgeting → chat response.
 - `tests/results/` stores generated reports while caches remain ignored.
 
 ```bash
@@ -46,5 +46,6 @@ curl --fail -H 'Content-Type: application/json' \
 For a visible budget audit, start with `ALIM_CONTEXT_DEBUG=true` and call
 `/api/context/compile` using `debug=true`, `max_context_tokens=4096`, and
 `reserve_output_tokens=512`. Confirm `compiled_total_tokens <= token_budget.input_limit`. These
-requests touch only local FastAPI/llama.cpp; web testing contacts MediaWiki only when explicitly
-enabled and still never contacts Lovable or Supabase.
+requests touch only local FastAPI/llama.cpp. Automated tests prove that `auto` does not open the
+network when local evidence matches and that it invokes the remote adapter when local material is
+missing. Neither path contacts Lovable or Supabase from the Python backend.

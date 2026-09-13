@@ -17,7 +17,7 @@ StudyChat
        -> selected memory/retrieval branches only
        -> dense + BM25 retrieval
        -> reciprocal-rank fusion, deduplication, heuristic reranking
-       -> optional intent-gated web retrieval + local cache
+       -> optional intent-gated local-first reference retrieval + local cache
        -> per-section and global token budgeting
        -> ContextCompiler
   -> configured local OpenAI-compatible model
@@ -43,7 +43,7 @@ frontend transcript by default.
 | Conversation | `conversation_messages`, `conversation_summaries` | Recent messages + rolling summary + relevant older messages |
 | Working | `working_memory` | Conversation/task scoped, expiry-based; P0 only when explicitly critical |
 | Artifact | `context_artifacts` | Summary/location in prompt; full content remains in SQLite and searchable |
-| Web | `web_cache` | Explicit current/web intent only; provenance-labelled, untrusted P2 context |
+| Reference | `web_cache` | Explicit current/web intent; local-first with web fallback, untrusted P2 context |
 
 Original conversation messages are not deleted when a summary is created. Student mastery,
 weakness, and misconception memories require repeated evidence by default. Casual chat and weak or
@@ -77,7 +77,7 @@ All defaults can be overridden with `ALIM_*` environment variables; see
 
 Qwen3.8-27B supports 262,144 native tokens, but Alim selects a safer total ceiling from hardware:
 65,536 on the 48 GB M4 Pro, 32,768 on a 24 GB RTX 3090, or 16,384 on Linux CPU fallback. One
-quarter is reserved for output. Web results have their own 6,000-token ceiling and are removed
+quarter is reserved for output. Reference results have their own 6,000-token ceiling and are removed
 before critical working state when the global input limit is reached.
 
 ## Observability
@@ -116,6 +116,10 @@ Unrelated Chemistry chunks and the rest of the Biology corpus are absent.
 
 - The zero-configuration hashing embedder is not a full semantic embedding model; configure
   `ALIM_EMBEDDING_MODEL` for semantic dense retrieval.
+- Reference lookup activates for an explicit current/web request or when a study question has no
+  relevant document/syllabus match. It first searches operator snapshots under `material/web/`. If no relevant
+  match exists, the default `auto` provider uses Wikipedia. Use `ALIM_WEB_PROVIDER=local` to remain
+  strictly offline.
 - PDF and DOCX file parsing require the `documents` optional dependency; the JSON text-ingestion
   endpoint is the currently exposed ingestion route.
 - The FastAPI chat endpoint is non-streaming; the TanStack route converts the completed response to

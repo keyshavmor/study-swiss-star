@@ -21,6 +21,7 @@ conda activate alim-study
 It reads `environment.yml`, installs Python/Node/npm/uv, selects the llama.cpp build for detected
 CUDA, Metal/Accelerate, or Linux CPU, syncs `backend/uv.lock`, and installs
 `frontend/package-lock.json`. Add `--with-model` to download the 17.67 GiB model in the same run.
+For a network-free machine, use `--model-source /path/to/Qwen3.8-27B-Q4_K_M.gguf` instead.
 
 If Conda is not already on `PATH`, the script also checks `~/anaconda3/bin/conda` and
 `~/miniconda3/bin/conda`. Intel macOS is intentionally rejected; the supported Mac target is native
@@ -36,10 +37,11 @@ dependency update should not regenerate both locks accidentally.
 uv run --project backend python models/download_qwen3_8_27b.py --check
 uv run --project backend python models/download_qwen3_8_27b.py --dry-run
 uv run --project backend python models/download_qwen3_8_27b.py
+uv run --project backend python models/download_qwen3_8_27b.py --source-file /path/to/Qwen3.8-27B-Q4_K_M.gguf
 ```
 
-The first command is offline. The latter commands require outbound HTTPS access to Hugging Face.
-The resulting `models/Qwen3.8-27B/` directory is not committed.
+The first and fourth commands are offline. The second and third require outbound HTTPS access to
+Hugging Face. The resulting `models/Qwen3.8-27B/` directory is not committed.
 
 ## Start everything
 
@@ -47,8 +49,9 @@ The resulting `models/Qwen3.8-27B/` directory is not committed.
 python backend/scripts/start_app.py
 ```
 
-The backend validates and preloads Qwen before becoming ready. The frontend can render while the
-model loads, but AI calls return only after FastAPI startup completes. Inspect `logs/backend.log`,
+The backend validates Qwen, downloads it automatically if absent, and preloads it before becoming
+ready. Set `ALIM_MODEL_AUTO_DOWNLOAD=false` to require pre-provisioned weights. The frontend can
+render while the model loads, but AI calls return only after FastAPI startup completes. Inspect `logs/backend.log`,
 `logs/frontend.log`, and `logs/qwen3.8-27b-llama-server.log` if startup fails.
 
 To run components independently for UI/API development, point FastAPI at an already-running
@@ -60,12 +63,16 @@ cd frontend
 npm run dev
 ```
 
-## Web context
+## Local-first reference context
 
-Web retrieval is on by default and activates only for explicit current/browsing requests. Set
-`allow_web:false` on an API request or `ALIM_WEB_ENABLED=false` globally to prevent network access.
-Fetched text is cached under `app-data/`, labelled untrusted, and limited to the web section and
-global context budgets.
+Reference retrieval is on by default and activates for explicit current/browsing requests or when a
+normal study question has no relevant local document/syllabus match. Its
+default `auto` provider searches `.md`, `.txt`, `.html`, and `.htm` snapshots under
+`material/web/`, then automatically uses Wikipedia if no relevant local match exists. Set
+`allow_web:false` on an API request or
+`ALIM_WEB_ENABLED=false` globally to disable the branch. Selected text is cached under `app-data/`,
+labelled untrusted, and limited by the web section and global context budgets. Set
+`ALIM_WEB_PROVIDER=local` for no network access or `wikipedia` to force live MediaWiki retrieval.
 
 ## Tests
 
@@ -94,6 +101,6 @@ selects a slower but functional CPU runtime. On the M4 Pro, Metal uses unified m
 | Linux unexpectedly uses CPU | Repair the NVIDIA driver, rerun setup to select the CUDA build, then restart |
 | Apple Mac uses the wrong architecture | Confirm `uname -m` is `arm64` and do not run the shell through Rosetta |
 | Chat returns 503 | Confirm `/health` and `/v1/models` list `Qwen/Qwen3.8-27B` |
-| No internet sources | Use explicit “latest/current/browse” language and confirm web access is enabled |
+| No local reference sources | Automatic mode uses Wikipedia; check connectivity or add snapshots under `material/web/` |
 | Prompt too large | Inspect debug budget data; reduce section limits or selected material |
 | Sign-in fails offline | Supabase authentication still requires connectivity |

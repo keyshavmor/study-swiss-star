@@ -18,7 +18,7 @@ expected model alias is resident and listed by `/v1/models`.
 
 ## Run
 
-From the repository root after platform setup and model download:
+From the repository root after platform setup:
 
 ```bash
 conda activate alim-study
@@ -34,8 +34,14 @@ ALIM_MODEL_AUTOSTART=false uv run --project backend \
 
 The API exposes `/health`, `/api/model/status`, `/api/chat`, `/api/context/compile`,
 `/api/context/documents/text`, `/api/context/events`, and `/api/context/artifacts`. Local state
-defaults to `app-data/context/alim-context.db`. Web retrieval is intent-gated, cached,
-provenance-labelled, and constrained by the same hard budget as local evidence.
+defaults to `app-data/context/alim-context.db`. Reference retrieval searches `material/web/` first
+and automatically uses Wikipedia only when no relevant local match exists. It is intent-gated,
+cached, provenance-labelled, and constrained by the same hard budget as local evidence. Use
+`ALIM_WEB_PROVIDER=local` to prohibit network retrieval.
+
+`start_app.py` validates the model, automatically invokes the resumable downloader if it is absent,
+and then starts the preloaded runtime. Set `ALIM_MODEL_AUTO_DOWNLOAD=false` to require an existing
+checkpoint instead.
 
 Tests live in repository-level `tests/backend/` and `tests/e2e/`; they do not require Lovable or
 Supabase.

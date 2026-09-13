@@ -15,7 +15,7 @@ from pathlib import Path
 REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPOSITORY_ROOT / "backend"))
 
-from app.model_spec import inspect_model
+from app.model_spec import ModelPresence, inspect_model
 from app.platform import detect_host
 
 
@@ -35,6 +35,32 @@ def require_executable(command: list[str]) -> None:
         )
 
 
+def ensure_model() -> ModelPresence:
+    """Validate local weights and automatically fetch them when they are absent."""
+
+    presence = inspect_model()
+    if presence.present:
+        return presence
+    if os.getenv("ALIM_MODEL_AUTO_DOWNLOAD", "true").lower() != "true":
+        raise SystemExit(
+            "Qwen3.8-27B is missing or incomplete and automatic download is disabled. "
+            "Run `uv run --project backend python models/download_qwen3_8_27b.py` first."
+        )
+    downloader = REPOSITORY_ROOT / "models" / "download_qwen3_8_27b.py"
+    print("Qwen3.8-27B is not present; downloading the validated GGUF checkpoint...", flush=True)
+    try:
+        subprocess.run([sys.executable, str(downloader)], cwd=REPOSITORY_ROOT, check=True)
+    except subprocess.CalledProcessError as error:
+        raise SystemExit(
+            "Automatic model download failed. Check internet access and free disk space, then "
+            "rerun startup; the downloader resumes partial transfers."
+        ) from error
+    presence = inspect_model()
+    if not presence.present:
+        raise SystemExit("The model download completed but the checkpoint did not validate")
+    return presence
+
+
 def main() -> int:
     """Validate local prerequisites, start both services, and coordinate shutdown."""
 
@@ -45,12 +71,7 @@ def main() -> int:
         f"context window {profile.default_context_tokens} tokens",
         flush=True,
     )
-    presence = inspect_model()
-    if not presence.present:
-        raise SystemExit(
-            "Qwen3.8-27B is missing or incomplete. Run "
-            "`uv run --project backend python models/download_qwen3_8_27b.py` first."
-        )
+    ensure_model()
     backend = command_from_env(
         "ALIM_BACKEND_COMMAND",
         [
