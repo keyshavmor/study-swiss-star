@@ -1,0 +1,15 @@
+flowchart TD
+  Panel[MaterialsPanel on subject workspace] --> LocalList[Local user files links and notes]
+  LocalList --> CRUD[Add edit archive delete restore]
+  CRUD --> Local[(Browser storage\nIMPLEMENTED LOCAL)]
+  Panel -. planned merge .-> BackendList[Indexed corpus materials]
+  BackendList -.-> GET["GET /api/subjects/{id}/materials\nPLANNED"]
+  Upload[Choose PDF DOCX MD or TXT\nPLANNED UI WIRING] -.-> Import[POST /api/import/document multipart\nPLANNED]
+  Import -.-> Parse[Python parse and normalize]
+  Parse -.-> Chunk[Chunk + embed + index]
+  Chunk -.-> Store[(Python SQLite/vector index)]
+  Store -.-> BackendList
+  Import -. success .-> Status[Indexed status pages chunks warnings]
+  Import -. parse failure .-> Review[Keep item visible as Needs review]
+  Text[POST /api/context/documents/text\nIMPLEMENTED BACKEND] --> Chunk
+  Transcript[TranscriptImportDialog\nsimulated OCR review confirm] --> Assessments[Local assessments only\nIMPLEMENTED]
