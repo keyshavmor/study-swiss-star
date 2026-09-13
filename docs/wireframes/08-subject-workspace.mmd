@@ -1,0 +1,18 @@
+flowchart TD
+  Route[Open /school/$subject] --> Lookup[getSchoolSubject or not found]
+  Lookup --> Header[Subject header\naverage next exam materials]
+  Lookup --> Components{SPF combined?}
+  Components -->|No| Active[Use subject slug]
+  Components -->|Yes| Toggle[Biology or Chemistry segmented switch]
+  Toggle --> Active
+  Active --> Grades[Local tests + grade summary]
+  Active --> Materials[MaterialsPanel local CRUD]
+  Active --> Modes[Chat Knowledge Analysis Quiz Exam Study Plan Statistics Tools]
+  Grades --> Stats[Statistics mode\nIMPLEMENTED]
+  Modes --> Chat[Open /chat\nIMPLEMENTED but subject is entered on thread]
+  Modes -.-> Future[Knowledge analysis quiz exam plan tools\nPLACEHOLDER UI / PLANNED]
+  Materials --> Local[(Browser storage\nIMPLEMENTED LOCAL)]
+  Materials -.-> Indexed[Python indexed materials\nPLANNED MERGE]
+  Toggle --> Scope[Component subject ID for future retrieval]
+  Scope -.-> Python[FastAPI subject APIs\nPLANNED]
+  Components --> Formula[Combined header = component averages divided by 2\nFRONTEND AUTHORITY]

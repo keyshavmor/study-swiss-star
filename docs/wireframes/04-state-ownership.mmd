@@ -1,0 +1,16 @@
+flowchart LR
+  Static[Static frontend\n15 subjects + languages + SPF mapping] --> UI[Rendered UI]
+  Local[(Browser storage\nassessments events materials links profile demo)] --> AppData[AppDataProvider]
+  AppData --> UI
+  AppData --> Grade[grade-math.ts\nSwiss formula + summaries + SPF]
+  Grade --> UI
+  Year[(Browser storage\nacademic year)] --> Academic[AcademicYearProvider]
+  Academic --> UI
+  Cloud[(Lovable Cloud\nusers threads messages)] --> ServerFns[Authenticated server functions]
+  ServerFns --> UI
+  Python[(Python SQLite\nchunks memories artifacts)] --> FastAPI[FastAPI]
+  FastAPI --> ChatAPI[TanStack /api/chat]
+  ChatAPI --> UI
+  Static -->|subject/language context| ChatAPI
+  Academic -->|year/grade context| ChatAPI
+  Future[(Future Python records\nquiz exam grading plan feedback)] -. planned .-> FastAPI

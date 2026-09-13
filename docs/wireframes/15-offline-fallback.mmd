@@ -1,0 +1,17 @@
+flowchart TD
+  Start[App operation] --> Cloud{Lovable Cloud reachable?}
+  Cloud -->|No before sign-in| AuthBlocked[Protected pages unavailable]
+  Cloud -->|Session already valid| LocalScreens[Local screens may remain usable]
+  Cloud -->|Yes| Gate[Authentication and chat history available]
+  Gate --> Python{Python backend reachable?}
+  Python -->|Yes| AI[Context-backed chat works]
+  Python -->|No| Fallback{Opt-in Lovable fallback enabled?}
+  Fallback -->|Yes| Gateway[Cloud AI answer\nIMPLEMENTED OPTIONAL]
+  Fallback -->|No| Error[Chat returns clear 503\nIMPLEMENTED]
+  Python -. future health UI .-> Banner[Non-blocking offline banner + Retry\nPLANNED]
+  Banner -.-> Disable[Disable AI-only actions\nPLANNED]
+  Error --> Continue[School grades stats planner profile links demo remain local]
+  Disable --> Continue
+  Continue --> Store[(Browser storage)]
+  ModelDown{Model unavailable but FastAPI reachable} --> Degraded[/health returns degraded]
+  Degraded -. planned UI .-> Banner

@@ -1,0 +1,20 @@
+flowchart TD
+  Open[Open /home] --> Read[Read AppDataProvider + AcademicYearProvider]
+  Read --> Profile[Preferred/full name]
+  Read --> Grades[Assessments for selected year]
+  Read --> Events[Planner events next 30 days]
+  Read --> Links[User school links]
+  Grades --> Year[summariseYear\nSPF counted once]
+  Events --> Occ[occurrencesInRange]
+  Year --> Cards[School-year average]
+  Occ --> Cards
+  Occ --> Next[Next exam + study time + activity]
+  Profile --> Greeting[Personal greeting]
+  Links --> LinkUI[SchoolLinksSection\nopen + CRUD]
+  Cards --> UI[Home dashboard]
+  Next --> UI
+  Greeting --> UI
+  LinkUI --> UI
+  UI --> School[/school]
+  UI --> Planner[/planner]
+  UI --> Local[(Browser storage\nIMPLEMENTED LOCAL)]
