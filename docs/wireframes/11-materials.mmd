@@ -3,7 +3,7 @@ flowchart TD
   LocalList --> CRUD[Add edit archive delete restore]
   CRUD --> Local[(Browser storage\nIMPLEMENTED LOCAL)]
   Panel -. planned merge .-> BackendList[Indexed corpus materials]
-  BackendList -.-> GET[GET /api/subjects/{id}/materials\nPLANNED]
+  BackendList -.-> GET["GET /api/subjects/{id}/materials\nPLANNED"]
   Upload[Choose PDF DOCX MD or TXT\nPLANNED UI WIRING] -.-> Import[POST /api/import/document multipart\nPLANNED]
   Import -.-> Parse[Python parse and normalize]
   Parse -.-> Chunk[Chunk + embed + index]
