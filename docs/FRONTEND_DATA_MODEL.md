@@ -4,7 +4,9 @@ Stable TypeScript types for the frontend ↔ Python contract. Names are fixed so
 mirror them 1:1 with Pydantic models. Wire format is `snake_case`; existing local prototype types
 keep their current camelCase field names until a type is explicitly migrated.
 
-New API types belong in `src/lib/pythonApiTypes.ts`.
+The implemented chat/context response types live in `src/lib/context-backend.types.ts`. Types for
+the still-planned quiz/exam/planner endpoints should move to a shared API-types module when those
+features are implemented.
 
 ## Summary table
 
@@ -33,6 +35,7 @@ New API types belong in `src/lib/pythonApiTypes.ts`.
 | `ModelStatus` | — (new) | — | PY | `ModelStatus` |
 | `BackendHealth` | — (new) | — | PY | `BackendHealth` |
 | `APIError` | — (new) | — | PY | `APIError` |
+| `ContextItem` / `CompiledContext` | `backend/app/context/models.py` | local SQLite / request | PY | Python dataclasses (internal, not ordinary student UI data) |
 
 ---
 
@@ -42,13 +45,13 @@ New API types belong in `src/lib/pythonApiTypes.ts`.
 export type SubjectLanguage = "de" | "en" | "fr";
 
 export interface SubjectComponent {
-  component_subject_id: "spf_biology" | "spf_chemistry" | string;
+  component_subject_id: "spf-biology" | "spf-chemistry" | string;
   display_name: string;
   language: SubjectLanguage;
 }
 
 export interface Subject {
-  subject_id: string;              // "spf_biology_chemistry"
+  subject_id: string;              // "spf"
   display_name: string;            // "SPF Biology & Chemistry"
   language: SubjectLanguage;
   components: SubjectComponent[];  // [] for the 14 non-combined subjects
@@ -60,12 +63,12 @@ export interface Subject {
 
 ```json
 {
-  "subject_id": "spf_biology_chemistry",
+  "subject_id": "spf",
   "display_name": "SPF Biology & Chemistry",
   "language": "de",
   "components": [
-    { "component_subject_id": "spf_biology", "display_name": "Biology (SPF)", "language": "de" },
-    { "component_subject_id": "spf_chemistry", "display_name": "Chemistry (SPF)", "language": "de" }
+    { "component_subject_id": "spf-biology", "display_name": "Biology (SPF)", "language": "de" },
+    { "component_subject_id": "spf-chemistry", "display_name": "Chemistry (SPF)", "language": "de" }
   ],
   "indexed_materials": 14,
   "learning_goal_count": 22,
@@ -151,7 +154,7 @@ export interface Assessment {
 ```json
 {
   "id": "as_2f1",
-  "subjectSlug": "spf_chemistry",
+  "subjectSlug": "spf-chemistry",
   "title": "Kinetik Test",
   "type": "Written exam",
   "topic": "Reaktionsgeschwindigkeit",

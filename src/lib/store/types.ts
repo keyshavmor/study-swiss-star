@@ -1,7 +1,7 @@
 /**
  * Prototype data model. Everything here lives in editable frontend state —
- * there is no backend, and every record can be created, edited and removed
- * by the user.
+ * these records do not use the Python context backend, and every record can be
+ * created, edited and removed by the user.
  */
 
 export type GradeSource =
@@ -285,4 +285,3 @@ export const EMPTY_STATE: DataState = {
   readNotifications: [],
   dismissedNotifications: [],
 };
-

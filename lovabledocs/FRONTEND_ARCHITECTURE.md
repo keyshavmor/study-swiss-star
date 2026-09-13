@@ -9,13 +9,13 @@ local Python FastAPI backend.
 | --- | --- | --- |
 | Framework | TanStack Start v1 | SSR + server functions, file-based routing |
 | UI | React 19 + TypeScript 5.8 | Function components, hooks only |
-| Build | Vite 7 | Dev server on `http://localhost:8080` |
+| Build | Vite 8 | Dev server on `http://localhost:8080` |
 | Package manager | Bun | `bun install`, `bun run dev` |
 | Styling | Tailwind CSS v4 | Tokens in `src/styles.css` via `@theme` |
 | Primitives | Radix UI / shadcn | `src/components/ui/*` |
 | Data fetching | TanStack Query | `QueryClientProvider` in `src/routes/__root.tsx` |
 | Auth + chat storage | Supabase (Lovable Cloud) | `src/integrations/supabase/*` |
-| AI | Lovable AI Gateway via `ai` SDK | `src/lib/ai-gateway.server.ts`, `src/routes/api/chat.ts` |
+| AI | Local Python context backend; optional Lovable fallback | `src/lib/context-backend.server.ts`, `src/routes/api/chat.ts` |
 
 ## 2. TanStack Start model
 
@@ -98,27 +98,30 @@ server functions via `src/integrations/supabase/auth-attacher.ts` and validated 
 `auth-middleware.ts`. Threads/messages live in Supabase tables typed by
 `src/integrations/supabase/types.ts` (auto-generated, never edited).
 
-### b. Lovable AI Gateway
-`src/routes/api/chat.ts` authenticates the request, verifies thread ownership, persists the user
-message, then calls `createLovableAiGatewayProvider()` (`src/lib/ai-gateway.server.ts`) and
-`streamText(...)`, persisting the assistant message in `onFinish`. `StudyChat.tsx` consumes it via
-`useChat` + `DefaultChatTransport({ api: "/api/chat" })`.
+### b. AI and context path
+`src/routes/api/chat.ts` authenticates the request, verifies thread ownership, and persists the
+user message. In the default `context` mode it forwards only the current question and identifiers
+to FastAPI, converts the completed Python answer and provenance metadata into an AI SDK UI stream,
+and persists the assistant message. `StudyChat.tsx` renders source metadata with
+`SourceSnippetList`. The older `streamText`/Lovable path remains available in explicit `lovable`
+mode or as an opt-in fallback.
 
 ### c. localStorage prototype data
 `AppDataProvider` hydrates from `localStorage`, seeded from `src/lib/store/demo-data.ts` only when
 demo mode is on. Grade math is computed client-side in `src/lib/grade-math.ts` from
 `Assessment[]`. Static subject metadata lives in `src/lib/mock/subjects.ts`.
 
-## 9. Where Python backend calls should be inserted
+## 9. Python backend insertion points
 
-**Recommendation: a browser-side typed API client, not new TanStack server functions.**
+Chat currently uses a server-only client so the existing Supabase-authenticated route remains the
+single transcript writer. Other planned AI features can use a browser-side client later.
 
 | Concern | Insertion point |
 | --- | --- |
-| All Python calls | New `src/lib/pythonApiClient.ts` (fetch wrapper, base URL from `VITE_PYTHON_API_BASE_URL`, timeout, typed errors) |
-| Shared types | New `src/lib/pythonApiTypes.ts` (mirrors `FRONTEND_DATA_MODEL.md`) |
-| Mode switching | New `src/lib/backendMode.ts` (`python` \| `lovable` \| `mock`) |
-| Chat transport | New `src/lib/pythonChatAdapter.ts`, swapped into the `transport` option of `useChat` in `StudyChat.tsx`. The chat UI itself does not change. |
+| Chat Python calls | `src/lib/context-backend.server.ts` (server-only fetch wrapper, timeout, typed errors) |
+| Shared chat types | `src/lib/context-backend.types.ts` |
+| Mode switching | `ALIM_AI_BACKEND=context|lovable` on the TanStack server |
+| Chat transport | Existing `DefaultChatTransport` continues to call `/api/chat`; the route selects the backend |
 | Health/status | New `src/components/app/BackendStatusBanner.tsx`, rendered inside `AppShell` |
 | RAG sources | New `src/components/app/SourceSnippetList.tsx`, rendered under assistant messages |
 
@@ -132,10 +135,10 @@ TanStack server route (`src/routes/api/*`) and keep the same client interface.
 ```mermaid
 graph LR
     Student([Student]) --> UI[Lovable UI<br/>React 19 + TanStack Router]
-    UI --> SF[TanStack server fn /<br/>pythonApiClient.ts]
+    UI --> SF[TanStack /api/chat route]
     SF --> SB[(Supabase<br/>auth + chat threads)]
     SF --> PY[Python FastAPI<br/>localhost:8001]
-    PY --> RAG[(Chroma / embeddings<br/>subject databases)]
+    PY --> RAG[(SQLite chunks /<br/>hybrid retrieval)]
     PY --> FILES[(Subject files<br/>PDF / DOCX / MD / TXT)]
     PY --> LLM[Ollama / vLLM<br/>localhost:11434 or remote GPU]
     RAG --> PY
@@ -151,4 +154,5 @@ graph LR
 - Do not remove the `_authenticated` gate.
 - Do not break SPF combined-subject logic in `src/lib/grade-math.ts`.
 - Do not put secrets in `VITE_*`.
-- Keep the app functional with the Python backend offline (mock/degraded mode).
+- Keep non-AI screens functional with the Python backend offline. Chat reports a clear 503 unless
+  the cloud fallback has been explicitly enabled.

@@ -196,7 +196,7 @@ function PlannerPage() {
       if (view === "Month") return addMonths(current, delta);
       return addDays(current, delta * 7);
     });
-    void navigate({ to: "/planner", search: {} });
+    void navigate({ to: "/planner", search: { date: undefined, event: undefined } });
   }
 
   function applyMove(request: MoveRequest, scope: Scope) {

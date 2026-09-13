@@ -1,18 +1,19 @@
 # User Flows
 
-Sequence diagrams for the target architecture. Participants:
-**Student**, **UI** (Lovable frontend), **SF** (TanStack server fn / `pythonApiClient`),
+Sequence diagrams for the current chat path and the target paths for unfinished subject tools.
+Unless a section says implemented, it is a target flow. Participants:
+**Student**, **UI** (Lovable frontend), **SF** (TanStack route or planned API client),
 **PY** (Python FastAPI), **SB** (Supabase), **LS** (localStorage / `AppDataProvider`),
-**RAG** (Chroma / embeddings), **FILES** (subject files), **LLM** (Ollama / vLLM).
+**RAG** (SQLite chunks / hybrid retrieval), **FILES** (subject files), **LLM** (local OpenAI-compatible server).
 
-## 1. Local app startup
+## 1. Local app startup (target; health banner not yet implemented)
 
 ```mermaid
 sequenceDiagram
     participant Student
     participant UI as Lovable UI
     participant LS as localStorage/AppDataProvider
-    participant SF as pythonApiClient
+    participant SF as Frontend server bridge
     participant PY as Python FastAPI
     Student->>UI: open http://localhost:8080
     UI->>UI: mount __root providers (Query, Theme, AppData, AcademicYear)
@@ -58,7 +59,7 @@ sequenceDiagram
     participant Student
     participant UI as Lovable UI
     participant LS as localStorage/AppDataProvider
-    participant SF as pythonApiClient
+    participant SF as Frontend server bridge
     participant PY as Python FastAPI
     Student->>UI: open /school
     UI->>UI: read static SUBJECTS (15 cards)
@@ -79,7 +80,7 @@ sequenceDiagram
     participant Student
     participant UI as Lovable UI
     participant LS as localStorage/AppDataProvider
-    participant SF as pythonApiClient
+    participant SF as Frontend server bridge
     participant PY as Python FastAPI
     Student->>UI: click subject card → /school/physics
     UI->>LS: assessments + materials for "physics"
@@ -100,42 +101,41 @@ sequenceDiagram
     participant Student
     participant UI as Lovable UI
     participant LS as localStorage/AppDataProvider
-    participant SF as pythonApiClient
+    participant SF as Frontend server bridge
     participant PY as Python FastAPI
-    Student->>UI: open /school/spf_biology_chemistry
-    UI->>LS: assessments for spf_biology + spf_chemistry
+    Student->>UI: open /school/spf
+    UI->>LS: assessments for spf-biology + spf-chemistry
     UI->>UI: combined = (avg(bio) + avg(chem)) / 2 → header (2 decimals)
     UI-->>Student: combined header + both component averages + segmented switch
     Student->>UI: switch to "Chemistry"
-    UI->>UI: component_subject_id = "spf_chemistry" (no route change)
-    UI->>SF: GET /api/subjects/spf_biology_chemistry/learning-goals?component_subject_id=spf_chemistry
+    UI->>UI: component_subject_id = "spf-chemistry" (no route change)
+    UI->>SF: GET /api/subjects/spf/learning-goals?component_subject_id=spf-chemistry
     SF->>PY: scoped request
     PY-->>SF: chemistry goals + materials only
     SF-->>UI: chemistry workspace; combined header average unchanged
 ```
 
-## 6. Asking a subject-specific chat question
+## 6. Asking a chat question (implemented)
 
 ```mermaid
 sequenceDiagram
     participant Student
     participant UI as Lovable UI
-    participant SF as pythonChatAdapter
+    participant SF as TanStack /api/chat
     participant SB as Supabase
     participant PY as Python FastAPI
-    participant RAG as Chroma/RAG
+    participant RAG as Context Manager/SQLite
     participant FILES as Subject files
     participant LLM as Ollama/vLLM
     Student->>UI: type question, submit
     UI->>UI: Shimmer "Thinking…", composer disabled
     UI->>SF: sendMessage(question)
     SF->>SB: persist user message (Stage 1 writer)
-    SF->>PY: POST /api/chat {thread_id, subject_id, component_subject_id, language:"de", academic_year:"2026-27", grade_level:11, question, top_k:6, include_sources:true}
-    PY->>RAG: embed + similarity search (collection subject_spf_chemistry)
-    RAG->>FILES: resolve chunk → source file/page
-    RAG-->>PY: top-k chunks + scores
-    PY->>LLM: prompt (system: Grade 11 Swiss Gymnasium, answer in German) + context
-    LLM-->>PY: answer tokens
+    SF->>PY: POST /api/chat {thread_id, current question, subject/language/year/grade, include_sources:true, stream:false}
+    PY->>RAG: intent-gated dense + BM25 retrieval, RRF, rerank, deduplicate, budget
+    RAG-->>PY: CompiledContext + provenance
+    PY->>LLM: exactly two compiled messages (system/context + current user request)
+    LLM-->>PY: completed answer
     PY-->>SF: {answer, sources[], exam_tip, used_model, retrieval_summary}
     SF->>SB: persist assistant message
     SF-->>UI: ChatResponse
@@ -148,9 +148,9 @@ sequenceDiagram
 sequenceDiagram
     participant Student
     participant UI as Lovable UI
-    participant SF as pythonApiClient
+    participant SF as Frontend server bridge
     participant PY as Python FastAPI
-    participant RAG as Chroma/RAG
+    participant RAG as Hybrid context retrieval
     participant LLM as Ollama/vLLM
     Student->>UI: /school/biology → "Generate quiz" (8 questions, standard)
     UI-->>Student: panel shimmer "Generating quiz…" (up to 120 s)
@@ -172,12 +172,12 @@ sequenceDiagram
 sequenceDiagram
     participant Student
     participant UI as Lovable UI
-    participant SF as pythonApiClient
+    participant SF as Frontend server bridge
     participant PY as Python FastAPI
-    participant RAG as Chroma/RAG
+    participant RAG as Hybrid context retrieval
     participant LLM as Ollama/vLLM
     Student->>UI: "Generate mock exam" (90 min, 40 points, topic Genetik)
-    SF->>PY: POST /api/mock-exam/generate {subject_id:"spf_biology_chemistry", component_subject_id:"spf_biology", ...}
+    SF->>PY: POST /api/mock-exam/generate {subject_id:"spf", component_subject_id:"spf-biology", ...}
     PY->>RAG: retrieve syllabus + grading criteria + material chunks
     RAG-->>PY: context
     PY->>LLM: exam prompt with per-question rubric requirement
@@ -193,9 +193,9 @@ sequenceDiagram
 sequenceDiagram
     participant Student
     participant UI as Lovable UI
-    participant SF as pythonApiClient
+    participant SF as Frontend server bridge
     participant PY as Python FastAPI
-    participant RAG as Chroma/RAG
+    participant RAG as Hybrid context retrieval
     participant LLM as Ollama/vLLM
     participant LS as localStorage/AppDataProvider
     Student->>UI: submit answer for exam question (max 8 points)
@@ -220,7 +220,7 @@ sequenceDiagram
     participant Student
     participant UI as Lovable UI
     participant LS as localStorage/AppDataProvider
-    participant SF as pythonApiClient
+    participant SF as Frontend server bridge
     participant PY as Python FastAPI
     participant LLM as Ollama/vLLM
     Student->>UI: /planner → "Generate study plan"
@@ -242,15 +242,15 @@ sequenceDiagram
 sequenceDiagram
     participant Student
     participant UI as Lovable UI
-    participant SF as pythonApiClient
+    participant SF as Frontend server bridge
     participant PY as Python FastAPI
     participant FILES as Subject files
-    participant RAG as Chroma/RAG
+    participant RAG as Hybrid context retrieval
     participant LS as localStorage/AppDataProvider
     Student->>UI: MaterialsPanel → upload "Kinetik — Skript.pdf" (section: Learning Material)
     UI-->>Student: Uploading → Parsing → Indexing
     SF->>PY: POST /api/import/document (multipart: file, subject_id, component_subject_id, section, language)
-    PY->>FILES: store under data/subjects/spf_chemistry/
+    PY->>FILES: store under data/subjects/spf-chemistry/
     PY->>PY: parse PDF/DOCX/MD/TXT → chunks
     PY->>RAG: embed + upsert into subject collection
     RAG-->>PY: chunks_indexed=118
@@ -269,7 +269,7 @@ sequenceDiagram
 sequenceDiagram
     participant Student
     participant UI as Lovable UI
-    participant SF as pythonApiClient
+    participant SF as Frontend server bridge
     participant PY as Python FastAPI
     participant LS as localStorage/AppDataProvider
     Student->>UI: 👎 on an answer or /feedback form
@@ -312,7 +312,7 @@ sequenceDiagram
 sequenceDiagram
     participant Student
     participant UI as Lovable UI
-    participant SF as pythonApiClient
+    participant SF as Frontend server bridge
     participant PY as Python FastAPI
     participant LS as localStorage/AppDataProvider
     UI->>SF: GET /health (startup + every 60 s)

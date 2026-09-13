@@ -7,8 +7,9 @@ Where each kind of data lives today, and where it should live once the Python ba
 | Data type | Current file/module | Current owner | Current storage | Lifecycle today | Future owner | Stay in localStorage? | Move to Python? | Stay in Supabase? | Notes / risk |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | Chat threads | `src/lib/chat.functions.ts` (`listThreads`, `createThread`, `deleteThread`) | Supabase | Postgres `threads` | Per user, permanent | Supabase (Stage 1) | No | Optional (Stage 2) | **Yes** | Moving them breaks cross-device history; only move if fully offline use is required |
-| Chat messages | `src/routes/api/chat.ts`, `listMessages` | Supabase | Postgres `messages` | Permanent per thread | Supabase transcript + Python AI metadata | No | Partially | Yes | Risk: double-writes if both persist. Decide one writer |
-| AI answer metadata (sources, model, retrieval) | — | none | — | — | **Python** | No | Yes | No | New; key `sources` by `message_id` |
+| Chat messages | `src/routes/api/chat.ts`, `listMessages` | Supabase | Postgres `messages` | Permanent display transcript | Supabase display transcript + Python context mirror | No | Context mirror | Yes | TanStack is the only Supabase writer; Python's mirror supports compaction/retrieval |
+| AI answer metadata (sources, model, retrieval) | Python response + AI SDK data part | Python/UI message | SQLite context + Supabase message `parts` | Per answer | **Python** | No | Yes | Yes, inside message parts | Restored with the stored UI message |
+| Context memories and summaries | `backend/app/context/*` | Python | Local SQLite | Persistent/expiry by type | **Python** | No | Yes | No | Student, episodic, conversation, working, and artifact memory are separate tables |
 | Subject list (15 subjects) | `src/lib/mock/subjects.ts` | Frontend | static module | Compile-time | **Frontend** | n/a | No | No | Backend must never redefine the list |
 | Subject languages | `src/lib/mock/subjects.ts` | Frontend | static module | Compile-time | Frontend (sent as request context) | n/a | No | No | Mapped to `de/en/fr` at the API boundary |
 | SPF combined info | `src/lib/mock/subjects.ts` + `grade-math.ts` (`summariseSubjectView`) | Frontend | static + derived | Runtime | **Frontend** for display, Python for corpus routing | n/a | No | No | Do not duplicate combining logic in Python |
@@ -17,7 +18,7 @@ Where each kind of data lives today, and where it should live once the Python ba
 | Planner events | `src/lib/store/app-data.tsx` | `AppDataProvider` | `localStorage` | Full CRUD + recurrence | localStorage | **Yes** | No | Stage 3 optional | Recurrence expansion in `src/lib/date-utils.ts` stays local |
 | Timetable events | same as planner (`category: "School class"`, recurring) | `AppDataProvider` | `localStorage` | Recurring series | localStorage | Yes | No | No | Used to compute availability for study plans |
 | Materials (user-added) | `src/lib/store/app-data.tsx`, `MaterialsPanel` | `AppDataProvider` | `localStorage` | Full CRUD | localStorage | Yes | No | No | Merged with backend list, `origin: "local"` |
-| Materials (indexed corpus) | — | none | — | — | **Python** (local files + Chroma) | No | **Yes** | No | Read-only in the UI, `origin: "backend"` |
+| Materials (indexed corpus) | `backend/app/services/documents.py` | Python | Local SQLite chunks + cached embeddings | Persistent | **Python** | No | **Yes** | No | Text ingestion API is live; PDF/DOCX parser service is optional-dependency based |
 | School links | `src/lib/store/app-data.tsx`, `SchoolLinksSection` | `AppDataProvider` | `localStorage` | Full CRUD | localStorage | Yes | No | No | No backend need |
 | Student profile | `src/lib/store/app-data.tsx`, `EditProfileDialog` | `AppDataProvider` | `localStorage` | Editable | localStorage | Yes | No | Stage 3 optional | `grade_level` and language prefs are sent as request context |
 | Demo data | `src/lib/store/demo-data.ts`, `app/DemoMode.tsx` | `AppDataProvider` | `localStorage` | Toggleable, resettable | localStorage | **Yes** | No | No | Must keep working with the backend offline |
@@ -27,25 +28,23 @@ Where each kind of data lives today, and where it should live once the Python ba
 | AI mock exams | — | none | — | — | **Python** | Cache only | **Yes** | No | Same as quizzes |
 | Grading results | `grade-math.ts` computes locally today | Frontend | derived | Ephemeral | **Python** for evaluation, localStorage for kept records | Yes (as `Assessment`) | Yes (history) | No | Only saved to grades when the student confirms; `source: "AI practice assessment"` |
 | Study plans | planner `generated: true` events | `AppDataProvider` | `localStorage` | Editable | Python generates, localStorage stores | **Yes** | Generation only | No | Never auto-insert without review |
-| Source snippets | — | none | — | — | **Python** | No | **Yes** | No | Rendered by `SourceSnippetList` |
+| Source snippets | FastAPI chat response | Python | Compiled response + Supabase UI message parts | Per answer | **Python** | No | **Yes** | In message parts | Rendered by `SourceSnippetList` |
 | Model / backend health | — | none | — | — | **Python** | No | **Yes** | No | Polled, never persisted |
 
 ## Staged migration path
 
-### Stage 1 — Route AI to Python, change nothing else
+### Stage 1 — Route chat context to Python (implemented)
 - Keep the UI, design system, routes and the 15-subject model untouched.
 - Keep all prototype data (grades, planner, materials, links, profile, demo mode) in `localStorage`.
 - Keep Supabase auth and chat thread/message persistence exactly as-is.
-- Add `pythonApiClient.ts`, `pythonApiTypes.ts`, `backendMode.ts`, `pythonChatAdapter.ts`.
-- Point chat at `POST http://localhost:8001/api/chat` (non-streaming first).
-- Add `GET /health` polling and `BackendStatusBanner`.
-- Add `SourceSnippetList` under assistant answers.
-- Keep the Lovable AI Gateway path intact but disabled unless `VITE_ENABLE_LOVABLE_AI_FALLBACK=true`.
-- **Exit criteria:** chat answers come from Python with sources; app still fully usable offline.
+- `context-backend.server.ts` keeps the existing authenticated chat route and proxies to Python.
+- `SourceSnippetList` renders provenance returned with assistant data parts.
+- The Lovable path is intact and selected by `ALIM_AI_BACKEND=lovable`; automatic fallback is opt-in.
+- Health polling/banner remains to be implemented.
 
-### Stage 2 — Python owns AI artefacts
-- Python stores AI outputs locally (SQLite/JSON): quiz history, mock exams, grading history,
-  study plans, source snippets, feedback, and AI metadata keyed by `message_id`.
+### Stage 2 — Python owns additional AI artefacts (partly implemented)
+- Python stores context artifacts, source chunks, memories, events, and conversation summaries in
+  SQLite. Quiz history, mock exams, grading history, study plans, and feedback remain future work.
 - Wire learning goals, indexed materials and document import to Python.
 - Optionally mirror chat transcripts in Python for offline use, with Supabase still authoritative.
 - **Exit criteria:** every AI feature works with the network to Lovable Cloud disabled, except sign-in.

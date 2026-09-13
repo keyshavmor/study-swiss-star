@@ -11,7 +11,7 @@ Classification of every significant component in the existing frontend.
 | 🟨 LOCAL | Reads/writes `AppDataProvider` (localStorage / mock data) |
 | 🟩 AUTH | Supabase auth / session |
 | 🟧 AIGW | Lovable AI Gateway path |
-| 🟥 PY | Future Python-backend-connected |
+| 🟥 PY | Python-backend-connected or planned |
 | 📊 GRADE | Grading / statistics |
 | 📄 DOC | Material / document handling |
 
@@ -53,7 +53,7 @@ __root.tsx                                 🟪 LAYOUT  providers: Query, Theme,
     │   ├── app/AssessmentActions.tsx      🟨 LOCAL
     │   ├── app/AssessmentDialog.tsx       🟨 LOCAL 📊 GRADE
     │   ├── (quiz / mock exam / grader / study-plan panels) 🟥 PY  (to be created)
-    │   └── app/SourceSnippetList.tsx      🟥 PY      (to be created)
+    │   └── app/SourceSnippetList.tsx      🟥 PY      (implemented for chat; reusable here)
     ├── planner.tsx                        🟨 LOCAL (🟥 PY: study-plan generation)
     │   ├── app/Timetable.tsx              🟨 LOCAL
     │   ├── app/EventDialog.tsx            🟨 LOCAL
@@ -68,14 +68,14 @@ __root.tsx                                 🟪 LAYOUT  providers: Query, Theme,
     ├── help.tsx                           🟦 UI
     ├── diagnostics.tsx                    🟨 LOCAL → 🟥 PY (health + model status)
     ├── chat.index.tsx                     🟩 AUTH 🟧 AIGW (thread bootstrap)
-    └── chat.$threadId.tsx                 🟧 AIGW → 🟥 PY
-        └── StudyChat.tsx                  🟧 AIGW 🟩 AUTH → 🟥 PY
+    └── chat.$threadId.tsx                 🟥 PY (🟧 AIGW optional fallback)
+        └── StudyChat.tsx                  🟥 PY 🟩 AUTH
             ├── ThreadList.tsx             🟩 AUTH (Supabase threads)
             ├── ai-elements/conversation.tsx 🟦 UI
             ├── ai-elements/message.tsx      🟦 UI
             ├── ai-elements/prompt-input.tsx 🟦 UI
             ├── ai-elements/shimmer.tsx      🟦 UI
-            └── app/SourceSnippetList.tsx    🟥 PY (to be created)
+            └── app/SourceSnippetList.tsx    🟥 PY
 
 components/ui/*                            🟦 UI      shadcn/Radix primitives, never data-aware
 ```
@@ -90,14 +90,15 @@ components/ui/*                            🟦 UI      shadcn/Radix primitives,
 - **Integration notes:** do not modify. If local demo without auth is required, add a separate
   guest path — never weaken the `_authenticated` gate.
 
-### `StudyChat.tsx` — 🟧 AIGW → 🟥 PY
+### `StudyChat.tsx` — 🟥 PY / 🟧 optional fallback
 - **Purpose:** full chat shell: sidebar, thread dialog, transcript, composer, sign out.
 - **Props:** `{ threadId?: string }`.
 - **Data source:** `listThreads`/`listMessages`/`createThread`/`deleteThread` server fns (Supabase);
   `useChat` + `DefaultChatTransport({ api: "/api/chat" })` with a custom `fetch` that attaches the
   Supabase bearer token.
-- **Future backend:** swap only the `transport` for `pythonChatAdapter.ts`; add `subject_id`,
-  `component_subject_id`, `language`, `academic_year`, `grade_level` to the request body.
+- **Current backend:** the existing transport calls the authenticated TanStack route. That route
+  proxies to Python and passes thread, subject, academic-year and grade-level context; the response
+  carries `data-context-metadata` for sources/model/retrieval details.
 - **Integration notes:** the single highest-value edit point. Keep `Conversation`, `Message`,
   `PromptInput`, `Shimmer`, markdown rendering and empty state exactly as they are.
 

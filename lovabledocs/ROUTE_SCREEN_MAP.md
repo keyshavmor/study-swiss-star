@@ -61,10 +61,10 @@ Auth-gated routes live under `src/routes/_authenticated/` and are protected by
 - **File:** `_authenticated/chat.$threadId.tsx` → `src/components/StudyChat.tsx`
 - **Components:** `StudyChat`, `ThreadList`, `ai-elements/conversation|message|prompt-input|shimmer`, `ReactMarkdown`, `ThemeToggle`.
 - **Data source today:** `listThreads`, `listMessages`, `createThread`, `deleteThread` server
-  functions; streaming via `useChat` → `POST /api/chat` → Lovable AI Gateway.
+  functions; `useChat` → authenticated `POST /api/chat` → local Python Context Manager by default.
 - **Storage today:** Supabase `threads` / `messages`.
-- **Future backend:** **primary integration target.** `POST /api/chat` on FastAPI with RAG,
-  sources and exam tips; optional thread endpoints.
+- **Current backend:** FastAPI `POST /api/chat` with compiled context and source provenance;
+  optional thread endpoints remain future work.
 - **Proposed endpoints:** `POST /api/chat`, `GET /api/chat/threads`, `GET /api/chat/threads/{id}/messages`.
 - **Frontend-only: no.**
 
@@ -134,8 +134,8 @@ Auth-gated routes live under `src/routes/_authenticated/` and are protected by
 ### `POST /api/chat` — server route
 - **File:** `src/routes/api/chat.ts`
 - **Auth:** `Authorization: Bearer <supabase access token>`, validated with `auth.getClaims`.
-- **Today:** verifies thread ownership, inserts the user message, streams from Lovable AI Gateway
-  (`openai/gpt-5.6-sol`), inserts the assistant message in `onFinish`.
-- **Future:** either (a) becomes a thin proxy to `POST http://localhost:8001/api/chat`, or
-  (b) is bypassed entirely by `pythonChatAdapter.ts` calling FastAPI directly. Keep the file as the
-  Lovable AI fallback path, enabled only by `VITE_ENABLE_LOVABLE_AI_FALLBACK`.
+- **Today:** verifies thread ownership, inserts the user message, and in default context mode proxies
+  only the current question and identifiers to `POST http://127.0.0.1:8001/api/chat`. It converts
+  the response to an AI SDK UI stream, including source metadata, and inserts the assistant message.
+- **Fallback:** the Lovable gateway path remains available with `ALIM_AI_BACKEND=lovable` or the
+  opt-in `ALIM_ENABLE_LOVABLE_FALLBACK=true`.

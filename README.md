@@ -1,6 +1,8 @@
 # Alim's Study Assistant
 
-AI-powered study platform for Swiss Gymnasium students (ages 15–16). This is a full-stack prototype built with TanStack Start, React 19, TypeScript, Tailwind CSS v4, and Lovable Cloud (Supabase) for the chat backend.
+AI-powered study platform for Swiss Gymnasium students (ages 15–16). The repository contains a
+TanStack Start/React frontend, Supabase authentication and transcript storage, and a local Python
+context backend that retrieves and budgets the information sent to a local LLM.
 
 ---
 
@@ -28,7 +30,9 @@ AI-powered study platform for Swiss Gymnasium students (ages 15–16). This is a
 The app is split into two main layers:
 
 1. **Authenticated Study Assistant**
-   - Threaded AI chat powered by the Lovable AI Gateway (server-side streaming).
+   - Threaded AI chat compiled by the local Python Context Manager and served by a local
+     OpenAI-compatible model.
+   - The Lovable AI Gateway remains an explicit legacy/fallback mode.
    - Persistent cloud storage for chat threads and messages via Supabase, scoped to the signed-in user.
    - Google / Email authentication via `@lovable.dev/cloud-auth-js`.
 
@@ -58,15 +62,16 @@ SPF Biology & Chemistry is a combined subject: its displayed grade is the averag
 | Layer | Technology |
 |-------|------------|
 | Framework | TanStack Start v1 (full-stack React, SSR/SSG) |
-| Build Tool | Vite 7 |
+| Build Tool | Vite 8 |
 | Language | TypeScript 5.8 |
 | UI | React 19, Tailwind CSS v4, Radix UI primitives |
 | Routing | TanStack Router (file-based) |
 | State (server) | TanStack Query + `createServerFn` |
 | State (client) | React Context + `localStorage` |
-| Backend | Lovable Cloud / Supabase |
+| Backend | Python 3.11+ / FastAPI + TanStack server route |
 | Auth | Supabase Auth + `@lovable.dev/cloud-auth-js` |
-| AI | Lovable AI Gateway via `ai` SDK |
+| AI | Local OpenAI-compatible model; optional Lovable fallback |
+| Context storage | Local SQLite |
 | Charts | `recharts` |
 | Markdown | `react-markdown` |
 | Icons | `lucide-react` |
@@ -100,11 +105,22 @@ TanStack Start uses two backend patterns:
 
 2. **Server Routes** (`createFileRoute` with a `server` block)
    - Used for raw HTTP endpoints.
-   - `src/routes/api/chat.ts` — streaming AI chat endpoint via the Lovable AI Gateway. It verifies the bearer token, persists the last user message, streams the assistant response, and persists the assistant response on finish.
+   - `src/routes/api/chat.ts` — authenticated chat gateway. It persists the current user message,
+     forwards only that current request and identifiers to the local Context Manager, converts the
+     completed answer to the AI SDK UI stream, and persists the assistant response. The legacy
+     Lovable provider is retained behind configuration.
+
+3. **Local Python service** (`backend/app`)
+   - `ContextManager` performs intent analysis, hybrid retrieval, reranking, deduplication,
+     memory selection, conversation compaction, token budgeting, and final prompt compilation.
+   - FastAPI exposes the compiled path on `http://127.0.0.1:8001` and calls the configured local
+     OpenAI-compatible model.
 
 ### Data & Storage
 
 - **Chat data (persistent)** — `threads` and `messages` tables in Supabase. Row Level Security (RLS) ensures users can only access their own rows.
+- **Context data (local)** — document chunks, cached embeddings, student/episodic/conversation
+  memory, summaries, working memory, and artifacts live in `.local/alim-context.db` by default.
 - **Prototype data (local)** — assessments, planner events, materials, school links, and profile. Stored in `localStorage` via `AppDataProvider` and editable by the user. No backend or cloud sync for these.
 - **Demo mode** — A global toggle (`DemoMode`) populates the local state with sample data so the app looks realistic without a backend.
 
@@ -150,6 +166,9 @@ The visual direction is a calm, premium, pre-Liquid-Glass Apple aesthetic:
 │   ├── server.ts            # SSR error wrapper
 │   ├── start.ts             # TanStack Start app config + middleware
 │   └── styles.css           # Global design tokens and Tailwind imports
+├── backend/                 # Local Python Context Manager, FastAPI facade, and tests
+├── docs/                    # Current architecture and integration documentation
+├── lovabledocs/             # Mirror of docs/ for the Lovable editor
 ├── supabase/                # Supabase configuration
 ├── public/                  # Static assets
 ├── package.json             # Dependencies and scripts
@@ -244,6 +263,8 @@ Standard shadcn/ui primitives built on Radix UI. Notable files:
 |------|---------|
 | `ai-gateway.server.ts` | Lovable AI Gateway provider factory |
 | `chat.functions.ts` | Server functions for thread/message CRUD |
+| `context-backend.server.ts` | Server-only local Python API client and mode selection |
+| `context-backend.types.ts` | Shared context-response/source types |
 | `date-utils.ts` | ISO date string helpers (timezone-safe) |
 | `error-capture.ts` | Error capture utilities |
 | `error-page.ts` | SSR-friendly error HTML page |
@@ -282,7 +303,7 @@ TanStack Start file-based routes.
 | `_authenticated/school.$subject.tsx` | `/school/:subject` | Subject-specific dashboard with study modes and SPF component switch |
 | `_authenticated/settings.tsx` | `/settings` | Settings page |
 | `_authenticated/stats.tsx` | `/stats` | Academic statistics and records |
-| `api/chat.ts` | `/api/chat` | Streaming AI chat HTTP endpoint |
+| `api/chat.ts` | `/api/chat` | Authenticated local-context chat gateway and optional cloud fallback |
 
 ### Root config files
 
@@ -308,7 +329,10 @@ TanStack Start file-based routes.
 - **Auth protection** — server functions that touch user data use `requireSupabaseAuth`. Public routes that need auth wrap children in `_authenticated/route.tsx`.
 - **Local state** — the UI prototype stores data in `localStorage` via `AppDataProvider` so it is editable without a backend.
 - **Design tokens** — all colors, spacing, radii, and shadows are defined as semantic CSS variables in `src/styles.css`.
-- **No `src/server/` imports in client code** — server-only helpers are named `*.server.ts` and never imported by components.
+- **No server-only imports in client code** — server-only helpers are named `*.server.ts`; shared
+  type declarations live in non-server modules.
+- **One context boundary** — only Python's `ContextCompiler` constructs model messages. The
+  frontend route does not forward the complete UI transcript to the local model.
 - **Combined subjects** — `SCHOOL_SUBJECTS` in `src/lib/mock/subjects.ts` is the canonical top-level list; individual SPF Biology and SPF Chemistry are components, not top-level cards.
 
 ---
@@ -320,6 +344,8 @@ The app is a standard TanStack Start project. It can be run with Bun or Node.js 
 ### Prerequisites
 
 - Bun 1.2+ or Node.js 22+
+- Python 3.11+ and `uv`
+- A local OpenAI-compatible model endpoint (Ollama is the default)
 - A Lovable Cloud / Supabase project for the chat feature
 
 ### Steps
@@ -334,31 +360,48 @@ bun install
 # or
 npm install
 
-# Start the dev server
+# Install and start the local context backend (second terminal)
+cd backend
+uv sync --extra dev --extra documents
+uv run uvicorn app.main:app --reload --host 127.0.0.1 --port 8001
+
+# Start the frontend from the repository root
+cd ..
 bun run dev
 # or
 npm run dev
 ```
 
-The app will be available at `http://localhost:8080`.
-
-> **Note:** The AI chat feature requires the environment variables below. The prototype pages (School, Planner, Stats, Profile) work with only local state and do not need a backend.
+The frontend is available at `http://localhost:8080`; FastAPI documentation is at
+`http://127.0.0.1:8001/docs`. School, Planner, Stats, and Profile remain usable from local state
+when the Python service or model is offline.
 
 ---
 
 ## Environment Variables
 
-These are managed by the Lovable platform and are read from the server runtime. Do not commit real values to the repository.
+Supabase variables are managed by Lovable; `ALIM_*` values belong to the local server/backend
+environment. Do not commit real secrets.
 
 | Variable | Required for | Description |
 |----------|--------------|-------------|
 | `SUPABASE_URL` | Chat, Auth | Supabase project URL |
 | `SUPABASE_PUBLISHABLE_KEY` | Chat, Auth | Supabase anon/publishable key |
-| `LOVABLE_API_KEY` | Chat AI | Lovable AI Gateway key |
+| `LOVABLE_API_KEY` | Optional fallback | Lovable AI Gateway key |
 | `VITE_SUPABASE_URL` | Auth client | Public Supabase URL for the browser |
 | `VITE_SUPABASE_PUBLISHABLE_KEY` | Auth client | Public Supabase key for the browser |
+| `ALIM_AI_BACKEND` | Frontend server | `context` (default) or `lovable` |
+| `ALIM_CONTEXT_BACKEND_URL` | Frontend server | Python API URL; default `http://127.0.0.1:8001` |
+| `ALIM_ENABLE_LOVABLE_FALLBACK` | Frontend server | Opt-in cloud fallback (`false` by default) |
+| `ALIM_CONTEXT_DB` | Python backend | Local SQLite path; default `.local/alim-context.db` |
+| `ALIM_LLM_BASE_URL` | Python backend | Local OpenAI-compatible base URL |
+| `ALIM_LLM_MODEL` | Python backend | Local model identifier |
+| `ALIM_EMBEDDING_MODEL` | Python backend | Optional local embedding model; hashing fallback when unset |
 
 The Supabase client configuration and auth middleware are auto-generated by the Lovable platform; do not edit them manually.
+
+See [`docs/CONTEXT_MANAGER.md`](docs/CONTEXT_MANAGER.md) and `backend/.env.example` for the full
+retrieval, memory, budget, and local model configuration.
 
 ---
 
@@ -372,6 +415,7 @@ The Supabase client configuration and auth middleware are auto-generated by the 
 | `preview` | `bun run preview` | Preview production build |
 | `lint` | `bun run lint` | Run ESLint |
 | `format` | `bun run format` | Format code with Prettier |
+| Python tests | `PYTHONPATH=backend python3 -m unittest discover -s backend/tests -v` | Run context unit/integration tests |
 
 ---
 

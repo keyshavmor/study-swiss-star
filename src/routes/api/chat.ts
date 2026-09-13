@@ -1,8 +1,23 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { createClient } from "@supabase/supabase-js";
-import { convertToModelMessages, streamText, type UIMessage } from "ai";
+import {
+  convertToModelMessages,
+  createUIMessageStream,
+  createUIMessageStreamResponse,
+  streamText,
+  type UIMessage,
+} from "ai";
 import { createLovableAiGatewayProvider } from "@/lib/ai-gateway.server";
+import {
+  ContextBackendError,
+  contextBackendMode,
+  lovableFallbackEnabled,
+  requestContextAnswer,
+  type ContextResponseMetadata,
+} from "@/lib/context-backend.server";
 import type { Database, Json } from "@/integrations/supabase/types";
+
+type AlimUIMessage = UIMessage<never, { "context-metadata": ContextResponseMetadata }>;
 
 function isNewSupabaseApiKey(value: string): boolean {
   return value.startsWith("sb_publishable_") || value.startsWith("sb_secret_");
@@ -16,7 +31,10 @@ function createSupabaseFetch(supabaseKey: string): typeof fetch {
     if (init?.headers) {
       new Headers(init.headers).forEach((value, key) => headers.set(key, value));
     }
-    if (isNewSupabaseApiKey(supabaseKey) && headers.get("Authorization") === `Bearer ${supabaseKey}`) {
+    if (
+      isNewSupabaseApiKey(supabaseKey) &&
+      headers.get("Authorization") === `Bearer ${supabaseKey}`
+    ) {
       headers.delete("Authorization");
     }
     headers.set("apikey", supabaseKey);
@@ -68,7 +86,9 @@ export const Route = createFileRoute("/api/chat")({
         const body = (await request.json()) as {
           messages?: UIMessage[];
           threadId?: string;
-          data?: { threadId?: string };
+          academicYear?: string;
+          gradeLevel?: number;
+          data?: { threadId?: string; academicYear?: string; gradeLevel?: number };
         };
 
         const messages = body.messages ?? [];
@@ -80,7 +100,7 @@ export const Route = createFileRoute("/api/chat")({
 
         const { data: thread, error: threadError } = await supabase
           .from("threads")
-          .select("id")
+          .select("id, subject")
           .eq("id", threadId)
           .eq("user_id", userId)
           .single();
@@ -90,6 +110,10 @@ export const Route = createFileRoute("/api/chat")({
         }
 
         const lastMessage = messages[messages.length - 1];
+        const question =
+          lastMessage?.role === "user"
+            ? lastMessage.parts.map((part) => (part.type === "text" ? part.text : "")).join("")
+            : "";
         if (lastMessage && lastMessage.role === "user") {
           const { error: insertError } = await supabase.from("messages").insert({
             thread_id: threadId,
@@ -104,6 +128,67 @@ export const Route = createFileRoute("/api/chat")({
 
           if (insertError) {
             console.error("Failed to save user message", insertError);
+          }
+        }
+
+        if (!lastMessage || lastMessage.role !== "user" || !question.trim()) {
+          return new Response("A current user message is required", { status: 400 });
+        }
+
+        if (contextBackendMode() === "context") {
+          try {
+            const academicYear = body.academicYear ?? body.data?.academicYear;
+            const gradeLevel = body.gradeLevel ?? body.data?.gradeLevel;
+            const contextResponse = await requestContextAnswer({
+              studentId: userId,
+              threadId,
+              userMessageId: lastMessage.id,
+              question,
+              ...(thread.subject ? { subject: thread.subject } : {}),
+              ...(academicYear ? { academicYear } : {}),
+              ...(gradeLevel !== undefined ? { gradeLevel } : {}),
+            });
+            const stream = createUIMessageStream<AlimUIMessage>({
+              originalMessages: messages as AlimUIMessage[],
+              execute: ({ writer }) => {
+                const textId = `text-${contextResponse.message_id}`;
+                writer.write({ type: "text-start", id: textId });
+                writer.write({ type: "text-delta", id: textId, delta: contextResponse.answer });
+                writer.write({ type: "text-end", id: textId });
+                writer.write({
+                  type: "data-context-metadata",
+                  data: {
+                    sources: contextResponse.sources,
+                    examTip: contextResponse.exam_tip,
+                    usedModel: contextResponse.used_model,
+                    retrievalSummary: contextResponse.retrieval_summary,
+                  },
+                });
+              },
+              onFinish: async ({ responseMessage }) => {
+                const content = responseMessage.parts
+                  .map((part) => (part.type === "text" ? part.text : ""))
+                  .join("");
+                const { error } = await supabase.from("messages").insert({
+                  thread_id: threadId,
+                  user_id: userId,
+                  id: responseMessage.id,
+                  role: "assistant",
+                  content,
+                  parts: responseMessage.parts as Json[],
+                });
+                if (error) console.error("Failed to save assistant message", error);
+              },
+            });
+            return createUIMessageStreamResponse({ stream });
+          } catch (error) {
+            if (!lovableFallbackEnabled()) {
+              const contextError = error instanceof ContextBackendError ? error : null;
+              return new Response(contextError?.message ?? "Context backend unavailable", {
+                status: contextError?.status ?? 503,
+              });
+            }
+            console.warn("Context backend unavailable; using configured Lovable fallback", error);
           }
         }
 

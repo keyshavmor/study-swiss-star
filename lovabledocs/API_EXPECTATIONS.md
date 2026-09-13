@@ -5,6 +5,16 @@ Content type: `application/json; charset=utf-8` unless stated. All timestamps ar
 All IDs are strings. Field naming is `snake_case` on the wire; the frontend client maps to
 camelCase only where existing components require it.
 
+## Implementation status
+
+Implemented now: `GET /health`, `GET /api/model/status`, `POST /api/chat` (non-streaming),
+`POST /api/context/compile`, `POST /api/context/documents/text`,
+`POST /api/context/events`, and `POST /api/context/artifacts`.
+
+The subject, learning-goal, material-list, multipart import, quiz, mock-exam, study-plan, grading,
+and feedback endpoints below remain target contracts. They are documented so later UI work does not
+invent incompatible shapes; they should not be read as currently available routes.
+
 ## Conventions
 
 ### Standard error envelope
@@ -45,7 +55,8 @@ quiz / mock exam / study plan 120 s · `POST /api/import/document` 300 s.
 ## 1. `GET /health`
 
 - **Purpose:** liveness + capability probe. Drives `BackendStatusBanner`.
-- **Called by:** `AppShell` on mount (via `pythonApiClient`), `/diagnostics`, `/settings`.
+- **Called by:** not yet wired in the frontend; intended for a future `BackendStatusBanner`,
+  `/diagnostics`, and `/settings`.
 - **Request:** none.
 
 ```json
@@ -53,14 +64,14 @@ quiz / mock exam / study plan 120 s · `POST /api/import/document` 300 s.
   "status": "ok",
   "version": "0.4.1",
   "uptime_s": 1284,
-  "vector_store": { "type": "chroma", "reachable": true, "collections": 17 },
+  "context_store": { "type": "sqlite", "reachable": true },
   "model_server": { "reachable": true, "provider": "ollama" },
-  "subjects_indexed": 12,
   "checked_at": "2026-08-11T08:40:12Z"
 }
 ```
 
-- **Required:** `status`, `checked_at`. **Optional:** everything else.
+- **Required:** `status`, `checked_at`. The implemented `status` can be `degraded` while FastAPI and
+  SQLite are healthy but the local model is unreachable.
 - **Loading:** silent; no spinner. **Display:** green/amber chip in `/diagnostics`; banner only when unreachable or `status != "ok"`.
 
 ## 2. `GET /api/model/status`
@@ -95,12 +106,12 @@ quiz / mock exam / study plan 120 s · `POST /api/import/document` 300 s.
 {
   "subjects": [
     {
-      "subject_id": "spf_biology_chemistry",
+      "subject_id": "spf",
       "display_name": "SPF Biology & Chemistry",
       "language": "de",
       "components": [
-        { "component_subject_id": "spf_biology", "display_name": "Biology (SPF)" },
-        { "component_subject_id": "spf_chemistry", "display_name": "Chemistry (SPF)" }
+        { "component_subject_id": "spf-biology", "display_name": "Biology (SPF)" },
+        { "component_subject_id": "spf-chemistry", "display_name": "Chemistry (SPF)" }
       ],
       "indexed_materials": 14,
       "learning_goal_count": 22,
@@ -148,8 +159,8 @@ quiz / mock exam / study plan 120 s · `POST /api/import/document` 300 s.
 
 ```json
 {
-  "subject_id": "spf_biology_chemistry",
-  "component_subject_id": "spf_chemistry",
+  "subject_id": "spf",
+  "component_subject_id": "spf-chemistry",
   "learning_goals": [
     {
       "learning_goal_id": "lg_spf_chem_04",
@@ -194,15 +205,16 @@ quiz / mock exam / study plan 120 s · `POST /api/import/document` 300 s.
 
 ## 7. `POST /api/chat`
 
-- **Purpose:** the core RAG answer. **Called by:** `StudyChat.tsx` via `pythonChatAdapter.ts`.
+- **Purpose:** the core compiled-context answer. **Called by:** authenticated TanStack `/api/chat`
+  via `context-backend.server.ts`.
 
 Request:
 
 ```json
 {
   "thread_id": "3f6e6d3a-6d51-4a1b-9a41-4a8e2a3f0011",
-  "subject_id": "spf_biology_chemistry",
-  "component_subject_id": "spf_chemistry",
+  "subject_id": "spf",
+  "component_subject_id": "spf-chemistry",
   "language": "de",
   "academic_year": "2026-27",
   "grade_level": 11,
@@ -218,7 +230,7 @@ Request:
 | Field | Required | Notes |
 | --- | --- | --- |
 | `thread_id` | yes | UUID from Supabase today. |
-| `subject_id` | yes | Stable ID. |
+| `subject_id` | subject chat | Stable frontend slug; omitted for a general all-subject thread. |
 | `component_subject_id` | no | Required only for SPF workspaces. |
 | `language` | yes | `de` \| `en` \| `fr`. |
 | `academic_year` | yes | e.g. `2026-27`. |
@@ -229,6 +241,8 @@ Request:
 | `top_k` | no | Default 6. |
 | `include_sources` | no | Default `true`. |
 | `stream` | no | Default `false`; `true` returns SSE. |
+
+Current implementation accepts only `stream:false`; native Python SSE remains future work.
 
 Response (`stream: false`):
 
@@ -251,7 +265,7 @@ Response (`stream: false`):
   ],
   "exam_tip": "In Prüfungen wird oft ein Energiediagramm verlangt — beschrifte E_A und ΔH getrennt.",
   "used_model": "llama3.1:8b-instruct",
-  "retrieval_summary": { "chunks_considered": 42, "chunks_used": 6, "collections": ["subject_spf_chemistry"] },
+  "retrieval_summary": { "chunks_considered": 42, "chunks_used": 6, "collections": ["subject_spf-chemistry"] },
   "language": "de",
   "created_at": "2026-08-11T08:41:00Z"
 }
@@ -330,8 +344,8 @@ Request:
 
 ```json
 {
-  "subject_id": "spf_biology_chemistry",
-  "component_subject_id": "spf_biology",
+  "subject_id": "spf",
+  "component_subject_id": "spf-biology",
   "language": "de",
   "academic_year": "2026-27",
   "grade_level": 11,
@@ -347,8 +361,8 @@ Response:
 ```json
 {
   "exam_id": "exam_01HZ",
-  "subject_id": "spf_biology_chemistry",
-  "component_subject_id": "spf_biology",
+  "subject_id": "spf",
+  "component_subject_id": "spf-biology",
   "title": "SPF Biologie — Probeprüfung Genetik",
   "language": "de",
   "duration_minutes": 90,
@@ -378,7 +392,7 @@ Request:
 
 ```json
 {
-  "subject_ids": ["mathematics", "spf_biology_chemistry"],
+  "subject_ids": ["mathematics", "spf"],
   "language": "en",
   "academic_year": "2026-27",
   "grade_level": 11,
@@ -475,7 +489,7 @@ Request:
   "route": "/chat/3f6e6d3a",
   "thread_id": "3f6e6d3a-6d51-4a1b-9a41-4a8e2a3f0011",
   "message_id": "msg_01HZYB3K",
-  "subject_id": "spf_biology_chemistry",
+  "subject_id": "spf",
   "language": "de",
   "app_version": "2026.08.11"
 }

@@ -15,16 +15,16 @@ Legend for **Owner (later)**: `PY` = Python FastAPI, `SB` = Supabase, `LS` = loc
 | Route | `/chat/$threadId`, later also `/school/$subject` |
 | Component | `src/components/StudyChat.tsx` (`PromptInput` → `chat.sendMessage`) |
 | Action | Student submits a question |
-| Now | `useChat` + `DefaultChatTransport` → `POST /api/chat` → Lovable AI Gateway `openai/gpt-5.6-sol` |
-| Data source now | Supabase `messages`, Lovable AI Gateway |
-| Owner later | **PY** |
+| Now | `useChat` + `DefaultChatTransport` → authenticated TanStack `POST /api/chat` → local FastAPI Context Manager; optional Lovable mode/fallback |
+| Data source now | Supabase display transcript + local SQLite context memory |
+| Owner later | **PY** (already owns prompt construction) |
 | Endpoint | `POST /api/chat` (FastAPI) |
 | Request | `thread_id, subject_id, component_subject_id, language, academic_year, grade_level, question, learning_goal_id, material_ids, top_k, include_sources, stream` |
 | Response | `thread_id, message_id, answer, sources[], exam_tip, used_model, retrieval_summary, language, created_at` |
 | Loading | `chat.status === "submitted" \| "streaming"` → existing `Shimmer` "Thinking…" + disabled composer |
-| Error | `onError` toast (existing) + inline retry on last message; 503 shows `BackendStatusBanner` |
+| Error | Existing `onError` toast; a Python/model outage returns 503 unless cloud fallback is explicitly enabled |
 | Empty | Existing "Ready to study?" panel |
-| Mock fallback | `VITE_USE_MOCK_AI=true` returns a canned answer + two fake sources after ~600ms |
+| Mock fallback | Not implemented |
 
 | Field | Stream / display AI answer |
 | --- | --- |
@@ -32,7 +32,7 @@ Legend for **Owner (later)**: `PY` = Python FastAPI, `SB` = Supabase, `LS` = loc
 | Component | `ai-elements/message.tsx`, `ReactMarkdown` in `StudyChat.tsx` |
 | Now | AI SDK UI message stream from `/api/chat` |
 | Owner later | **PY** |
-| Endpoint | `POST /api/chat` with `stream: true` (SSE / `text/event-stream`) |
+| Endpoint | Current Python call uses `stream:false`; TanStack converts the completed result into AI SDK UI stream parts |
 | Request | as above | 
 | Response | token deltas, then a final event with `sources`, `exam_tip`, `used_model` |
 | Loading | token-by-token render; shimmer until first token |
@@ -72,8 +72,8 @@ Legend for **Owner (later)**: `PY` = Python FastAPI, `SB` = Supabase, `LS` = loc
 | Field | Show RAG source snippets |
 | --- | --- |
 | Route | `/chat/$threadId`, `/school/$subject` |
-| Component | new `src/components/app/SourceSnippetList.tsx` under each assistant message |
-| Now | **does not exist** |
+| Component | `src/components/app/SourceSnippetList.tsx` under each assistant message |
+| Now | Implemented using the `data-context-metadata` AI SDK part |
 | Owner later | **PY** |
 | Endpoint | `sources[]` on the `POST /api/chat` response |
 | Response fields | `source_id, material_id, material_name, section, page, snippet, score, url` |

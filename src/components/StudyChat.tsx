@@ -32,8 +32,11 @@ import {
   PromptInputTextarea,
 } from "@/components/ai-elements/prompt-input";
 import { Shimmer } from "@/components/ai-elements/shimmer";
+import { SourceSnippetList } from "@/components/app/SourceSnippetList";
 import { GraduationCap, Plus, LogOut } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useAcademicYear } from "@/lib/store/academic-year";
+import type { ContextResponseMetadata } from "@/lib/context-backend.types";
 import { toast } from "sonner";
 import ReactMarkdown from "react-markdown";
 import type { UIMessage } from "ai";
@@ -46,6 +49,7 @@ export function StudyChat({ threadId }: StudyChatProps) {
   const routeParams = useParams({ strict: false });
   const activeThreadId = threadId ?? routeParams?.threadId;
   const navigate = useNavigate();
+  const { yearId, year } = useAcademicYear();
 
   const listThreadsFn = useServerFn(listThreads);
   const listMessagesFn = useServerFn(listMessages);
@@ -72,11 +76,15 @@ export function StudyChat({ threadId }: StudyChatProps) {
   });
 
   const chat = useChat({
-    id: activeThreadId,
+    ...(activeThreadId ? { id: activeThreadId } : {}),
     messages: (messages as unknown as UIMessage[]) ?? [],
     transport: new DefaultChatTransport({
       api: "/api/chat",
-      body: { threadId: activeThreadId },
+      body: {
+        threadId: activeThreadId,
+        academicYear: yearId,
+        gradeLevel: Number(year.gradeLevel.replace(/\D/g, "")),
+      },
       fetch: async (input, init) => {
         const {
           data: { session },
@@ -140,7 +148,10 @@ export function StudyChat({ threadId }: StudyChatProps) {
   const sessionDialogFields = (suffix: string) => (
     <div className="space-y-5 py-2">
       <div className="space-y-2">
-        <Label htmlFor={`subject${suffix}`} className="text-[13px] font-semibold text-muted-foreground">
+        <Label
+          htmlFor={`subject${suffix}`}
+          className="text-[13px] font-semibold text-muted-foreground"
+        >
           Subject
         </Label>
         <Input
@@ -152,7 +163,10 @@ export function StudyChat({ threadId }: StudyChatProps) {
         />
       </div>
       <div className="space-y-2">
-        <Label htmlFor={`title${suffix}`} className="text-[13px] font-semibold text-muted-foreground">
+        <Label
+          htmlFor={`title${suffix}`}
+          className="text-[13px] font-semibold text-muted-foreground"
+        >
           Topic
         </Label>
         <Input
@@ -172,7 +186,9 @@ export function StudyChat({ threadId }: StudyChatProps) {
           <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground">
             <GraduationCap className="h-[18px] w-[18px]" />
           </span>
-          <span className="text-[15px] font-semibold tracking-tight text-sidebar-foreground">School</span>
+          <span className="text-[15px] font-semibold tracking-tight text-sidebar-foreground">
+            School
+          </span>
         </Link>
         <div className="px-4 pb-3">
           <Dialog open={newThreadOpen} onOpenChange={setNewThreadOpen}>
@@ -202,7 +218,7 @@ export function StudyChat({ threadId }: StudyChatProps) {
         <div className="flex-1 overflow-y-auto px-3 py-2">
           <ThreadList
             threads={threads ?? []}
-            activeThreadId={activeThreadId}
+            {...(activeThreadId ? { activeThreadId } : {})}
             onDelete={handleDeleteThread}
             isLoading={threadsLoading}
           />
@@ -277,6 +293,9 @@ export function StudyChat({ threadId }: StudyChatProps) {
                   const text = message.parts
                     .map((part) => (part.type === "text" ? part.text : ""))
                     .join("");
+                  const contextMetadata = message.parts.find(
+                    (part) => part.type === "data-context-metadata",
+                  ) as { data?: ContextResponseMetadata } | undefined;
                   return (
                     <Message key={message.id} from={message.role}>
                       <MessageContent
@@ -294,6 +313,15 @@ export function StudyChat({ threadId }: StudyChatProps) {
                           <p>{text}</p>
                         )}
                       </MessageContent>
+                      {message.role === "assistant" && contextMetadata?.data?.examTip && (
+                        <div className="rounded-xl border border-border bg-surface px-4 py-3 text-[13px] text-muted-foreground">
+                          <span className="font-semibold text-foreground">Exam tip: </span>
+                          {contextMetadata.data.examTip}
+                        </div>
+                      )}
+                      {message.role === "assistant" && (
+                        <SourceSnippetList sources={contextMetadata?.data?.sources ?? []} />
+                      )}
                     </Message>
                   );
                 })

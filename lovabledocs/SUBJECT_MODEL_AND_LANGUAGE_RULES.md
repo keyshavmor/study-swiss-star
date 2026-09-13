@@ -18,10 +18,10 @@ The School dashboard shows exactly these 15 cards, in this order.
 | 6 | German | `german` | German | |
 | 7 | Biology | `biology` | German | Regular (non-SPF) Biology |
 | 8 | Chemistry | `chemistry` | German | Regular (non-SPF) Chemistry |
-| 9 | SPF Biology & Chemistry | `spf_biology_chemistry` | German | **Combined subject** |
+| 9 | SPF Biology & Chemistry | `spf` | German | **Combined subject** |
 | 10 | Philosophy | `philosophy` | German | |
-| 11 | Political Education | `political_education` | German | |
-| 12 | Pedagogics and Psychology | `pedagogics_psychology` | German | |
+| 11 | Political Education | `political-education` | German | |
+| 12 | Pedagogics and Psychology | `pedagogics-psychology` | German | |
 | 13 | Economics | `economics` | German | |
 | 14 | Art | `art` | German | |
 | 15 | Sport | `sport` | German | |
@@ -30,13 +30,13 @@ The School dashboard shows exactly these 15 cards, in this order.
 
 | `component_subject_id` | Parent | Display label | Language |
 | --- | --- | --- | --- |
-| `spf_biology` | `spf_biology_chemistry` | Biology (SPF) | German |
-| `spf_chemistry` | `spf_biology_chemistry` | Chemistry (SPF) | German |
+| `spf-biology` | `spf` | Biology (SPF) | German |
+| `spf-chemistry` | `spf` | Chemistry (SPF) | German |
 
-`spf_biology` and `spf_chemistry` **must never** be rendered as top-level subject cards and must
+`spf-biology` and `spf-chemistry` **must never** be rendered as top-level subject cards and must
 never be counted separately in the yearly average. They exist only:
 
-- as the two workspaces behind the segmented switch on `/school/spf_biology_chemistry`;
+- as the two workspaces behind the segmented switch on `/school/spf`;
 - as the two component averages displayed under the combined header average;
 - as `component_subject_id` on AI requests, so RAG retrieval is scoped to the right corpus.
 
@@ -45,7 +45,7 @@ never be counted separately in the yearly average. They exist only:
 | Rule | Behaviour |
 | --- | --- |
 | Card count | One card: "SPF Biology & Chemistry". |
-| Displayed grade | `(avg(spf_biology) + avg(spf_chemistry)) / 2` — the average of the **component averages**, not of all assessments pooled. |
+| Displayed grade | `(avg(spf-biology) + avg(spf-chemistry)) / 2` — the average of the **component averages**, not of all assessments pooled. |
 | Missing component | If one component has no assessments, the combined average equals the other component's average. If both are empty, the average is `null` and the card shows the empty state. |
 | Decimals | The subject header shows the combined average to **2 decimals**; card/list display follows the normal Swiss rounding rules. |
 | Yearly average | SPF counts as **exactly one** subject entry, using the combined value. |
@@ -60,8 +60,8 @@ render in warning orange `#C96A00`.
 
 | Concern | Owner | Rule |
 | --- | --- | --- |
-| Subject IDs | Shared contract | Lowercase snake_case, exactly as in the tables above. Immutable — never derived from display names at runtime. |
-| Python backend | Backend | Uses `subject_id` / `component_subject_id` for corpus directories, Chroma collection names and DB keys, e.g. `data/subjects/spf_biology/`, collection `subject_spf_biology`. Never uses display names as keys. |
+| Subject IDs | Shared contract | Lowercase frontend slugs (hyphenated where the source uses hyphens), exactly as above. |
+| Python backend | Backend | Uses `subject_id` / `component_subject_id` as SQLite retrieval keys. The chat proxy maps known display names to the existing frontend slugs. |
 | Frontend display | Frontend | Renders the human label from `src/lib/mock/subjects.ts` (later `GET /api/subjects`). Never renders raw IDs. The backend may return a `display_name`, but the frontend label wins for UI consistency. |
 | Slugs in URLs | Frontend | `/school/$subject` uses the same stable ID as the slug, so URLs and API IDs match 1:1. |
 
@@ -85,14 +85,15 @@ Every call to `/api/chat`, `/api/quiz/generate`, `/api/mock-exam/generate`, `/ap
 
 | Field | Type | Required | Example | Meaning |
 | --- | --- | --- | --- | --- |
-| `subject_id` | string | yes | `"spf_biology_chemistry"` | Top-level subject. |
-| `component_subject_id` | string \| null | only for SPF | `"spf_chemistry"` | Active component workspace. `null` for all other subjects. |
+| `subject_id` | string | yes | `"spf"` | Top-level subject. |
+| `component_subject_id` | string \| null | only for SPF | `"spf-chemistry"` | Active component workspace. `null` for all other subjects. |
 | `language` | `"de" \| "en" \| "fr"` | yes | `"de"` | Answer language, from the table above. |
 | `academic_year` | string | yes | `"2026-27"` | From `AcademicYearProvider`. |
 | `grade_level` | number | yes | `11` | From the student profile. |
 | `learning_goal_id` | string \| null | optional | `"lg_spf_chem_04"` | Scopes retrieval to one goal. |
 | `material_ids` | string[] | optional | `["mat_123"]` | Restricts retrieval to selected materials. |
 
-Retrieval scoping rule for the backend: when `component_subject_id` is present, retrieve from that
-component corpus only; otherwise retrieve from the `subject_id` corpus. For
-`spf_biology_chemistry` with no component specified, retrieve from **both** component corpora.
+Retrieval scoping rule: when `component_subject_id` is present, retrieve from that component only;
+otherwise retrieve from `subject_id`. The current standalone chat creates free-text subjects and
+does not expose the SPF component switch, so combined SPF retrieval is a remaining subject-page
+integration item.

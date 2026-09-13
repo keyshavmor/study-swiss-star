@@ -1,14 +1,13 @@
 # Frontend Handoff — Alim's Study Assistant
 
-This folder documents the **current** Lovable / TanStack Start frontend and the **planned**
-integration with a separate local **Python FastAPI** backend that owns AI, RAG and grading logic.
-
-Nothing in this pack changes runtime behaviour. It is documentation and an integration plan only.
+This folder documents the current Lovable / TanStack Start frontend, the in-repository local
+**Python FastAPI** Context Manager, and the remaining AI-feature integration plan.
 
 ## Read first
 
 1. `FRONTEND_ARCHITECTURE.md` — how the app is built today, and where backend calls belong.
-2. `PYTHON_BACKEND_INTEGRATION_PLAN.md` — the concrete plan for the next phase.
+2. `CONTEXT_MANAGER.md` — the implemented retrieval, memory, budgeting, and compilation path.
+3. `PYTHON_BACKEND_INTEGRATION_PLAN.md` — what is implemented and what remains.
 
 ## Who reads what
 
@@ -24,6 +23,7 @@ Nothing in this pack changes runtime behaviour. It is documentation and an integ
 | File | Defines |
 | --- | --- |
 | `README_FRONTEND_HANDOFF.md` | This guide |
+| `CONTEXT_MANAGER.md` | Implemented local Context Manager architecture and operation |
 | `FRONTEND_ARCHITECTURE.md` | Current architecture + system diagram + insertion points |
 | `ROUTE_SCREEN_MAP.md` | Route-by-route screen, data source and future endpoint map |
 | `SUBJECT_MODEL_AND_LANGUAGE_RULES.md` | 15 subjects, languages, SPF combined-subject rules, stable IDs |
@@ -48,4 +48,4 @@ Nothing in this pack changes runtime behaviour. It is documentation and an integ
 
 - No UI rewrite, no design-system change, no route restructuring.
 - Supabase auth/chat persistence and Lovable AI Gateway stay in place.
-- No RAG/LLM logic in TypeScript.
+- No RAG/LLM orchestration in TypeScript; the TanStack chat route is only an authenticated proxy.
