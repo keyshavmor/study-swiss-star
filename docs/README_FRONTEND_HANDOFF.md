@@ -5,9 +5,10 @@ This folder documents the current Lovable / TanStack Start frontend, the in-repo
 
 ## Read first
 
-1. `FRONTEND_ARCHITECTURE.md` — how the app is built today, and where backend calls belong.
-2. `CONTEXT_MANAGER.md` — the implemented retrieval, memory, budgeting, and compilation path.
-3. `PYTHON_BACKEND_INTEGRATION_PLAN.md` — what is implemented and what remains.
+1. `FULL_APP_WIREFRAMES.md` — visual map of the UI, state owners, and end-to-end feature journeys.
+2. `FRONTEND_ARCHITECTURE.md` — how the app is built today, and where backend calls belong.
+3. `CONTEXT_MANAGER.md` — the implemented retrieval, memory, budgeting, and compilation path.
+4. `PYTHON_BACKEND_INTEGRATION_PLAN.md` — what is implemented and what remains.
 
 ## Who reads what
 
@@ -16,6 +17,7 @@ This folder documents the current Lovable / TanStack Start frontend, the in-repo
 | Python backend developers | `API_EXPECTATIONS.md`, `FRONTEND_DATA_MODEL.md`, `SUBJECT_MODEL_AND_LANGUAGE_RULES.md`, `OPEN_QUESTIONS_FOR_BACKEND.md`, `USER_FLOWS.md` |
 | Lovable / frontend developers | `FRONTEND_ARCHITECTURE.md`, `ROUTE_SCREEN_MAP.md`, `COMPONENT_TREE.md`, `UI_BACKEND_MAPPING.md`, `PYTHON_BACKEND_INTEGRATION_PLAN.md`, `BACKEND_INTEGRATION_TODO.md` |
 | Both (contract) | `API_EXPECTATIONS.md`, `FRONTEND_DATA_MODEL.md`, `UI_BACKEND_MAPPING.md`, `SUBJECT_MODEL_AND_LANGUAGE_RULES.md` |
+| Coding agents / visual orientation | `FULL_APP_WIREFRAMES.md`, plus standalone Mermaid sources in `wireframes/` |
 | Ops / local setup | `LOCAL_DEV_WITH_PYTHON_BACKEND.md` |
 
 ## File index
@@ -23,6 +25,8 @@ This folder documents the current Lovable / TanStack Start frontend, the in-repo
 | File | Defines |
 | --- | --- |
 | `README_FRONTEND_HANDOFF.md` | This guide |
+| `FULL_APP_WIREFRAMES.md` | Master UI/frontend/backend map with 15 feature and architecture diagrams |
+| `wireframes/*.mmd` | Standalone Mermaid source for each master-pack diagram |
 | `CONTEXT_MANAGER.md` | Implemented local Context Manager architecture and operation |
 | `FRONTEND_ARCHITECTURE.md` | Current architecture + system diagram + insertion points |
 | `ROUTE_SCREEN_MAP.md` | Route-by-route screen, data source and future endpoint map |
