@@ -18,8 +18,8 @@ sequenceDiagram
   Student->>UI: Submit question
   UI-->>Student: Optimistic message + Thinking
   UI->>API: UI messages + thread + year + grade with bearer token
-  API->>Cloud: Verify user and thread ownership; save user message
-  API->>PY: Current question and study context; stream=false
+  API->>Cloud: Verify ownership, then save user message
+  API->>PY: Current question and study context with streaming disabled
   PY->>RAG: Build budgeted context and provenance
   RAG-->>PY: Relevant chunks and memory
   PY->>LLM: Compiled context + current question
