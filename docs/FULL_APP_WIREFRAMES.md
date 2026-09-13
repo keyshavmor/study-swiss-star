@@ -171,7 +171,7 @@ sequenceDiagram
     Gate-->>Page: Render protected screen
   end
   Student->>Cloud: Sign out from account menu or chat
-  Cloud-->>Student: Session cleared; navigate /auth
+  Cloud-->>Student: Session cleared, navigate to /auth
 ```
 
 ## 6. Home journey
