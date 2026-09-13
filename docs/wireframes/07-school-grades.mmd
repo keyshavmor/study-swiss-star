@@ -13,7 +13,7 @@ flowchart TD
   Cards --> Failing{Rounded grade below 4.0?}
   Failing -->|Yes| Orange[Warning styling]
   Failing -->|No| Normal[Standard styling]
-  Cards --> Subject[/school/$subject]
+  Cards --> Subject["/school/$subject"]
   Add[Add edit duplicate move delete assessment] --> AppData[AppDataProvider CRUD]
   Import[Transcript simulation: parse review confirm] --> AppData
   AppData --> Store[(Browser storage\nIMPLEMENTED LOCAL)]

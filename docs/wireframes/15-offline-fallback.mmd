@@ -13,5 +13,5 @@ flowchart TD
   Error --> Continue[School grades stats planner profile links demo remain local]
   Disable --> Continue
   Continue --> Store[(Browser storage)]
-  ModelDown{Model unavailable but FastAPI reachable} --> Degraded[/health returns degraded]
+  ModelDown{Model unavailable but FastAPI reachable} --> Degraded["/health returns degraded"]
   Degraded -. planned UI .-> Banner

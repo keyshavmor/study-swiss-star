@@ -198,8 +198,8 @@ flowchart TD
   Next --> UI
   Greeting --> UI
   LinkUI --> UI
-  UI --> School[/school]
-  UI --> Planner[/planner]
+  UI --> School["/school"]
+  UI --> Planner["/planner"]
   UI --> Local[(Browser storage\nIMPLEMENTED LOCAL)]
 ```
 
@@ -225,7 +225,7 @@ flowchart TD
   Cards --> Failing{Rounded grade below 4.0?}
   Failing -->|Yes| Orange[Warning styling]
   Failing -->|No| Normal[Standard styling]
-  Cards --> Subject[/school/$subject]
+  Cards --> Subject["/school/$subject"]
   Add[Add edit duplicate move delete assessment] --> AppData[AppDataProvider CRUD]
   Import[Transcript simulation: parse review confirm] --> AppData
   AppData --> Store[(Browser storage\nIMPLEMENTED LOCAL)]
@@ -420,15 +420,15 @@ Standalone: [`14-supporting-screens.mmd`](wireframes/14-supporting-screens.mmd)
 
 ```mermaid
 flowchart TD
-  Profile[/profile] --> ProfileData[Edit student profile + academic year\nIMPLEMENTED LOCAL]
+  Profile["/profile"] --> ProfileData[Edit student profile + academic year\nIMPLEMENTED LOCAL]
   ProfileData --> Local[(Browser storage)]
-  Settings[/settings] --> Toggles[Exam reminders daily summary Apple sync sound\nPROTOTYPE UI ONLY]
+  Settings["/settings"] --> Toggles[Exam reminders daily summary Apple sync sound\nPROTOTYPE UI ONLY]
   Settings -.-> Model[Backend mode and model status\nPLANNED]
   Demo[Demo Mode toggle] --> DemoData[Switch between user state and fresh demo state\nIMPLEMENTED LOCAL]
-  Help[/help] --> Static[Static help content\nIMPLEMENTED]
-  Feedback[/feedback] --> Form[Form and success toast\nIMPLEMENTED UI ONLY]
+  Help["/help"] --> Static[Static help content\nIMPLEMENTED]
+  Feedback["/feedback"] --> Form[Form and success toast\nIMPLEMENTED UI ONLY]
   Form -.-> FeedbackAPI[POST /api/feedback + local retry queue\nPLANNED]
-  Diagnostics[/diagnostics] --> Simulated[All services nominal\nCURRENTLY SIMULATED]
+  Diagnostics["/diagnostics"] --> Simulated[All services nominal\nCURRENTLY SIMULATED]
   Diagnostics -.-> Health[GET /health + GET /api/model/status\nBACKEND IMPLEMENTED; FRONTEND WIRING PLANNED]
   Notifications[NotificationCenter] --> Derived[Derived from local exams and deadlines\nIMPLEMENTED LOCAL]
   SchoolLinks[SchoolLinksSection] --> LinkCRUD[Open add edit duplicate reorder delete\nIMPLEMENTED LOCAL]
@@ -457,7 +457,7 @@ flowchart TD
   Error --> Continue[School grades stats planner profile links demo remain local]
   Disable --> Continue
   Continue --> Store[(Browser storage)]
-  ModelDown{Model unavailable but FastAPI reachable} --> Degraded[/health returns degraded]
+  ModelDown{Model unavailable but FastAPI reachable} --> Degraded["/health returns degraded"]
   Degraded -. planned UI .-> Banner
 ```
 
