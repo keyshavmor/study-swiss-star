@@ -182,7 +182,9 @@ export function Timetable({
                           "absolute touch-none overflow-hidden rounded-[10px] border-l-[3px] px-2 py-1 text-left transition-shadow",
                           "hover:shadow-[0_2px_10px_-4px_rgba(0,0,0,0.28)]",
                           dragging && "cursor-grabbing opacity-90 shadow-lg",
-                          !dragging && "cursor-grab",
+                          !dragging && (readOnly ? "cursor-pointer" : "cursor-grab"),
+                          readOnly && "border-l-dashed",
+
                           highlightEventId === o.event.id &&
                             "ring-2 ring-primary ring-offset-1 ring-offset-surface",
                           o.event.done && "opacity-60",
