@@ -5,7 +5,6 @@ import { useI18n } from "@/lib/i18n/provider";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   PASSING_THRESHOLD,
-  ROUNDED_TOOLTIP,
   ROUNDING_EXAMPLES,
   formatHalf,
   isFailing,
@@ -96,7 +95,7 @@ export function RoundingInfo({ className }: { className?: string | undefined }) 
           </button>
         </TooltipTrigger>
         <TooltipContent className="max-w-[260px] text-[12.5px] leading-relaxed">
-          <p>{ROUNDED_TOOLTIP}</p>
+          <p>{t("grades.roundedTooltip")}</p>
           <p className="tabular mt-2 opacity-80">{ROUNDING_EXAMPLES.slice(0, 4).join(" · ")}</p>
         </TooltipContent>
       </Tooltip>

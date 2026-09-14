@@ -21,6 +21,8 @@ export const grades = {
     "grades.noRecords": "No school-test grades recorded yet.",
     "grades.subjectAverage": "Subject average",
     "grades.roundedTo": "Rounded to 0.5",
+    "grades.roundedTooltip":
+      "This is the subject average rounded to the nearest 0.5. The rounded value is used when calculating the yearly average.",
     "grades.roundingInfoAriaLabel": "How rounding works",
     "grades.passingThreshold": "Passing threshold 4.0",
     "grades.trendChartAriaLabel":
@@ -123,6 +125,8 @@ export const grades = {
     "grades.noRecords": "Noch keine Schultest-Noten erfasst.",
     "grades.subjectAverage": "Fachdurchschnitt",
     "grades.roundedTo": "Auf 0.5 gerundet",
+    "grades.roundedTooltip":
+      "Das ist der Fachdurchschnitt, gerundet auf das nächste 0.5. Der gerundete Wert wird für den Jahresdurchschnitt verwendet.",
     "grades.roundingInfoAriaLabel": "Wie das Runden funktioniert",
     "grades.passingThreshold": "Bestehensgrenze 4.0",
     "grades.trendChartAriaLabel":
@@ -228,6 +232,8 @@ export const grades = {
     "grades.noRecords": "No kei Schuel-Test-Note erfasst.",
     "grades.subjectAverage": "Fachdurchschnitt",
     "grades.roundedTo": "Uf 0.5 grundet",
+    "grades.roundedTooltip":
+      "Das isch de Fachdurchschnitt, grundet uf s nächschte 0.5. De grundeti Wert wird für de Jahresdurchschnitt bruucht.",
     "grades.roundingInfoAriaLabel": "Wie s Runde funktioniert",
     "grades.passingThreshold": "Bestah-Grenze 4.0",
     "grades.trendChartAriaLabel":
@@ -332,6 +338,8 @@ export const grades = {
     "grades.noRecords": "Оценок за школьные тесты пока нет.",
     "grades.subjectAverage": "Средний балл по предмету",
     "grades.roundedTo": "Округлено до 0,5",
+    "grades.roundedTooltip":
+      "Это средний балл по предмету, округлённый до ближайших 0,5. Округлённое значение используется при расчёте среднего за год.",
     "grades.roundingInfoAriaLabel": "Как работает округление",
     "grades.passingThreshold": "Проходной балл 4,0",
     "grades.trendChartAriaLabel":
@@ -437,6 +445,8 @@ export const grades = {
     "grades.noRecords": "Todavía no se han registrado notas de pruebas escolares.",
     "grades.subjectAverage": "Promedio de la asignatura",
     "grades.roundedTo": "Redondeado a 0,5",
+    "grades.roundedTooltip":
+      "Es la media de la asignatura redondeada al 0,5 más cercano. El valor redondeado se usa para calcular la media anual.",
     "grades.roundingInfoAriaLabel": "Cómo funciona el redondeo",
     "grades.passingThreshold": "Nota de aprobado 4.0",
     "grades.trendChartAriaLabel":
@@ -541,6 +551,8 @@ export const grades = {
     "grades.noRecords": "Aucune note de test scolaire enregistrée pour l'instant.",
     "grades.subjectAverage": "Moyenne de la matière",
     "grades.roundedTo": "Arrondi à 0,5",
+    "grades.roundedTooltip":
+      "C'est la moyenne de la branche arrondie au 0,5 le plus proche. La valeur arrondie sert au calcul de la moyenne annuelle.",
     "grades.roundingInfoAriaLabel": "Comment fonctionne l'arrondi",
     "grades.passingThreshold": "Seuil de réussite 4.0",
     "grades.trendChartAriaLabel":
@@ -647,6 +659,8 @@ export const grades = {
     "grades.noRecords": "Nessun voto di verifica scolastica registrato finora.",
     "grades.subjectAverage": "Media della materia",
     "grades.roundedTo": "Arrotondato a 0,5",
+    "grades.roundedTooltip":
+      "È la media della materia arrotondata al 0,5 più vicino. Il valore arrotondato serve per calcolare la media annuale.",
     "grades.roundingInfoAriaLabel": "Come funziona l'arrotondamento",
     "grades.passingThreshold": "Soglia di sufficienza 4.0",
     "grades.trendChartAriaLabel":
