@@ -123,9 +123,14 @@ Auth-gated routes live under `frontend/src/routes/_authenticated/` and are prote
 
 ### `/feedback` — Feedback
 - **File:** `_authenticated/feedback.tsx`
-- **Data source today:** local form, toast only.
-- **Future backend:** `POST /api/feedback` so feedback can tune retrieval/prompts.
-- **Frontend-only: no** (should persist).
+- **Data source:** authenticated `supabase.functions.invoke("feedback-submit", { message, category,
+  context })`. The function writes the row to `public.feedback` and a text mirror to the private
+  Storage bucket `feedback-messages` at `<user_id>/<YYYY-MM-DD>/<uuid>.txt`.
+- **Behaviour:** controlled textarea (10–4000 chars), optional category (idea / bug / general),
+  loading, success and error states; the form clears only after a confirmed save. Telemetry records
+  `feedback_submitted` / `feedback_submit_failed` — never the message text.
+- **Frontend-only: no.**
+
 
 ### `/help` — Help
 - **File:** `_authenticated/help.tsx` · static content. **Frontend-only: yes.**
