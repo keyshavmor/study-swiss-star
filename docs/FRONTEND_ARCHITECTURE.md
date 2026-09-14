@@ -89,7 +89,7 @@ segment does not appear in the URL.
 | `frontend/src/components/app/*` | Product components: `AppShell`, `AppHeader`, `SubjectCard`, `GradeDisplay`, `StatsOverviewPanel`, `Timetable`, `MaterialsPanel`, `AssessmentDialog`, `EventDialog`, `TranscriptImportDialog`, `NotificationCenter`, `States`, `LiveClock`, `Badges`, `Breadcrumbs`, `AcademicYearSelector`, `SchoolLinksSection`. Read/write `AppDataProvider`. |
 | `frontend/src/components/ai-elements/*` | Chat rendering primitives: `conversation`, `message`, `prompt-input`, `shimmer`. Transport-agnostic. |
 | `frontend/src/components/StudyChat.tsx`, `ThreadList.tsx`, `AuthForm.tsx` | Chat shell, thread sidebar, auth form. |
-| `frontend/src/lib/i18n/*` | Central i18n: `languages.ts` (5 codes/flags/locales, `normaliseLanguage`), `detect.ts` (`detectLanguage`, `effectiveResponseLanguage`), `provider.tsx` (`I18nProvider`, `useI18n`), `messages/*.ts` per feature area, English as typed source of truth and fallback. |
+| `frontend/src/lib/i18n/*` | Central i18n: `languages.ts` (7 codes/flags/locales incl. explicit Swiss German weekday labels, `normaliseLanguage`), `format.ts` (central date/time/number helpers — `dd/mm/yyyy`, weekday variants, 24h `HH:mm`, no textual month names), `detect.ts` (`detectLanguage`, `effectiveResponseLanguage`), `provider.tsx` (`I18nProvider`, `useI18n`), `messages/*.ts` per feature area, English as typed source of truth and fallback. |
 
 ## 8. Current data patterns
 
