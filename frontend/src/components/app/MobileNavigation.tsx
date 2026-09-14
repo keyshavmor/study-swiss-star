@@ -1,13 +1,13 @@
 /** Alim application component for study, planning, profile, or navigation workflows. */
 import { Link, useRouterState } from "@tanstack/react-router";
-import { CalendarDays, GraduationCap, Home, LineChart } from "lucide-react";
+import { Bot, CalendarDays, GraduationCap, Home } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const ITEMS = [
   { to: "/home", label: "Home", icon: Home },
   { to: "/school", label: "School", icon: GraduationCap },
   { to: "/planner", label: "Planner", icon: CalendarDays },
-  { to: "/stats", label: "Stats", icon: LineChart },
+  { to: "/assistant", label: "Assistant", icon: Bot },
 ] as const;
 
 export function MobileNavigation() {

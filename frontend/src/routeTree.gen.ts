@@ -21,6 +21,9 @@ import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedStatsRouteImport } from './routes/_authenticated/stats'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
+import { Route as AuthUpdatePasswordRouteImport } from './routes/auth.update-password'
+import { Route as AuthenticatedAssistantIndexRouteImport } from './routes/_authenticated/assistant.index'
+import { Route as AuthenticatedAssistantThreadIdRouteImport } from './routes/_authenticated/assistant.$threadId'
 import { Route as AuthenticatedChatIndexRouteImport } from './routes/_authenticated/chat.index'
 import { Route as AuthenticatedChatThreadIdRouteImport } from './routes/_authenticated/chat.$threadId'
 import { Route as AuthenticatedSchoolIndexRouteImport } from './routes/_authenticated/school.index'
@@ -86,6 +89,23 @@ const ApiChatRoute = ApiChatRouteImport.update({
   path: '/api/chat',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthUpdatePasswordRoute = AuthUpdatePasswordRouteImport.update({
+  id: '/update-password',
+  path: '/update-password',
+  getParentRoute: () => AuthRoute,
+} as any)
+const AuthenticatedAssistantIndexRoute =
+  AuthenticatedAssistantIndexRouteImport.update({
+    id: '/assistant/',
+    path: '/assistant/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAssistantThreadIdRoute =
+  AuthenticatedAssistantThreadIdRouteImport.update({
+    id: '/assistant/$threadId',
+    path: '/assistant/$threadId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedChatIndexRoute = AuthenticatedChatIndexRouteImport.update({
   id: '/chat/',
   path: '/chat/',
@@ -112,7 +132,7 @@ const AuthenticatedSchoolSubjectRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/auth': typeof AuthRoute
+  '/auth': typeof AuthRouteWithChildren
   '/diagnostics': typeof AuthenticatedDiagnosticsRoute
   '/feedback': typeof AuthenticatedFeedbackRoute
   '/help': typeof AuthenticatedHelpRoute
@@ -122,14 +142,17 @@ export interface FileRoutesByFullPath {
   '/settings': typeof AuthenticatedSettingsRoute
   '/stats': typeof AuthenticatedStatsRoute
   '/api/chat': typeof ApiChatRoute
+  '/auth/update-password': typeof AuthUpdatePasswordRoute
+  '/assistant/$threadId': typeof AuthenticatedAssistantThreadIdRoute
   '/chat/$threadId': typeof AuthenticatedChatThreadIdRoute
   '/school/$subject': typeof AuthenticatedSchoolSubjectRoute
+  '/assistant/': typeof AuthenticatedAssistantIndexRoute
   '/chat/': typeof AuthenticatedChatIndexRoute
   '/school/': typeof AuthenticatedSchoolIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/auth': typeof AuthRoute
+  '/auth': typeof AuthRouteWithChildren
   '/diagnostics': typeof AuthenticatedDiagnosticsRoute
   '/feedback': typeof AuthenticatedFeedbackRoute
   '/help': typeof AuthenticatedHelpRoute
@@ -139,8 +162,11 @@ export interface FileRoutesByTo {
   '/settings': typeof AuthenticatedSettingsRoute
   '/stats': typeof AuthenticatedStatsRoute
   '/api/chat': typeof ApiChatRoute
+  '/auth/update-password': typeof AuthUpdatePasswordRoute
+  '/assistant/$threadId': typeof AuthenticatedAssistantThreadIdRoute
   '/chat/$threadId': typeof AuthenticatedChatThreadIdRoute
   '/school/$subject': typeof AuthenticatedSchoolSubjectRoute
+  '/assistant': typeof AuthenticatedAssistantIndexRoute
   '/chat': typeof AuthenticatedChatIndexRoute
   '/school': typeof AuthenticatedSchoolIndexRoute
 }
@@ -148,7 +174,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
-  '/auth': typeof AuthRoute
+  '/auth': typeof AuthRouteWithChildren
   '/_authenticated/diagnostics': typeof AuthenticatedDiagnosticsRoute
   '/_authenticated/feedback': typeof AuthenticatedFeedbackRoute
   '/_authenticated/help': typeof AuthenticatedHelpRoute
@@ -158,8 +184,11 @@ export interface FileRoutesById {
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/stats': typeof AuthenticatedStatsRoute
   '/api/chat': typeof ApiChatRoute
+  '/auth/update-password': typeof AuthUpdatePasswordRoute
+  '/_authenticated/assistant/$threadId': typeof AuthenticatedAssistantThreadIdRoute
   '/_authenticated/chat/$threadId': typeof AuthenticatedChatThreadIdRoute
   '/_authenticated/school/$subject': typeof AuthenticatedSchoolSubjectRoute
+  '/_authenticated/assistant/': typeof AuthenticatedAssistantIndexRoute
   '/_authenticated/chat/': typeof AuthenticatedChatIndexRoute
   '/_authenticated/school/': typeof AuthenticatedSchoolIndexRoute
 }
@@ -177,8 +206,11 @@ export interface FileRouteTypes {
     | '/settings'
     | '/stats'
     | '/api/chat'
+    | '/auth/update-password'
+    | '/assistant/$threadId'
     | '/chat/$threadId'
     | '/school/$subject'
+    | '/assistant/'
     | '/chat/'
     | '/school/'
   fileRoutesByTo: FileRoutesByTo
@@ -194,8 +226,11 @@ export interface FileRouteTypes {
     | '/settings'
     | '/stats'
     | '/api/chat'
+    | '/auth/update-password'
+    | '/assistant/$threadId'
     | '/chat/$threadId'
     | '/school/$subject'
+    | '/assistant'
     | '/chat'
     | '/school'
   id:
@@ -212,8 +247,11 @@ export interface FileRouteTypes {
     | '/_authenticated/settings'
     | '/_authenticated/stats'
     | '/api/chat'
+    | '/auth/update-password'
+    | '/_authenticated/assistant/$threadId'
     | '/_authenticated/chat/$threadId'
     | '/_authenticated/school/$subject'
+    | '/_authenticated/assistant/'
     | '/_authenticated/chat/'
     | '/_authenticated/school/'
   fileRoutesById: FileRoutesById
@@ -221,7 +259,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
-  AuthRoute: typeof AuthRoute
+  AuthRoute: typeof AuthRouteWithChildren
   ApiChatRoute: typeof ApiChatRoute
 }
 
@@ -311,6 +349,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiChatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/auth/update-password': {
+      id: '/auth/update-password'
+      path: '/update-password'
+      fullPath: '/auth/update-password'
+      preLoaderRoute: typeof AuthUpdatePasswordRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_authenticated/assistant/': {
+      id: '/_authenticated/assistant/'
+      path: '/assistant'
+      fullPath: '/assistant/'
+      preLoaderRoute: typeof AuthenticatedAssistantIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/assistant/$threadId': {
+      id: '/_authenticated/assistant/$threadId'
+      path: '/assistant/$threadId'
+      fullPath: '/assistant/$threadId'
+      preLoaderRoute: typeof AuthenticatedAssistantThreadIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/chat/': {
       id: '/_authenticated/chat/'
       path: '/chat'
@@ -351,8 +410,10 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
   AuthenticatedStatsRoute: typeof AuthenticatedStatsRoute
+  AuthenticatedAssistantThreadIdRoute: typeof AuthenticatedAssistantThreadIdRoute
   AuthenticatedChatThreadIdRoute: typeof AuthenticatedChatThreadIdRoute
   AuthenticatedSchoolSubjectRoute: typeof AuthenticatedSchoolSubjectRoute
+  AuthenticatedAssistantIndexRoute: typeof AuthenticatedAssistantIndexRoute
   AuthenticatedChatIndexRoute: typeof AuthenticatedChatIndexRoute
   AuthenticatedSchoolIndexRoute: typeof AuthenticatedSchoolIndexRoute
 }
@@ -366,8 +427,10 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedProfileRoute: AuthenticatedProfileRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
   AuthenticatedStatsRoute: AuthenticatedStatsRoute,
+  AuthenticatedAssistantThreadIdRoute: AuthenticatedAssistantThreadIdRoute,
   AuthenticatedChatThreadIdRoute: AuthenticatedChatThreadIdRoute,
   AuthenticatedSchoolSubjectRoute: AuthenticatedSchoolSubjectRoute,
+  AuthenticatedAssistantIndexRoute: AuthenticatedAssistantIndexRoute,
   AuthenticatedChatIndexRoute: AuthenticatedChatIndexRoute,
   AuthenticatedSchoolIndexRoute: AuthenticatedSchoolIndexRoute,
 }
@@ -375,10 +438,20 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
 const AuthenticatedRouteRouteWithChildren =
   AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
 
+interface AuthRouteChildren {
+  AuthUpdatePasswordRoute: typeof AuthUpdatePasswordRoute
+}
+
+const AuthRouteChildren: AuthRouteChildren = {
+  AuthUpdatePasswordRoute: AuthUpdatePasswordRoute,
+}
+
+const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
-  AuthRoute: AuthRoute,
+  AuthRoute: AuthRouteWithChildren,
   ApiChatRoute: ApiChatRoute,
 }
 export const routeTree = rootRouteImport
