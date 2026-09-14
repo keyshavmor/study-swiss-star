@@ -35,6 +35,9 @@ Where each kind of data lives today, and where it should live once the Python ba
 | Model / backend health | — | none | — | — | **Python** | No | **Yes** | No | Polled, never persisted |
 | Web result cache | `backend/app/context/web.py` | Python | `app-data/context/alim-context.db` | 24-hour TTL by default | **Python** | No | Yes | No | Query, URL, provider, fetch time; internet disclosure is user/config controlled |
 | Qwen model weights | `models/Qwen3.8-27B/` | Local runtime | GGUF | Operator-managed | **llama.cpp** | No | No | No | Ignored by Git; validated before every managed startup |
+| App language | `frontend/src/lib/i18n/provider.tsx` | `I18nProvider` | Supabase `user_preferences.preferences.app_language` (authoritative) + `localStorage alim.app_language` (flash-prevention cache only) | Persistent | Supabase | Cache only | No | **Yes** | Signed-out welcome screen reads the localStorage cache only |
+| Assistant audio playback | `frontend/src/lib/speech.ts` | browser Web Speech API | not persisted | Ephemeral per message | n/a | No | No | No | Never uploaded or stored; graceful unavailable state |
+| Media retention queue (assistant output media) | `frontend/src/lib/media-retention.ts` | Supabase | `public.media_retention_queue` + private `assistant-descriptors` bucket | Descriptor first, original deletable after 30 min | **Python (future)** for descriptor generation/cleanup | No | Yes (future) | Yes | Never applies to ordinary user study uploads |
 
 ## Staged migration path
 

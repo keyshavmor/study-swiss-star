@@ -1,9 +1,17 @@
+import type { TranslationKey } from "@/lib/i18n/messages";
+
 /**
  * Prototype mock data. No backend, no persistence — UI only.
  */
 
 export type SubjectLanguage = "German" | "English" | "French";
 export type Trend = "Improving" | "Stable" | "Needs focus";
+
+export const TREND_LABEL_KEY: Record<Trend, TranslationKey> = {
+  Improving: "grades.trend.improving",
+  Stable: "grades.trend.stable",
+  "Needs focus": "grades.trend.needsFocus",
+};
 export type MaterialStatus = "Complete" | "Partial" | "Missing";
 
 export interface Subject {

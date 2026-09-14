@@ -65,6 +65,18 @@ render in warning orange `#C96A00`.
 | Frontend display | Frontend | Renders the human label from `frontend/src/lib/mock/subjects.ts` (later `GET /api/subjects`). Never renders raw IDs. The backend may return a `display_name`, but the frontend label wins for UI consistency. |
 | Slugs in URLs | Frontend | `/school/$subject` uses the same stable ID as the slug, so URLs and API IDs match 1:1. |
 
+## 4b. App UI language vs. subject instruction language
+
+The subject `language` field above (`de`/`en`/`fr`) is fixed per subject and governs the
+**instruction language of subject content** — it is unrelated to the app-wide UI language.
+The frontend separately ships a full five-language UI (`en`-GB, `de`-CH, `ru`-RU, `es`-ES,
+`fr`-CH) via `frontend/src/lib/i18n/` (`languages.ts`, `detect.ts`, `provider.tsx`,
+`messages/*.ts`), selected with the header flag menu and persisted in
+`user_preferences.preferences.app_language`. `FUTURE BACKEND / CODEX`: the future
+response-language precedence contract (`ui_language`/`message_language` → `response_language`,
+see `API_EXPECTATIONS.md`) uses this five-language set, not the three-language subject table
+below — do not conflate them.
+
 ## 5. Language rules for AI requests
 
 Every AI request carries an explicit `language`. The backend must answer in that language and must

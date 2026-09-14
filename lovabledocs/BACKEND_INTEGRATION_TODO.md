@@ -38,7 +38,8 @@ This checklist reflects the repository after the Context Manager implementation.
 ## Remaining operations/UI work
 
 - [ ] Replace the deterministic hashing embedder with the selected local embedding model.
-- [ ] Add a backend health banner and health/model rows to Diagnostics and Settings.
+- [ ] Add a backend health banner and health/model rows to Settings (there is no
+      `/diagnostics` route — it was removed).
 - [ ] Add subject-specific component context to chat launched from the SPF workspace.
 - [ ] Wire indexed materials and learning goals into subject pages.
 - [ ] Add multipart document upload; retain the user review path for parsed assessments.
@@ -77,3 +78,16 @@ This checklist reflects the repository after the Context Manager implementation.
       local model instead of a hard-coded default.
 - [ ] Populate `documents` storage columns consistently so the settings storage
       list can show every study material with size and date.
+
+## FUTURE BACKEND / CODEX — added by the i18n/audio/media-retention frontend work
+
+- [ ] Implement the `ui_language`/`message_language` → `response_language` precedence rule once
+      those fields are added to `/api/chat` (and the future assistant endpoint).
+- [ ] Generate a text descriptor for every assistant-output image/audio/video and upload it to the
+      private `assistant-descriptors` bucket before the original is eligible for deletion.
+- [ ] Enqueue a `public.media_retention_queue` row at generation time for every such media item.
+- [ ] Run the 30-minute cleanup sweep that deletes originals once `delete_after` has passed, and
+      never touches ordinary user study uploads.
+- [ ] Use the descriptor (not the original) for later AI retrieval once the original is deleted.
+- [ ] None of the above is implemented today; the frontend only provides
+      `frontend/src/lib/media-retention.ts` for enqueueing once a descriptor path already exists.

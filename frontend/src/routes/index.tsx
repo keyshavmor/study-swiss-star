@@ -4,6 +4,7 @@ import { GraduationCap } from "lucide-react";
 import { AuthForm } from "@/components/AuthForm";
 import { LiveClock } from "@/components/app/LiveClock";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { useI18n } from "@/lib/i18n/provider";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -33,6 +34,7 @@ export const Route = createFileRoute("/")({
 });
 
 export function WelcomeAuthScreen() {
+  const { t } = useI18n();
   return (
     <div className="flex min-h-screen flex-col items-center justify-center px-6 py-12">
       <div className="absolute right-6 top-6 flex items-center gap-3">
@@ -45,11 +47,10 @@ export function WelcomeAuthScreen() {
             <GraduationCap className="h-6 w-6" />
           </div>
           <h1 className="text-[30px] font-bold tracking-[-0.02em] text-foreground">
-            Alim's Study Assistant
+            {t("auth.appName")}
           </h1>
           <p className="mt-3 text-[15px] leading-relaxed text-muted-foreground">
-            Your calm workspace for Swiss Gymnasium exams — guided study sessions, subject and grade
-            overviews, and a planner that keeps every exam and revision block in one place.
+            {t("auth.welcomeSubtitle")}
           </p>
         </div>
         <AuthForm />

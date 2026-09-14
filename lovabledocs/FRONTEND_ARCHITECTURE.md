@@ -63,7 +63,6 @@ frontend/src/routes/
     settings.tsx                 "/settings"
     feedback.tsx                 "/feedback"
     help.tsx                     "/help"
-    diagnostics.tsx              "/diagnostics"
     chat.index.tsx               "/chat"
     chat.$threadId.tsx           "/chat/:threadId"
 ```
@@ -80,6 +79,7 @@ segment does not appear in the URL.
 | `AppDataProvider` | `frontend/src/lib/store/app-data.tsx` | All prototype data: assessments, planner events, materials, school links, profile, demo mode. Context + `localStorage`. |
 | `AcademicYearProvider` | `frontend/src/lib/store/academic-year.tsx` | Global academic-year context (default 2026–27, Grade 11). |
 | `Toaster` | `frontend/src/components/ui/sonner` | Global toasts for success/error states. |
+| `I18nProvider` | `frontend/src/lib/i18n/provider.tsx` | App-wide translation/date/number formatting. Supabase `user_preferences.preferences.app_language` is authoritative for signed-in users; a `localStorage` cache (`alim.app_language`) only prevents a flash of the wrong language and localises the signed-out welcome screen. |
 
 ## 7. Component folders
 
@@ -89,6 +89,7 @@ segment does not appear in the URL.
 | `frontend/src/components/app/*` | Product components: `AppShell`, `AppHeader`, `SubjectCard`, `GradeDisplay`, `StatsOverviewPanel`, `Timetable`, `MaterialsPanel`, `AssessmentDialog`, `EventDialog`, `TranscriptImportDialog`, `NotificationCenter`, `DemoMode`, `States`, `LiveClock`, `Badges`, `Breadcrumbs`, `AcademicYearSelector`, `SchoolLinksSection`. Read/write `AppDataProvider`. |
 | `frontend/src/components/ai-elements/*` | Chat rendering primitives: `conversation`, `message`, `prompt-input`, `shimmer`. Transport-agnostic. |
 | `frontend/src/components/StudyChat.tsx`, `ThreadList.tsx`, `AuthForm.tsx` | Chat shell, thread sidebar, auth form. |
+| `frontend/src/lib/i18n/*` | Central i18n: `languages.ts` (5 codes/flags/locales, `normaliseLanguage`), `detect.ts` (`detectLanguage`, `effectiveResponseLanguage`), `provider.tsx` (`I18nProvider`, `useI18n`), `messages/*.ts` per feature area, English as typed source of truth and fallback. |
 
 ## 8. Current data patterns
 
@@ -115,6 +116,10 @@ demo mode is on. Grade math is computed client-side in `frontend/src/lib/grade-m
 
 Chat currently uses a server-only client so the existing Supabase-authenticated route remains the
 single transcript writer. Other planned AI features can use a browser-side client later.
+
+### Internationalisation (implemented, frontend-only today)
+
+The whole frontend is internationalised into exactly five languages: English (`en`, locale `en-GB`), German (`de`, `de-CH`), Russian (`ru`, `ru-RU`), Spanish (`es`, `es-ES`) and French (`fr`, `fr-CH`). A flag dropdown (`frontend/src/components/app/LanguageMenu.tsx`) sits in `AppHeader` between the notification bell and the profile avatar — there is no language control in `/settings`. Selecting a language writes `user_preferences.preferences.app_language` (authoritative) and caches it in `localStorage` under `alim.app_language` only to avoid a flash of the wrong language and to localise the signed-out welcome screen. Missing translation keys fall back to English. `FUTURE BACKEND / CODEX` still needs to honour language metadata on generation requests — the local Python backend does not read `app_language` today.
 
 | Concern | Insertion point |
 | --- | --- |

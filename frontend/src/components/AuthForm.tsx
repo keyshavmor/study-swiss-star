@@ -13,6 +13,8 @@ import { Label } from "@/components/ui/label";
 import { GitHubLogo, LinkedInLogo, SpotifyLogo } from "@/components/app/BrandLogos";
 import { track, trackFailure } from "@/lib/telemetry";
 import { toast } from "sonner";
+import { useI18n } from "@/lib/i18n/provider";
+import type { TranslationKey } from "@/lib/i18n/messages";
 
 type Mode = "signin" | "signup" | "reset";
 type OAuthProvider = "github" | "linkedin_oidc" | "spotify";
@@ -36,13 +38,13 @@ export function normaliseUsername(raw: string): string {
 }
 
 /** Returns an error message, or null when the username is acceptable. */
-export function validateUsername(raw: string): string | null {
+export function validateUsername(raw: string, t: (key: TranslationKey) => string): string | null {
   const value = normaliseUsername(raw);
   if (value.length < 3 || value.length > 30) {
-    return "Your username needs between 3 and 30 characters.";
+    return t("auth.usernameLengthError");
   }
   if (!USERNAME_PATTERN.test(value)) {
-    return "Use only letters, numbers, dots, underscores and hyphens.";
+    return t("auth.usernameCharsError");
   }
   return null;
 }
@@ -58,6 +60,7 @@ interface UsernameAvailabilityResult {
 }
 
 export function AuthForm() {
+  const { t } = useI18n();
   const [mode, setMode] = useState<Mode>("signin");
   const [identifier, setIdentifier] = useState("");
   const [signupEmail, setSignupEmail] = useState("");
@@ -84,14 +87,14 @@ export function AuthForm() {
     }
 
     const normalised = normaliseUsername(value);
-    const invalid = validateUsername(normalised);
+    const invalid = validateUsername(normalised, t);
     if (invalid) throw new Error(invalid);
 
     const { data, error } = await supabase.functions.invoke<UsernameLoginResult>("username-login", {
       body: { username: normalised, password },
     });
     if (error || !data?.access_token || !data?.refresh_token) {
-      throw new Error("That username and password combination did not work.");
+      throw new Error(t("auth.usernamePasswordError"));
     }
     const { error: sessionError } = await supabase.auth.setSession({
       access_token: data.access_token,
@@ -108,7 +111,7 @@ export function AuthForm() {
 
   const handleSignUp = async () => {
     const normalised = normaliseUsername(username);
-    const invalid = validateUsername(normalised);
+    const invalid = validateUsername(normalised, t);
     if (invalid) throw new Error(invalid);
 
     // Ask the availability function first, so the student sees a clear message
@@ -120,10 +123,10 @@ export function AuthForm() {
     );
     if (!availability.error && availability.data) {
       if (availability.data.valid === false) {
-        throw new Error("Use only letters, numbers, dots, underscores and hyphens.");
+        throw new Error(t("auth.usernameCharsError"));
       }
       if (availability.data.available === false) {
-        throw new Error("That username is already taken. Please pick another one.");
+        throw new Error(t("auth.usernameTaken"));
       }
     }
 
@@ -137,12 +140,12 @@ export function AuthForm() {
     });
     if (error) {
       if (/username/i.test(error.message) && /(exists|duplicate|unique)/i.test(error.message)) {
-        throw new Error("That username is already taken. Please pick another one.");
+        throw new Error(t("auth.usernameTaken"));
       }
       throw error;
     }
     track({ event_name: "auth_signup_succeeded", feature: "auth" });
-    toast.success("Check your email to confirm your account.");
+    toast.success(t("auth.checkEmailToConfirm"));
     setMode("signin");
     setIdentifier(normalised);
     setPassword("");
@@ -155,7 +158,7 @@ export function AuthForm() {
     });
     if (error) throw error;
     track({ event_name: "auth_password_reset_requested", feature: "auth" });
-    toast.success("Password reset link sent. Check your email.");
+    toast.success(t("auth.resetLinkSent"));
     setMode("signin");
   };
 
@@ -179,7 +182,7 @@ export function AuthForm() {
           properties: { method: identifier.includes("@") ? "email" : "username" },
         },
       );
-      toast.error(err instanceof Error ? err.message : "Authentication failed");
+      toast.error(err instanceof Error ? err.message : t("auth.authenticationFailed"));
     } finally {
       setIsLoading(false);
     }
@@ -197,13 +200,17 @@ export function AuthForm() {
         feature: "auth",
         properties: { provider },
       });
-      toast.error(error.message || `${label} sign-in failed`);
+      toast.error(error.message || t("auth.oauthSignInFailed", { provider: label }));
       setIsLoading(false);
     }
   };
 
   const submitLabel =
-    mode === "reset" ? "Send reset link" : mode === "signin" ? "Sign in" : "Create account";
+    mode === "reset"
+      ? t("auth.submitReset")
+      : mode === "signin"
+        ? t("auth.submitSignIn")
+        : t("auth.submitSignUp");
 
   return (
     <div className="app-card space-y-6 p-7">
@@ -211,13 +218,13 @@ export function AuthForm() {
         {mode === "signin" && (
           <div className="space-y-2">
             <Label htmlFor="identifier" className="text-[13px] font-semibold text-muted-foreground">
-              Email or username
+              {t("auth.identifierLabel")}
             </Label>
             <Input
               id="identifier"
               type="text"
               autoComplete="username"
-              placeholder="you@example.com or your username"
+              placeholder={t("auth.identifierPlaceholder")}
               value={identifier}
               onChange={(e) => setIdentifier(e.target.value)}
               required
@@ -230,34 +237,32 @@ export function AuthForm() {
           <>
             <div className="space-y-2">
               <Label htmlFor="username" className="text-[13px] font-semibold text-muted-foreground">
-                Username
+                {t("auth.usernameLabel")}
               </Label>
               <Input
                 id="username"
                 type="text"
                 autoComplete="username"
-                placeholder="alim.study"
+                placeholder={t("auth.usernamePlaceholder")}
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 required
                 autoFocus
               />
-              <p className="text-[12.5px] text-muted-foreground">
-                3–30 characters: lowercase letters, numbers, dots, underscores or hyphens.
-              </p>
+              <p className="text-[12.5px] text-muted-foreground">{t("auth.usernameHelper")}</p>
             </div>
             <div className="space-y-2">
               <Label
                 htmlFor="signupEmail"
                 className="text-[13px] font-semibold text-muted-foreground"
               >
-                Email
+                {t("auth.emailLabel")}
               </Label>
               <Input
                 id="signupEmail"
                 type="email"
                 autoComplete="email"
-                placeholder="you@example.com"
+                placeholder={t("auth.emailPlaceholder")}
                 value={signupEmail}
                 onChange={(e) => setSignupEmail(e.target.value)}
                 required
@@ -269,22 +274,19 @@ export function AuthForm() {
         {mode === "reset" && (
           <div className="space-y-2">
             <Label htmlFor="resetEmail" className="text-[13px] font-semibold text-muted-foreground">
-              Email
+              {t("auth.emailLabel")}
             </Label>
             <Input
               id="resetEmail"
               type="email"
               autoComplete="email"
-              placeholder="you@example.com"
+              placeholder={t("auth.emailPlaceholder")}
               value={resetEmail}
               onChange={(e) => setResetEmail(e.target.value)}
               required
               autoFocus
             />
-            <p className="text-[14px] text-muted-foreground">
-              Password resets always go by email. Enter the email address on your account and we
-              will send a secure link.
-            </p>
+            <p className="text-[14px] text-muted-foreground">{t("auth.resetHelper")}</p>
           </div>
         )}
 
@@ -292,7 +294,7 @@ export function AuthForm() {
           <div className="space-y-2">
             <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
               <Label htmlFor="password" className="text-[13px] font-semibold text-muted-foreground">
-                Password
+                {t("auth.passwordLabel")}
               </Label>
               {mode === "signin" && (
                 <button
@@ -303,7 +305,7 @@ export function AuthForm() {
                     setMode("reset");
                   }}
                 >
-                  Forgot password?
+                  {t("auth.forgotPassword")}
                 </button>
               )}
             </div>
@@ -321,7 +323,7 @@ export function AuthForm() {
         )}
 
         <Button type="submit" className="w-full" disabled={isLoading}>
-          {isLoading ? "Please wait…" : submitLabel}
+          {isLoading ? t("auth.pleaseWait") : submitLabel}
         </Button>
       </form>
 
@@ -332,7 +334,7 @@ export function AuthForm() {
               <span className="w-full border-t border-border" />
             </div>
             <div className="relative flex justify-center text-[12px] font-semibold uppercase tracking-wide">
-              <span className="bg-card px-3 text-muted-foreground">Or</span>
+              <span className="bg-card px-3 text-muted-foreground">{t("auth.or")}</span>
             </div>
           </div>
 
@@ -347,7 +349,7 @@ export function AuthForm() {
                 disabled={isLoading}
               >
                 <Logo className="h-[18px] w-[18px]" />
-                Continue with {label}
+                {t("auth.continueWith", { provider: label })}
               </Button>
             ))}
           </div>
@@ -361,17 +363,17 @@ export function AuthForm() {
             className="font-semibold text-primary hover:text-primary-hover"
             onClick={() => setMode("signin")}
           >
-            Back to sign in
+            {t("auth.backToSignIn")}
           </button>
         ) : (
           <>
-            {mode === "signin" ? "Don't have an account?" : "Already have an account?"}{" "}
+            {mode === "signin" ? t("auth.noAccount") : t("auth.haveAccount")}{" "}
             <button
               type="button"
               className="font-semibold text-primary hover:text-primary-hover"
               onClick={() => setMode(mode === "signin" ? "signup" : "signin")}
             >
-              {mode === "signin" ? "Sign up" : "Sign in"}
+              {mode === "signin" ? t("auth.signUpLink") : t("auth.signInLink")}
             </button>
           </>
         )}

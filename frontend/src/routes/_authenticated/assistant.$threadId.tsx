@@ -3,6 +3,7 @@ import { createFileRoute, useParams } from "@tanstack/react-router";
 import { AppShell, PageHeading } from "@/components/app/AppShell";
 import { PageNav } from "@/components/app/Breadcrumbs";
 import { AssistantChat } from "@/components/assistant/AssistantChat";
+import { useI18n } from "@/lib/i18n/provider";
 
 export const Route = createFileRoute("/_authenticated/assistant/$threadId")({
   head: () => ({
@@ -20,20 +21,18 @@ export const Route = createFileRoute("/_authenticated/assistant/$threadId")({
 
 function AssistantThreadPage() {
   const { threadId } = useParams({ from: "/_authenticated/assistant/$threadId" });
+  const { t } = useI18n();
   return (
     <AppShell>
       <PageNav
-        back={{ to: "/assistant", label: "Assistant" }}
+        back={{ to: "/assistant", label: t("assistant.crumbAssistant") }}
         crumbs={[
-          { label: "Home", to: "/home" },
-          { label: "Assistant", to: "/assistant" },
-          { label: "Conversation" },
+          { label: t("assistant.crumbHome"), to: "/home" },
+          { label: t("assistant.crumbAssistant"), to: "/assistant" },
+          { label: t("assistant.crumbConversation") },
         ]}
       />
-      <PageHeading
-        title="Assistant"
-        description="General-purpose chat with attachments, kept separate from subject tutoring."
-      />
+      <PageHeading title={t("assistant.pageTitle")} description={t("assistant.pageDescription")} />
       <AssistantChat threadId={threadId} />
     </AppShell>
   );

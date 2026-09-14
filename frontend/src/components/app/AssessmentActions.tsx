@@ -35,6 +35,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useI18n } from "@/lib/i18n/provider";
 import { SUBJECTS } from "@/lib/mock/subjects";
 import { useAppData } from "@/lib/store/app-data";
 import type { Assessment } from "@/lib/store/types";
@@ -42,6 +43,7 @@ import { toast } from "sonner";
 
 /** Edit / duplicate / move / delete menu shown on every test record. */
 export function AssessmentActions({ record }: { record: Assessment }) {
+  const { t } = useI18n();
   const { updateAssessment, duplicateAssessment, removeAssessment, restoreAssessment } =
     useAppData();
   const [editing, setEditing] = useState(false);
@@ -52,9 +54,9 @@ export function AssessmentActions({ record }: { record: Assessment }) {
   function remove() {
     const snapshot = { ...record };
     removeAssessment(record.id);
-    toast.success("Test deleted", {
-      description: "Nothing is permanent — you can undo this.",
-      action: { label: "Undo", onClick: () => restoreAssessment(snapshot) },
+    toast.success(t("grades.delete.toastTitle"), {
+      description: t("grades.delete.toastDescription"),
+      action: { label: t("grades.delete.undo"), onClick: () => restoreAssessment(snapshot) },
     });
   }
 
@@ -62,31 +64,37 @@ export function AssessmentActions({ record }: { record: Assessment }) {
     <>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="icon-sm" aria-label={`Actions for ${record.title}`}>
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            aria-label={t("grades.actions.ariaLabel", { title: record.title })}
+          >
             <MoreHorizontal className="h-4 w-4" />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
           <DropdownMenuItem onSelect={() => setTimeout(() => setEditing(true), 0)}>
-            Edit
+            {t("grades.actions.edit")}
           </DropdownMenuItem>
           <DropdownMenuItem onSelect={() => duplicateAssessment(record.id)}>
-            Duplicate
+            {t("grades.actions.duplicate")}
           </DropdownMenuItem>
           <DropdownMenuItem onSelect={() => setTimeout(() => setMoving(true), 0)}>
-            Move to another subject
+            {t("grades.actions.moveToAnother")}
           </DropdownMenuItem>
           <DropdownMenuItem
             onSelect={() => updateAssessment(record.id, { includeInStats: !record.includeInStats })}
           >
-            {record.includeInStats ? "Exclude from statistics" : "Include in statistics"}
+            {record.includeInStats
+              ? t("grades.actions.excludeFromStats")
+              : t("grades.actions.includeInStats")}
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem
             className="text-destructive"
             onSelect={() => setTimeout(() => setConfirmDelete(true), 0)}
           >
-            Delete
+            {t("grades.actions.delete")}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
@@ -96,10 +104,8 @@ export function AssessmentActions({ record }: { record: Assessment }) {
       <Dialog open={moving} onOpenChange={setMoving}>
         <DialogContent className="sm:max-w-[440px]">
           <DialogHeader>
-            <DialogTitle>Move test</DialogTitle>
-            <DialogDescription>
-              Both subject averages update immediately after the move.
-            </DialogDescription>
+            <DialogTitle>{t("grades.move.title")}</DialogTitle>
+            <DialogDescription>{t("grades.move.description")}</DialogDescription>
           </DialogHeader>
           <Select value={target} onValueChange={setTarget}>
             <SelectTrigger>
@@ -115,16 +121,16 @@ export function AssessmentActions({ record }: { record: Assessment }) {
           </Select>
           <DialogFooter>
             <Button variant="ghost" onClick={() => setMoving(false)}>
-              Cancel
+              {t("common.cancel")}
             </Button>
             <Button
               onClick={() => {
                 updateAssessment(record.id, { subjectSlug: target });
                 setMoving(false);
-                toast.success("Test moved");
+                toast.success(t("grades.move.toastSuccess"));
               }}
             >
-              Move test
+              {t("grades.move.button")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -133,15 +139,12 @@ export function AssessmentActions({ record }: { record: Assessment }) {
       <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete “{record.title}”?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This removes the test from your records and recalculates the subject and yearly
-              averages. You can undo it straight afterwards.
-            </AlertDialogDescription>
+            <AlertDialogTitle>{t("grades.delete.title", { title: record.title })}</AlertDialogTitle>
+            <AlertDialogDescription>{t("grades.delete.description")}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={remove}>Delete test</AlertDialogAction>
+            <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
+            <AlertDialogAction onClick={remove}>{t("grades.delete.confirm")}</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

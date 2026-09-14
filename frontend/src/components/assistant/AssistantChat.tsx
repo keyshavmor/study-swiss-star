@@ -17,8 +17,10 @@ import {
   Music,
   Paperclip,
   Pencil,
+  Square,
   Trash2,
   Video,
+  Volume2,
   X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -40,6 +42,11 @@ import {
 } from "@/lib/assistant-data";
 import { toast } from "sonner";
 import { track, trackFailure } from "@/lib/telemetry";
+import { useI18n } from "@/lib/i18n/provider";
+import { effectiveResponseLanguage } from "@/lib/i18n/detect";
+import type { LanguageCode } from "@/lib/i18n/languages";
+import { speak, speechSupported, stopSpeaking } from "@/lib/speech";
+import { fetchPreferences, DEFAULT_PREFERENCES, type UserPreferences } from "@/lib/account-data";
 
 const KIND_ICON: Record<string, typeof FileText> = {
   image: ImageIcon,
@@ -53,11 +60,13 @@ function AttachmentChip({
   size,
   kind,
   onRemove,
+  removeLabel,
 }: {
   name: string;
   size: number;
   kind: string;
   onRemove?: () => void;
+  removeLabel?: string;
 }) {
   const Icon = KIND_ICON[kind] ?? FileText;
   return (
@@ -69,7 +78,7 @@ function AttachmentChip({
         <button
           type="button"
           onClick={onRemove}
-          aria-label={`Remove ${name}`}
+          aria-label={removeLabel}
           className="shrink-0 text-muted-foreground transition-colors hover:text-foreground"
         >
           <X className="h-3.5 w-3.5" />
@@ -80,6 +89,7 @@ function AttachmentChip({
 }
 
 export function AssistantChat({ threadId }: { threadId?: string }) {
+  const { t, language, formatDate } = useI18n();
   const navigate = useNavigate();
   const [threads, setThreads] = useState<AssistantThread[]>([]);
   const [messages, setMessages] = useState<AssistantMessage[]>([]);
@@ -90,18 +100,42 @@ export function AssistantChat({ threadId }: { threadId?: string }) {
   const [sending, setSending] = useState(false);
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState("");
+  const [preferences, setPreferences] = useState<UserPreferences>(DEFAULT_PREFERENCES);
+  const [speakingId, setSpeakingId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
+
+  // Response-language hints per message id (frontend-only, not sent to the backend).
+  const responseLanguageHints = useRef(new Map<string, LanguageCode>());
+  // Ids present when a thread's history is first loaded — never autoplayed.
+  const historyIdsRef = useRef<Set<string>>(new Set());
+
+  useEffect(() => {
+    void formatDate;
+  }, [formatDate]);
+
+  useEffect(() => {
+    fetchPreferences()
+      .then(setPreferences)
+      .catch(() => setPreferences(DEFAULT_PREFERENCES));
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      stopSpeaking();
+      setSpeakingId(null);
+    };
+  }, [threadId]);
 
   const refreshThreads = useCallback(async () => {
     try {
       setThreads(await listAssistantThreads());
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Could not load conversations");
+      toast.error(err instanceof Error ? err.message : t("assistant.loadThreadsFailed"));
     } finally {
       setLoadingThreads(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     void refreshThreads();
@@ -116,10 +150,13 @@ export function AssistantChat({ threadId }: { threadId?: string }) {
     setLoadingMessages(true);
     listAssistantMessages(threadId)
       .then((rows) => {
-        if (!cancelled) setMessages(rows);
+        if (!cancelled) {
+          historyIdsRef.current = new Set(rows.map((row) => row.id));
+          setMessages(rows);
+        }
       })
       .catch((err: unknown) => {
-        toast.error(err instanceof Error ? err.message : "Could not load this conversation");
+        toast.error(err instanceof Error ? err.message : t("assistant.loadMessagesFailed"));
       })
       .finally(() => {
         if (!cancelled) setLoadingMessages(false);
@@ -127,7 +164,7 @@ export function AssistantChat({ threadId }: { threadId?: string }) {
     return () => {
       cancelled = true;
     };
-  }, [threadId]);
+  }, [threadId, t]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ block: "end" });
@@ -146,7 +183,7 @@ export function AssistantChat({ threadId }: { threadId?: string }) {
       track({ event_name: "assistant_thread_created", feature: "assistant" });
     } catch (err) {
       trackFailure("assistant_thread_create_failed", err, { feature: "assistant" });
-      toast.error(err instanceof Error ? err.message : "Could not start a conversation");
+      toast.error(err instanceof Error ? err.message : t("assistant.createFailed"));
     }
   };
 
@@ -166,6 +203,10 @@ export function AssistantChat({ threadId }: { threadId?: string }) {
     const content = text.trim();
     if (!content && files.length === 0) return;
     setSending(true);
+    // FUTURE BACKEND / CODEX: send { ui_language, message_language } so the model answers in
+    // message_language when it is confidently one of the five supported languages; otherwise
+    // ui_language.
+    const responseLanguageHint = effectiveResponseLanguage(content, language);
     // Counts only — the message text and attachment contents are never sent.
     track({
       event_name: "assistant_message_send_started",
@@ -181,6 +222,7 @@ export function AssistantChat({ threadId }: { threadId?: string }) {
         navigate({ to: "/assistant/$threadId", params: { threadId: thread.id } });
       }
       const saved = await sendAssistantMessage({ threadId: targetId, content, files });
+      responseLanguageHints.current.set(saved.id, responseLanguageHint);
       setMessages((current) => [...current, saved]);
       setText("");
       setFiles([]);
@@ -195,7 +237,7 @@ export function AssistantChat({ threadId }: { threadId?: string }) {
       });
     } catch (err) {
       trackFailure("assistant_message_failed", err, { feature: "assistant" });
-      toast.error(err instanceof Error ? err.message : "Could not save your message");
+      toast.error(err instanceof Error ? err.message : t("assistant.sendFailed"));
     } finally {
       setSending(false);
     }
@@ -209,21 +251,37 @@ export function AssistantChat({ threadId }: { threadId?: string }) {
       await renameAssistantThread(id, title);
       await refreshThreads();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Could not rename the conversation");
+      toast.error(err instanceof Error ? err.message : t("assistant.renameFailed"));
     }
   };
 
   const handleDelete = async (id: string) => {
-    if (!window.confirm("Delete this conversation and its attachments?")) return;
+    if (!window.confirm(t("assistant.deleteConfirm"))) return;
     try {
       await deleteAssistantThread(id);
       await refreshThreads();
       track({ event_name: "assistant_thread_deleted", feature: "assistant" });
       if (id === threadId) navigate({ to: "/assistant" });
-      toast.success("Conversation deleted");
+      toast.success(t("assistant.deleteSuccess"));
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Could not delete the conversation");
+      toast.error(err instanceof Error ? err.message : t("assistant.deleteFailed"));
     }
+  };
+
+  const handleToggleSpeech = (messageId: string, content: string) => {
+    if (speakingId === messageId) {
+      stopSpeaking();
+      setSpeakingId(null);
+      return;
+    }
+    const outcome = speak({
+      text: content,
+      uiLanguage: language,
+      onEnd: () => setSpeakingId((current) => (current === messageId ? null : current)),
+    });
+    if (outcome === "spoken") setSpeakingId(messageId);
+    else if (outcome === "unsupported") toast.error(t("assistant.audio.unsupported"));
+    else if (outcome === "no-voice") toast.error(t("assistant.audio.noVoice"));
   };
 
   return (
@@ -231,14 +289,16 @@ export function AssistantChat({ threadId }: { threadId?: string }) {
       <aside className="app-card flex max-h-[70vh] flex-col overflow-hidden p-3 lg:max-h-[calc(100vh-220px)]">
         <Button onClick={handleNewChat} className="w-full justify-start gap-2">
           <MessageSquarePlus className="h-4 w-4" />
-          New chat
+          {t("assistant.newChat")}
         </Button>
         <div className="mt-3 min-h-0 flex-1 overflow-y-auto">
           {loadingThreads ? (
-            <p className="px-2 py-3 text-[14px] text-muted-foreground">Loading conversations…</p>
+            <p className="px-2 py-3 text-[14px] text-muted-foreground">
+              {t("assistant.loadingConversations")}
+            </p>
           ) : threads.length === 0 ? (
             <p className="px-2 py-3 text-[14px] text-muted-foreground">
-              No conversations yet. Start one above.
+              {t("assistant.noConversations")}
             </p>
           ) : (
             <ul className="space-y-1">
@@ -277,7 +337,7 @@ export function AssistantChat({ threadId }: { threadId?: string }) {
                       </button>
                       <button
                         type="button"
-                        aria-label="Rename conversation"
+                        aria-label={t("assistant.renameAria")}
                         onClick={() => {
                           setRenamingId(thread.id);
                           setRenameValue(thread.title);
@@ -288,7 +348,7 @@ export function AssistantChat({ threadId }: { threadId?: string }) {
                       </button>
                       <button
                         type="button"
-                        aria-label="Delete conversation"
+                        aria-label={t("assistant.deleteAria")}
                         onClick={() => void handleDelete(thread.id)}
                         className="p-1.5 text-muted-foreground opacity-0 transition-opacity hover:text-warning focus-visible:opacity-100 group-hover:opacity-100"
                       >
@@ -306,50 +366,78 @@ export function AssistantChat({ threadId }: { threadId?: string }) {
       <section className="app-card flex min-h-[60vh] flex-col p-0">
         <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-5">
           {loadingMessages ? (
-            <p className="text-[14px] text-muted-foreground">Loading messages…</p>
+            <p className="text-[14px] text-muted-foreground">{t("assistant.loadingMessages")}</p>
           ) : messages.length === 0 ? (
             <div className="mx-auto max-w-md py-10 text-center">
-              <h2 className="text-[19px] font-semibold">General assistant</h2>
+              <h2 className="text-[19px] font-semibold">{t("assistant.emptyTitle")}</h2>
               <p className="mt-2 text-[15px] text-muted-foreground">
-                A general-purpose chat, separate from your subject tutoring. Ask anything, or attach
-                an image, recording, video (up to 1 MB each), PDF or Word document.
+                {t("assistant.emptyDescription")}
               </p>
             </div>
           ) : (
-            messages.map((message) => (
-              <div
-                key={message.id}
-                className={cn("flex", message.role === "user" ? "justify-end" : "justify-start")}
-              >
+            messages.map((message) => {
+              const isAssistant = message.role === "assistant";
+              const canPlay =
+                isAssistant &&
+                preferences.assistant_audio_enabled &&
+                speechSupported() &&
+                message.content.trim().length > 0;
+              const isSpeaking = speakingId === message.id;
+              return (
                 <div
-                  className={cn(
-                    "max-w-[85%] space-y-2 rounded-2xl px-4 py-3 text-[15px] leading-relaxed",
-                    message.role === "user"
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-surface-2 text-foreground",
-                  )}
+                  key={message.id}
+                  className={cn("flex", message.role === "user" ? "justify-end" : "justify-start")}
                 >
-                  {message.content && <p className="whitespace-pre-wrap">{message.content}</p>}
-                  {message.attachments.length > 0 && (
-                    <div className="flex flex-wrap gap-2">
-                      {message.attachments.map((attachment) => (
-                        <AttachmentChip
-                          key={attachment.id}
-                          name={attachment.fileName}
-                          size={attachment.byteSize}
-                          kind={attachment.kind}
-                        />
-                      ))}
-                    </div>
-                  )}
+                  <div
+                    className={cn(
+                      "max-w-[85%] space-y-2 rounded-2xl px-4 py-3 text-[15px] leading-relaxed",
+                      message.role === "user"
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-surface-2 text-foreground",
+                    )}
+                  >
+                    {message.content && <p className="whitespace-pre-wrap">{message.content}</p>}
+                    {message.attachments.length > 0 && (
+                      <div className="flex flex-wrap gap-2">
+                        {message.attachments.map((attachment) => (
+                          <AttachmentChip
+                            key={attachment.id}
+                            name={attachment.fileName}
+                            size={attachment.byteSize}
+                            kind={attachment.kind}
+                          />
+                        ))}
+                      </div>
+                    )}
+                    {canPlay && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 gap-1.5 px-2 text-[12.5px] text-muted-foreground"
+                        onClick={() => handleToggleSpeech(message.id, message.content)}
+                      >
+                        {isSpeaking ? (
+                          <>
+                            <Square className="h-3.5 w-3.5" />
+                            {t("assistant.audio.stop")}
+                          </>
+                        ) : (
+                          <>
+                            <Volume2 className="h-3.5 w-3.5" />
+                            {t("assistant.audio.listen")}
+                          </>
+                        )}
+                      </Button>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))
+              );
+            })
           )}
           {messages.length > 0 && messages[messages.length - 1]!.role === "user" && (
             <p className="rounded-xl border border-border bg-surface-2 px-4 py-3 text-[13.5px] text-muted-foreground">
-              Saved and ready for the local AI backend. Replies will appear here once the assistant
-              endpoint is connected; attachments are stored but not yet read by the backend.
+              {t("assistant.pendingNotice")}
             </p>
           )}
           <div ref={bottomRef} />
@@ -364,6 +452,7 @@ export function AssistantChat({ threadId }: { threadId?: string }) {
                   name={file.name}
                   size={file.size}
                   kind={file.type.split("/")[0] ?? "document"}
+                  removeLabel={t("assistant.removeAttachmentAria", { name: file.name })}
                   onRemove={() => setFiles((current) => current.filter((_, i) => i !== index))}
                 />
               ))}
@@ -381,7 +470,7 @@ export function AssistantChat({ threadId }: { threadId?: string }) {
             <Button
               variant="ghost"
               size="icon"
-              aria-label="Attach files"
+              aria-label={t("assistant.attachAria")}
               onClick={() => fileInputRef.current?.click()}
               disabled={sending}
             >
@@ -396,13 +485,13 @@ export function AssistantChat({ threadId }: { threadId?: string }) {
                   void handleSend();
                 }
               }}
-              placeholder="Message the assistant…"
+              placeholder={t("assistant.composerPlaceholder")}
               rows={1}
               className="max-h-40 min-h-[44px] resize-none"
             />
             <Button
               size="icon"
-              aria-label="Send message"
+              aria-label={t("assistant.sendAria")}
               onClick={() => void handleSend()}
               disabled={sending || (!text.trim() && files.length === 0)}
             >
@@ -414,7 +503,7 @@ export function AssistantChat({ threadId }: { threadId?: string }) {
             </Button>
           </div>
           <p className="mt-2 text-[12.5px] text-muted-foreground">
-            Images, audio and video up to 1 MB each. PDF and Word documents are also accepted.
+            {t("assistant.attachmentHint")}
           </p>
         </div>
       </section>

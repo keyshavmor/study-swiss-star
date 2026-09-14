@@ -26,12 +26,14 @@ import type { SchoolLink } from "@/lib/store/types";
 import { LINK_CATEGORIES } from "@/lib/store/types";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { useI18n } from "@/lib/i18n/provider";
 
 /**
  * "Important School Links" — a student-managed set of shortcut tiles.
  * Empty until the student adds something.
  */
 export function SchoolLinksSection({ className }: { className?: string }) {
+  const { t } = useI18n();
   const { links, removeLink, restoreLink, duplicateLink, reorderLinks, registerLinkOpen } =
     useAppData();
   const [editing, setEditing] = useState<SchoolLink | null>(null);
@@ -58,17 +60,15 @@ export function SchoolLinksSection({ className }: { className?: string }) {
       <div className="mb-4 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
         <div className="min-w-0">
           <h2 id="school-links-heading" className="text-[19px] font-semibold tracking-tight">
-            Important School Links
+            {t("profile.links.title")}
           </h2>
-          <p className="text-[14px] text-muted-foreground">
-            Your own shortcuts to school websites and platforms.
-          </p>
+          <p className="text-[14px] text-muted-foreground">{t("profile.links.description")}</p>
         </div>
         <SchoolLinkDialog
           trigger={
             <Button variant="secondary" size="sm">
               <Plus className="h-4 w-4" />
-              Add Link
+              {t("profile.links.addButton")}
             </Button>
           }
         />
@@ -77,14 +77,14 @@ export function SchoolLinksSection({ className }: { className?: string }) {
       {links.length === 0 ? (
         <EmptyState
           icon={Link2}
-          heading="No school links yet"
-          description="Add the websites you use most — timetable, learning platform, school email or library."
+          heading={t("profile.links.emptyHeading")}
+          description={t("profile.links.emptyDescription")}
           action={
             <SchoolLinkDialog
               trigger={
                 <Button>
                   <Plus className="h-4 w-4" />
-                  Add your first link
+                  {t("profile.links.emptyAction")}
                 </Button>
               }
             />
@@ -145,7 +145,7 @@ export function SchoolLinksSection({ className }: { className?: string }) {
                     <span className="mt-1 block text-[12.5px] text-muted-foreground">
                       {link.category}
                       {subject ? ` · ${subject.name}` : ""}
-                      {link.opens > 0 ? ` · opened ${link.opens}×` : ""}
+                      {link.opens > 0 ? t("profile.links.openedCount", { count: link.opens }) : ""}
                     </span>
                   </a>
 
@@ -154,7 +154,7 @@ export function SchoolLinksSection({ className }: { className?: string }) {
                       <Button
                         variant="ghost"
                         size="icon-sm"
-                        aria-label={`Actions for ${link.name}`}
+                        aria-label={t("profile.links.actionsFor", { name: link.name })}
                       >
                         <MoreHorizontal className="h-4 w-4" />
                       </Button>
@@ -162,19 +162,19 @@ export function SchoolLinksSection({ className }: { className?: string }) {
                     <DropdownMenuContent align="end">
                       <DropdownMenuItem onSelect={() => setTimeout(() => setEditing(link), 0)}>
                         <Pencil className="h-4 w-4" />
-                        Edit
+                        {t("common.edit")}
                       </DropdownMenuItem>
                       <DropdownMenuItem onSelect={() => duplicateLink(link.id)}>
-                        Duplicate
+                        {t("profile.links.duplicate")}
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem onSelect={() => move(link.id, -1)}>
                         <ArrowUp className="h-4 w-4" />
-                        Move up
+                        {t("profile.links.moveUp")}
                       </DropdownMenuItem>
                       <DropdownMenuItem onSelect={() => move(link.id, 1)}>
                         <ArrowDown className="h-4 w-4" />
-                        Move down
+                        {t("profile.links.moveDown")}
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem
@@ -182,13 +182,16 @@ export function SchoolLinksSection({ className }: { className?: string }) {
                         onSelect={() => {
                           const snapshot = { ...link };
                           removeLink(link.id);
-                          toast.success("Link deleted", {
-                            action: { label: "Undo", onClick: () => restoreLink(snapshot) },
+                          toast.success(t("profile.links.deleted"), {
+                            action: {
+                              label: t("profile.links.undo"),
+                              onClick: () => restoreLink(snapshot),
+                            },
                           });
                         }}
                       >
                         <Trash2 className="h-4 w-4" />
-                        Delete
+                        {t("common.delete")}
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>

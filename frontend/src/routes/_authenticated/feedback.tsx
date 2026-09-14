@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
+import { useI18n } from "@/lib/i18n/provider";
 import { track, trackFailure } from "@/lib/telemetry";
 import { toast } from "sonner";
 
@@ -32,15 +33,16 @@ export const Route = createFileRoute("/_authenticated/feedback")({
 });
 
 const CATEGORIES = [
-  { value: "idea", label: "Idea or suggestion" },
-  { value: "bug", label: "Something is broken" },
-  { value: "general", label: "General feedback" },
+  { value: "idea", labelKey: "feedback.category.idea" },
+  { value: "bug", labelKey: "feedback.category.bug" },
+  { value: "general", labelKey: "feedback.category.general" },
 ] as const;
 
 const MIN_LENGTH = 10;
 const MAX_LENGTH = 4000;
 
 function FeedbackPage() {
+  const { t } = useI18n();
   const [message, setMessage] = useState("");
   const [category, setCategory] = useState<string>("general");
   const [sending, setSending] = useState(false);
@@ -54,7 +56,7 @@ function FeedbackPage() {
     e.preventDefault();
     setError(null);
     if (trimmed.length < MIN_LENGTH) {
-      setError(`Please write at least ${MIN_LENGTH} characters so we can act on it.`);
+      setError(t("feedback.error.tooShort", { min: MIN_LENGTH }));
       return;
     }
     setSending(true);
@@ -75,7 +77,7 @@ function FeedbackPage() {
       setMessage("");
       setSent(true);
       track({ event_name: "feedback_submitted", feature: "feedback", properties: { category } });
-      toast.success("Thank you — your feedback was saved.");
+      toast.success(t("feedback.success.toast"));
     } catch (err) {
       trackFailure("feedback_submit_failed", err, {
         feature: "feedback",
@@ -83,8 +85,8 @@ function FeedbackPage() {
       });
       setError(
         err instanceof Error
-          ? `Your feedback was not saved: ${err.message}`
-          : "Your feedback was not saved. Please try again.",
+          ? t("feedback.error.submitFailed", { message: err.message })
+          : t("feedback.error.submitFailedGeneric"),
       );
     } finally {
       setSending(false);
@@ -94,13 +96,13 @@ function FeedbackPage() {
   return (
     <AppShell>
       <PageNav
-        back={{ to: "/home", label: "Home" }}
-        crumbs={[{ label: "Home", to: "/home" }, { label: "Feedback" }]}
+        back={{ to: "/home", label: t("nav.home") }}
+        crumbs={[{ label: t("nav.home"), to: "/home" }, { label: t("nav.feedback") }]}
       />
-      <PageHeading title="Feedback" description="Tell us what should work better." />
+      <PageHeading title={t("feedback.heading")} description={t("feedback.description")} />
       <form onSubmit={handleSubmit} className="app-card max-w-2xl space-y-4 p-5">
         <div className="max-w-xs space-y-2">
-          <Label htmlFor="category">Category</Label>
+          <Label htmlFor="category">{t("feedback.category.label")}</Label>
           <Select value={category} onValueChange={setCategory} disabled={sending}>
             <SelectTrigger id="category">
               <SelectValue />
@@ -108,7 +110,7 @@ function FeedbackPage() {
             <SelectContent>
               {CATEGORIES.map((item) => (
                 <SelectItem key={item.value} value={item.value}>
-                  {item.label}
+                  {t(item.labelKey)}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -116,12 +118,12 @@ function FeedbackPage() {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="message">Your feedback</Label>
+          <Label htmlFor="message">{t("feedback.message.label")}</Label>
           <Textarea
             id="message"
             rows={6}
             maxLength={MAX_LENGTH}
-            placeholder="What would you improve?"
+            placeholder={t("feedback.message.placeholder")}
             value={message}
             onChange={(e) => {
               setMessage(e.target.value);
@@ -131,8 +133,8 @@ function FeedbackPage() {
             required
           />
           <p className="text-[12.5px] text-muted-foreground">
-            {trimmed.length}/{MAX_LENGTH} characters
-            {tooShort ? ` · at least ${MIN_LENGTH} needed` : ""}
+            {t("feedback.charCount", { count: trimmed.length, max: MAX_LENGTH })}
+            {tooShort ? t("feedback.charCount.tooShort", { min: MIN_LENGTH }) : ""}
           </p>
         </div>
 
@@ -143,12 +145,12 @@ function FeedbackPage() {
         )}
         {sent && !error && (
           <p className="rounded-[14px] bg-surface-2 p-3 text-[13.5px] text-muted-foreground">
-            Saved. Thank you — we read every message.
+            {t("feedback.success.saved")}
           </p>
         )}
 
         <Button type="submit" disabled={sending || trimmed.length < MIN_LENGTH}>
-          {sending ? "Sending…" : "Send feedback"}
+          {sending ? t("feedback.submit.pending") : t("feedback.submit")}
         </Button>
       </form>
     </AppShell>

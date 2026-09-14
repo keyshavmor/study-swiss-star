@@ -28,6 +28,21 @@
 - Migration `drizzle/migrations/0002_assistant_settings_storage_management.sql` records the live
   schema additively/idempotently; private `chat-attachments` and `profile-avatars` buckets created.
 - Typecheck clean, production build succeeds, `/`, `/auth`, `/auth/update-password` return 200.
+- Five-language i18n (`en`/`de`/`ru`/`es`/`fr`) via `frontend/src/lib/i18n/` (`languages.ts`,
+  `detect.ts`, `provider.tsx`, `messages/*`), a header `LanguageMenu`, and
+  `user_preferences.preferences.app_language` as the authoritative signed-in source (localStorage
+  cache only prevents a flash of the wrong language and localises the signed-out welcome screen).
+- Read-aloud Listen/Stop controls on assistant messages via `frontend/src/lib/speech.ts` (Web Speech
+  API, frontend-only, nothing uploaded/persisted), gated by `assistant_audio_enabled` /
+  `assistant_audio_autoplay` in `user_preferences.preferences`.
+- `/help` now links five static A4 PDF user guides (`frontend/public/help-guides/alim-user-guide-
+  {en,de,ru,es,fr}.pdf`) instead of a "Contact support" CTA.
+- Typed helper `frontend/src/lib/media-retention.ts` for the future `public.media_retention_queue`
+  table and private `assistant-descriptors` bucket (assistant OUTPUT media only); insert/list only —
+  descriptor generation/upload, enqueueing on generation, the 30-minute cleanup, and descriptor-based
+  retrieval remain backend follow-up.
+- Docs refreshed again for language/audio/media-retention and mirrored byte-for-byte to
+  `lovabledocs/` (excluding the wireframes owned by another workstream).
 
 ## Blocked / needs user (Supabase project settings only)
 - Enable GitHub, LinkedIn (OIDC) and Spotify providers and paste each client id/secret.
@@ -38,3 +53,9 @@
 ## Backend follow-up (deliberately not done here)
 - Assistant inference endpoint writing `assistant_messages` rows with `role = 'assistant'`.
 - Attachment parsing (`parse_status`) and honouring the selected Qwen model at load time.
+- Honouring `user_preferences.preferences.app_language` on generation requests (`FUTURE BACKEND /
+  CODEX`, not implemented).
+- Media retention for assistant output media: descriptor generation/upload to the
+  `assistant-descriptors` bucket, enqueueing `public.media_retention_queue` rows on generation, the
+  30-minute cleanup worker, and descriptor-based retrieval (`FUTURE BACKEND / CODEX`, not
+  implemented).

@@ -45,7 +45,8 @@ They are deliberately not `VITE_*`, so model credentials never enter the browser
 
 ## Remaining frontend/product work
 
-1. Add a backend health banner and model status to Diagnostics/Settings.
+1. Add a backend health banner and model status to `/settings` (there is no
+   `/diagnostics` route — it was removed from the frontend).
 2. Expose indexed materials and learning goals on subject pages.
 3. Add multipart upload UI/API; the backend currently exposes text ingestion and a file-ingestor
    service rather than the prior proposed multipart endpoint.

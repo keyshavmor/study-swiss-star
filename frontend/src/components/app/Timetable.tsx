@@ -1,7 +1,8 @@
 /** Alim application component for study, planning, profile, or navigation workflows. */
 import { useRef, useState } from "react";
 import { GoogleCalendarLogo } from "@/components/app/BrandLogos";
-import { addDays, minutesOf, timeOf, todayIso, WEEKDAY_SHORT } from "@/lib/date-utils";
+import { addDays, minutesOf, timeOf, todayIso } from "@/lib/date-utils";
+import { useI18n } from "@/lib/i18n/provider";
 
 import type { Occurrence } from "@/lib/store/app-data";
 import { CATEGORY_COLOR } from "@/lib/store/types";
@@ -50,9 +51,19 @@ export function Timetable({
   onMove: (request: MoveRequest) => void;
   highlightEventId?: string | undefined;
 }) {
+  const { t } = useI18n();
   const gridRef = useRef<HTMLDivElement>(null);
   const [drag, setDrag] = useState<DragState | null>(null);
   const today = todayIso();
+  const weekdayShort = [
+    t("subject.timetable.weekday.mon"),
+    t("subject.timetable.weekday.tue"),
+    t("subject.timetable.weekday.wed"),
+    t("subject.timetable.weekday.thu"),
+    t("subject.timetable.weekday.fri"),
+    t("subject.timetable.weekday.sat"),
+    t("subject.timetable.weekday.sun"),
+  ];
 
   const hours = Array.from({ length: toHour - fromHour }, (_, i) => fromHour + i);
   const dayList = Array.from({ length: days }, (_, i) => addDays(weekStart, i));
@@ -101,7 +112,7 @@ export function Timetable({
               )}
             >
               <p className="text-[12px] font-medium uppercase tracking-wide text-muted-foreground">
-                {WEEKDAY_SHORT[(new Date(`${iso}T12:00:00`).getDay() + 6) % 7]}
+                {weekdayShort[(new Date(`${iso}T12:00:00`).getDay() + 6) % 7]}
               </p>
               <p
                 className={cn("tabular text-[15px] font-semibold", iso === today && "text-primary")}
@@ -262,7 +273,7 @@ export function Timetable({
       </div>
 
       <p className="border-t border-border bg-surface-2 px-4 py-2.5 text-[12.5px] text-muted-foreground">
-        Drag a block to move it to another day or time. Times are shown in 24-hour format.
+        {t("subject.timetable.dragHint")}
       </p>
     </div>
   );

@@ -55,8 +55,8 @@ quiz / mock exam / study plan 120 s · `POST /api/import/document` 300 s.
 ## 1. `GET /health`
 
 - **Purpose:** liveness + capability probe. Drives `BackendStatusBanner`.
-- **Called by:** not yet wired in the frontend; intended for a future `BackendStatusBanner`,
-  `/diagnostics`, and `/settings`.
+- **Called by:** not yet wired in the frontend; intended for a future `BackendStatusBanner`
+  and `/settings`. There is no `/diagnostics` route — it was removed.
 - **Request:** none.
 
 ```json
@@ -81,12 +81,12 @@ quiz / mock exam / study plan 120 s · `POST /api/import/document` 300 s.
   `65536` and `metal`).
 - **Required:** `status`, `checked_at`. The implemented `status` can be `degraded` while FastAPI and
   SQLite are healthy but the local model is unreachable.
-- **Loading:** silent; no spinner. **Display:** green/amber chip in `/diagnostics`; banner only when unreachable or `status != "ok"`.
+- **Loading:** silent; no spinner. **Display:** banner only when unreachable or `status != "ok"` (no dedicated diagnostics screen exists).
 
 ## 2. `GET /api/model/status`
 
 - **Purpose:** which model is serving requests and where.
-- **Called by:** `/settings`, `/diagnostics`, optional chat-header chip.
+- **Called by:** `/settings`, optional chat-header chip.
 
 ```json
 {
@@ -297,6 +297,31 @@ data: {"message_id":"msg_01HZYB3K","sources":[...],"exam_tip":"...","used_model"
 - **Errors:** 404 `thread_not_found`, 503 `model_unavailable`, 429 `rate_limited`.
 - **Loading:** existing `Shimmer` "Thinking…"; composer disabled.
 - **Display:** Markdown answer, then `SourceSnippetList`, then the exam tip in a subtle callout.
+
+### FUTURE BACKEND / CODEX — response-language precedence (not implemented)
+
+The frontend now has a five-language UI (`en`, `de`, `ru`, `es`, `fr`; see
+`SUBJECT_MODEL_AND_LANGUAGE_RULES.md`). The **future** request contract for `/api/chat`
+adds two fields alongside the existing `language`:
+
+```json
+{
+  "ui_language": "de",
+  "message_language": "en"
+}
+```
+
+Precedence rule (**not implemented today**): the effective `response_language` is
+`message_language` when it is confidently one of the five supported languages,
+otherwise it falls back to `ui_language`.
+
+Today the frontend computes a per-message `responseLanguageHint` client-side
+(`frontend/src/lib/i18n/detect.ts`, `effectiveResponseLanguage`) and keeps it in
+component state only. It is **deliberately not added** to the current `/api/chat`
+request body above, so the current backend contract is unchanged and this section
+describes target behaviour only. `FUTURE BACKEND / CODEX` must implement the
+precedence rule server-side once `ui_language`/`message_language` are added to the
+request.
 
 ## 8. `POST /api/quiz/generate`
 

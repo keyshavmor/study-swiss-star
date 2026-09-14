@@ -3,6 +3,7 @@ import { Link } from "@tanstack/react-router";
 import { ArrowLeft, ChevronRight } from "lucide-react";
 import { Fragment } from "react";
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/lib/i18n/provider";
 
 export interface Crumb {
   label: string;
@@ -12,9 +13,10 @@ export interface Crumb {
 
 /** Clickable breadcrumb trail, e.g. Home / School / Biology. */
 export function Breadcrumbs({ items, className }: { items: Crumb[]; className?: string }) {
+  const { t } = useI18n();
   return (
     <nav
-      aria-label="Breadcrumb"
+      aria-label={t("misc.breadcrumb.label")}
       className={cn(
         "flex flex-wrap items-center gap-1 text-[13.5px] text-muted-foreground",
         className,
@@ -52,6 +54,7 @@ export function BackLink({
   label: string;
   className?: string;
 }) {
+  const { t } = useI18n();
   return (
     <Link
       to={to}
@@ -62,7 +65,7 @@ export function BackLink({
       )}
     >
       <ArrowLeft className="h-4 w-4" />
-      Back to {label}
+      {t("misc.breadcrumb.backTo", { label })}
     </Link>
   );
 }

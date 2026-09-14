@@ -1,5 +1,5 @@
 flowchart TD
-  Root["/ — Welcome + sign in / sign up"] --> SignedIn{Existing session?}
+  Root["/ — Welcome + sign in / sign up\nlocalised via cached alim.app_language"] --> SignedIn{Existing session?}
   SignedIn -->|yes| Home["/home"]
   SignedIn -->|no| AuthForm[AuthForm: email or username + password,\nGitHub LinkedIn Spotify]
   AuthForm -->|success| Home
@@ -14,21 +14,22 @@ flowchart TD
   School --> Stats["/stats"]
   Subject --> ChatEntry["/chat"]
   ChatEntry -->|select or create thread| Thread["/chat/$threadId"]
+  Home --> Assistant["/assistant"]
   Home --> Profile["/profile"]
   Home --> Settings["/settings"]
   Home --> Help["/help"]
   Home --> Feedback["/feedback"]
-  Home --> Diagnostics["/diagnostics"]
   Header[Desktop header navigation] --> Home
   Header --> School
   Header --> Planner
+  Header --> Assistant
   Header --> Stats
   Header --> Help
   Header --> Feedback
-  Mobile[Mobile bottom navigation] --> Home
+  HeaderLang[Header-only flag language menu\nnot present in Settings] -.-> Header
+  Mobile[Mobile bottom navigation, 4 items] --> Home
   Mobile --> School
   Mobile --> Planner
-  Mobile --> Stats
+  Mobile --> Assistant
   Footer[Footer navigation] --> Feedback
   Footer --> Help
-  Footer --> Diagnostics

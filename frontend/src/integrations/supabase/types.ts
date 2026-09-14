@@ -135,6 +135,64 @@ export type Database = {
         };
         Relationships: [];
       };
+
+      /**
+       * Assistant OUTPUT media retention queue. Originals become eligible for
+       * deletion 30 minutes after creation; the textual descriptor in
+       * `assistant-descriptors` is the retrieval surface afterwards.
+       */
+      media_retention_queue: {
+        Row: {
+          id: string;
+          user_id: string;
+          attachment_id: string | null;
+          media_kind: string;
+          storage_bucket: string;
+          object_path: string;
+          descriptor_bucket: string;
+          descriptor_path: string | null;
+          source_url: string | null;
+          source_path: string | null;
+          status: string;
+          created_at: string;
+          delete_after: string;
+          deleted_at: string | null;
+          error_code: string | null;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          attachment_id?: string | null;
+          media_kind: string;
+          storage_bucket: string;
+          object_path: string;
+          descriptor_bucket?: string;
+          descriptor_path?: string | null;
+          source_url?: string | null;
+          source_path?: string | null;
+          status?: string;
+          created_at?: string;
+          delete_after?: string;
+          deleted_at?: string | null;
+          error_code?: string | null;
+        };
+        Update: {
+          attachment_id?: string | null;
+          media_kind?: string;
+          storage_bucket?: string;
+          object_path?: string;
+          descriptor_bucket?: string;
+          descriptor_path?: string | null;
+          source_url?: string | null;
+          source_path?: string | null;
+          status?: string;
+          delete_after?: string;
+          deleted_at?: string | null;
+          error_code?: string | null;
+        };
+        Relationships: [];
+      };
+
       documents: {
         Row: {
           id: string;

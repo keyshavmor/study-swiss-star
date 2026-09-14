@@ -3,6 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { AppShell, PageHeading } from "@/components/app/AppShell";
 import { PageNav } from "@/components/app/Breadcrumbs";
 import { AssistantChat } from "@/components/assistant/AssistantChat";
+import { useI18n } from "@/lib/i18n/provider";
 
 export const Route = createFileRoute("/_authenticated/assistant/")({
   head: () => ({
@@ -21,17 +22,22 @@ export const Route = createFileRoute("/_authenticated/assistant/")({
       { name: "twitter:card", content: "summary" },
     ],
   }),
-  component: () => (
+  component: AssistantIndexPage,
+});
+
+function AssistantIndexPage() {
+  const { t } = useI18n();
+  return (
     <AppShell>
       <PageNav
-        back={{ to: "/home", label: "Home" }}
-        crumbs={[{ label: "Home", to: "/home" }, { label: "Assistant" }]}
+        back={{ to: "/home", label: t("assistant.crumbHome") }}
+        crumbs={[
+          { label: t("assistant.crumbHome"), to: "/home" },
+          { label: t("assistant.crumbAssistant") },
+        ]}
       />
-      <PageHeading
-        title="Assistant"
-        description="General-purpose chat with attachments, kept separate from subject tutoring."
-      />
+      <PageHeading title={t("assistant.pageTitle")} description={t("assistant.pageDescription")} />
       <AssistantChat />
     </AppShell>
-  ),
-});
+  );
+}

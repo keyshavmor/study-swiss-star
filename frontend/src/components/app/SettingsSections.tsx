@@ -43,6 +43,8 @@ import type { StorageUsageStatus } from "@/integrations/supabase/types";
 import { toast } from "sonner";
 import { track, trackFailure } from "@/lib/telemetry";
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/lib/i18n/provider";
+import { speechSupported } from "@/lib/speech";
 
 function SectionCard({
   title,
@@ -67,6 +69,7 @@ function SectionCard({
 /* -------------------------------------------------------------- account --- */
 
 export function AccountSection() {
+  const { t } = useI18n();
   const [profile, setProfile] = useState<AccountProfile | null>(null);
   const [avatarUrl, setAvatarUrl] = useState("");
   const [email, setEmail] = useState("");
@@ -87,11 +90,11 @@ export function AccountSection() {
       setProfile(loaded);
       setAvatarUrl(loaded?.photoPath ? await avatarSignedUrl(loaded.photoPath) : "");
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Could not load your account");
+      toast.error(err instanceof Error ? err.message : t("settings.account.loadError"));
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     void load();
@@ -113,10 +116,10 @@ export function AccountSection() {
         contactDetails: profile.contactDetails,
       });
       track({ event_name: "settings_profile_saved", feature: "settings" });
-      toast.success("Profile saved");
+      toast.success(t("settings.account.profileSaved"));
     } catch (err) {
       trackFailure("settings_profile_save_failed", err, { feature: "settings" });
-      toast.error(err instanceof Error ? err.message : "Could not save your profile");
+      toast.error(err instanceof Error ? err.message : t("settings.account.profileSaveError"));
     } finally {
       setSaving(false);
     }
@@ -129,10 +132,10 @@ export function AccountSection() {
       patch({ photoPath: path });
       setAvatarUrl(await avatarSignedUrl(path));
       track({ event_name: "settings_avatar_updated", feature: "settings" });
-      toast.success("Profile picture updated");
+      toast.success(t("settings.account.avatarUpdated"));
     } catch (err) {
       trackFailure("settings_avatar_update_failed", err, { feature: "settings" });
-      toast.error(err instanceof Error ? err.message : "Could not upload the picture");
+      toast.error(err instanceof Error ? err.message : t("settings.account.avatarUpdateError"));
     }
     if (fileRef.current) fileRef.current.value = "";
   };
@@ -143,10 +146,10 @@ export function AccountSection() {
       patch({ photoPath: "" });
       setAvatarUrl("");
       track({ event_name: "settings_avatar_removed", feature: "settings" });
-      toast.success("Profile picture removed");
+      toast.success(t("settings.account.avatarRemoved"));
     } catch (err) {
       trackFailure("settings_avatar_remove_failed", err, { feature: "settings" });
-      toast.error(err instanceof Error ? err.message : "Could not remove the picture");
+      toast.error(err instanceof Error ? err.message : t("settings.account.avatarRemoveError"));
     }
   };
 
@@ -160,12 +163,12 @@ export function AccountSection() {
     }
     track({ event_name: "settings_email_change_requested", feature: "settings" });
     setNewEmail("");
-    toast.success("Confirmation email sent. The change applies once you verify it.");
+    toast.success(t("settings.account.email.sent"));
   };
 
   const handlePasswordChange = async () => {
     if (password !== confirmPassword) {
-      toast.error("The two passwords do not match.");
+      toast.error(t("settings.account.password.mismatch"));
       return;
     }
     const { error } = await supabase.auth.updateUser({ password });
@@ -177,28 +180,28 @@ export function AccountSection() {
     track({ event_name: "settings_password_changed", feature: "settings" });
     setPassword("");
     setConfirmPassword("");
-    toast.success("Password updated");
+    toast.success(t("settings.account.password.updated"));
   };
 
   if (loading) {
     return (
-      <SectionCard title="Account">
-        <p className="text-[14px] text-muted-foreground">Loading your account…</p>
+      <SectionCard title={t("settings.account.title")}>
+        <p className="text-[14px] text-muted-foreground">{t("settings.account.loading")}</p>
       </SectionCard>
     );
   }
 
   return (
     <SectionCard
-      title="Account"
-      description="Your profile picture, name and contact details are stored securely in your account."
+      title={t("settings.account.title")}
+      description={t("settings.account.description")}
     >
       <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-4">
         <span className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-full border border-border bg-surface-2 text-muted-foreground">
           {avatarUrl ? (
             <img
               src={avatarUrl}
-              alt="Your profile picture"
+              alt={t("settings.account.pictureAlt")}
               className="h-full w-full object-cover"
             />
           ) : (
@@ -215,22 +218,20 @@ export function AccountSection() {
           />
           <Button variant="outline" onClick={() => fileRef.current?.click()} className="gap-2">
             <Upload className="h-4 w-4" />
-            Change picture
+            {t("settings.account.changePicture")}
           </Button>
           {profile?.photoPath && (
             <Button variant="ghost" onClick={() => void handleRemoveAvatar()}>
-              Remove
+              {t("settings.account.removePicture")}
             </Button>
           )}
         </div>
       </div>
-      <p className="text-[13px] text-muted-foreground">
-        Images up to 2 MB, private to your account.
-      </p>
+      <p className="text-[13px] text-muted-foreground">{t("settings.account.pictureHint")}</p>
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2">
-          <Label htmlFor="username">Username</Label>
+          <Label htmlFor="username">{t("settings.account.usernameLabel")}</Label>
           <Input
             id="username"
             value={profile?.username ?? ""}
@@ -238,7 +239,7 @@ export function AccountSection() {
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="fullName">Full name</Label>
+          <Label htmlFor="fullName">{t("settings.account.fullNameLabel")}</Label>
           <Input
             id="fullName"
             value={profile?.fullName ?? ""}
@@ -246,7 +247,7 @@ export function AccountSection() {
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="nationality">Nationality</Label>
+          <Label htmlFor="nationality">{t("settings.account.nationalityLabel")}</Label>
           <Input
             id="nationality"
             value={profile?.nationality ?? ""}
@@ -254,7 +255,7 @@ export function AccountSection() {
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="phone">Contact phone</Label>
+          <Label htmlFor="phone">{t("settings.account.phoneLabel")}</Label>
           <Input
             id="phone"
             type="tel"
@@ -263,7 +264,7 @@ export function AccountSection() {
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="address">Address</Label>
+          <Label htmlFor="address">{t("settings.account.addressLabel")}</Label>
           <Input
             id="address"
             value={profile?.contactDetails["address"] ?? ""}
@@ -275,7 +276,7 @@ export function AccountSection() {
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="guardian">Guardian contact</Label>
+          <Label htmlFor="guardian">{t("settings.account.guardianLabel")}</Label>
           <Input
             id="guardian"
             value={profile?.contactDetails["guardian"] ?? ""}
@@ -288,18 +289,19 @@ export function AccountSection() {
         </div>
       </div>
       <Button onClick={() => void handleSaveProfile()} disabled={saving}>
-        {saving ? "Saving…" : "Save profile"}
+        {saving ? t("settings.account.saving") : t("settings.account.saveProfile")}
       </Button>
 
       <div className="space-y-4 border-t border-border pt-5">
-        <h3 className="text-[15px] font-semibold">Email address</h3>
+        <h3 className="text-[15px] font-semibold">{t("settings.account.email.title")}</h3>
         <p className="text-[14px] text-muted-foreground">
-          Signed in as <span className="font-medium text-foreground">{email || "unknown"}</span>.
-          Changing it requires confirming the new address by email.
+          {t("settings.account.email.description", {
+            email: email || t("settings.account.email.unknown"),
+          })}
         </p>
         <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
           <div className="space-y-2">
-            <Label htmlFor="newEmail">New email</Label>
+            <Label htmlFor="newEmail">{t("settings.account.email.newLabel")}</Label>
             <Input
               id="newEmail"
               type="email"
@@ -308,16 +310,16 @@ export function AccountSection() {
             />
           </div>
           <Button variant="outline" onClick={() => void handleEmailChange()} disabled={!newEmail}>
-            Update email
+            {t("settings.account.email.update")}
           </Button>
         </div>
       </div>
 
       <div className="space-y-4 border-t border-border pt-5">
-        <h3 className="text-[15px] font-semibold">Password</h3>
+        <h3 className="text-[15px] font-semibold">{t("settings.account.password.title")}</h3>
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2">
-            <Label htmlFor="newPassword">New password</Label>
+            <Label htmlFor="newPassword">{t("settings.account.password.newLabel")}</Label>
             <Input
               id="newPassword"
               type="password"
@@ -327,7 +329,7 @@ export function AccountSection() {
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="confirmNewPassword">Repeat new password</Label>
+            <Label htmlFor="confirmNewPassword">{t("settings.account.password.repeatLabel")}</Label>
             <Input
               id="confirmNewPassword"
               type="password"
@@ -342,7 +344,7 @@ export function AccountSection() {
           onClick={() => void handlePasswordChange()}
           disabled={password.length < 6}
         >
-          Update password
+          {t("settings.account.password.update")}
         </Button>
       </div>
     </SectionCard>
@@ -352,17 +354,19 @@ export function AccountSection() {
 /* ------------------------------------------------- preferences + model --- */
 
 export function PreferencesSections() {
+  const { t } = useI18n();
   const [prefs, setPrefs] = useState<UserPreferences>(DEFAULT_PREFERENCES);
   const [loading, setLoading] = useState(true);
+  const audioSupported = useMemo(() => speechSupported(), []);
 
   useEffect(() => {
     fetchPreferences()
       .then(setPrefs)
       .catch((err: unknown) =>
-        toast.error(err instanceof Error ? err.message : "Could not load your preferences"),
+        toast.error(err instanceof Error ? err.message : t("settings.preferences.loadError")),
       )
       .finally(() => setLoading(false));
-  }, []);
+  }, [t]);
 
   const update = async (next: Partial<UserPreferences>) => {
     const previous = prefs;
@@ -382,36 +386,36 @@ export function PreferencesSections() {
         feature: "settings",
         properties: { preference: Object.keys(next)[0] ?? "" },
       });
-      toast.error(err instanceof Error ? err.message : "Could not save your preference");
+      toast.error(err instanceof Error ? err.message : t("settings.preferences.saveError"));
     }
   };
 
   const switches: { key: keyof UserPreferences; label: string; hint?: string }[] = [
-    { key: "exam_reminders", label: "Exam reminders" },
-    { key: "daily_study_summary", label: "Daily study summary" },
-    { key: "sound_effects", label: "Sound effects" },
+    { key: "exam_reminders", label: t("settings.preferences.examReminders") },
+    { key: "daily_study_summary", label: t("settings.preferences.dailyStudySummary") },
+    { key: "sound_effects", label: t("settings.preferences.soundEffects") },
     {
       key: "auto_storage_cleanup",
-      label: "Automatic cleanup when storage is nearly full",
-      hint: "When 1% or less of storage remains, the oldest 5% of eligible study and chat files are removed platform-wide.",
+      label: t("settings.preferences.autoCleanup.label"),
+      hint: t("settings.preferences.autoCleanup.hint"),
     },
   ];
 
   return (
     <>
       <SectionCard
-        title="Local model"
-        description="Choose which local Qwen model the study assistant should use. This selects the model only; the local backend controls how it runs."
+        title={t("settings.localModel.title")}
+        description={t("settings.localModel.description")}
       >
         <div className="max-w-md space-y-2">
-          <Label htmlFor="qwenModel">Model</Label>
+          <Label htmlFor="qwenModel">{t("settings.localModel.label")}</Label>
           <Select
             value={prefs.selected_qwen_model}
             onValueChange={(value) => void update({ selected_qwen_model: value })}
             disabled={loading}
           >
             <SelectTrigger id="qwenModel">
-              <SelectValue placeholder="Select a model" />
+              <SelectValue placeholder={t("settings.localModel.placeholder")} />
             </SelectTrigger>
             <SelectContent>
               {QWEN_MODELS.map((model) => (
@@ -421,13 +425,14 @@ export function PreferencesSections() {
               ))}
             </SelectContent>
           </Select>
-          <p className="text-[13px] text-muted-foreground">
-            Listed from largest to smallest. Larger models answer better but need more memory.
-          </p>
+          <p className="text-[13px] text-muted-foreground">{t("settings.localModel.hint")}</p>
         </div>
       </SectionCard>
 
-      <SectionCard title="Preferences" description="Saved to your account, not just this browser.">
+      <SectionCard
+        title={t("settings.preferences.title")}
+        description={t("settings.preferences.description")}
+      >
         <div className="divide-y divide-border">
           {switches.map((item) => (
             <div
@@ -449,22 +454,53 @@ export function PreferencesSections() {
           ))}
         </div>
       </SectionCard>
+
+      <SectionCard title={t("settings.audio.title")} description={t("settings.audio.description")}>
+        <div className="divide-y divide-border">
+          <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 py-3.5">
+            <div>
+              <span className="text-[15px] font-medium">{t("settings.audio.enabled.label")}</span>
+              <p className="mt-1 text-[13px] text-muted-foreground">
+                {t("settings.audio.enabled.hint")}
+              </p>
+            </div>
+            <Switch
+              checked={Boolean(prefs.assistant_audio_enabled)}
+              disabled={loading}
+              onCheckedChange={(checked) => void update({ assistant_audio_enabled: checked })}
+            />
+          </div>
+          <div
+            className={cn(
+              "grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 py-3.5",
+              !prefs.assistant_audio_enabled && "opacity-50",
+            )}
+          >
+            <div>
+              <span className="text-[15px] font-medium">{t("settings.audio.autoplay.label")}</span>
+              <p className="mt-1 text-[13px] text-muted-foreground">
+                {t("settings.audio.autoplay.hint")}
+              </p>
+            </div>
+            <Switch
+              checked={Boolean(prefs.assistant_audio_autoplay)}
+              disabled={loading || !prefs.assistant_audio_enabled}
+              onCheckedChange={(checked) => void update({ assistant_audio_autoplay: checked })}
+            />
+          </div>
+        </div>
+        {!audioSupported && (
+          <p className="text-[13px] text-muted-foreground">{t("settings.audio.unsupported")}</p>
+        )}
+      </SectionCard>
     </>
   );
 }
 
 /* -------------------------------------------------------------- storage --- */
 
-const KIND_FILTERS: { value: StorageItemKind | "all"; label: string }[] = [
-  { value: "all", label: "All types" },
-  { value: "image", label: "Images" },
-  { value: "audio", label: "Audio" },
-  { value: "video", label: "Video" },
-  { value: "document", label: "Documents" },
-  { value: "other", label: "Other" },
-];
-
 export function StorageSection() {
+  const { t, formatDate } = useI18n();
   const [usage, setUsage] = useState<StorageUsageStatus | null>(null);
   const [items, setItems] = useState<StorageItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -475,6 +511,15 @@ export function StorageSection() {
   const [to, setTo] = useState("");
   const cleanupAttempted = useRef(false);
 
+  const KIND_FILTERS: { value: StorageItemKind | "all"; label: string }[] = [
+    { value: "all", label: t("settings.storage.filter.all") },
+    { value: "image", label: t("settings.storage.filter.image") },
+    { value: "audio", label: t("settings.storage.filter.audio") },
+    { value: "video", label: t("settings.storage.filter.video") },
+    { value: "document", label: t("settings.storage.filter.document") },
+    { value: "other", label: t("settings.storage.filter.other") },
+  ];
+
   const load = useCallback(async () => {
     try {
       const [status, list] = await Promise.all([fetchStorageUsage(), listStorageItems()]);
@@ -482,12 +527,12 @@ export function StorageSection() {
       setItems(list);
       return status;
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Could not load storage information");
+      toast.error(err instanceof Error ? err.message : t("settings.storage.loadError"));
       return null;
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     void (async () => {
@@ -496,16 +541,14 @@ export function StorageSection() {
         cleanupAttempted.current = true;
         try {
           await invokeEmergencyCleanup();
-          toast.success("Storage was nearly full, so the oldest eligible files were removed.");
+          toast.success(t("settings.storage.cleanupDone"));
           await load();
         } catch (err) {
-          toast.error(
-            err instanceof Error ? err.message : "Automatic storage cleanup could not run",
-          );
+          toast.error(err instanceof Error ? err.message : t("settings.storage.cleanupError"));
         }
       }
     })();
-  }, [load]);
+  }, [load, t]);
 
   const filtered = useMemo(
     () =>
@@ -530,20 +573,19 @@ export function StorageSection() {
   const handleDelete = async () => {
     const targets = filtered.filter((item) => selected.has(item.id));
     if (!targets.length) return;
-    if (
-      !window.confirm(
-        `Permanently delete ${targets.length} file${targets.length === 1 ? "" : "s"}? This cannot be undone.`,
-      )
-    )
-      return;
+    const confirmMessage =
+      targets.length === 1
+        ? t("settings.storage.confirmDeleteOne", { count: targets.length })
+        : t("settings.storage.confirmDeleteOther", { count: targets.length });
+    if (!window.confirm(confirmMessage)) return;
     setBusy(true);
     try {
       await deleteStorageItems(targets);
       setSelected(new Set());
       await load();
-      toast.success("Files deleted");
+      toast.success(t("settings.storage.deleted"));
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Could not delete the selected files");
+      toast.error(err instanceof Error ? err.message : t("settings.storage.deleteError"));
       await load();
     } finally {
       setBusy(false);
@@ -556,20 +598,23 @@ export function StorageSection() {
 
   return (
     <SectionCard
-      title="Storage"
-      description="Shared app storage across study materials and assistant attachments."
+      title={t("settings.storage.title")}
+      description={t("settings.storage.description")}
     >
       {loading ? (
-        <p className="text-[14px] text-muted-foreground">Loading storage usage…</p>
+        <p className="text-[14px] text-muted-foreground">{t("settings.storage.loading")}</p>
       ) : (
         <>
           <div className="space-y-2">
             <div className="grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-3">
               <span className="text-[15px] font-medium">
-                {formatBytes(usage?.used_bytes ?? 0)} of {formatBytes(usage?.quota_bytes ?? 0)} used
+                {t("settings.storage.usedOf", {
+                  used: formatBytes(usage?.used_bytes ?? 0),
+                  total: formatBytes(usage?.quota_bytes ?? 0),
+                })}
               </span>
               <span className="text-[14px] text-muted-foreground">
-                {remainingPercent.toFixed(1)}% remaining
+                {t("settings.storage.remaining", { percent: remainingPercent.toFixed(1) })}
               </span>
             </div>
             <div className="h-2.5 w-full overflow-hidden rounded-full bg-surface-2">
@@ -584,12 +629,9 @@ export function StorageSection() {
             <div className="flex items-start gap-3 rounded-xl border border-warning/40 bg-warning/10 p-4">
               <AlertTriangle className="mt-0.5 h-[18px] w-[18px] shrink-0 text-warning" />
               <div className="text-[14px]">
-                <p className="font-semibold text-warning">Storage is almost full</p>
+                <p className="font-semibold text-warning">{t("settings.storage.lowTitle")}</p>
                 <p className="mt-1 text-muted-foreground">
-                  Only {remainingPercent.toFixed(1)}% remains. Delete files you no longer need. If
-                  1% or less is left, an automatic cleanup removes the oldest eligible study and
-                  chat files across the whole app; profile pictures and account data are never
-                  touched.
+                  {t("settings.storage.lowBody", { percent: remainingPercent.toFixed(1) })}
                 </p>
               </div>
             </div>
@@ -597,7 +639,7 @@ export function StorageSection() {
 
           <div className="grid gap-3 sm:grid-cols-[minmax(0,180px)_minmax(0,1fr)_minmax(0,1fr)]">
             <div className="space-y-2">
-              <Label htmlFor="kindFilter">Type</Label>
+              <Label htmlFor="kindFilter">{t("settings.storage.typeLabel")}</Label>
               <Select value={kind} onValueChange={(value) => setKind(value as typeof kind)}>
                 <SelectTrigger id="kindFilter">
                   <SelectValue />
@@ -612,7 +654,7 @@ export function StorageSection() {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="fromDate">From</Label>
+              <Label htmlFor="fromDate">{t("settings.storage.fromLabel")}</Label>
               <Input
                 id="fromDate"
                 type="date"
@@ -621,15 +663,19 @@ export function StorageSection() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="toDate">To</Label>
+              <Label htmlFor="toDate">{t("settings.storage.toLabel")}</Label>
               <Input id="toDate" type="date" value={to} onChange={(e) => setTo(e.target.value)} />
             </div>
           </div>
 
           <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
             <p className="text-[14px] text-muted-foreground">
-              {filtered.length} file{filtered.length === 1 ? "" : "s"}
-              {selected.size > 0 ? ` · ${selected.size} selected` : ""}
+              {filtered.length === 1
+                ? t("settings.storage.fileCountOne", { count: filtered.length })
+                : t("settings.storage.fileCountOther", { count: filtered.length })}
+              {selected.size > 0
+                ? t("settings.storage.selectedCount", { count: selected.size })
+                : ""}
             </p>
             <Button
               variant="outline"
@@ -638,13 +684,13 @@ export function StorageSection() {
               onClick={() => void handleDelete()}
             >
               {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
-              Delete selected
+              {t("settings.storage.deleteSelected")}
             </Button>
           </div>
 
           {filtered.length === 0 ? (
             <p className="rounded-xl border border-border bg-surface-2 p-4 text-[14px] text-muted-foreground">
-              No stored files match these filters.
+              {t("settings.storage.emptyFiltered")}
             </p>
           ) : (
             <ul className="divide-y divide-border rounded-xl border border-border">
@@ -655,7 +701,7 @@ export function StorageSection() {
                 >
                   <input
                     type="checkbox"
-                    aria-label={`Select ${item.name}`}
+                    aria-label={t("settings.storage.selectItem", { name: item.name })}
                     checked={selected.has(item.id)}
                     onChange={() => toggle(item.id)}
                     className="h-4 w-4 accent-[var(--primary)]"
@@ -664,7 +710,9 @@ export function StorageSection() {
                     <p className="truncate text-[15px] font-medium">{item.name}</p>
                     <p className="text-[13px] text-muted-foreground">
                       {item.source} · {item.kind} ·{" "}
-                      {item.createdAt ? item.createdAt.slice(0, 10) : "unknown date"}
+                      {item.createdAt
+                        ? formatDate(item.createdAt)
+                        : t("settings.storage.unknownDate")}
                     </p>
                   </div>
                   <span className="text-[13px] text-muted-foreground">

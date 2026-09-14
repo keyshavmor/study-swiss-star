@@ -1,13 +1,17 @@
 flowchart LR
   Student[Student] --> Browser[React UI in browser\nIMPLEMENTED]
   Browser --> Router[TanStack file routes\nIMPLEMENTED]
-  Router --> Providers[Query + Theme + AppData + AcademicYear\nIMPLEMENTED]
+  Router --> Providers[Query + I18n + Theme + AppData + AcademicYear\nIMPLEMENTED]
+  Providers --> I18n[I18nProvider\nfrontend/src/lib/i18n\nen-GB de-CH ru-RU es-ES fr-CH\nIMPLEMENTED]
+  I18n --> LangCache[(localStorage alim.app_language\nflash-avoidance cache only\nIMPLEMENTED LOCAL)]
   Providers --> Local[(Browser storage\nGrades, planner, profile, links, demo\nIMPLEMENTED LOCAL)]
   Router --> Auth[Authenticated route gate\nIMPLEMENTED]
-  Auth --> Cloud[(external Supabase\nIdentity + threads + messages\nprofiles + user_preferences\nfeedback + usage_events\nIMPLEMENTED CLOUD)]
+  Auth --> Cloud[(external Supabase\nIdentity + threads + messages\nprofiles + user_preferences\nfeedback + usage_events\nmedia_retention_queue\nIMPLEMENTED CLOUD)]
+  I18n --> Cloud
   Browser --> Fns[Edge Functions\nusername-login, username-availability,\nactivity-log, feedback-submit\nIMPLEMENTED]
   Fns --> Cloud
-  Fns --> Buckets[(Private buckets\nactivity-logs, feedback-messages,\nchat-attachments, user-materials, profile-avatars)]
+  Fns --> Buckets[(Private buckets\nactivity-logs, feedback-messages,\nchat-attachments, user-materials, profile-avatars,\nassistant-descriptors\nIMPLEMENTED)]
+  Browser --> Speech[Web Speech API speechSynthesis\nfrontend/src/lib/speech.ts\nclient-only, ephemeral, never stored\nIMPLEMENTED LOCAL]
   Browser --> GCal[Google Calendar v3 read-only\nvia linked Google identity\nNEEDS PROVIDER CONFIG]
   Browser --> ChatRoute[POST /api/chat\nTanStack server route\nIMPLEMENTED]
   ChatRoute --> Cloud
@@ -16,6 +20,7 @@ flowchart LR
   Python --> Context[Context Manager\nintent + budget + memory\nIMPLEMENTED]
   Context --> Retrieval[(SQLite chunks + hybrid retrieval\nIMPLEMENTED)]
   Context --> Files[(PDF DOCX MD TXT corpus\nPARTIAL INGESTION)]
-  Python --> Model[Ollama or vLLM\nCONFIGURED EXTERNALLY]
+  Python --> Model[Local Qwen via llama.cpp localhost:8000\nCONFIGURED EXTERNALLY]
   ChatRoute -. opt-in fallback .-> Gateway[Lovable AI Gateway\nIMPLEMENTED OPTIONAL]
-  Python -. future APIs .-> Future[Quiz, exam, grading, plan, feedback\nPLANNED]
+  Python -. future APIs .-> Future[Quiz, exam, grading, plan, feedback,\nmessage-language contract, media descriptors\nFUTURE BACKEND / CODEX not implemented]
+  Buckets -. 30-minute cleanup worker .-> FutureCleanup[FUTURE BACKEND / CODEX not implemented]

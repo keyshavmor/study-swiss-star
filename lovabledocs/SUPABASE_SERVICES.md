@@ -52,6 +52,7 @@ by everything on this page.
 | `chat-attachments` | `<user_id>/<thread_id>/<file>` | assistant chat attachments |
 | `user-materials` | `<user_id>/...` | private learning materials |
 | `profile-avatars` | `<user_id>/...` | profile pictures (signed URLs only) |
+| `assistant-descriptors` | `<user_id>/...` | text/markdown/json descriptors of assistant **output** media, referenced by `media_retention_queue`; private, no signed URLs issued to unrelated users |
 
 None of these buckets is public. Objects are inserted under the caller's own `auth.uid()` prefix;
 audit objects (`activity-logs`, `feedback-messages`) are not client-updatable or deletable.
@@ -101,6 +102,51 @@ or reconnected. It never claims a successful sync and never shows fabricated eve
 - Enable the `google` provider, allow manual identity linking, and grant the
   `https://www.googleapis.com/auth/calendar.readonly` scope.
 - Allow the app origin (and `/home`, `/planner`) in the redirect allowlist.
+
+## `public.media_retention_queue` — FUTURE BACKEND / CODEX
+
+Columns: `id uuid`, `user_id uuid`, `attachment_id uuid nullable`, `media_kind text`,
+`storage_bucket text`, `object_path text`, `descriptor_bucket text`, `descriptor_path text`,
+`source_url text nullable`, `source_path text nullable`, `status text`, `created_at timestamptz`,
+`delete_after timestamptz default now() + 30 minutes`, `deleted_at timestamptz nullable`,
+`error_code text nullable`.
+
+This policy covers **assistant OUTPUT media only** — images, audio, video or other files the
+assistant generates or fetches as part of a reply. It never applies to ordinary user study uploads
+(`user-materials`, `chat-attachments`, `assistant_attachments`), which are retained under their
+existing rules and are not queued here.
+
+The frontend ships a typed helper, `frontend/src/lib/media-retention.ts`
+(`enqueueAssistantMedia`, `listRetentionQueue`, `minutesUntilDeletion`, `isOriginalExpired`), that
+can insert/list rows once a descriptor already exists in Supabase. Everything else is
+`FUTURE BACKEND / CODEX (not implemented)`:
+
+- Generating a text/markdown/json descriptor for a piece of assistant output media.
+- Uploading that descriptor to the private `assistant-descriptors` bucket.
+- Enqueueing a `media_retention_queue` row at generation time.
+- The 30-minute cleanup worker that deletes the original object from `storage_bucket`/`object_path`
+  after `delete_after` and stamps `deleted_at`/`error_code`.
+- Descriptor-based retrieval — having later AI turns read the descriptor instead of the (possibly
+  deleted) original media.
+
+The local Python FastAPI backend does not create descriptors, enqueue rows, run the cleanup, or
+retrieve by descriptor today.
+
+## `user_preferences.preferences` — language and audio keys
+
+Beyond the model/notification switches described in `ASSISTANT_SETTINGS_AND_STORAGE.md`, the JSONB
+`preferences` column also holds:
+
+- `app_language` — one of `en | de | ru | es | fr`, default `en`. Authoritative source for the
+  frontend `I18nProvider` once a user is signed in.
+- `assistant_audio_enabled` — boolean, default `true`. Gates the Listen/Stop control on assistant
+  messages (frontend-only Web Speech API playback today).
+- `assistant_audio_autoplay` — boolean, default `false`. When true, autoplays only newly completed
+  assistant answers.
+
+Reading/writing these keys is implemented in the frontend today; the local Python backend does not
+yet read `app_language` when generating a response — see `FRONTEND_ARCHITECTURE.md` and
+`SUBJECT_MODEL_AND_LANGUAGE_RULES.md` for the `FUTURE BACKEND / CODEX` language-honouring contract.
 
 ## Migration source history
 

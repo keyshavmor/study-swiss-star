@@ -46,7 +46,9 @@ further frontend changes. No replies are fabricated in the frontend.
   — `photo` holds an object path inside the private `profile-avatars` bucket.
 - `user_preferences(user_id, preferences jsonb)` — keys used by the UI:
   `selected_qwen_model`, `exam_reminders`, `daily_study_summary`,
-  `sound_effects`, `auto_storage_cleanup`.
+  `sound_effects`, `auto_storage_cleanup`, `app_language` (one of `en`/`de`/`ru`/`es`/`fr`,
+  authoritative for the app-wide `I18nProvider`), `assistant_audio_enabled` (default `true`)
+  and `assistant_audio_autoplay` (default `false`).
 - `feedback(id, user_id, category, message, context jsonb, created_at)` — every column
   is `NOT NULL` — and
   `usage_events(id, user_id nullable, event_name, feature, subject, properties jsonb NOT NULL, occurred_at)`
@@ -106,6 +108,37 @@ further frontend changes. No replies are fabricated in the frontend.
 | `src/components/assistant/AssistantChat.tsx` | assistant workspace UI |
 | `src/components/app/SettingsSections.tsx` | account/model/preferences/storage |
 
+## Audio (Listen / Stop) — implemented, frontend-only
+
+Completed assistant messages get a Listen/Stop control backed by the browser Web Speech API
+(`frontend/src/lib/speech.ts`, `speak`/`stopSpeaking`/`speechSupported`). Nothing is uploaded or
+persisted: playback is entirely ephemeral and client-side. `assistant_audio_enabled` gates whether
+the control appears at all; `assistant_audio_autoplay` (default off) autoplays only newly
+completed answers, never historical ones on load. When the API is unavailable the control shows a
+graceful "not supported" state rather than failing silently. The local Python backend is not
+involved and does not produce audio today.
+
+## Help — implemented, frontend-only
+
+`/help` no longer has a "Contact support" call to action. It instead links five static A4 PDF
+user guides, one per supported language, served as static assets from
+`frontend/public/help-guides/alim-user-guide-{en,de,ru,es,fr}.pdf`.
+
+## Media retention (assistant output media) — FUTURE BACKEND / CODEX
+
+Production Supabase has `public.media_retention_queue` (`id, user_id, attachment_id nullable,
+media_kind, storage_bucket, object_path, descriptor_bucket, descriptor_path, source_url nullable,
+source_path nullable, status, created_at, delete_after default now()+30 minutes, deleted_at
+nullable, error_code nullable`) and a private `assistant-descriptors` bucket. The policy applies
+only to assistant **output** media, never ordinary user study uploads: a text descriptor is
+retained first (plus `source_url`/`source_path` when the media was fetched rather than generated),
+the original becomes eligible for deletion 30 minutes after creation, and later AI retrieval uses
+the descriptor. The frontend offers a typed helper, `frontend/src/lib/media-retention.ts`
+(`enqueueAssistantMedia`, `listRetentionQueue`, `minutesUntilDeletion`, `isOriginalExpired`), for
+enqueueing rows once a descriptor already exists. Descriptor **generation**, descriptor **upload**,
+**enqueueing on generation**, the 30-minute **cleanup** worker, and descriptor-based **retrieval**
+are all `FUTURE BACKEND / CODEX` responsibilities — none of them are implemented today.
+
 ## Remaining backend work
 
 - An assistant inference endpoint that reads `assistant_messages` and writes
@@ -113,3 +146,7 @@ further frontend changes. No replies are fabricated in the frontend.
 - Parsing of `assistant_attachments` (`parse_status` stays `unparsed` today).
 - Honouring `user_preferences.preferences.selected_qwen_model` in the model
   runtime.
+- Response-language precedence (`ui_language`/`message_language` → `response_language`) — see
+  `API_EXPECTATIONS.md`.
+- Media retention: descriptor generation/upload, enqueueing, the 30-minute cleanup worker, and
+  descriptor-based retrieval — see `SUPABASE_SERVICES.md` and `BACKEND_INTEGRATION_TODO.md`.

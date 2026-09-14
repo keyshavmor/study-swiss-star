@@ -28,6 +28,7 @@ import type { LinkCategory, SchoolLink } from "@/lib/store/types";
 import { LINK_ACCENTS, LINK_CATEGORIES } from "@/lib/store/types";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { useI18n } from "@/lib/i18n/provider";
 
 const NO_SUBJECT = "__none";
 
@@ -56,6 +57,7 @@ export function SchoolLinkDialog({
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
 }) {
+  const { t } = useI18n();
   const { addLink, updateLink } = useAppData();
   const [uncontrolled, setUncontrolled] = useState(false);
   const open = controlledOpen ?? uncontrolled;
@@ -84,10 +86,10 @@ export function SchoolLinkDialog({
     };
     if (record) {
       updateLink(record.id, payload);
-      toast.success("Link updated");
+      toast.success(t("profile.linkDialog.updated"));
     } else {
       addLink(payload);
-      toast.success("Link added");
+      toast.success(t("profile.linkDialog.added"));
     }
     setOpen(false);
   }
@@ -97,34 +99,34 @@ export function SchoolLinkDialog({
       {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
       <DialogContent className="max-h-[88vh] overflow-y-auto sm:max-w-[520px]">
         <DialogHeader>
-          <DialogTitle>{record ? "Edit link" : "Add school link"}</DialogTitle>
-          <DialogDescription>
-            Quick access to the websites you use for school. Links open in a new tab.
-          </DialogDescription>
+          <DialogTitle>
+            {record ? t("profile.linkDialog.editTitle") : t("profile.linkDialog.addTitle")}
+          </DialogTitle>
+          <DialogDescription>{t("profile.linkDialog.description")}</DialogDescription>
         </DialogHeader>
 
         <div className="grid gap-4">
           <div className="grid gap-2">
-            <Label htmlFor="link-name">Name</Label>
+            <Label htmlFor="link-name">{t("profile.linkDialog.nameLabel")}</Label>
             <Input
               id="link-name"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="WebUntis"
+              placeholder={t("profile.linkDialog.namePlaceholder")}
             />
           </div>
           <div className="grid gap-2">
-            <Label htmlFor="link-url">URL</Label>
+            <Label htmlFor="link-url">{t("profile.linkDialog.urlLabel")}</Label>
             <Input
               id="link-url"
               value={url}
               onChange={(e) => setUrl(e.target.value)}
-              placeholder="webuntis.com"
+              placeholder={t("profile.linkDialog.urlPlaceholder")}
             />
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="grid gap-2">
-              <Label>Category</Label>
+              <Label>{t("profile.linkDialog.categoryLabel")}</Label>
               <Select value={category} onValueChange={(v) => setCategory(v as LinkCategory)}>
                 <SelectTrigger>
                   <SelectValue />
@@ -139,13 +141,13 @@ export function SchoolLinkDialog({
               </Select>
             </div>
             <div className="grid gap-2">
-              <Label>Related subject (optional)</Label>
+              <Label>{t("profile.linkDialog.subjectLabel")}</Label>
               <Select value={subjectSlug} onValueChange={setSubjectSlug}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value={NO_SUBJECT}>No subject</SelectItem>
+                  <SelectItem value={NO_SUBJECT}>{t("profile.linkDialog.noSubject")}</SelectItem>
                   {SUBJECTS.map((s) => (
                     <SelectItem key={s.slug} value={s.slug}>
                       {s.name}
@@ -156,17 +158,17 @@ export function SchoolLinkDialog({
             </div>
           </div>
           <div className="grid gap-2">
-            <Label htmlFor="link-desc">Short description (optional)</Label>
+            <Label htmlFor="link-desc">{t("profile.linkDialog.descriptionLabel")}</Label>
             <Textarea
               id="link-desc"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Official timetable and absences"
+              placeholder={t("profile.linkDialog.descriptionPlaceholder")}
             />
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="grid gap-2">
-              <Label htmlFor="link-icon">Tile initials (optional)</Label>
+              <Label htmlFor="link-icon">{t("profile.linkDialog.iconLabel")}</Label>
               <Input
                 id="link-icon"
                 value={icon}
@@ -176,13 +178,13 @@ export function SchoolLinkDialog({
               />
             </div>
             <div className="grid gap-2">
-              <Label>Tile colour</Label>
+              <Label>{t("profile.linkDialog.colourLabel")}</Label>
               <div className="flex flex-wrap gap-2">
                 {LINK_ACCENTS.map((c) => (
                   <button
                     key={c}
                     type="button"
-                    aria-label={`Colour ${c}`}
+                    aria-label={t("profile.linkDialog.colourAria", { color: c })}
                     onClick={() => setAccent(c)}
                     className={cn(
                       "h-9 w-9 rounded-full border-2 transition-transform",
@@ -198,10 +200,10 @@ export function SchoolLinkDialog({
 
         <DialogFooter>
           <Button variant="ghost" onClick={() => setOpen(false)}>
-            Cancel
+            {t("common.cancel")}
           </Button>
           <Button disabled={invalid} onClick={save}>
-            {record ? "Save changes" : "Add link"}
+            {record ? t("profile.editDialog.saveChanges") : t("profile.linkDialog.addLink")}
           </Button>
         </DialogFooter>
       </DialogContent>

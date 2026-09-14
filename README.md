@@ -217,3 +217,5 @@ process fixture, it loads the 17.67 GiB checkpoint and is run deliberately on an
 - [API contracts](docs/API_EXPECTATIONS.md)
 - [Frontend architecture](docs/FRONTEND_ARCHITECTURE.md)
 - [State and storage](docs/STATE_AND_STORAGE.md)
+- [Supabase services](docs/SUPABASE_SERVICES.md) — includes the five-language `app_language`
+  preference and the future `media_retention_queue` policy for assistant output media
