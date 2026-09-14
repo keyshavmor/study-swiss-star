@@ -199,8 +199,9 @@ Legend for **Owner (later)**: `PY` = Python FastAPI, `SB` = Supabase, `LS` = loc
 | Route | app-wide |
 | Owner | **Supabase Edge Function `activity-log`** |
 | Call | `supabase.functions.invoke("activity-log", { event_name, feature?, subject?, properties? })` via `frontend/src/lib/telemetry.ts` |
-| Effect | row in `public.usage_events` (`user_id` nullable) + object in the private `activity-logs` bucket |
-| Rules | fire-and-forget, never blocks the UI; sensitive keys dropped, strings capped; anonymous only for `auth_signin_failed` / `oauth_signin_failed` |
+| Effect | row in `public.usage_events` (`user_id` nullable, timestamp `occurred_at`) + object in the private `activity-logs` bucket |
+| Rules | fire-and-forget, never blocks the UI; sensitive keys dropped, strings capped; failures send only `error_name`/`error_status`/`error_code`, never a raw error message; anonymous only for `auth_signin_failed` / `oauth_signin_failed` |
+| Coverage | page views, global errors, auth (sign-in/sign-up/OAuth/sign-out), planner create/update/duplicate/delete/move/series changes, Google Calendar connect/sync/disconnect, feedback, settings & profile & preference saves, assistant/chat send/complete/fail (status only) |
 
 | Field | Load backend/model health |
 | --- | --- |
