@@ -421,8 +421,8 @@ export interface APIError {
 ## Account, assistant and storage types
 
 ```ts
-interface AccountProfile {          // profiles
-  id: string; username: string; fullName: string; preferredName: string;
+interface AccountProfile {          // profiles — DB key column is `user_id`
+  id: string;                       // = profiles.user_id / auth.users.id username: string; fullName: string; preferredName: string;
   photoPath: string;                // object path in profile-avatars
   nationality: string; contactPhone: string;
   contactDetails: Record<string, string>;
@@ -433,6 +433,20 @@ interface UserPreferences {         // user_preferences.preferences jsonb
   exam_reminders: boolean; daily_study_summary: boolean;
   sound_effects: boolean;
   auto_storage_cleanup: boolean;
+}
+
+// public.feedback — all columns NOT NULL
+interface FeedbackRow {
+  id: string; user_id: string; category: string; message: string;
+  context: Json; created_at: string;
+}
+
+// public.usage_events — timestamp column is `occurred_at`, there is no `created_at`
+interface UsageEventRow {
+  id: string; user_id: string | null; event_name: string;
+  feature: string | null; subject: string | null;
+  properties: Json;                 // NOT NULL
+  occurred_at: string;
 }
 
 interface AssistantThread { id: string; title: string; createdAt: string; updatedAt: string }

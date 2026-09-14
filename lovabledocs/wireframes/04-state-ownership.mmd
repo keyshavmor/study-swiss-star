@@ -6,7 +6,10 @@ flowchart LR
   Grade --> UI
   Year[(Browser storage\nacademic year)] --> Academic[AcademicYearProvider]
   Academic --> UI
-  Cloud[(external Supabase\nusers threads messages)] --> ServerFns[Authenticated server functions]
+  Cloud[(external Supabase\nusers threads messages\nprofiles user_preferences\nfeedback usage_events)] --> ServerFns[Authenticated server functions]
+  Telemetry[telemetry.ts\nsanitized activity + error events] --> Cloud
+  GoogleToken[(sessionStorage only\nGoogle provider token)] --> GoogleEvents[Read-only Google occurrences\nrender-merged, never stored]
+  GoogleEvents --> UI
   ServerFns --> UI
   Python[(Python SQLite\nchunks memories artifacts)] --> FastAPI[FastAPI]
   FastAPI --> ChatAPI[TanStack /api/chat]
