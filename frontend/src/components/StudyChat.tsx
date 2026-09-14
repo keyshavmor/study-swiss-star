@@ -70,9 +70,8 @@ export function StudyChat({ threadId }: StudyChatProps) {
   const [preferences, setPreferences] = useState<UserPreferences>(DEFAULT_PREFERENCES);
   const [speakingId, setSpeakingId] = useState<string | null>(null);
 
-  // Response-language hints per assistant message id (frontend-only, not sent to the backend).
+  // Response-language hints per USER message id (frontend-only, not sent to the backend).
   const responseLanguageHints = useRef(new Map<string, LanguageCode>());
-  const pendingHintRef = useRef<LanguageCode | null>(null);
 
   useEffect(() => {
     void formatDate; // keep reference used below for timestamps
@@ -130,13 +129,11 @@ export function StudyChat({ threadId }: StudyChatProps) {
     }),
     onError: (err) => {
       trackFailure("chat_message_failed", err, { feature: "chat" });
-      toast.error(err.message || t("chat.sendFailed"));
+      toast.error(t("chat.sendFailed"));
     },
     onFinish: ({ message }) => {
       // Status only — prompts and responses are never sent to telemetry.
       track({ event_name: "chat_message_completed", feature: "chat" });
-      const hint = pendingHintRef.current;
-      if (hint) responseLanguageHints.current.set(message.id, hint);
       if (preferences.assistant_audio_enabled && preferences.assistant_audio_autoplay) {
         const text = message.parts.map((part) => (part.type === "text" ? part.text : "")).join("");
         if (text.trim()) {
@@ -450,8 +447,9 @@ export function StudyChat({ threadId }: StudyChatProps) {
                 // answers in message_language when it is confidently one of the five supported
                 // languages; otherwise ui_language.
                 const responseLanguageHint = effectiveResponseLanguage(value, language);
-                pendingHintRef.current = responseLanguageHint;
-                chat.sendMessage({ text: value });
+                const messageId = crypto.randomUUID();
+                responseLanguageHints.current.set(messageId, responseLanguageHint);
+                chat.sendMessage({ messageId, text: value });
               }}
             >
               <PromptInputTextarea
