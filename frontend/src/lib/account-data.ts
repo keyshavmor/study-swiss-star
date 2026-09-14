@@ -74,7 +74,8 @@ export async function fetchAccountProfile(): Promise<AccountProfile | null> {
   const { data, error } = await supabase
     .from("profiles")
     .select("*")
-    .eq("id", userId)
+    .eq("user_id", userId)
+
     .maybeSingle();
   if (error) throw new Error(error.message);
   if (!data) return null;
