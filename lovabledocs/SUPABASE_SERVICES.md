@@ -85,3 +85,11 @@ or reconnected. It never claims a successful sync and never shows fabricated eve
 - Enable the `google` provider, allow manual identity linking, and grant the
   `https://www.googleapis.com/auth/calendar.readonly` scope.
 - Allow the app origin (and `/home`, `/planner`) in the redirect allowlist.
+
+## Migration source history
+
+`drizzle/migrations/` records history and is never rewritten. `0002_assistant_settings_storage_management.sql`
+still contains the old `apple_reminders_sync` preference default; a later migration applied directly in
+the production project removed that key from `user_preferences.preferences` defaults and from existing
+rows. The frontend no longer reads or writes it. Database and Storage changes are applied externally —
+do not run migrations from the Lovable editor.

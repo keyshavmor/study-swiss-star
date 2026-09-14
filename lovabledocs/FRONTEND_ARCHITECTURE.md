@@ -49,7 +49,7 @@ Key values: light `#F7F8FA`, dark `#0D0E12`, accent `#6558D9`, failing-grade war
 ```
 frontend/src/routes/
   __root.tsx                     providers + shell + head
-  index.tsx                      "/" title screen
+  index.tsx                      "/" welcome + sign in / sign up
   auth.tsx                       "/auth" sign in / sign up
   api/chat.ts                    "POST /api/chat" AI streaming endpoint
   _authenticated/
