@@ -38,7 +38,7 @@ function trackPlanner(
     properties: {
       ...properties,
       category: event?.category ?? null,
-      recurring: event ? Boolean(event.repeat && event.repeat !== "none") : null,
+      recurring: event ? event.recurrence !== "none" : null,
     },
   });
 }
