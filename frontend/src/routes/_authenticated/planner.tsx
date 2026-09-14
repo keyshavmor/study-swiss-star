@@ -45,13 +45,12 @@ import {
   addMonths,
   durationLabel,
   endOfMonth,
-  fromIso,
+  isoForWeekdayIndex,
   minutesOf,
   startOfMonth,
   startOfWeek,
   todayIso,
   weekdayIndex,
-  WEEKDAY_SHORT,
 } from "@/lib/date-utils";
 import { getSubject } from "@/lib/mock/subjects";
 import type { Occurrence } from "@/lib/store/app-data";
@@ -116,7 +115,7 @@ function formatHours(t: ReturnType<typeof useI18n>["t"], minutes: number) {
 function PlannerPage() {
   const search = Route.useSearch();
   const navigate = useNavigate();
-  const { t, formatDate } = useI18n();
+  const { t, formatDateCompact, formatMonth, formatWeekday } = useI18n();
   const {
     events,
     updateEvent,
@@ -198,7 +197,7 @@ function PlannerPage() {
             id: `${a.event.id}-${b.event.id}-${date}`,
             title: t("planner.conflictOverlap", { a: a.title, b: b.title }),
             detail: t("planner.conflictDetail", {
-              date: formatDate(fromIso(date), { day: "numeric", month: "long" }),
+              date: formatDateCompact(date),
               aStart: a.start,
               aEnd: a.end,
               bStart: b.start,
@@ -265,7 +264,7 @@ function PlannerPage() {
     });
     toast.success(
       t("planner.movedToast", {
-        date: formatDate(fromIso(date), { day: "numeric", month: "long" }),
+        date: formatDateCompact(date),
         time: start,
       }),
     );
@@ -287,10 +286,10 @@ function PlannerPage() {
 
   const rangeLabel =
     view === "Month"
-      ? formatDate(fromIso(anchor), { month: "long", year: "numeric" })
+      ? formatMonth(anchor)
       : view === "Day"
-        ? formatDate(fromIso(anchor), { day: "numeric", month: "long" })
-        : `${formatDate(fromIso(range.from), { day: "numeric", month: "long" })} – ${formatDate(fromIso(range.to), { day: "numeric", month: "long" })}`;
+        ? formatDateCompact(anchor)
+        : `${formatDateCompact(range.from)} – ${formatDateCompact(range.to)}`;
 
   return (
     <AppShell wide>
@@ -488,7 +487,7 @@ function PlannerPage() {
                             )}
                           </span>
                           <span className="tabular block text-[13px] text-muted-foreground">
-                            {formatDate(fromIso(o.date), { day: "numeric", month: "long" })} ·{" "}
+                            {formatDateCompact(o.date)} ·{" "}
                             {o.start}–{o.end} · {durationLabel(o.start, o.end)}
                             {subject ? ` · ${subject.name}` : ""}
                             {fromGoogle ? t("planner.readOnlySuffix") : ""}
@@ -591,7 +590,7 @@ function PlannerPage() {
                     <p className="tabular text-[12.5px] text-muted-foreground">
                       {activity.recurrence !== "none"
                         ? `${(activity.weekdays ?? [weekdayIndex(activity.date)])
-                            .map((d) => WEEKDAY_SHORT[d])
+                            .map((d) => formatWeekday(isoForWeekdayIndex(d), "short"))
                             .join(", ")} · `
                         : ""}
                       {activity.start}–{activity.end}
@@ -649,7 +648,7 @@ function PlannerPage() {
             </DialogTitle>
             <DialogDescription>
               {googleDetail
-                ? `${formatDate(fromIso(googleDetail.date), { day: "numeric", month: "long" })} · ${googleDetail.start}–${googleDetail.end}`
+                ? `${formatDateCompact(googleDetail.date)} · ${googleDetail.start}–${googleDetail.end}`
                 : ""}
             </DialogDescription>
           </DialogHeader>
@@ -792,7 +791,7 @@ function MonthGrid({
   onSelect: (occurrence: Occurrence) => void;
   onPickDay: (iso: string) => void;
 }) {
-  const { t } = useI18n();
+  const { t, formatWeekday } = useI18n();
   const first = startOfMonth(anchor);
   const gridStart = startOfWeek(first);
   const days = Array.from({ length: 42 }, (_, i) => addDays(gridStart, i));
@@ -802,12 +801,12 @@ function MonthGrid({
   return (
     <div className="app-card overflow-hidden p-0">
       <div className="grid grid-cols-7 border-b border-border bg-surface-2">
-        {WEEKDAY_SHORT.map((d) => (
+        {Array.from({ length: 7 }, (_, i) => i).map((i) => (
           <div
-            key={d}
+            key={i}
             className="px-2 py-2 text-center text-[12px] font-medium uppercase tracking-wide text-muted-foreground"
           >
-            {d}
+            {formatWeekday(isoForWeekdayIndex(i), "short")}
           </div>
         ))}
       </div>
