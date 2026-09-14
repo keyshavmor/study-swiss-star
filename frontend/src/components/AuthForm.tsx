@@ -52,6 +52,12 @@ interface UsernameLoginResult {
   refresh_token?: string;
 }
 
+interface UsernameAvailabilityResult {
+  available?: boolean;
+  valid?: boolean;
+}
+
+
 export function AuthForm() {
   const [mode, setMode] = useState<Mode>("signin");
   const [identifier, setIdentifier] = useState("");
