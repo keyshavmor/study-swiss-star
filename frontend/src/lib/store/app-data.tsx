@@ -160,11 +160,23 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
       addEvent: (input) => {
         const record: PlannerEvent = { ...input, id: uid("e") };
         setState((s) => ({ ...s, events: [...s.events, record] }));
+        trackPlanner("planner_event_created", record);
         return record;
       },
-      updateEvent: (id, patch) =>
-        setState((s) => ({ ...s, events: patchList(s.events, id, patch) })),
-      updateOccurrence: (id, isoDate, patch) =>
+      updateEvent: (id, patch) => {
+        trackPlanner(
+          "planner_event_updated",
+          state.events.find((x) => x.id === id),
+          { patched_fields: Object.keys(patch).join(",") },
+        );
+        setState((s) => ({ ...s, events: patchList(s.events, id, patch) }));
+      },
+      updateOccurrence: (id, isoDate, patch) => {
+        trackPlanner(
+          "planner_occurrence_updated",
+          state.events.find((x) => x.id === id),
+          { patched_fields: Object.keys(patch).join(",") },
+        );
         setState((s) => ({
           ...s,
           events: s.events.map((e) =>
@@ -178,9 +190,15 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
                 }
               : e,
           ),
-        })),
+        }));
+      },
       /** Ends the original series the day before `isoDate` and starts a new one. */
-      splitSeriesFrom: (id, isoDate, patch) =>
+      splitSeriesFrom: (id, isoDate, patch) => {
+        trackPlanner(
+          "planner_series_split",
+          state.events.find((x) => x.id === id),
+          { patched_fields: Object.keys(patch).join(",") },
+        );
         setState((s) => {
           const found = s.events.find((x) => x.id === id);
           if (!found) return s;
@@ -198,8 +216,13 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
             ...s,
             events: [...s.events.filter((x) => x.id !== id), ...(keepHead ? [head] : []), tail],
           };
-        }),
-      duplicateEvent: (id) =>
+        });
+      },
+      duplicateEvent: (id) => {
+        trackPlanner(
+          "planner_event_duplicated",
+          state.events.find((x) => x.id === id),
+        );
         setState((s) => {
           const found = s.events.find((x) => x.id === id);
           if (!found) return s;
@@ -207,21 +230,41 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
             ...s,
             events: [...s.events, { ...found, id: uid("e"), title: `${found.title} (copy)` }],
           };
-        }),
-      removeEvent: (id) => setState((s) => ({ ...s, events: s.events.filter((x) => x.id !== id) })),
-      removeOccurrence: (id, isoDate) =>
+        });
+      },
+      removeEvent: (id) => {
+        trackPlanner(
+          "planner_event_deleted",
+          state.events.find((x) => x.id === id),
+        );
+        setState((s) => ({ ...s, events: s.events.filter((x) => x.id !== id) }));
+      },
+      removeOccurrence: (id, isoDate) => {
+        trackPlanner(
+          "planner_occurrence_deleted",
+          state.events.find((x) => x.id === id),
+        );
         setState((s) => ({
           ...s,
           events: s.events.map((e) =>
             e.id === id ? { ...e, exceptions: [...(e.exceptions ?? []), isoDate] } : e,
           ),
-        })),
-      endSeriesBefore: (id, isoDate) =>
+        }));
+      },
+      endSeriesBefore: (id, isoDate) => {
+        trackPlanner(
+          "planner_series_ended",
+          state.events.find((x) => x.id === id),
+        );
         setState((s) => ({
           ...s,
           events: s.events.map((e) => (e.id === id ? { ...e, until: addDays(isoDate, -1) } : e)),
-        })),
-      restoreEvent: (record) => setState((s) => ({ ...s, events: [...s.events, record] })),
+        }));
+      },
+      restoreEvent: (record) => {
+        trackPlanner("planner_event_restored", record);
+        setState((s) => ({ ...s, events: [...s.events, record] }));
+      },
       getEvent: (id) => state.events.find((x) => x.id === id),
 
       addMaterial: (input) => {
