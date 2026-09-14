@@ -5,6 +5,7 @@ import {
   Link,
   createRootRouteWithContext,
   useRouter,
+  useRouterState,
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
@@ -12,6 +13,7 @@ import { useEffect, type ReactNode } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/hooks/use-theme";
 import { supabase } from "@/integrations/supabase/client";
+import { installGlobalErrorTelemetry, track } from "@/lib/telemetry";
 import { AppDataProvider } from "@/lib/store/app-data";
 import { AcademicYearProvider } from "@/lib/store/academic-year";
 
@@ -126,6 +128,15 @@ function RootShell({ children }: { children: ReactNode }) {
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const router = useRouter();
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+
+  useEffect(() => {
+    installGlobalErrorTelemetry();
+  }, []);
+
+  useEffect(() => {
+    track({ event_name: "page_viewed", properties: { route: pathname } });
+  }, [pathname]);
 
   useEffect(() => {
     const { data } = supabase.auth.onAuthStateChange((event) => {

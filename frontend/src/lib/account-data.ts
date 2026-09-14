@@ -40,7 +40,6 @@ export interface UserPreferences {
   selected_qwen_model: string;
   exam_reminders: boolean;
   daily_study_summary: boolean;
-  apple_reminders_sync: boolean;
   sound_effects: boolean;
   auto_storage_cleanup: boolean;
 }
@@ -49,7 +48,6 @@ export const DEFAULT_PREFERENCES: UserPreferences = {
   selected_qwen_model: QWEN_MODELS[0],
   exam_reminders: true,
   daily_study_summary: true,
-  apple_reminders_sync: false,
   sound_effects: false,
   auto_storage_cleanup: true,
 };
@@ -188,7 +186,7 @@ export async function fetchPreferences(): Promise<UserPreferences> {
       : DEFAULT_PREFERENCES.selected_qwen_model,
     exam_reminders: bool("exam_reminders") as boolean,
     daily_study_summary: bool("daily_study_summary") as boolean,
-    apple_reminders_sync: bool("apple_reminders_sync") as boolean,
+
     sound_effects: bool("sound_effects") as boolean,
     auto_storage_cleanup: bool("auto_storage_cleanup") as boolean,
   };

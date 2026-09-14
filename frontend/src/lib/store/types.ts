@@ -145,6 +145,10 @@ export interface PlannerEvent {
   done?: boolean;
   /** True for sessions produced by "Generate study plan". */
   generated?: boolean;
+  /** Set for items mirrored from an external calendar (read-only). */
+  externalSource?: "google";
+  /** True when the item cannot be edited, moved or deleted in the app. */
+  readOnly?: boolean;
 }
 
 export type MaterialSection =

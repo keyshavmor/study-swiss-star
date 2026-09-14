@@ -24,6 +24,57 @@ export type Database = {
   };
   public: {
     Tables: {
+      feedback: {
+        Row: {
+          id: string;
+          user_id: string | null;
+          category: string | null;
+          message: string;
+          context: Json | null;
+          created_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          user_id?: string | null;
+          category?: string | null;
+          message: string;
+          context?: Json | null;
+          created_at?: string | null;
+        };
+        Update: {
+          category?: string | null;
+          message?: string;
+          context?: Json | null;
+        };
+        Relationships: [];
+      };
+      usage_events: {
+        Row: {
+          id: string;
+          user_id: string | null;
+          event_name: string;
+          feature: string | null;
+          subject: string | null;
+          properties: Json | null;
+          created_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          user_id?: string | null;
+          event_name: string;
+          feature?: string | null;
+          subject?: string | null;
+          properties?: Json | null;
+          created_at?: string | null;
+        };
+        Update: {
+          event_name?: string;
+          feature?: string | null;
+          subject?: string | null;
+          properties?: Json | null;
+        };
+        Relationships: [];
+      };
       profiles: {
         Row: {
           id: string;

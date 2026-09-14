@@ -8,8 +8,9 @@ Auth-gated routes live under `frontend/src/routes/_authenticated/` and are prote
 
 | URL | Route file | Screen | Auth | Frontend-only possible? |
 | --- | --- | --- | --- | --- |
-| `/` | `frontend/src/routes/index.tsx` | Title screen | No | Yes |
-| `/auth` | `frontend/src/routes/auth.tsx` | Sign in / sign up | No | No (Supabase) |
+| `/` | `frontend/src/routes/index.tsx` | Welcome + sign in / sign up | No (redirects signed-in users to `/home`) | No (Supabase) |
+| `/auth` | `frontend/src/routes/auth.tsx` | Redirect only (`/` when signed out, `/home` when signed in) | No | No (Supabase) |
+
 | `/home` | `_authenticated/home.tsx` | Home dashboard | Yes | Yes (today) |
 | `/chat` | `_authenticated/chat.index.tsx` | Chat redirect | Yes | No |
 | `/chat/$threadId` | `_authenticated/chat.$threadId.tsx` | Study chat | Yes | No |
@@ -18,7 +19,7 @@ Auth-gated routes live under `frontend/src/routes/_authenticated/` and are prote
 | `/planner` | `_authenticated/planner.tsx` | Weekly planner | Yes | Yes (except study-plan generation) |
 | `/stats` | `_authenticated/stats.tsx` | Statistics | Yes | Yes |
 | `/profile` | `_authenticated/profile.tsx` | Student profile | Yes | Yes |
-| `/feedback` | `_authenticated/feedback.tsx` | Feedback | Yes | No (should persist) |
+| `/feedback` | `_authenticated/feedback.tsx` | Feedback | Yes | No (Edge Function `feedback-submit`) |
 | `/help` | `_authenticated/help.tsx` | Help | Yes | Yes |
 | `/settings` | `_authenticated/settings.tsx` | Settings | Yes | Partly |
 | `/diagnostics` | `_authenticated/diagnostics.tsx` | Diagnostics | Yes | No (needs health) |
@@ -26,20 +27,29 @@ Auth-gated routes live under `frontend/src/routes/_authenticated/` and are prote
 
 ## Detail
 
-### `/` — Title screen
-- **File:** `frontend/src/routes/index.tsx` · **Auth:** no
-- **Purpose:** entry screen with "School" and "Planner" cards, theme toggle.
-- **Components:** `ThemeToggle`, `LiveClock`, `Button`, `Card`.
-- **Data source / storage:** static JSX; theme in `localStorage`.
-- **Future backend:** none. **Endpoints:** none. **Can stay frontend-only: yes.**
-
-### `/auth` — Sign in / sign up
-- **File:** `frontend/src/routes/auth.tsx` · **Auth:** no (redirects when signed in)
-- **Components:** `AuthForm.tsx`, `Input`, `Button`.
-- **Data source:** `supabase.auth.signInWithPassword` / `signUp` / `resetPasswordForEmail`, and `signInWithOAuth` for `github`, `linkedin_oidc`, `spotify`.
+### `/` — Welcome + authentication
+- **File:** `frontend/src/routes/index.tsx` · **Auth:** no; `beforeLoad` redirects signed-in users to `/home`
+- **Purpose:** the single entry screen. Short welcome copy explaining the study assistant, plus the
+  sign-in / sign-up form. The old "School"/"Planner" landing cards no longer live here — the
+  post-login dashboard is `/home`.
+- **Components:** `AuthForm.tsx`, `ThemeToggle`, `BrandLogos` (GitHub, LinkedIn, Spotify).
+- **Data source:**
+  - email + password → `supabase.auth.signInWithPassword`
+  - username + password → Edge Function `username-login`, then `supabase.auth.setSession`
+  - sign-up → `supabase.auth.signUp` with a compulsory `options.data.username`
+    (`^[a-z0-9._-]{3,30}$`); the auth trigger creates `profiles.username`
+  - password reset → `supabase.auth.resetPasswordForEmail` (always email-based; if the user typed a
+    username we ask for the email rather than resolving it, to avoid account enumeration)
+  - OAuth → `supabase.auth.signInWithOAuth` for `github`, `linkedin_oidc`, `spotify` with
+    `redirectTo` = `${origin}/home`
 - **Storage:** Supabase session in browser storage.
-- **Future backend:** none in Stage 1. Python backend trusts a locally-signed-in user; optional
-  `X-Student-Id` header. **Endpoints:** none. **Frontend-only: no.**
+- **Frontend-only: no.**
+
+### `/auth` — Legacy authentication URL
+- **File:** `frontend/src/routes/auth.tsx` · **Auth:** no
+- **Purpose:** kept only so old links keep working. It redirects to `/home` when a session exists
+  and to `/` otherwise; there is no second auth implementation.
+
 
 ### `/home` — Home dashboard
 - **File:** `_authenticated/home.tsx`
@@ -113,9 +123,14 @@ Auth-gated routes live under `frontend/src/routes/_authenticated/` and are prote
 
 ### `/feedback` — Feedback
 - **File:** `_authenticated/feedback.tsx`
-- **Data source today:** local form, toast only.
-- **Future backend:** `POST /api/feedback` so feedback can tune retrieval/prompts.
-- **Frontend-only: no** (should persist).
+- **Data source:** authenticated `supabase.functions.invoke("feedback-submit", { message, category,
+  context })`. The function writes the row to `public.feedback` and a text mirror to the private
+  Storage bucket `feedback-messages` at `<user_id>/<YYYY-MM-DD>/<uuid>.txt`.
+- **Behaviour:** controlled textarea (10–4000 chars), optional category (idea / bug / general),
+  loading, success and error states; the form clears only after a confirmed save. Telemetry records
+  `feedback_submitted` / `feedback_submit_failed` — never the message text.
+- **Frontend-only: no.**
+
 
 ### `/help` — Help
 - **File:** `_authenticated/help.tsx` · static content. **Frontend-only: yes.**

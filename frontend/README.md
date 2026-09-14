@@ -22,13 +22,13 @@ managed Qwen runtime.
 
 ## Source map
 
-| Path | Responsibility |
-| --- | --- |
-| `src/components/` | Reusable application and UI components |
-| `src/routes/` | TanStack file routes, including the local chat proxy |
-| `src/lib/` | Backend clients, state stores, fixtures, and utilities |
-| `src/integrations/` | Optional Lovable and Supabase adapters |
-| `src/styles.css` | Global Tailwind styles and theme tokens |
+| Path                | Responsibility                                         |
+| ------------------- | ------------------------------------------------------ |
+| `src/components/`   | Reusable application and UI components                 |
+| `src/routes/`       | TanStack file routes, including the local chat proxy   |
+| `src/lib/`          | Backend clients, state stores, fixtures, and utilities |
+| `src/integrations/` | Optional Lovable and Supabase adapters                 |
+| `src/styles.css`    | Global Tailwind styles and theme tokens                |
 
 `src/routeTree.gen.ts`, lockfiles, and build output are generated artifacts and should not be
 hand-edited. The local test commands used for this work do not contact Lovable or Supabase.
