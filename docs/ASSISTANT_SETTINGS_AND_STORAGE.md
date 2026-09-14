@@ -46,7 +46,7 @@ further frontend changes. No replies are fabricated in the frontend.
   — `photo` holds an object path inside the private `profile-avatars` bucket.
 - `user_preferences(user_id, preferences jsonb)` — keys used by the UI:
   `selected_qwen_model`, `exam_reminders`, `daily_study_summary`,
-  `sound_effects`, `auto_storage_cleanup`, `app_language` (one of `en`/`de`/`ru`/`es`/`fr`,
+  `sound_effects`, `auto_storage_cleanup`, `app_language` (one of `en`/`de`/`gsw`/`ru`/`es`/`fr`/`it`,
   authoritative for the app-wide `I18nProvider`), `assistant_audio_enabled` (default `true`)
   and `assistant_audio_autoplay` (default `false`).
 - `feedback(id, user_id, category, message, context jsonb, created_at)` — every column
@@ -120,9 +120,9 @@ involved and does not produce audio today.
 
 ## Help — implemented, frontend-only
 
-`/help` no longer has a "Contact support" call to action. It instead links five static A4 PDF
+`/help` no longer has a "Contact support" call to action. It instead links seven static A4 PDF
 user guides, one per supported language, served as static assets from
-`frontend/public/help-guides/alim-user-guide-{en,de,ru,es,fr}.pdf`.
+`frontend/public/help-guides/alim-user-guide-{en,de,gsw,ru,es,fr,it}.pdf`.
 
 ## Media retention (assistant output media) — FUTURE BACKEND / CODEX
 

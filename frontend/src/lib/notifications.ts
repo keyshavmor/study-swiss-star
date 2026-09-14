@@ -1,5 +1,6 @@
 /** Frontend utility or server adapter used by the local Alim application. */
-import { addDays, daysBetween, formatLongDate, todayIso, weekdayName } from "@/lib/date-utils";
+import { addDays, daysBetween, todayIso } from "@/lib/date-utils";
+import { formatDate, formatWeekday } from "@/lib/i18n/format";
 import { getSubject } from "@/lib/mock/subjects";
 import type { Occurrence } from "@/lib/store/app-data";
 import { occurrencesInRange } from "@/lib/store/app-data";
@@ -24,9 +25,9 @@ function relativeDay(iso: string, today: string): string {
   if (diff === 0) return "today";
   if (diff === 1) return "tomorrow";
   if (diff === -1) return "yesterday";
-  if (diff > 1 && diff <= 7) return `on ${weekdayName(iso)}`;
-  if (diff < -1 && diff >= -7) return `last ${weekdayName(iso)}`;
-  return `on ${formatLongDate(iso).replace(/^\w+, /, "")}`;
+  if (diff > 1 && diff <= 7) return `on ${formatWeekday(iso, "en", "long")}`;
+  if (diff < -1 && diff >= -7) return `last ${formatWeekday(iso, "en", "long")}`;
+  return `on ${formatDate(iso)}`;
 }
 
 /**
@@ -55,7 +56,7 @@ export function buildNotifications(
         summary: [occurrence.start, subject ?? occurrence.event.category]
           .filter(Boolean)
           .join(" · "),
-        timestamp: `${formatLongDate(occurrence.date).replace(/,.*$/, "")} · ${occurrence.start}`,
+        timestamp: `${formatDate(occurrence.date)} · ${occurrence.start}`,
         section,
         category: occurrence.event.category,
         subjectName: subject,

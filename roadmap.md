@@ -3,8 +3,8 @@
 ## Current verification pass
 - Corrected missing preference-row saves, English fallback for absent stored language, unavailable speech voices, and the mobile School label.
 - Retained study-chat language hints against user-message IDs without changing the request contract.
-- Verified removals, five A4 guide assets, byte-identical documentation mirrors, formatting, lint (0 errors; 26 warnings), and automatic build OK.
-- Verified the welcome screen in all five languages. Authenticated screen and audible playback checks remain blocked by the unavailable production session; preview telemetry reports CORS failures.
+- Verified removals, seven A4 guide assets, byte-identical documentation mirrors, formatting, lint (0 errors; 26 warnings), and automatic build OK.
+- Verified the welcome screen in all seven languages. Authenticated screen and audible playback checks remain blocked by the unavailable production session; preview telemetry reports CORS failures.
 
 ## Done
 - Sync `supabase/config.toml` to project ref `ucacmeadsufiedxrgqit`.
@@ -34,15 +34,15 @@
 - Migration `drizzle/migrations/0002_assistant_settings_storage_management.sql` records the live
   schema additively/idempotently; private `chat-attachments` and `profile-avatars` buckets created.
 - Typecheck clean, production build succeeds, `/`, `/auth`, `/auth/update-password` return 200.
-- Five-language i18n (`en`/`de`/`ru`/`es`/`fr`) via `frontend/src/lib/i18n/` (`languages.ts`,
+- Seven-language i18n (`en`/`de`/`gsw`/`ru`/`es`/`fr`/`it`) via `frontend/src/lib/i18n/` (`languages.ts`,
   `detect.ts`, `provider.tsx`, `messages/*`), a header `LanguageMenu`, and
   `user_preferences.preferences.app_language` as the authoritative signed-in source (localStorage
   cache only prevents a flash of the wrong language and localises the signed-out welcome screen).
 - Read-aloud Listen/Stop controls on assistant messages via `frontend/src/lib/speech.ts` (Web Speech
   API, frontend-only, nothing uploaded/persisted), gated by `assistant_audio_enabled` /
   `assistant_audio_autoplay` in `user_preferences.preferences`.
-- `/help` now links five static A4 PDF user guides (`frontend/public/help-guides/alim-user-guide-
-  {en,de,ru,es,fr}.pdf`) instead of a "Contact support" CTA.
+- `/help` now links seven static A4 PDF user guides (`frontend/public/help-guides/alim-user-guide-
+  {en,de,gsw,ru,es,fr,it}.pdf`) instead of a "Contact support" CTA.
 - Typed helper `frontend/src/lib/media-retention.ts` for the future `public.media_retention_queue`
   table and private `assistant-descriptors` bucket (assistant OUTPUT media only); insert/list only —
   descriptor generation/upload, enqueueing on generation, the 30-minute cleanup, and descriptor-based
@@ -65,3 +65,17 @@
   `assistant-descriptors` bucket, enqueueing `public.media_retention_queue` rows on generation, the
   30-minute cleanup worker, and descriptor-based retrieval (`FUTURE BACKEND / CODEX`, not
   implemented).
+
+## Documentation audit (this pass)
+- Corrected all docs to the live seven-language set (`en`, `de` Hochdeutsch, `gsw` Schwiizerdütsch,
+  `ru`, `es`, `fr`, `it`) with locales `en-GB`/`de-DE`/`gsw-CH`(Intl fallback `de-CH`)/`ru-RU`/`es-ES`/
+  `fr-CH`/`it-CH`; removed all "five languages" wording.
+- Documented `frontend/src/lib/i18n/format.ts` central date/time helpers (`dd/mm/yyyy`, weekday
+  variant, 24h `HH:mm`, no textual month names) and `detect.ts` message-language detection.
+- Removed remaining `DemoMode`/demo-mode references from docs — that component and store flag are
+  gone from the frontend; `/diagnostics` and Help's "Contact support" were already removed.
+- Reconfirmed the media-retention contract (`media_retention_queue`, private
+  `assistant-descriptors` bucket, 30-minute `delete_after`) and the privacy-safe telemetry
+  contract (bounded error classification only) stay marked `FUTURE BACKEND / CODEX` where the
+  local Python backend does not yet implement them.
+- Mirrored every changed file byte-for-byte into `lovabledocs/`.

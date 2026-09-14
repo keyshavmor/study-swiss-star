@@ -24,7 +24,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { durationLabel, fromIso, weekdayName } from "@/lib/date-utils";
+import { durationLabel } from "@/lib/date-utils";
 import { getSubject } from "@/lib/mock/subjects";
 import type { Occurrence } from "@/lib/store/app-data";
 import { useAppData } from "@/lib/store/app-data";
@@ -55,7 +55,7 @@ export function EventDetailDialog({
   showPlannerAction?: boolean;
 }) {
   const navigate = useNavigate();
-  const { t, formatDate } = useI18n();
+  const { t, formatWeekdayDate, formatWeekday } = useI18n();
   const { markNotificationRead, dismissNotification, readNotifications } = useAppData();
   const [editing, setEditing] = useState(false);
 
@@ -93,14 +93,7 @@ export function EventDetailDialog({
           </DialogHeader>
 
           <div className="rounded-[14px] bg-surface-2 p-4">
-            <p className="text-[15.5px] font-medium">
-              {formatDate(fromIso(occurrence.date), {
-                weekday: "long",
-                day: "numeric",
-                month: "long",
-                year: "numeric",
-              })}
-            </p>
+            <p className="text-[15.5px] font-medium">{formatWeekdayDate(occurrence.date)}</p>
             <p className="tabular mt-1 text-[14px] text-muted-foreground">
               {occurrence.start}–{occurrence.end} ·{" "}
               {durationLabel(occurrence.start, occurrence.end)}
@@ -109,7 +102,7 @@ export function EventDetailDialog({
 
           <dl className="mt-1 divide-y divide-border">
             <Row icon={<CalendarDays className="h-4 w-4" />} label={t("events.detail.weekday")}>
-              {weekdayName(occurrence.date)}
+              {formatWeekday(occurrence.date)}
             </Row>
             <Row icon={<Clock className="h-4 w-4" />} label={t("events.detail.time")}>
               <span className="tabular">
@@ -122,7 +115,9 @@ export function EventDetailDialog({
             <Row icon={<Repeat className="h-4 w-4" />} label={t("events.detail.recurrence")}>
               {t(RECURRENCE_LABEL_KEY[event.recurrence])}
               {event.recurrence === "weekly" || event.recurrence === "biweekly"
-                ? t("events.detail.recurrenceOn", { weekday: weekdayName(occurrence.originalDate) })
+                ? t("events.detail.recurrenceOn", {
+                    weekday: formatWeekday(occurrence.originalDate),
+                  })
                 : ""}
             </Row>
             <Row icon={<Bell className="h-4 w-4" />} label={t("events.detail.reminder")}>

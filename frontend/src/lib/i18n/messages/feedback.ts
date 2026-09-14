@@ -1,4 +1,4 @@
-/** feedback translations for the five approved application languages. */
+/** feedback translations for the seven approved application languages. */
 export const feedback = {
   en: {
     "feedback.heading": "Feedback",
@@ -38,6 +38,27 @@ export const feedback = {
     "feedback.success.saved": "Gespeichert. Danke — wir lesen jede Nachricht.",
     "feedback.submit": "Feedback senden",
     "feedback.submit.pending": "Wird gesendet…",
+  },
+  gsw: {
+    "feedback.heading": "Feedback",
+    "feedback.description": "Säg üs, was besser funktioniere sött.",
+    "feedback.category.label": "Kategorie",
+    "feedback.category.idea": "Idee oder Vorschlag",
+    "feedback.category.bug": "Öppis funktioniert nöd",
+    "feedback.category.general": "Allgemeine Feedback",
+    "feedback.message.label": "Dis Feedback",
+    "feedback.message.placeholder": "Was würdsch du verbessere?",
+    "feedback.charCount": "{count}/{max} Zeiche",
+    "feedback.charCount.tooShort": " · mindeschtens {min} nötig",
+    "feedback.error.tooShort":
+      "Bitte schriib mindeschtens {min} Zeiche, dass mir öppis mache chönd.",
+    "feedback.error.submitFailed": "Dis Feedback isch nöd gspicheret worde: {message}",
+    "feedback.error.submitFailedGeneric":
+      "Dis Feedback isch nöd gspicheret worde. Bitte probier's nomal.",
+    "feedback.success.toast": "Merci — dis Feedback isch gspicheret worde.",
+    "feedback.success.saved": "Gspicheret. Merci — mir lise jedi Nachricht.",
+    "feedback.submit": "Feedback schicke",
+    "feedback.submit.pending": "Wird gschickt…",
   },
   ru: {
     "feedback.heading": "Отзыв",
@@ -98,5 +119,24 @@ export const feedback = {
     "feedback.success.saved": "Enregistré. Merci — nous lisons chaque message.",
     "feedback.submit": "Envoyer le retour",
     "feedback.submit.pending": "Envoi…",
+  },
+  it: {
+    "feedback.heading": "Feedback",
+    "feedback.description": "Dicci cosa dovrebbe funzionare meglio.",
+    "feedback.category.label": "Categoria",
+    "feedback.category.idea": "Idea o suggerimento",
+    "feedback.category.bug": "Qualcosa non funziona",
+    "feedback.category.general": "Feedback generale",
+    "feedback.message.label": "Il tuo feedback",
+    "feedback.message.placeholder": "Cosa miglioreresti?",
+    "feedback.charCount": "{count}/{max} caratteri",
+    "feedback.charCount.tooShort": " · servono almeno {min}",
+    "feedback.error.tooShort": "Scrivi almeno {min} caratteri così possiamo agire.",
+    "feedback.error.submitFailed": "Il tuo feedback non è stato salvato: {message}",
+    "feedback.error.submitFailedGeneric": "Il tuo feedback non è stato salvato. Riprova.",
+    "feedback.success.toast": "Grazie — il tuo feedback è stato salvato.",
+    "feedback.success.saved": "Salvato. Grazie — leggiamo ogni messaggio.",
+    "feedback.submit": "Invia feedback",
+    "feedback.submit.pending": "Invio in corso…",
   },
 };

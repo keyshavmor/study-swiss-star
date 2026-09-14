@@ -6,6 +6,9 @@
  * Cyrillic is deterministic. Latin-script languages use bounded stop-word and
  * diacritic scoring; when the signal is weak the caller's fallback (the
  * selected app language) is returned instead of a guess.
+ *
+ * Swiss German (`gsw`) is scored against Hochdeutsch (`de`) using dialect
+ * markers; German text without those markers stays `de`.
  */
 import { DEFAULT_LANGUAGE, type LanguageCode } from "./languages";
 
@@ -73,6 +76,36 @@ const STOP_WORDS: Record<Exclude<LanguageCode, "ru">, readonly string[]> = {
     "frage",
     "mir",
   ],
+  gsw: [
+    "isch",
+    "nöd",
+    "nüt",
+    "au",
+    "gsi",
+    "gseh",
+    "öppis",
+    "öppe",
+    "chli",
+    "chan",
+    "chasch",
+    "hät",
+    "händ",
+    "mier",
+    "üs",
+    "dänk",
+    "grüezi",
+    "hoi",
+    "zäme",
+    "wüki",
+    "wüsse",
+    "erklär",
+    "prüefig",
+    "wieso",
+    "verstande",
+    "ez",
+    "gschwind",
+    "guet",
+  ],
   es: [
     "el",
     "la",
@@ -133,14 +166,48 @@ const STOP_WORDS: Record<Exclude<LanguageCode, "ru">, readonly string[]> = {
     "question",
     "moi",
   ],
+  it: [
+    "il",
+    "lo",
+    "la",
+    "gli",
+    "le",
+    "e",
+    "è",
+    "sono",
+    "non",
+    "io",
+    "tu",
+    "come",
+    "cosa",
+    "con",
+    "per",
+    "posso",
+    "favore",
+    "un",
+    "una",
+    "di",
+    "che",
+    "in",
+    "del",
+    "ho",
+    "spiega",
+    "esame",
+    "domanda",
+    "mi",
+  ],
 };
 
 /** Characters that are strong hints for a specific Latin-script language. */
 const DIACRITIC_HINTS: { code: LanguageCode; pattern: RegExp; weight: number }[] = [
-  { code: "de", pattern: /[äöüß]/i, weight: 2 },
+  { code: "de", pattern: /ß/, weight: 3 },
+  { code: "de", pattern: /[äöü]/i, weight: 1 },
+  { code: "gsw", pattern: /[äöü]/i, weight: 1 },
   { code: "es", pattern: /[ñ¿¡]/i, weight: 3 },
   { code: "es", pattern: /[áíóúé]/i, weight: 1 },
   { code: "fr", pattern: /[çœàèùêîôë]/i, weight: 2 },
+  { code: "it", pattern: /[àòùìé]/i, weight: 1 },
+  { code: "it", pattern: /(zione|zioni|glia|gli\b)/i, weight: 2 },
 ];
 
 export interface DetectionResult {
@@ -161,7 +228,15 @@ export function detectLanguage(
   const words = trimmed.toLowerCase().match(/[\p{L}']+/gu) ?? [];
   if (words.length === 0) return { language: fallback, confident: false };
 
-  const scores: Record<LanguageCode, number> = { en: 0, de: 0, ru: 0, es: 0, fr: 0 };
+  const scores: Record<LanguageCode, number> = {
+    en: 0,
+    de: 0,
+    gsw: 0,
+    ru: 0,
+    es: 0,
+    fr: 0,
+    it: 0,
+  };
 
   for (const word of words) {
     for (const [code, list] of Object.entries(STOP_WORDS)) {
@@ -190,6 +265,10 @@ export function detectLanguage(
 /**
  * Effective assistant response language: the UI language, unless the message
  * is confidently written in another approved language.
+ *
+ * This mirrors the Supabase preference `assistant_reply_language_policy =
+ * "message_then_app"`. FUTURE BACKEND / CODEX: the local AI backend does not
+ * yet consume this metadata — the frontend only prepares and stores it.
  */
 export function effectiveResponseLanguage(text: string, uiLanguage: LanguageCode): LanguageCode {
   const detected = detectLanguage(text, uiLanguage);

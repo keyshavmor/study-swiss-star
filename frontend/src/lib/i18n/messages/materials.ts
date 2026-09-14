@@ -1,4 +1,4 @@
-/** materials translations for the five approved application languages. */
+/** materials translations for the seven approved application languages. */
 export const materials = {
   en: {
     "materials.dialog.title.edit": "Edit material",
@@ -70,6 +70,41 @@ export const materials = {
     "materials.panel.emptyBody":
       "Füge Notizen, Dokumente oder Links hinzu, damit sie hier erscheinen. Alles kann jederzeit umbenannt, verschoben oder gelöscht werden.",
     "materials.panel.helpLink": "So funktioniert die Materialindexierung",
+  },
+  gsw: {
+    "materials.dialog.title.edit": "Material bearbeite",
+    "materials.dialog.title.add": "Material dezuefüege",
+    "materials.dialog.description":
+      "Nur en Prototyp — es wird kei Datei uegladen. Alles bliibt bearbeitbar.",
+    "materials.dialog.name": "Name",
+    "materials.dialog.name.placeholder": "Notize zur Zellbiologie",
+    "materials.dialog.type": "Typ",
+    "materials.dialog.section": "Bereich",
+    "materials.dialog.subject": "Fach",
+    "materials.dialog.link": "Link",
+    "materials.dialog.notes": "Notize (optional)",
+    "materials.dialog.save.add": "Material dezuefüege",
+    "materials.dialog.save.edit": "Ändige spichere",
+    "materials.toast.updated": "Material aktualisiert",
+    "materials.toast.added": "Material dezuegfüegt",
+    "materials.toast.added.description": "Du chasch's spöter umbenenne, verschiebe oder lösche.",
+    "materials.toast.deleted": "Material glöscht",
+    "materials.toast.undo": "Rückgängig",
+    "materials.card.addedOn": "dezuegfüegt am {date}",
+    "materials.card.archived": "Archiviert",
+    "materials.card.actionsFor": "Aktione für {name}",
+    "materials.card.renameOrEdit": "Umbenenne oder bearbeite",
+    "materials.card.archive": "Archiviere",
+    "materials.card.restore": "Us em Archiv widerherstelle",
+    "materials.card.delete": "Lösche",
+    "materials.panel.title": "Notize und Material",
+    "materials.panel.empty": "No nüt dezuegfüegt",
+    "materials.panel.count": "{count} vo dir dezuegfüegti Element",
+    "materials.panel.addMaterial": "Material dezuefüege",
+    "materials.panel.addWebLink": "Web-Link dezuefüege",
+    "materials.panel.emptyBody":
+      "Füeg Notize, Dokumänt oder Links dezue und sie erschiined da. Alles cha jedärziit umbenennt, verschobe oder glöscht wärde.",
+    "materials.panel.helpLink": "So funktioniert d Materialindexierig",
   },
   ru: {
     "materials.dialog.title.edit": "Изменить материал",
@@ -177,5 +212,40 @@ export const materials = {
     "materials.panel.emptyBody":
       "Ajoutez des notes, des documents ou des liens et ils apparaîtront ici. Tout peut être renommé, déplacé ou supprimé à tout moment.",
     "materials.panel.helpLink": "Comment fonctionne l'indexation des matériels",
+  },
+  it: {
+    "materials.dialog.title.edit": "Modifica materiale",
+    "materials.dialog.title.add": "Aggiungi materiale",
+    "materials.dialog.description":
+      "Solo un prototipo — nessun file viene caricato. Tutto resta modificabile.",
+    "materials.dialog.name": "Nome",
+    "materials.dialog.name.placeholder": "Appunti di biologia cellulare",
+    "materials.dialog.type": "Tipo",
+    "materials.dialog.section": "Sezione",
+    "materials.dialog.subject": "Materia",
+    "materials.dialog.link": "Link",
+    "materials.dialog.notes": "Note (opzionale)",
+    "materials.dialog.save.add": "Aggiungi materiale",
+    "materials.dialog.save.edit": "Salva modifiche",
+    "materials.toast.updated": "Materiale aggiornato",
+    "materials.toast.added": "Materiale aggiunto",
+    "materials.toast.added.description": "Potrai rinominarlo, spostarlo o eliminarlo più tardi.",
+    "materials.toast.deleted": "Materiale eliminato",
+    "materials.toast.undo": "Annulla",
+    "materials.card.addedOn": "aggiunto il {date}",
+    "materials.card.archived": "Archiviato",
+    "materials.card.actionsFor": "Azioni per {name}",
+    "materials.card.renameOrEdit": "Rinomina o modifica",
+    "materials.card.archive": "Archivia",
+    "materials.card.restore": "Ripristina dall'archivio",
+    "materials.card.delete": "Elimina",
+    "materials.panel.title": "Note e materiali",
+    "materials.panel.empty": "Non hai ancora aggiunto nulla",
+    "materials.panel.count": "{count} elementi che hai aggiunto",
+    "materials.panel.addMaterial": "Aggiungi materiale",
+    "materials.panel.addWebLink": "Aggiungi link web",
+    "materials.panel.emptyBody":
+      "Aggiungi note, documenti o link e appariranno qui. Tutto può essere rinominato, spostato o eliminato in qualsiasi momento.",
+    "materials.panel.helpLink": "Come funziona l'indicizzazione dei materiali",
   },
 };

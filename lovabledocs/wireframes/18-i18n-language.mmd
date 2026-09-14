@@ -4,7 +4,7 @@ flowchart TD
   Boot --> AuthCheck{Signed in?}
   AuthCheck -->|No| WelcomeLocal[Localise welcome/auth screen from cache]
   AuthCheck -->|Yes| Load[Load user_preferences.preferences.app_language\nAUTHORITATIVE]
-  Load --> Valid{Value is one of en de ru es fr?}
+  Load --> Valid{Value is one of en de gsw ru es fr it?}
   Valid -->|Yes| Apply[Apply language, update cache]
   Valid -->|No or missing| English[Recover to English default]
   English --> Apply

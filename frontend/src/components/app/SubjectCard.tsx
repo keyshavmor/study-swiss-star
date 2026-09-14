@@ -13,13 +13,13 @@ import {
 import { useState } from "react";
 import { AssessmentActions } from "@/components/app/AssessmentActions";
 import { AssessmentDialog } from "@/components/app/AssessmentDialog";
-import { DemoBadge, FailingBadge } from "@/components/app/Badges";
+import { FailingBadge } from "@/components/app/Badges";
 import { AverageWithRounded } from "@/components/app/GradeDisplay";
 import { TranscriptImportDialog } from "@/components/app/TranscriptImportDialog";
 import { Button } from "@/components/ui/button";
 import { useI18n } from "@/lib/i18n/provider";
 import { ASSESSMENT_TYPE_LABEL_KEY, GRADE_SOURCE_LABEL_KEY } from "@/lib/store/types";
-import { formatDate, formatMonthYear, gradeOf, summariseSubjectView } from "@/lib/grade-math";
+import { gradeOf, summariseSubjectView } from "@/lib/grade-math";
 import { isFailing } from "@/lib/mock/grades";
 import type { Subject } from "@/lib/mock/subjects";
 import { SCHOOL_SUBJECTS, TREND_LABEL_KEY, getSubject } from "@/lib/mock/subjects";
@@ -76,7 +76,7 @@ function Sparkline({ values }: { values: number[] }) {
 export function SubjectCard({ subject }: { subject: Subject }) {
   const { t, formatDate } = useI18n();
   const [open, setOpen] = useState(false);
-  const { assessments, materials, demoMode, events } = useAppData();
+  const { assessments, materials, events } = useAppData();
   const Icon =
     (Icons as unknown as Record<string, Icons.LucideIcon>)[subject.icon] ?? Icons.BookOpen;
   const grades = summariseSubjectView(assessments, subject);
@@ -117,11 +117,6 @@ export function SubjectCard({ subject }: { subject: Subject }) {
                 <p className="truncate text-[16.5px] font-semibold tracking-tight">
                   {subject.name}
                 </p>
-                {demoMode && (
-                  <span className="pointer-events-auto">
-                    <DemoBadge />
-                  </span>
-                )}
               </div>
               <p className="text-[13px] text-muted-foreground">
                 {subject.subtitle ??
@@ -264,8 +259,7 @@ export function SubjectCard({ subject }: { subject: Subject }) {
                         <div className="min-w-0">
                           <p className="truncate text-[14px] font-medium">{test.title}</p>
                           <p className="text-[12.5px] text-muted-foreground">
-                            {formatDate(test.date)} · {t(ASSESSMENT_TYPE_LABEL_KEY[test.type])} ·{" "}
-                            {formatDate(test.date, { month: "long", year: "numeric" })}
+                            {formatDate(test.date)} · {t(ASSESSMENT_TYPE_LABEL_KEY[test.type])}
                           </p>
                           <p className="text-[12.5px] text-muted-foreground">
                             {t(GRADE_SOURCE_LABEL_KEY[test.source])}

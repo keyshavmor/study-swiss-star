@@ -1,4 +1,4 @@
-/** notifications translations for the five approved application languages. */
+/** notifications translations for the seven approved application languages. */
 export const notifications = {
   en: {
     "notifications.buttonAria": "Notifications",
@@ -32,6 +32,23 @@ export const notifications = {
     "notifications.dismissAria": "Benachrichtigung verwerfen",
     "notifications.dismissed": "Benachrichtigung verworfen",
     "notifications.prototypeBadge": "Prototyp · es wird nichts übermittelt",
+    "notifications.countOverflow": "9+",
+  },
+  gsw: {
+    "notifications.buttonAria": "Benachrichtigunge",
+    "notifications.title": "Benachrichtigunge",
+    "notifications.unreadSummary": "{count} ungläse · us dim Planer",
+    "notifications.markAllRead": "Alles als gläse markiere",
+    "notifications.emptyTitle": "Du bisch uf em neuschte Stand",
+    "notifications.emptyDescription":
+      "Benachrichtigunge erschiine, wenn du Prüefige, Lektione oder Aktivitäte zu dim Planer hinzuefüegsch.",
+    "notifications.section.today": "Hüt",
+    "notifications.section.upcoming": "Bevorstehend",
+    "notifications.section.earlier": "Früener",
+    "notifications.markReadAria": "Als gläse markiere",
+    "notifications.dismissAria": "Benachrichtigung verwerfe",
+    "notifications.dismissed": "Benachrichtigung verworfe",
+    "notifications.prototypeBadge": "Prototyp · es wird nüt übermittlet",
     "notifications.countOverflow": "9+",
   },
   ru: {
@@ -83,6 +100,23 @@ export const notifications = {
     "notifications.dismissAria": "Ignorer la notification",
     "notifications.dismissed": "Notification ignorée",
     "notifications.prototypeBadge": "Prototype · rien n'est envoyé nulle part",
+    "notifications.countOverflow": "9+",
+  },
+  it: {
+    "notifications.buttonAria": "Notifiche",
+    "notifications.title": "Notifiche",
+    "notifications.unreadSummary": "{count} non lette · dal tuo pianificatore",
+    "notifications.markAllRead": "Segna tutte come lette",
+    "notifications.emptyTitle": "Sei aggiornato",
+    "notifications.emptyDescription":
+      "Le notifiche appaiono quando aggiungi esami, lezioni o attività al tuo pianificatore.",
+    "notifications.section.today": "Oggi",
+    "notifications.section.upcoming": "Prossime",
+    "notifications.section.earlier": "Precedenti",
+    "notifications.markReadAria": "Segna come letta",
+    "notifications.dismissAria": "Ignora notifica",
+    "notifications.dismissed": "Notifica ignorata",
+    "notifications.prototypeBadge": "Prototipo · non viene inviato nulla da nessuna parte",
     "notifications.countOverflow": "9+",
   },
 };

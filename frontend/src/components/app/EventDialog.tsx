@@ -21,13 +21,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  WEEKDAY_INITIAL,
-  WEEKDAY_LONG,
-  todayIso,
-  weekdayIndex,
-  weekdayName,
-} from "@/lib/date-utils";
+import { isoForWeekdayIndex, todayIso, weekdayIndex } from "@/lib/date-utils";
 import { SUBJECTS } from "@/lib/mock/subjects";
 import { useAppData } from "@/lib/store/app-data";
 import type { EventCategory, PlannerEvent, Recurrence } from "@/lib/store/types";
@@ -104,7 +98,7 @@ export function EventDialog({
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
 }) {
-  const { t } = useI18n();
+  const { t, formatWeekday } = useI18n();
   const { addEvent, updateEvent, updateOccurrence, splitSeriesFrom } = useAppData();
   const [uncontrolled, setUncontrolled] = useState(false);
   const open = controlledOpen ?? uncontrolled;
@@ -126,7 +120,7 @@ export function EventDialog({
   const previewText = (() => {
     if (!repeats) {
       return t("events.preview.once", {
-        weekday: weekdayName(draft.date),
+        weekday: formatWeekday(draft.date),
         start: draft.start,
         end: draft.end,
       });
@@ -134,7 +128,7 @@ export function EventDialog({
     if (usesWeekdays) {
       const days = [...draft.weekdays]
         .sort()
-        .map((d) => WEEKDAY_LONG[d])
+        .map((d) => formatWeekday(isoForWeekdayIndex(d), "short"))
         .join(", ");
       return t(
         draft.recurrence === "weekly" ? "events.preview.weekly" : "events.preview.biweekly",
@@ -282,7 +276,7 @@ export function EventDialog({
             </div>
             <div className="grid gap-2">
               <Label>{t("events.weekday")}</Label>
-              <Input value={weekdayName(draft.date)} readOnly className="text-muted-foreground" />
+              <Input value={formatWeekday(draft.date)} readOnly className="text-muted-foreground" />
             </div>
 
             <div className="grid gap-2">
@@ -349,13 +343,14 @@ export function EventDialog({
               <div className="mt-4 grid gap-2">
                 <Label>{t("events.repeatOn")}</Label>
                 <div className="flex gap-1.5">
-                  {WEEKDAY_INITIAL.map((initial, index) => {
+                  {Array.from({ length: 7 }, (_, index) => index).map((index) => {
                     const on = draft.weekdays.includes(index);
+                    const label = formatWeekday(isoForWeekdayIndex(index), "short");
                     return (
                       <button
                         key={index}
                         type="button"
-                        aria-label={WEEKDAY_LONG[index]}
+                        aria-label={formatWeekday(isoForWeekdayIndex(index))}
                         aria-pressed={on}
                         onClick={() =>
                           setDraft((d) => ({
@@ -372,7 +367,7 @@ export function EventDialog({
                             : "border-border text-muted-foreground hover:bg-hover",
                         )}
                       >
-                        {initial}
+                        {label.charAt(0)}
                       </button>
                     );
                   })}

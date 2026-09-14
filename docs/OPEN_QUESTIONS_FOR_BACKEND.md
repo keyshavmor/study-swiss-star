@@ -30,7 +30,7 @@ features remain open; implemented decisions are recorded here to prevent contrac
 
 The frontend's future `/api/chat` (and equivalent assistant) request will carry `ui_language`
 and `message_language`. The effective `response_language` must be `message_language` when it is
-confidently one of the five supported languages (`en`, `de`, `ru`, `es`, `fr`), otherwise
+confidently one of the seven supported languages (``en`, `de`, `gsw`, `ru`, `es`, `fr`, `it`), otherwise
 `ui_language`. Today the frontend computes `responseLanguageHint` client-side
 (`frontend/src/lib/i18n/detect.ts`) and keeps it in component state only — it is not sent on the
 current request, so today's contract is unchanged. This precedence rule must be implemented

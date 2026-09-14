@@ -1,4 +1,4 @@
-/** nav translations for the five approved application languages. */
+/** nav translations for the seven approved application languages. */
 export const nav = {
   en: {
     "nav.home": "Home",
@@ -35,6 +35,24 @@ export const nav = {
     "nav.viewProfile": "Profil ansehen",
     "nav.yourProfile": "Dein Profil",
     "nav.signOutFailed": "Abmelden nicht möglich",
+  },
+  gsw: {
+    "nav.home": "Home",
+    "nav.school": "Schuel",
+    "nav.planner": "Planer",
+    "nav.assistant": "Assistent",
+    "nav.stats": "Statistik",
+    "nav.help": "Hilf",
+    "nav.feedback": "Feedback",
+    "nav.profile": "Profil",
+    "nav.settings": "Iistellige",
+    "nav.chat": "Lern-Chat",
+    "nav.signOut": "Abmälde",
+    "nav.openMenu": "Menü öffne",
+    "nav.profileMenu": "Profilmenü",
+    "nav.viewProfile": "Profil aluege",
+    "nav.yourProfile": "Dis Profil",
+    "nav.signOutFailed": "Abmälde nöd möglich",
   },
   ru: {
     "nav.home": "Главная",
@@ -79,7 +97,7 @@ export const nav = {
     "nav.assistant": "Assistant",
     "nav.stats": "Statistiques",
     "nav.help": "Aide",
-    "nav.feedback": "Retour",
+    "nav.feedback": "Commentaires",
     "nav.profile": "Profil",
     "nav.settings": "Réglages",
     "nav.chat": "Chat d'étude",
@@ -89,5 +107,23 @@ export const nav = {
     "nav.viewProfile": "Voir le profil",
     "nav.yourProfile": "Votre profil",
     "nav.signOutFailed": "Déconnexion impossible",
+  },
+  it: {
+    "nav.home": "Home",
+    "nav.school": "Scuola",
+    "nav.planner": "Pianificatore",
+    "nav.assistant": "Assistente",
+    "nav.stats": "Statistiche",
+    "nav.help": "Aiuto",
+    "nav.feedback": "Feedback",
+    "nav.profile": "Profilo",
+    "nav.settings": "Impostazioni",
+    "nav.chat": "Chat di studio",
+    "nav.signOut": "Disconnetti",
+    "nav.openMenu": "Apri menu",
+    "nav.profileMenu": "Menu del profilo",
+    "nav.viewProfile": "Visualizza profilo",
+    "nav.yourProfile": "Il tuo profilo",
+    "nav.signOutFailed": "Impossibile disconnettersi",
   },
 };

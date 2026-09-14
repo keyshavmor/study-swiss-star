@@ -1,4 +1,4 @@
-/** chat translations for the five approved application languages. */
+/** chat translations for the seven approved application languages. */
 export const chat = {
   en: {
     "chat.newSession": "New study session",
@@ -50,6 +50,32 @@ export const chat = {
     "chat.examTip": "Prüfungstipp:",
     "chat.audio.listen": "Anhören",
     "chat.audio.stop": "Stopp",
+  },
+  gsw: {
+    "chat.newSession": "Neui Lärnsession",
+    "chat.newSessionAria": "Neui Lärnsession",
+    "chat.dialogTitle": "Neui Lärnsession",
+    "chat.dialogDescription": "Wähl es Fach und es Thema für die Session.",
+    "chat.subjectLabel": "Fach",
+    "chat.subjectPlaceholder": "z. B. Mathe, Latiin, Gschicht",
+    "chat.topicLabel": "Thema",
+    "chat.topicPlaceholder": "z. B. Wiederholig Integralrechnig",
+    "chat.createSession": "Session erstelle",
+    "chat.signOut": "Abmälde",
+    "chat.sessionsEmpty": "No kei Sessione.",
+    "chat.deleteSessionAria": "Session lösche",
+    "chat.studySessionFallback": "Lärnsession",
+    "chat.readyTitle": "Parat zum Lärne?",
+    "chat.readyDescription":
+      "Frög nach ere Erklärig, eim Quiz oder eim Lärnplan für dini nächscht Prüefig.",
+    "chat.thinking": "Am Nadänke…",
+    "chat.composerPlaceholder": "Frög öppis zu eim Thema, verlang es Quiz oder füeg e Frag ii…",
+    "chat.createFailed": "Session het nöd chönne erstellt werde",
+    "chat.deleteFailed": "Session het nöd chönne glöscht werde",
+    "chat.sendFailed": "Nachricht het nöd chönne gschickt werde",
+    "chat.examTip": "Prüefigs-Tipp:",
+    "chat.audio.listen": "Alose",
+    "chat.audio.stop": "Stop",
   },
   ru: {
     "chat.newSession": "Новая учебная сессия",
@@ -129,5 +155,32 @@ export const chat = {
     "chat.examTip": "Astuce d'examen :",
     "chat.audio.listen": "Écouter",
     "chat.audio.stop": "Arrêter",
+  },
+  it: {
+    "chat.newSession": "Nuova sessione di studio",
+    "chat.newSessionAria": "Nuova sessione di studio",
+    "chat.dialogTitle": "Nuova sessione di studio",
+    "chat.dialogDescription": "Scegli una materia e un argomento per questa sessione.",
+    "chat.subjectLabel": "Materia",
+    "chat.subjectPlaceholder": "es. Matematica, Latino, Storia",
+    "chat.topicLabel": "Argomento",
+    "chat.topicPlaceholder": "es. Ripasso del calcolo integrale",
+    "chat.createSession": "Crea sessione",
+    "chat.signOut": "Esci",
+    "chat.sessionsEmpty": "Nessuna sessione ancora.",
+    "chat.deleteSessionAria": "Elimina sessione",
+    "chat.studySessionFallback": "Sessione di studio",
+    "chat.readyTitle": "Pronto a studiare?",
+    "chat.readyDescription":
+      "Chiedi una spiegazione, un quiz o un piano di studio per il tuo prossimo esame.",
+    "chat.thinking": "Sto pensando…",
+    "chat.composerPlaceholder":
+      "Chiedi informazioni su un argomento, richiedi un quiz o incolla una domanda…",
+    "chat.createFailed": "Impossibile creare la sessione",
+    "chat.deleteFailed": "Impossibile eliminare la sessione",
+    "chat.sendFailed": "Impossibile inviare il messaggio",
+    "chat.examTip": "Consiglio per l'esame:",
+    "chat.audio.listen": "Ascolta",
+    "chat.audio.stop": "Interrompi",
   },
 };

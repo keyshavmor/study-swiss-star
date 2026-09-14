@@ -433,7 +433,7 @@ interface UserPreferences {         // user_preferences.preferences jsonb
   exam_reminders: boolean; daily_study_summary: boolean;
   sound_effects: boolean;
   auto_storage_cleanup: boolean;
-  app_language: "en" | "de" | "ru" | "es" | "fr";   // authoritative UI language
+  app_language: "en" | "de" | "gsw" | "ru" | "es" | "fr" | "it";   // authoritative UI language
   assistant_audio_enabled: boolean;   // default true — shows Listen/Stop
   assistant_audio_autoplay: boolean;  // default false — autoplay newly completed answers only
 }

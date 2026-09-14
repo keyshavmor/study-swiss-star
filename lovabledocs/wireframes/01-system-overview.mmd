@@ -2,9 +2,9 @@ flowchart LR
   Student[Student] --> Browser[React UI in browser\nIMPLEMENTED]
   Browser --> Router[TanStack file routes\nIMPLEMENTED]
   Router --> Providers[Query + I18n + Theme + AppData + AcademicYear\nIMPLEMENTED]
-  Providers --> I18n[I18nProvider\nfrontend/src/lib/i18n\nen-GB de-CH ru-RU es-ES fr-CH\nIMPLEMENTED]
+  Providers --> I18n[I18nProvider\nfrontend/src/lib/i18n\nen-GB de-DE gsw-CH ru-RU es-ES fr-CH it-CH\nIMPLEMENTED]
   I18n --> LangCache[(localStorage alim.app_language\nflash-avoidance cache only\nIMPLEMENTED LOCAL)]
-  Providers --> Local[(Browser storage\nGrades, planner, profile, links, demo\nIMPLEMENTED LOCAL)]
+  Providers --> Local[(Browser storage\nGrades, planner, profile, links\nIMPLEMENTED LOCAL)]
   Router --> Auth[Authenticated route gate\nIMPLEMENTED]
   Auth --> Cloud[(external Supabase\nIdentity + threads + messages\nprofiles + user_preferences\nfeedback + usage_events\nmedia_retention_queue\nIMPLEMENTED CLOUD)]
   I18n --> Cloud

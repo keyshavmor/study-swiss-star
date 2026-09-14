@@ -82,7 +82,7 @@ Auth-gated routes live under `frontend/src/routes/_authenticated/` and are prote
 ### `/school` — Subjects overview
 - **File:** `_authenticated/school.index.tsx`
 - **Purpose:** 15 top-level subject cards, sort/filter, yearly average, failing-subject alerts.
-- **Components:** `SubjectCard`, `StatsOverviewPanel`, `GradeDisplay`, `Badges`, `AcademicYearSelector`, `AssessmentDialog`, `TranscriptImportDialog`, `DemoMode`.
+- **Components:** `SubjectCard`, `StatsOverviewPanel`, `GradeDisplay`, `Badges`, `AcademicYearSelector`, `AssessmentDialog`, `TranscriptImportDialog`.
 - **Data source:** `SUBJECTS` in `frontend/src/lib/mock/subjects.ts` + assessments from `AppDataProvider`,
   aggregated by `frontend/src/lib/grade-math.ts` (`summariseSubjectView`, `summariseYear`).
 - **Storage:** static module + `localStorage`.
@@ -134,14 +134,14 @@ Auth-gated routes live under `frontend/src/routes/_authenticated/` and are prote
 
 
 ### `/help` — Help
-- **File:** `_authenticated/help.tsx` · static content plus five downloadable A4 PDF user
+- **File:** `_authenticated/help.tsx` · static content plus seven downloadable A4 PDF user
   guides, one per supported language, served from
-  `frontend/public/help-guides/alim-user-guide-{en,de,ru,es,fr}.pdf`. There is no
+  `frontend/public/help-guides/alim-user-guide-{en,de,gsw,ru,es,fr,it}.pdf`. There is no
   "Contact support" CTA. **Frontend-only: yes.**
 
 ### `/settings` — Settings
 - **File:** `_authenticated/settings.tsx`
-- **Data source:** theme, demo mode, academic year, data reset.
+- **Data source:** theme, academic year, data reset.
 - **Future backend:** surface backend mode, base URL, model status (read-only).
 - **Endpoints:** `GET /api/model/status`. **Frontend-only: partly.**
 

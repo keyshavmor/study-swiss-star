@@ -69,12 +69,14 @@ render in warning orange `#C96A00`.
 
 The subject `language` field above (`de`/`en`/`fr`) is fixed per subject and governs the
 **instruction language of subject content** — it is unrelated to the app-wide UI language.
-The frontend separately ships a full five-language UI (`en`-GB, `de`-CH, `ru`-RU, `es`-ES,
-`fr`-CH) via `frontend/src/lib/i18n/` (`languages.ts`, `detect.ts`, `provider.tsx`,
-`messages/*.ts`), selected with the header flag menu and persisted in
-`user_preferences.preferences.app_language`. `FUTURE BACKEND / CODEX`: the future
+The frontend separately ships a full seven-language UI — `en` (`en-GB`), `de` Hochdeutsch
+(`de-DE`), `gsw` Schwiizerdütsch (`gsw-CH`, Intl fallback `de-CH`), `ru` (`ru-RU`), `es` (`es-ES`),
+`fr` (`fr-CH`) and `it` (`it-CH`) — via `frontend/src/lib/i18n/` (`languages.ts`, `format.ts`,
+`detect.ts`, `provider.tsx`, `messages/*.ts`), selected with the header flag menu and persisted in
+`user_preferences.preferences.app_language`. `de` and `gsw` are separate languages with distinct
+UI copy; `gsw` copy never uses the character `ß`. `FUTURE BACKEND / CODEX`: the future
 response-language precedence contract (`ui_language`/`message_language` → `response_language`,
-see `API_EXPECTATIONS.md`) uses this five-language set, not the three-language subject table
+see `API_EXPECTATIONS.md`) uses this seven-language set, not the three-language subject table
 below — do not conflate them.
 
 ## 5. Language rules for AI requests

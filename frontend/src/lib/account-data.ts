@@ -37,10 +37,19 @@ export const QWEN_MODELS = [
 
 export type QwenModel = (typeof QWEN_MODELS)[number];
 
+/** Supabase-stored assistant reply-language policy. */
+export type ReplyLanguagePolicy = "message_then_app" | "app_only";
+
 export interface UserPreferences {
   selected_qwen_model: string;
-  /** One of the five approved application languages. */
+  /** One of the seven approved application languages. */
   app_language: LanguageCode;
+  /**
+   * Live Supabase default is `message_then_app`: a confidently detected message
+   * language wins, otherwise the app language is used.
+   * FUTURE BACKEND / CODEX: the local AI backend does not enforce this yet.
+   */
+  assistant_reply_language_policy: ReplyLanguagePolicy;
   assistant_audio_enabled: boolean;
   assistant_audio_autoplay: boolean;
   exam_reminders: boolean;
@@ -52,6 +61,7 @@ export interface UserPreferences {
 export const DEFAULT_PREFERENCES: UserPreferences = {
   selected_qwen_model: QWEN_MODELS[0],
   app_language: DEFAULT_LANGUAGE,
+  assistant_reply_language_policy: "message_then_app",
   assistant_audio_enabled: true,
   assistant_audio_autoplay: false,
   exam_reminders: true,
@@ -193,6 +203,10 @@ export async function fetchPreferences(): Promise<UserPreferences> {
     selected_qwen_model: (QWEN_MODELS as readonly string[]).includes(model)
       ? model
       : DEFAULT_PREFERENCES.selected_qwen_model,
+    assistant_reply_language_policy:
+      stored["assistant_reply_language_policy"] === "app_only"
+        ? "app_only"
+        : DEFAULT_PREFERENCES.assistant_reply_language_policy,
     app_language:
       stored["app_language"] === undefined
         ? DEFAULT_LANGUAGE

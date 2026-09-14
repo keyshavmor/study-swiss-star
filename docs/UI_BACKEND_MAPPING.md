@@ -232,7 +232,7 @@ Legend for **Owner (later)**: `PY` = Python FastAPI, `SB` = Supabase, `LS` = loc
 | --- | --- |
 | Authentication and session | **Stays in Supabase.** Do not touch. |
 | Chat threads / messages | **Stays in Supabase**, unless it blocks fully-offline local use. |
-| Prototype data (grades, planner, materials, links, profile, demo mode) | **Stays in `localStorage`.** |
+| Prototype data (grades, planner, materials, links, profile) | **Stays in `localStorage`.** No demo mode exists. |
 | AI inference, RAG, sources, quizzes, exams, grading, study plans, feedback | **Moves to Python** in Stage 1/2. |
 
 ## Assistant, settings and storage mapping

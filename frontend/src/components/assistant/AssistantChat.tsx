@@ -131,7 +131,7 @@ export function AssistantChat({ threadId }: { threadId?: string }) {
     try {
       setThreads(await listAssistantThreads());
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : t("assistant.loadThreadsFailed"));
+      toast.error(t("assistant.loadThreadsFailed"));
     } finally {
       setLoadingThreads(false);
     }
@@ -156,7 +156,7 @@ export function AssistantChat({ threadId }: { threadId?: string }) {
         }
       })
       .catch((err: unknown) => {
-        toast.error(err instanceof Error ? err.message : t("assistant.loadMessagesFailed"));
+        toast.error(t("assistant.loadMessagesFailed"));
       })
       .finally(() => {
         if (!cancelled) setLoadingMessages(false);
@@ -183,7 +183,7 @@ export function AssistantChat({ threadId }: { threadId?: string }) {
       track({ event_name: "assistant_thread_created", feature: "assistant" });
     } catch (err) {
       trackFailure("assistant_thread_create_failed", err, { feature: "assistant" });
-      toast.error(err instanceof Error ? err.message : t("assistant.createFailed"));
+      toast.error(t("assistant.createFailed"));
     }
   };
 
@@ -204,7 +204,7 @@ export function AssistantChat({ threadId }: { threadId?: string }) {
     if (!content && files.length === 0) return;
     setSending(true);
     // FUTURE BACKEND / CODEX: send { ui_language, message_language } so the model answers in
-    // message_language when it is confidently one of the five supported languages; otherwise
+    // message_language when it is confidently one of the seven supported languages; otherwise
     // ui_language.
     const responseLanguageHint = effectiveResponseLanguage(content, language);
     // Counts only — the message text and attachment contents are never sent.
@@ -237,7 +237,7 @@ export function AssistantChat({ threadId }: { threadId?: string }) {
       });
     } catch (err) {
       trackFailure("assistant_message_failed", err, { feature: "assistant" });
-      toast.error(err instanceof Error ? err.message : t("assistant.sendFailed"));
+      toast.error(t("assistant.sendFailed"));
     } finally {
       setSending(false);
     }
@@ -251,7 +251,7 @@ export function AssistantChat({ threadId }: { threadId?: string }) {
       await renameAssistantThread(id, title);
       await refreshThreads();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : t("assistant.renameFailed"));
+      toast.error(t("assistant.renameFailed"));
     }
   };
 
@@ -264,7 +264,7 @@ export function AssistantChat({ threadId }: { threadId?: string }) {
       if (id === threadId) navigate({ to: "/assistant" });
       toast.success(t("assistant.deleteSuccess"));
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : t("assistant.deleteFailed"));
+      toast.error(t("assistant.deleteFailed"));
     }
   };
 

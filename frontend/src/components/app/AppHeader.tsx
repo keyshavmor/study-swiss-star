@@ -3,7 +3,6 @@ import { Link, useNavigate, useRouter, useRouterState } from "@tanstack/react-ro
 
 import { GraduationCap, LogOut, Menu, Settings, User } from "lucide-react";
 import { useState } from "react";
-import { DemoModeButton } from "@/components/app/DemoMode";
 import { NotificationCenter } from "@/components/app/NotificationCenter";
 import { LiveClock } from "@/components/app/LiveClock";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -51,7 +50,9 @@ export function AppHeader() {
     try {
       await signOutCompletely();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : t("nav.signOutFailed"));
+      // Never surface a raw provider message: it would inject English into the UI.
+      console.error("sign-out failed", err);
+      toast.error(t("nav.signOutFailed"));
       return;
     }
     await router.invalidate();
@@ -109,7 +110,11 @@ export function AppHeader() {
             </SheetContent>
           </Sheet>
 
-          <Link to="/home" className="flex min-w-0 items-center gap-2.5">
+          <Link
+            to="/home"
+            aria-label={t("nav.home")}
+            className="flex min-w-0 items-center gap-2.5 rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
             <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground">
               <GraduationCap className="h-[18px] w-[18px]" />
             </span>
@@ -118,13 +123,13 @@ export function AppHeader() {
             </span>
           </Link>
 
-          <nav className="ml-6 hidden items-center gap-1 lg:flex">
+          <nav className="ml-5 hidden flex-1 items-center justify-start gap-0.5 lg:flex xl:ml-8 xl:gap-1.5">
             {NAV.map((item) => (
               <Link
                 key={item.to}
                 to={item.to}
                 className={cn(
-                  "rounded-full px-3.5 py-2 text-[14.5px] font-medium transition-colors duration-200",
+                  "whitespace-nowrap rounded-full px-3 py-2 text-[14.5px] font-medium transition-colors duration-200 xl:px-4",
                   isActive(item.to)
                     ? "bg-thread-active text-foreground"
                     : "text-muted-foreground hover:bg-hover hover:text-foreground",
@@ -138,7 +143,6 @@ export function AppHeader() {
 
         <div className="flex shrink-0 items-center gap-2">
           <LiveClock className="mr-1 hidden sm:flex" />
-          <DemoModeButton className="hidden lg:inline-flex" />
           <ThemeToggle className="hidden sm:inline-flex" />
 
           <NotificationCenter />
