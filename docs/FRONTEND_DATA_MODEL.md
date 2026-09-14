@@ -431,7 +431,7 @@ interface AccountProfile {          // profiles
 interface UserPreferences {         // user_preferences.preferences jsonb
   selected_qwen_model: string;      // one of the 10 Qwen choices
   exam_reminders: boolean; daily_study_summary: boolean;
-  apple_reminders_sync: boolean; sound_effects: boolean;
+  sound_effects: boolean;
   auto_storage_cleanup: boolean;
 }
 
