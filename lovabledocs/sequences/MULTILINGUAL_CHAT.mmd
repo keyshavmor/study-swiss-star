@@ -1,0 +1,31 @@
+%% Status: CURRENT — FRONTEND (hint) / BACKEND TODO FOR CODEX (enforcement)
+%% Source: frontend/src/lib/i18n/detect.ts, frontend/src/lib/i18n/provider.tsx,
+%% frontend/src/lib/speech.ts, frontend/src/components/StudyChat.tsx,
+%% frontend/src/lib/account-data.ts (assistant_reply_language_policy)
+sequenceDiagram
+    participant User
+    participant Chat as StudyChat.tsx
+    participant Detect as lib/i18n/detect.ts
+    participant I18n as I18nProvider (app language)
+    participant API as POST /api/chat (routes/api/chat.ts)
+    participant Speech as lib/speech.ts
+
+    Note over Chat: Four distinct language concepts in this flow:<br/>1) app/interface language (I18nProvider)<br/>2) detected language of the user's message<br/>3) intended AI response language (hint only)<br/>4) speech/audio locale
+    User->>Chat: type a message in any approved language
+    Chat->>I18n: read current app language (useI18n().language)
+    Chat->>Detect: effectiveResponseLanguage(messageText, appLanguage)
+    Detect->>Detect: detectLanguage(messageText) — Cyrillic deterministic,<br/>Latin stop-word/diacritic scoring
+    alt detection confident (supported language detected in the message)
+        Detect-->>Chat: detected message language wins (precedence over app language)
+    else not confident / not an approved language
+        Detect-->>Chat: falls back to app language
+    end
+    Chat->>Chat: store responseLanguageHint keyed by message id<br/>(frontend-only, ref map, never sent to backend)
+    Chat->>API: POST { messages, threadId, academicYear, gradeLevel }
+    Note over API: request body has NO language/response-language field today
+    API-->>Chat: streamed answer text + context-metadata
+    Note over Chat,API: BACKEND TODO FOR CODEX:<br/>the intended AI response language hint is prepared client-side only;<br/>the local Python backend does not receive it and does not<br/>enforce assistant_reply_language_policy ("message_then_app" | "app_only")
+    Chat->>Speech: on Listen / autoplay, speechLocaleFor(answerText, appLanguage)
+    Speech->>Detect: detectLanguage(answerText, appLanguage)
+    Speech-->>Chat: locale for speechSynthesis (independent of app/message language display)
+    Chat-->>User: renders assistant text + optionally speaks it in the resolved locale

@@ -1,0 +1,58 @@
+flowchart TD
+  Root["__root.tsx"] --> Auth["AuthForm.tsx<br/>(/ , /auth)"]
+  Root --> Gate["_authenticated/route.tsx"]
+  Gate --> Shell["AppShell.tsx"]
+  Shell --> Header["AppHeader.tsx"]
+  Shell --> MobileNav["MobileNavigation.tsx"]
+  Header --> Notif["NotificationCenter.tsx"]
+  Header --> LangMenu["LanguageMenu.tsx"]
+  Header --> ThemeToggle["ThemeToggle.tsx"]
+  Notif --> EventDetail["EventDetailDialog.tsx"]
+
+  Gate --> ChatRoute["chat.index / chat.$threadId"]
+  ChatRoute --> StudyChat["StudyChat.tsx"]
+  StudyChat --> ThreadList["ThreadList.tsx"]
+  StudyChat --> AiElements["ai-elements/*"]
+  StudyChat --> SourceList["SourceSnippetList.tsx"]
+  StudyChat -->|"/api/chat"| ApiChat["api/chat.ts server route"]
+  ApiChat -->|"POST"| PyBackend["Local Python context backend"]
+
+  Gate --> AssistantRoute["assistant.index / assistant.$threadId"]
+  AssistantRoute --> AssistantChat["assistant/AssistantChat.tsx"]
+
+  Gate --> SchoolRoute["school.index / school.$subject"]
+  SchoolRoute --> SubjectCard["SubjectCard.tsx"]
+  SubjectCard --> AssessDialog["AssessmentDialog.tsx"]
+  SubjectCard --> AssessActions["AssessmentActions.tsx"]
+  SchoolRoute --> Materials["MaterialsPanel.tsx"]
+  SchoolRoute --> TranscriptImport["TranscriptImportDialog.tsx"]
+  SchoolRoute --> SchoolLinks["SchoolLinksSection.tsx"]
+  SchoolLinks --> SchoolLinkDialog["SchoolLinkDialog.tsx"]
+
+  Gate --> PlannerRoute["planner.tsx"]
+  PlannerRoute --> EventDialog["EventDialog.tsx"]
+  PlannerRoute --> Timetable["Timetable.tsx"]
+  PlannerRoute --> GCal["GoogleCalendarCard.tsx"]
+  GCal -->|"linkIdentity + REST"| GoogleAPI["Google Calendar API (external)"]
+
+  Gate --> StatsRoute["stats.tsx"]
+  StatsRoute --> StatsPanel["StatsOverviewPanel.tsx"]
+
+  Gate --> ProfileRoute["profile.tsx"]
+  ProfileRoute --> EditProfile["EditProfileDialog.tsx"]
+
+  Gate --> SettingsRoute["settings.tsx"]
+  SettingsRoute --> AccountSection["SettingsSections.AccountSection"]
+  SettingsRoute --> PrefSection["SettingsSections.PreferencesSections"]
+  SettingsRoute --> StorageSection["SettingsSections.StorageSection"]
+
+  Gate --> FeedbackRoute["feedback.tsx"]
+  Gate --> HelpRoute["help.tsx"]
+
+  Auth -->|"functions.invoke"| EdgeFns["username-login / username-availability"]
+  AccountSection -->|"profiles, profile-avatars"| Supabase["Supabase (Auth/DB/Storage)"]
+  PrefSection -->|"user_preferences"| Supabase
+  StorageSection -->|"RPC + storage-emergency-cleanup"| Supabase
+  AssistantChat -->|"assistant_* tables, chat-attachments"| Supabase
+  StudyChat -->|"threads, messages"| Supabase
+  FeedbackRoute -->|"feedback-submit"| EdgeFns2["feedback-submit"]

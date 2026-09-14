@@ -1,0 +1,30 @@
+flowchart TB
+  APICHAT["/api/chat server route<br/>frontend/src/routes/api/chat.ts<br/>CURRENT - FRONTEND"]
+  CTXCLIENT["requestContextAnswer()<br/>lib/context-backend.server.ts<br/>CURRENT - FRONTEND"]
+
+  subgraph LOCALBACKEND["Local machine :8001 - contract boundary only"]
+    ENDPOINT["POST /api/chat<br/>EXPECTED BACKEND CONTRACT"]
+    CTXMGR["Context manager<br/>BACKEND IMPLEMENTATION UNKNOWN"]
+    RAG["Retrieval / RAG<br/>BACKEND IMPLEMENTATION UNKNOWN"]
+    DOCPROC["Document processing<br/>BACKEND IMPLEMENTATION UNKNOWN"]
+    MEMORY["Student memory<br/>BACKEND IMPLEMENTATION UNKNOWN"]
+    ORCH["AI orchestration<br/>BACKEND IMPLEMENTATION UNKNOWN"]
+    MODELIF["Local model interface<br/>BACKEND IMPLEMENTATION UNKNOWN"]
+    MEDIAPROC["Media processing<br/>BACKEND IMPLEMENTATION UNKNOWN"]
+    WEBRET["Web retrieval<br/>BACKEND IMPLEMENTATION UNKNOWN"]
+  end
+
+  MODEL["Local model runtime :8000<br/>llama.cpp / Qwen<br/>BACKEND IMPLEMENTATION UNKNOWN"]
+
+  APICHAT --> CTXCLIENT
+  CTXCLIENT -->|"X-Student-Id header, JSON body"| ENDPOINT
+  ENDPOINT --> CTXMGR
+  CTXMGR --> RAG
+  CTXMGR --> DOCPROC
+  CTXMGR --> MEMORY
+  CTXMGR --> ORCH
+  ORCH --> MODELIF
+  MODELIF --> MODEL
+  CTXMGR --> MEDIAPROC
+  CTXMGR --> WEBRET
+  ENDPOINT -->|"ContextChatResponse or error envelope"| CTXCLIENT

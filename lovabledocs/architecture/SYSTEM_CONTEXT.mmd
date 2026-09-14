@@ -1,0 +1,38 @@
+C4Context
+  title System Context - Alim / Gymi Genius
+
+  Person(student, "Gymnasium student", "Primary user of the web app")
+  Person(admin, "Administrator", "Retrieves feedback and activity artefacts; identified by app_metadata.role=admin")
+
+  Enterprise_Boundary(browser, "Trust boundary: Browser") {
+    System(webapp, "Gymi Genius web app (browser)", "React 19 SPA screens, Web Speech API, i18n")
+  }
+
+  Enterprise_Boundary(appserver, "Trust boundary: TanStack server runtime") {
+    System(apichat, "/api/chat server route", "TanStack Start server handler")
+  }
+
+  Enterprise_Boundary(supabasecloud, "Trust boundary: Supabase cloud") {
+    SystemDb(supabase, "Supabase (ucacmeadsufiedxrgqit)", "Auth, PostgreSQL+RLS, Storage, Edge Functions")
+  }
+
+  Enterprise_Boundary(localmachine, "Trust boundary: Student local machine") {
+    System(backend, "Local Python FastAPI backend", "127.0.0.1:8001 - BACKEND IMPLEMENTATION UNKNOWN")
+    System(model, "Local model runtime", "llama.cpp / Qwen on :8000")
+  }
+
+  Enterprise_Boundary(external, "Trust boundary: External") {
+    System_Ext(google, "Google OAuth + Calendar API v3", "Read-only calendar access")
+    System_Ext(oauth, "GitHub / LinkedIn / Spotify OAuth", "Sign-in identity providers")
+  }
+
+  Rel(student, webapp, "Uses", "HTTPS, CURRENT")
+  Rel(admin, supabase, "Reads feedback / activity artefacts", "SQL / dashboard, CURRENT - SUPABASE (declared)")
+  Rel(webapp, supabase, "Auth, CRUD, Storage, Edge Functions", "HTTPS, CURRENT")
+  Rel(webapp, apichat, "POST chat messages", "HTTPS + Bearer token, CURRENT")
+  Rel(apichat, supabase, "Verify token, read/write threads and messages", "HTTPS, CURRENT")
+  Rel(apichat, backend, "POST /api/chat with X-Student-Id", "HTTP, EXPECTED BACKEND CONTRACT")
+  Rel(backend, model, "Model inference", "local call, BACKEND IMPLEMENTATION UNKNOWN")
+  Rel(webapp, google, "Link identity, read calendar", "OAuth2, CURRENT - EXTERNAL INTEGRATION")
+  Rel(webapp, oauth, "Sign in", "OAuth2, CURRENT - EXTERNAL INTEGRATION")
+  Rel(supabase, google, "OAuth token exchange", "CURRENT - EXTERNAL INTEGRATION")

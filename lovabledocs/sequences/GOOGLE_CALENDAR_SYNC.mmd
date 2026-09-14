@@ -1,0 +1,55 @@
+%% Status: CURRENT — FRONTEND / CURRENT — EXTERNAL INTEGRATION
+%% Source: frontend/src/lib/google-calendar.ts, frontend/src/routes/_authenticated/planner.tsx,
+%% frontend/src/components/app/GoogleCalendarCard.tsx
+sequenceDiagram
+    participant User
+    participant Card as GoogleCalendarCard.tsx
+    participant Lib as lib/google-calendar.ts
+    participant Supa as Supabase Auth (linkIdentity)
+    participant Session as sessionStorage ("alim.google-calendar.provider-token")
+    participant Google as Google Calendar API v3 (calendars/primary/events)
+    participant Planner as planner.tsx
+
+    rect rgb(245,245,245)
+    Note over User,Session: Connect
+    User->>Card: click "Connect Google Calendar"
+    Card->>Lib: connectGoogleCalendar(redirectTo)
+    Lib->>Supa: auth.linkIdentity({ provider: "google",<br/>scopes: "calendar.readonly", queryParams: { access_type: "online", prompt: "consent" } })
+    Supa->>Google: OAuth consent redirect
+    User->>Google: approve read-only Calendar access
+    Google-->>Supa: identity linked, session carries provider_token
+    Supa-->>Lib: session with provider_token
+    Lib->>Lib: captureProviderToken(session)
+    Lib->>Session: store { token, expiresAt: now + 55min } (session-only, never localStorage/DB)
+    end
+
+    rect rgb(245,245,245)
+    Note over Planner,Google: Render-time sync (polled, e.g. every 5 minutes)
+    Planner->>Lib: fetchGoogleCalendarEvents(fromIso, toIso)
+    Lib->>Session: readStored() — check token present and not expired
+    alt no usable token
+        Lib-->>Planner: throws GoogleCalendarAuthError("not-connected")
+    else token usable
+        Lib->>Google: GET /calendars/primary/events?timeMin&timeMax&singleEvents=true&orderBy=startTime
+        alt 401/403
+            Google-->>Lib: unauthorized
+            Lib->>Session: clearGoogleAccess()
+            Lib-->>Planner: throws GoogleCalendarAuthError("access-expired")
+        else ok
+            Google-->>Lib: events[]
+            Lib->>Lib: toEvent() normalises to GoogleCalendarEvent[]
+            Lib-->>Planner: GoogleCalendarEvent[]
+            Planner->>Lib: googleOccurrences(events) — wraps as read-only Occurrence[]<br/>(externalSource: "google", readOnly: true)
+            Planner->>Planner: merge into visibleOccurrences for rendering only
+            Note over Planner: Google occurrences are NEVER written into the editable<br/>planner state (AppDataProvider) — merge is render-only and re-computed<br/>on each poll/interval.
+        end
+    end
+    end
+
+    rect rgb(245,245,245)
+    Note over User,Session: Disconnect
+    User->>Card: click "Disconnect"
+    Card->>Lib: clearGoogleAccess()
+    Lib->>Session: sessionStorage.removeItem(TOKEN_KEY)
+    Planner->>Planner: googleOccurrences cleared from next render
+    end

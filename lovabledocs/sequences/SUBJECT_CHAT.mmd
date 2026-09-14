@@ -1,0 +1,43 @@
+%% Status: CURRENT — FRONTEND / EXPECTED BACKEND CONTRACT (Python backend) — BACKEND IMPLEMENTATION UNKNOWN
+%% Source: frontend/src/components/StudyChat.tsx, frontend/src/routes/api/chat.ts,
+%% frontend/src/lib/context-backend.server.ts
+sequenceDiagram
+    participant User
+    participant Chat as StudyChat.tsx (useChat / DefaultChatTransport)
+    participant API as api/chat.ts (POST /api/chat)
+    participant DB as Supabase (threads, messages)
+    participant Ctx as context-backend.server.ts (requestContextAnswer)
+    participant Backend as Local Python backend (ALIM_CONTEXT_BACKEND_URL, default :8001)
+
+    User->>Chat: submits a question in a subject thread
+    Chat->>API: POST /api/chat<br/>Authorization: Bearer <supabase access token><br/>{ messages, threadId, academicYear, gradeLevel }
+    API->>API: verify token via supabase.auth.getClaims()
+    alt missing/invalid token
+        API-->>Chat: 401 Unauthorized
+    end
+    API->>DB: select threads where id = threadId AND user_id = userId
+    alt no matching thread (ownership check fails)
+        DB-->>API: not found
+        API-->>Chat: 404 "Thread not found"
+    end
+    API->>DB: insert user message into messages (thread_id, user_id, id, role, content, parts)
+    API->>Ctx: requestContextAnswer({ studentId, threadId, userMessageId, question, subject, academicYear, gradeLevel })
+    Ctx->>Backend: POST {baseUrl}/api/chat<br/>headers: Content-Type, X-Student-Id (context only, NOT an auth boundary)<br/>body: { thread_id, user_message_id, question, subject_id, language,<br/>academic_year, grade_level, include_sources:true, allow_web:true, stream:false }
+    Note over Ctx,Backend: BACKEND IMPLEMENTATION UNKNOWN beyond this contract.<br/>stream:false today — the local backend is called for a single<br/>non-streaming response even though the frontend renders a UI message stream.
+    alt backend timeout (ALIM_CONTEXT_BACKEND_TIMEOUT_MS, default 90000ms) or unreachable
+        Backend--xCtx: no response / AbortError
+        Ctx-->>API: throws ContextBackendError(503, "context_backend_unavailable")
+        API-->>Chat: HTTP 503 with error message
+        Chat-->>User: toast "chat.sendFailed"
+    else backend returns non-2xx or error envelope
+        Backend-->>Ctx: { error: { code, message } }
+        Ctx-->>API: throws ContextBackendError(status, message)
+        API-->>Chat: HTTP <status> with message
+        Chat-->>User: toast "chat.sendFailed"
+    else success
+        Backend-->>Ctx: ContextChatResponse { answer, sources[], exam_tip, used_model,<br/>retrieval_summary, language, ... }
+        Ctx-->>API: ContextChatResponse
+        API->>Chat: UI message stream: text-start / text-delta (full answer) / text-end<br/>+ data-context-metadata { sources, examTip, usedModel, retrievalSummary }
+        Chat-->>User: renders streamed assistant text, exam tip, SourceSnippetList.tsx sources
+        API->>DB: onFinish — insert assistant message into messages
+    end

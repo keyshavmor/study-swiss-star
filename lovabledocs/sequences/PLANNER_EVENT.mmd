@@ -1,0 +1,57 @@
+%% Status: CURRENT — FRONTEND (local browser state; not synced to Supabase)
+%% Source: frontend/src/routes/_authenticated/planner.tsx, frontend/src/lib/store/app-data.tsx
+sequenceDiagram
+    participant User
+    participant Planner as planner.tsx
+    participant Dialog as EventDialog.tsx / EventDetailDialog.tsx
+    participant AppData as AppDataProvider (lib/store/app-data.tsx)
+    participant LS as localStorage ("asa.data.v2")
+    participant Telemetry as lib/telemetry.ts (trackPlanner)
+
+    rect rgb(245,245,245)
+    Note over Planner,LS: Create
+    User->>Planner: click "Add item"
+    Planner->>Dialog: open EventDialog with defaults (date/week)
+    User->>Dialog: fill title, category, date, start/end, recurrence
+    Dialog->>AppData: addEvent(input)
+    AppData->>LS: persist DataState (events[]) to localStorage
+    AppData->>Telemetry: trackPlanner("planner_event_created", event)<br/>(structural facts only — never title/notes/location)
+    end
+
+    rect rgb(245,245,245)
+    Note over Planner,LS: Edit / move (with conflict detection)
+    User->>Planner: drag an occurrence to a new time, or edit via dialog
+    Planner->>Planner: compute weekOccurrences via occurrencesInRange()
+    Planner->>Planner: detect overlaps per day (sorted by start; b.start < a.end)
+    alt overlapping occurrences found
+        Planner-->>User: conflict banner: "planner.conflictOverlap" / "planner.conflictDetail"
+    end
+    User->>Planner: confirm move
+    alt single occurrence (recurrence: "none") or scope "series"
+        Planner->>AppData: updateEvent(id, { date, start, end })
+    else scope "future"
+        Planner->>AppData: splitSeriesFrom(id, originalDate, { date, start, end, weekdays })
+    else scope "only"
+        Planner->>AppData: updateOccurrence(id, originalDate, { date, start, end })
+    end
+    AppData->>LS: persist updated DataState
+    Planner->>Telemetry: track planner_event_moved (scope, category)
+    Planner-->>User: toast "planner.movedToast"
+    end
+
+    rect rgb(245,245,245)
+    Note over Planner,LS: Delete
+    User->>Planner: delete an event or occurrence
+    alt whole event/series
+        Planner->>AppData: removeEvent(id)
+    else single occurrence
+        Planner->>AppData: removeOccurrence(id, isoDate)
+    else end series from a date
+        Planner->>AppData: endSeriesBefore(id, isoDate)
+    end
+    AppData->>LS: persist updated DataState
+    AppData->>Telemetry: trackPlanner("planner_event_deleted", event)
+    Planner-->>User: item removed from view; undo via restoreEvent() where offered
+    end
+
+    Note over AppData,LS: Google Calendar occurrences (externalSource: "google")<br/>are excluded from telemetry and can never be moved/edited/deleted here —<br/>see GOOGLE_CALENDAR_SYNC.mmd.
