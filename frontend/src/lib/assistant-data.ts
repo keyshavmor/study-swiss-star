@@ -202,7 +202,7 @@ export async function sendAssistantMessage(input: {
     const validationError = validateAttachment(file);
     if (validationError) throw new Error(validationError);
 
-    const safeName = file.name.replace(/[^\w.\-]+/g, "_");
+    const safeName = file.name.replace(/[^\w.-]+/g, "_");
     const objectPath = `${userId}/${input.threadId}/${Date.now()}-${crypto.randomUUID().slice(0, 8)}-${safeName}`;
 
     const { error: uploadError } = await supabase.storage
