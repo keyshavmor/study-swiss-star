@@ -102,9 +102,32 @@ export function AuthForm() {
         </div>
       </div>
 
-      <Button variant="outline" className="w-full" onClick={handleGoogle} disabled={isLoading}>
-        Continue with Google
-      </Button>
+      <div className="space-y-3">
+        <Button
+          variant="outline"
+          className="w-full"
+          onClick={() => handleOAuth("google", "Google")}
+          disabled={isLoading}
+        >
+          Continue with Google
+        </Button>
+        <Button
+          variant="outline"
+          className="w-full"
+          onClick={() => handleOAuth("apple", "Apple")}
+          disabled={isLoading}
+        >
+          Continue with Apple
+        </Button>
+        <Button
+          variant="outline"
+          className="w-full"
+          onClick={() => handleOAuth("azure", "Microsoft")}
+          disabled={isLoading}
+        >
+          Continue with Microsoft
+        </Button>
+      </div>
 
       <p className="text-center text-[14px] text-muted-foreground">
         {mode === "signin" ? "Don't have an account?" : "Already have an account?"}{" "}
