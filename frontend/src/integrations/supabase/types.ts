@@ -1,14 +1,203 @@
-/** Generated Supabase schema types used only by the optional persistence adapter. */
+/**
+ * Supabase schema types for the production project.
+ *
+ * Hand-maintained to match the live schema: tutoring `threads`/`messages`,
+ * `profiles`, `user_preferences`, `documents`/`document_chunks`, and the
+ * separate general-assistant tables (`assistant_threads`,
+ * `assistant_messages`, `assistant_attachments`).
+ */
 export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
 
+export type StorageUsageStatus = {
+  quota_bytes: number;
+  used_bytes: number;
+  remaining_bytes: number;
+  used_percent: number;
+  remaining_percent: number;
+  warning_threshold_reached: boolean;
+  emergency_cleanup_needed: boolean;
+};
+
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "14.5";
   };
   public: {
     Tables: {
+      profiles: {
+        Row: {
+          id: string;
+          username: string | null;
+          full_name: string | null;
+          preferred_name: string | null;
+          photo: string | null;
+          nationality: string | null;
+          contact_phone: string | null;
+          contact_details: Json | null;
+          created_at: string | null;
+          updated_at: string | null;
+          [key: string]: Json | undefined;
+        };
+        Insert: {
+          id: string;
+          username?: string | null;
+          full_name?: string | null;
+          preferred_name?: string | null;
+          photo?: string | null;
+          nationality?: string | null;
+          contact_phone?: string | null;
+          contact_details?: Json | null;
+        };
+        Update: {
+          username?: string | null;
+          full_name?: string | null;
+          preferred_name?: string | null;
+          photo?: string | null;
+          nationality?: string | null;
+          contact_phone?: string | null;
+          contact_details?: Json | null;
+          updated_at?: string | null;
+        };
+        Relationships: [];
+      };
+      user_preferences: {
+        Row: {
+          id: string;
+          user_id: string;
+          preferences: Json | null;
+          created_at: string | null;
+          updated_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          preferences?: Json | null;
+        };
+        Update: {
+          preferences?: Json | null;
+          updated_at?: string | null;
+        };
+        Relationships: [];
+      };
+      documents: {
+        Row: {
+          id: string;
+          user_id: string;
+          created_at: string | null;
+          [key: string]: Json | undefined;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          [key: string]: Json | undefined;
+        };
+        Update: {
+          [key: string]: Json | undefined;
+        };
+        Relationships: [];
+      };
+      document_chunks: {
+        Row: {
+          id: string;
+          document_id: string;
+          user_id: string | null;
+          [key: string]: Json | undefined;
+        };
+        Insert: {
+          id?: string;
+          document_id: string;
+          [key: string]: Json | undefined;
+        };
+        Update: {
+          [key: string]: Json | undefined;
+        };
+        Relationships: [];
+      };
+      assistant_threads: {
+        Row: {
+          id: string;
+          user_id: string;
+          title: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          title?: string;
+        };
+        Update: {
+          title?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      assistant_messages: {
+        Row: {
+          id: string;
+          thread_id: string;
+          user_id: string;
+          role: string;
+          content: string;
+          parts: Json | null;
+          metadata: Json | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          thread_id: string;
+          user_id: string;
+          role: string;
+          content: string;
+          parts?: Json | null;
+          metadata?: Json | null;
+        };
+        Update: {
+          content?: string;
+          parts?: Json | null;
+          metadata?: Json | null;
+        };
+        Relationships: [];
+      };
+      assistant_attachments: {
+        Row: {
+          id: string;
+          user_id: string;
+          thread_id: string | null;
+          message_id: string | null;
+          storage_bucket: string;
+          object_path: string;
+          file_name: string;
+          mime_type: string | null;
+          byte_size: number | null;
+          kind: string | null;
+          parse_status: string | null;
+          metadata: Json | null;
+          created_at: string;
+          deleted_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          thread_id?: string | null;
+          message_id?: string | null;
+          storage_bucket: string;
+          object_path: string;
+          file_name: string;
+          mime_type?: string | null;
+          byte_size?: number | null;
+          kind?: string | null;
+          parse_status?: string | null;
+          metadata?: Json | null;
+        };
+        Update: {
+          message_id?: string | null;
+          parse_status?: string | null;
+          metadata?: Json | null;
+          deleted_at?: string | null;
+        };
+        Relationships: [];
+      };
       messages: {
         Row: {
           content: string;
@@ -30,12 +219,8 @@ export type Database = {
         };
         Update: {
           content?: string;
-          created_at?: string;
-          id?: string;
           parts?: Json | null;
           role?: string;
-          thread_id?: string;
-          user_id?: string;
         };
         Relationships: [
           {
@@ -65,12 +250,9 @@ export type Database = {
           user_id: string;
         };
         Update: {
-          created_at?: string;
-          id?: string;
           subject?: string | null;
           title?: string;
           updated_at?: string;
-          user_id?: string;
         };
         Relationships: [];
       };
@@ -79,7 +261,10 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
-      [_ in never]: never;
+      get_storage_usage_status: {
+        Args: Record<string, never>;
+        Returns: StorageUsageStatus[];
+      };
     };
     Enums: {
       [_ in never]: never;
@@ -123,7 +308,8 @@ export type Tables<
 
 export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
-    keyof DefaultSchema["Tables"] | { schema: keyof DatabaseWithoutInternals },
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
   TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals;
   }
@@ -147,7 +333,8 @@ export type TablesInsert<
 
 export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
-    keyof DefaultSchema["Tables"] | { schema: keyof DatabaseWithoutInternals },
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
   TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals;
   }
@@ -167,38 +354,6 @@ export type TablesUpdate<
       }
       ? U
       : never
-    : never;
-
-export type Enums<
-  DefaultSchemaEnumNameOrOptions extends
-    keyof DefaultSchema["Enums"] | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals;
-  }
-    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never) = never,
-> = DefaultSchemaEnumNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals;
-}
-  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
-  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
-    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
-    : never;
-
-export type CompositeTypes<
-  PublicCompositeTypeNameOrOptions extends
-    keyof DefaultSchema["CompositeTypes"] | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals;
-  }
-    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never) = never,
-> = PublicCompositeTypeNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals;
-}
-  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
-  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
-    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
     : never;
 
 export const Constants = {
