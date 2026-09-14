@@ -8,6 +8,13 @@
       "when": 1789388783967,
       "tag": "0000_harden_chat_ownership_and_user_materials_storage",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1789389445485,
+      "tag": "0001_optimize_user_isolation_policies_and_indexes",
+      "breakpoints": true
     }
   ]
 }
