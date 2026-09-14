@@ -261,7 +261,8 @@ export const settings = {
     "settings.preferences.examReminders": "Prüefigs-Erinnerige",
     "settings.preferences.dailyStudySummary": "Tägligs Lernfazit",
     "settings.preferences.soundEffects": "Soundeffekt",
-    "settings.preferences.autoCleanup.label": "Automatischi Bereinigung, wänn dr Speicher fascht voll isch",
+    "settings.preferences.autoCleanup.label":
+      "Automatischi Bereinigung, wänn dr Speicher fascht voll isch",
     "settings.preferences.autoCleanup.hint":
       "Sobald 1 % oder weniger Speicher übrig isch, werdet die ältischte 5 % vo de gültige Lern- und Chat-Dateie plattformwiit entfernt.",
     "settings.audio.title": "Audio-Antworte",
@@ -274,8 +275,7 @@ export const settings = {
       "Nur neu fertigi Antworte werdet automatisch vorgläse, nie ältere Verlauf.",
     "settings.audio.unsupported": "Vorläse isch uf däm Gerät oder Browser nöd verfüegbar.",
     "settings.storage.title": "Speicher",
-    "settings.storage.description":
-      "Gmeinsame App-Speicher für Lernmaterial und Assistent-Aahäng.",
+    "settings.storage.description": "Gmeinsame App-Speicher für Lernmaterial und Assistent-Aahäng.",
     "settings.storage.loading": "Speichernutzig wird glade…",
     "settings.storage.loadError": "Speicherinfos händ nöd chöne glade werde",
     "settings.storage.usedOf": "{used} vo {total} bruucht",
@@ -296,7 +296,8 @@ export const settings = {
     "settings.storage.fileCountOther": "{count} Dateie",
     "settings.storage.selectedCount": " · {count} uusgwählt",
     "settings.storage.deleteSelected": "Uuswahl lösche",
-    "settings.storage.confirmDeleteOne": "{count} Datei ändgültig lösche? Das cha nöd rückgängig gmacht werde.",
+    "settings.storage.confirmDeleteOne":
+      "{count} Datei ändgültig lösche? Das cha nöd rückgängig gmacht werde.",
     "settings.storage.confirmDeleteOther":
       "{count} Dateie ändgültig lösche? Das cha nöd rückgängig gmacht werde.",
     "settings.storage.deleted": "Dateie glöscht",
@@ -306,7 +307,8 @@ export const settings = {
     "settings.storage.unknownDate": "unbekanntes Datum",
     "settings.storage.cleanupDone":
       "Dr Speicher isch fascht voll gsi, drum sind die ältischte gültige Dateie entfernt worde.",
-    "settings.storage.cleanupError": "Automatischi Speicherbereinigung het nöd chöne uusgführt werde",
+    "settings.storage.cleanupError":
+      "Automatischi Speicherbereinigung het nöd chöne uusgführt werde",
   },
   ru: {
     "settings.page.title": "Настройки",
@@ -627,7 +629,8 @@ export const settings = {
   },
   it: {
     "settings.page.title": "Impostazioni",
-    "settings.page.description": "Il tuo account, il modello locale, l'archiviazione e le preferenze di studio.",
+    "settings.page.description":
+      "Il tuo account, il modello locale, l'archiviazione e le preferenze di studio.",
     "settings.account.title": "Account",
     "settings.account.description":
       "La tua foto profilo, il nome e i dati di contatto sono salvati in modo sicuro nel tuo account.",
@@ -679,18 +682,21 @@ export const settings = {
     "settings.preferences.examReminders": "Promemoria esami",
     "settings.preferences.dailyStudySummary": "Riepilogo di studio giornaliero",
     "settings.preferences.soundEffects": "Effetti sonori",
-    "settings.preferences.autoCleanup.label": "Pulizia automatica quando l'archiviazione è quasi piena",
+    "settings.preferences.autoCleanup.label":
+      "Pulizia automatica quando l'archiviazione è quasi piena",
     "settings.preferences.autoCleanup.hint":
       "Quando rimane l'1% o meno di spazio, il 5% più vecchio dei file di studio e chat idonei viene rimosso in tutta la piattaforma.",
     "settings.audio.title": "Risposte audio",
-    "settings.audio.description": "Fai leggere ad alta voce le risposte dell'assistente nel tuo browser.",
+    "settings.audio.description":
+      "Fai leggere ad alta voce le risposte dell'assistente nel tuo browser.",
     "settings.audio.enabled.label": "Leggi ad alta voce le risposte dell'assistente",
     "settings.audio.enabled.hint":
       "Il tuo browser legge il testo ad alta voce solo su questo dispositivo. Non viene registrato né salvato nulla.",
     "settings.audio.autoplay.label": "Riproduci automaticamente le nuove risposte",
     "settings.audio.autoplay.hint":
       "Solo le risposte appena completate vengono lette automaticamente, mai la cronologia precedente.",
-    "settings.audio.unsupported": "La lettura ad alta voce non è disponibile su questo dispositivo o browser.",
+    "settings.audio.unsupported":
+      "La lettura ad alta voce non è disponibile su questo dispositivo o browser.",
     "settings.storage.title": "Archiviazione",
     "settings.storage.description":
       "Archiviazione condivisa dell'app per materiali di studio e allegati dell'assistente.",
@@ -714,7 +720,8 @@ export const settings = {
     "settings.storage.fileCountOther": "{count} file",
     "settings.storage.selectedCount": " · {count} selezionati",
     "settings.storage.deleteSelected": "Elimina selezionati",
-    "settings.storage.confirmDeleteOne": "Eliminare definitivamente {count} file? Questa azione non può essere annullata.",
+    "settings.storage.confirmDeleteOne":
+      "Eliminare definitivamente {count} file? Questa azione non può essere annullata.",
     "settings.storage.confirmDeleteOther":
       "Eliminare definitivamente {count} file? Questa azione non può essere annullata.",
     "settings.storage.deleted": "File eliminati",
@@ -724,6 +731,7 @@ export const settings = {
     "settings.storage.unknownDate": "data sconosciuta",
     "settings.storage.cleanupDone":
       "L'archiviazione era quasi piena, quindi i file idonei più vecchi sono stati rimossi.",
-    "settings.storage.cleanupError": "Impossibile eseguire la pulizia automatica dell'archiviazione",
+    "settings.storage.cleanupError":
+      "Impossibile eseguire la pulizia automatica dell'archiviazione",
   },
 };

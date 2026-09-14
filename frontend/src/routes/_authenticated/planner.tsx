@@ -487,8 +487,8 @@ function PlannerPage() {
                             )}
                           </span>
                           <span className="tabular block text-[13px] text-muted-foreground">
-                            {formatDateCompact(o.date)} ·{" "}
-                            {o.start}–{o.end} · {durationLabel(o.start, o.end)}
+                            {formatDateCompact(o.date)} · {o.start}–{o.end} ·{" "}
+                            {durationLabel(o.start, o.end)}
                             {subject ? ` · ${subject.name}` : ""}
                             {fromGoogle ? t("planner.readOnlySuffix") : ""}
                           </span>

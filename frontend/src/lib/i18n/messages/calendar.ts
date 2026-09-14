@@ -163,7 +163,8 @@ export const calendar = {
     "calendar.disconnectedStatus": "Google Calendar è disconnesso in questo browser.",
     "calendar.error.sessionExpired":
       "L'accesso a Google Calendar non è disponibile in questa sessione del browser. Riconnettiti per sincronizzare.",
-    "calendar.error.notReached": "Non è stato possibile contattare Google Calendar in questo momento.",
+    "calendar.error.notReached":
+      "Non è stato possibile contattare Google Calendar in questo momento.",
     "calendar.error.accessExpired":
       "L'accesso a Google Calendar è scaduto. Riconnettiti per sincronizzare di nuovo.",
     "calendar.error.requestFailed": "La richiesta a Google Calendar non è riuscita.",

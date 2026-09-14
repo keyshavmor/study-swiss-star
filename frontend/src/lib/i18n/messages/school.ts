@@ -165,8 +165,7 @@ export const school = {
     "school.accordion.methodTitle": "Wie dr Jahresdurchschnitt usgrechnet wird",
     "school.accordion.step1": "Dr exakt Durchschnitt vo allne Tests pro Fach usrechne.",
     "school.accordion.step2": "Jede Fachdurchschnitt uf 0.5 rundä.",
-    "school.accordion.step3":
-      "Die gerundete Fachnote mittle, für dr Jahresdurchschnitt z becho.",
+    "school.accordion.step3": "Die gerundete Fachnote mittle, für dr Jahresdurchschnitt z becho.",
     "school.accordion.step4": "Fächer ohni Note werdet vo dr Berechnig usgschlosse.",
     "school.accordion.roundingExamples": "Rundigsbeispiel: {examples}",
     "school.accordion.formulaTitle": "Wie isch e einzelni Note usgrechnet worde?",
@@ -415,8 +414,7 @@ export const school = {
     "school.failingBanner.many":
       "{count} materie sono sotto la sufficienza di {threshold}: {subjects}.",
     "school.yearAverage.title": "Media dell'anno in corso",
-    "school.yearAverage.description":
-      "{year} · calcolata dai tuoi voti di materia arrotondati.",
+    "school.yearAverage.description": "{year} · calcolata dai tuoi voti di materia arrotondati.",
     "school.emptyState.heading": "Ancora nessun voto",
     "school.emptyState.description":
       "Aggiungi la tua prima verifica per vedere le medie per materia e annuali qui.",

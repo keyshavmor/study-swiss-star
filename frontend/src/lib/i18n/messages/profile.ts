@@ -641,7 +641,8 @@ export const profile = {
     "profile.editDialog.saveChanges": "Salva modifiche",
     "profile.editDialog.updated": "Profilo aggiornato",
     "profile.links.title": "Link scolastici importanti",
-    "profile.links.description": "Le tue scorciatoie personali verso siti e piattaforme scolastiche.",
+    "profile.links.description":
+      "Le tue scorciatoie personali verso siti e piattaforme scolastiche.",
     "profile.links.addButton": "Aggiungi link",
     "profile.links.emptyHeading": "Ancora nessun link scolastico",
     "profile.links.emptyDescription":

@@ -121,7 +121,8 @@ export const subject = {
     "subject.noTrendYet": "No kei Trend",
     "subject.combinedTrend": "{count} Test insgsamt · kombinierte Trend: {trend}",
     "subject.noTestsYet.heading": "No kei Test",
-    "subject.noTestsYet.description": "Füeg din erschti {name}-Test dazue, zum Durchschnitt und Trends gseh.",
+    "subject.noTestsYet.description":
+      "Füeg din erschti {name}-Test dazue, zum Durchschnitt und Trends gseh.",
     "subject.addTest": "Test dazuefüege",
     "subject.comingNext": "{mode} chunt bald",
     "subject.comingNextDescription":
@@ -308,7 +309,8 @@ export const subject = {
     "subject.noTrendYet": "Ancora nessuna tendenza",
     "subject.combinedTrend": "{count} test in totale · tendenza combinata: {trend}",
     "subject.noTestsYet.heading": "Ancora nessun test",
-    "subject.noTestsYet.description": "Aggiungi il tuo primo test di {name} per vedere medie e tendenze.",
+    "subject.noTestsYet.description":
+      "Aggiungi il tuo primo test di {name} per vedere medie e tendenze.",
     "subject.addTest": "Aggiungi test",
     "subject.comingNext": "{mode} arriva presto",
     "subject.comingNextDescription":

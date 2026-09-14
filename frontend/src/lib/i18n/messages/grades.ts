@@ -259,7 +259,8 @@ export const grades = {
     "grades.field.notes": "Notize (optional)",
     "grades.field.notesPlaceholder": "Was vor em nächschte Test wiederhole…",
     "grades.includeInStats.title": "In Statistik ihibeziehe",
-    "grades.includeInStats.description": "Usschalte, zum de Iitrag z'behalte, ohni d Durchschnitt z'beiifluesse.",
+    "grades.includeInStats.description":
+      "Usschalte, zum de Iitrag z'behalte, ohni d Durchschnitt z'beiifluesse.",
     "grades.resultingGrade": "Resultierendi Note",
     "grades.saveChanges": "Ändige spichere",
     "grades.addTestButton": "Test dezuefüege",
@@ -291,7 +292,8 @@ export const grades = {
     "grades.transcript.reviewDescription":
       "Kontrollier jedi Zile. Importierti Note bliibed danach bearbeitbar.",
     "grades.transcript.dropHeading": "Zügnis als PDF oder Foto da ablege",
-    "grades.transcript.dropSubtext": "D Extraktion isch simuliert — du bestätigsch jedi Note sälber.",
+    "grades.transcript.dropSubtext":
+      "D Extraktion isch simuliert — du bestätigsch jedi Note sälber.",
     "grades.transcript.subject": "Fach",
     "grades.transcript.assessmentTitle": "Titel vo de Prüefig",
     "grades.transcript.titlePlaceholder": "Semeschtertest",
@@ -682,7 +684,8 @@ export const grades = {
     "grades.saveChanges": "Salva modifiche",
     "grades.addTestButton": "Aggiungi verifica",
     "grades.toast.updatedTitle": "Verifica aggiornata",
-    "grades.toast.editDeleteAnytime": "Puoi modificarla o eliminarla di nuovo in qualsiasi momento.",
+    "grades.toast.editDeleteAnytime":
+      "Puoi modificarla o eliminarla di nuovo in qualsiasi momento.",
     "grades.toast.addedTitle": "Verifica aggiunta",
     "grades.actions.ariaLabel": "Azioni per {title}",
     "grades.actions.edit": "Modifica",

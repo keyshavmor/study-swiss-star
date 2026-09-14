@@ -648,7 +648,8 @@ export const events = {
     "events.cancel": "Annulla",
     "events.saveChanges": "Salva modifiche",
     "events.addToPlanner": "Aggiungi al planner",
-    "events.preview.once": "Questo evento apparirà una volta il {weekday}, dalle {start} alle {end}.",
+    "events.preview.once":
+      "Questo evento apparirà una volta il {weekday}, dalle {start} alle {end}.",
     "events.preview.weekly":
       "Questo evento apparirà ogni settimana il {days} dalle {start} alle {end}.",
     "events.preview.biweekly":

@@ -85,7 +85,8 @@ export const common = {
     "common.notFound.body": "Die Siite gits nöd oder isch verschobe worde.",
     "common.goHome": "Zur Startsiite",
     "common.error.pageTitle": "Die Siite het nöd glade",
-    "common.error.pageBody": "Öppis isch schiefgange. Du chasch neu lade oder zur Startsiite zrugg.",
+    "common.error.pageBody":
+      "Öppis isch schiefgange. Du chasch neu lade oder zur Startsiite zrugg.",
     "common.theme.toggle": "Häll oder dunkle Modus wächsle",
   },
   ru: {

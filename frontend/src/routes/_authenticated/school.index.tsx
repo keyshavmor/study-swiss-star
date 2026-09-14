@@ -367,7 +367,6 @@ function SchoolPage() {
                 </AccordionContent>
               </AccordionItem>
             </Accordion>
-
           </section>
         </div>
 

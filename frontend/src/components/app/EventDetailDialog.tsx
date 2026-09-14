@@ -93,9 +93,7 @@ export function EventDetailDialog({
           </DialogHeader>
 
           <div className="rounded-[14px] bg-surface-2 p-4">
-            <p className="text-[15.5px] font-medium">
-              {formatWeekdayDate(occurrence.date)}
-            </p>
+            <p className="text-[15.5px] font-medium">{formatWeekdayDate(occurrence.date)}</p>
             <p className="tabular mt-1 text-[14px] text-muted-foreground">
               {occurrence.start}–{occurrence.end} ·{" "}
               {durationLabel(occurrence.start, occurrence.end)}
@@ -117,7 +115,9 @@ export function EventDetailDialog({
             <Row icon={<Repeat className="h-4 w-4" />} label={t("events.detail.recurrence")}>
               {t(RECURRENCE_LABEL_KEY[event.recurrence])}
               {event.recurrence === "weekly" || event.recurrence === "biweekly"
-                ? t("events.detail.recurrenceOn", { weekday: formatWeekday(occurrence.originalDate) })
+                ? t("events.detail.recurrenceOn", {
+                    weekday: formatWeekday(occurrence.originalDate),
+                  })
                 : ""}
             </Row>
             <Row icon={<Bell className="h-4 w-4" />} label={t("events.detail.reminder")}>

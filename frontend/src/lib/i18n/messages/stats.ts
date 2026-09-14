@@ -100,7 +100,8 @@ export const stats = {
     "stats.crumb.statistics": "Statischtik",
     "stats.back.school": "Schuel",
     "stats.title": "Statischtik",
-    "stats.description": "Durchschnitt, Trends und jede Test wo du dazuegfüegt häsch — alles bearbeitbar.",
+    "stats.description":
+      "Durchschnitt, Trends und jede Test wo du dazuegfüegt häsch — alles bearbeitbar.",
     "stats.addTest": "Test dazuefüege",
     "stats.subjectFilter.all": "Alli Fächer",
     "stats.empty.heading": "Kei Test in {year}",

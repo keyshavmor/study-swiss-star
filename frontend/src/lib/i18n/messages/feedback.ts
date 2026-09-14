@@ -50,7 +50,8 @@ export const feedback = {
     "feedback.message.placeholder": "Was würdsch du verbessere?",
     "feedback.charCount": "{count}/{max} Zeiche",
     "feedback.charCount.tooShort": " · mindeschtens {min} nötig",
-    "feedback.error.tooShort": "Bitte schriib mindeschtens {min} Zeiche, dass mir öppis mache chönd.",
+    "feedback.error.tooShort":
+      "Bitte schriib mindeschtens {min} Zeiche, dass mir öppis mache chönd.",
     "feedback.error.submitFailed": "Dis Feedback isch nöd gspicheret worde: {message}",
     "feedback.error.submitFailedGeneric":
       "Dis Feedback isch nöd gspicheret worde. Bitte probier's nomal.",

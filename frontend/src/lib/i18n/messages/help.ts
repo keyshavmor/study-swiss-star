@@ -181,10 +181,10 @@ export const help = {
     "help.topic.indexing.body":
       "Carica appunti, programmi e criteri di valutazione; vengono indicizzati per le modalità di studio.",
     "help.topic.grading.title": "Sistema di valutazione svizzero",
-    "help.topic.grading.body":
-      "Voto = 1.0 + 5.0 × (punti ottenuti ÷ punti massimi), da 1.0 a 6.0.",
+    "help.topic.grading.body": "Voto = 1.0 + 5.0 × (punti ottenuti ÷ punti massimi), da 1.0 a 6.0.",
     "help.topic.plans.title": "Piani di studio",
-    "help.topic.plans.body": "I piani combinano le date degli esami, il tempo libero e il tuo orario di attività.",
+    "help.topic.plans.body":
+      "I piani combinano le date degli esami, il tempo libero e il tuo orario di attività.",
     "help.topic.calendar.title": "Google Calendar",
     "help.topic.calendar.body":
       "Collega Google Calendar nel Pianificatore per vedere i tuoi appuntamenti accanto al piano. Restano di sola lettura.",

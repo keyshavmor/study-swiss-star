@@ -120,8 +120,7 @@ export const auth = {
     "auth.signUpLink": "Registriere",
     "auth.signInLink": "Aamälde",
     "auth.usernameLengthError": "Dis Benutzername bruucht zwüsche 3 und 30 Zeiche.",
-    "auth.usernameCharsError":
-      "Bruuch nur Buechstabe, Zahle, Punkt, Understrich und Bindstrich.",
+    "auth.usernameCharsError": "Bruuch nur Buechstabe, Zahle, Punkt, Understrich und Bindstrich.",
     "auth.usernamePasswordError":
       "Die Kombination us Benutzername und Passwort het nöd funktioniert.",
     "auth.usernameTaken": "Das Benutzername isch scho vergäh. Wähl bitte es anders.",
