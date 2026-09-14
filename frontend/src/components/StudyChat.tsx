@@ -39,6 +39,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAcademicYear } from "@/lib/store/academic-year";
 import type { ContextResponseMetadata } from "@/lib/context-backend.types";
 import { toast } from "sonner";
+import { track, trackFailure } from "@/lib/telemetry";
 import ReactMarkdown from "react-markdown";
 import type { UIMessage } from "ai";
 
@@ -98,7 +99,12 @@ export function StudyChat({ threadId }: StudyChatProps) {
       },
     }),
     onError: (err) => {
+      trackFailure("chat_message_failed", err, { feature: "chat" });
       toast.error(err.message || "Failed to send message");
+    },
+    onFinish: () => {
+      // Status only — prompts and responses are never sent to telemetry.
+      track({ event_name: "chat_message_completed", feature: "chat" });
     },
   });
 
@@ -344,6 +350,7 @@ export function StudyChat({ threadId }: StudyChatProps) {
               onSubmit={(message) => {
                 const value = message.text.trim();
                 if (!value) return;
+                track({ event_name: "chat_message_sent", feature: "chat" });
                 chat.sendMessage({ text: value });
               }}
             >
