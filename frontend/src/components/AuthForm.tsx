@@ -2,7 +2,6 @@
 import { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
-import { lovable } from "@/integrations/lovable";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -43,18 +42,18 @@ export function AuthForm() {
     }
   };
 
-  const handleGoogle = async () => {
+  const handleOAuth = async (provider: "google" | "apple" | "azure", label: string) => {
     setIsLoading(true);
-    const result = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: window.location.origin,
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider,
+      options: {
+        redirectTo: window.location.origin,
+        ...(provider === "azure" ? { scopes: "email" } : {}),
+      },
     });
-    if (result.error) {
-      toast.error(result.error.message || "Google sign-in failed");
+    if (error) {
+      toast.error(error.message || `${label} sign-in failed`);
       setIsLoading(false);
-    } else if (result.redirected) {
-      // browser will redirect
-    } else {
-      navigate({ to: "/chat" });
     }
   };
 
