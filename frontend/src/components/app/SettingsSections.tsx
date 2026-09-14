@@ -41,6 +41,7 @@ import {
 } from "@/lib/storage-management";
 import type { StorageUsageStatus } from "@/integrations/supabase/types";
 import { toast } from "sonner";
+import { track, trackFailure } from "@/lib/telemetry";
 import { cn } from "@/lib/utils";
 
 function SectionCard({
@@ -111,8 +112,10 @@ export function AccountSection() {
         contactPhone: profile.contactPhone,
         contactDetails: profile.contactDetails,
       });
+      track({ event_name: "profile_saved", feature: "settings" });
       toast.success("Profile saved");
     } catch (err) {
+      trackFailure("profile_save_failed", err, { feature: "settings" });
       toast.error(err instanceof Error ? err.message : "Could not save your profile");
     } finally {
       setSaving(false);
@@ -125,8 +128,10 @@ export function AccountSection() {
       const path = await uploadAvatar(file);
       patch({ photoPath: path });
       setAvatarUrl(await avatarSignedUrl(path));
+      track({ event_name: "avatar_updated", feature: "settings" });
       toast.success("Profile picture updated");
     } catch (err) {
+      trackFailure("avatar_update_failed", err, { feature: "settings" });
       toast.error(err instanceof Error ? err.message : "Could not upload the picture");
     }
     if (fileRef.current) fileRef.current.value = "";
@@ -137,8 +142,10 @@ export function AccountSection() {
       await removeAvatar();
       patch({ photoPath: "" });
       setAvatarUrl("");
+      track({ event_name: "avatar_removed", feature: "settings" });
       toast.success("Profile picture removed");
     } catch (err) {
+      trackFailure("avatar_remove_failed", err, { feature: "settings" });
       toast.error(err instanceof Error ? err.message : "Could not remove the picture");
     }
   };
@@ -147,9 +154,11 @@ export function AccountSection() {
     if (!newEmail.trim()) return;
     const { error } = await supabase.auth.updateUser({ email: newEmail.trim() });
     if (error) {
+      trackFailure("account_email_change_failed", error, { feature: "settings" });
       toast.error(error.message);
       return;
     }
+    track({ event_name: "account_email_change_requested", feature: "settings" });
     setNewEmail("");
     toast.success("Confirmation email sent. The change applies once you verify it.");
   };
@@ -161,9 +170,11 @@ export function AccountSection() {
     }
     const { error } = await supabase.auth.updateUser({ password });
     if (error) {
+      trackFailure("account_password_change_failed", error, { feature: "settings" });
       toast.error(error.message);
       return;
     }
+    track({ event_name: "account_password_changed", feature: "settings" });
     setPassword("");
     setConfirmPassword("");
     toast.success("Password updated");
@@ -359,8 +370,18 @@ export function PreferencesSections() {
     try {
       const saved = await savePreferences(next);
       setPrefs(saved);
+      // Only the preference key is logged — never the stored value.
+      track({
+        event_name: "preference_saved",
+        feature: "settings",
+        properties: { preference_keys: Object.keys(next).join(",") },
+      });
     } catch (err) {
       setPrefs(previous);
+      trackFailure("preference_save_failed", err, {
+        feature: "settings",
+        properties: { preference_keys: Object.keys(next).join(",") },
+      });
       toast.error(err instanceof Error ? err.message : "Could not save your preference");
     }
   };
