@@ -15,6 +15,13 @@
       "when": 1789389445485,
       "tag": "0001_optimize_user_isolation_policies_and_indexes",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1789409029691,
+      "tag": "0002_assistant_settings_storage_management",
+      "breakpoints": true
     }
   ]
 }

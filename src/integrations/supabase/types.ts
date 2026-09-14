@@ -14,6 +14,137 @@ export type Database = {
   }
   public: {
     Tables: {
+      assistant_attachments: {
+        Row: {
+          byte_size: number | null
+          created_at: string
+          deleted_at: string | null
+          file_name: string
+          id: string
+          kind: string | null
+          message_id: string | null
+          metadata: Json | null
+          mime_type: string | null
+          object_path: string
+          parse_status: string
+          storage_bucket: string
+          thread_id: string | null
+          user_id: string
+        }
+        Insert: {
+          byte_size?: number | null
+          created_at?: string
+          deleted_at?: string | null
+          file_name: string
+          id?: string
+          kind?: string | null
+          message_id?: string | null
+          metadata?: Json | null
+          mime_type?: string | null
+          object_path: string
+          parse_status?: string
+          storage_bucket?: string
+          thread_id?: string | null
+          user_id: string
+        }
+        Update: {
+          byte_size?: number | null
+          created_at?: string
+          deleted_at?: string | null
+          file_name?: string
+          id?: string
+          kind?: string | null
+          message_id?: string | null
+          metadata?: Json | null
+          mime_type?: string | null
+          object_path?: string
+          parse_status?: string
+          storage_bucket?: string
+          thread_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assistant_attachments_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "assistant_messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assistant_attachments_thread_id_fkey"
+            columns: ["thread_id"]
+            isOneToOne: false
+            referencedRelation: "assistant_threads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      assistant_messages: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          metadata: Json | null
+          parts: Json | null
+          role: string
+          thread_id: string
+          user_id: string
+        }
+        Insert: {
+          content?: string
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          parts?: Json | null
+          role: string
+          thread_id: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          parts?: Json | null
+          role?: string
+          thread_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assistant_messages_thread_id_fkey"
+            columns: ["thread_id"]
+            isOneToOne: false
+            referencedRelation: "assistant_threads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      assistant_threads: {
+        Row: {
+          created_at: string
+          id: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          title?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       messages: {
         Row: {
           content: string
@@ -52,6 +183,72 @@ export type Database = {
           },
         ]
       }
+      profiles: {
+        Row: {
+          class_name: string | null
+          class_teacher: string | null
+          contact_details: Json | null
+          contact_phone: string | null
+          created_at: string
+          date_of_birth: string | null
+          focus_subject: string | null
+          full_name: string | null
+          id: string
+          language: string | null
+          nationality: string | null
+          photo: string | null
+          preferred_name: string | null
+          school_email: string | null
+          school_name: string | null
+          school_type: string | null
+          student_number: string | null
+          updated_at: string
+          username: string | null
+        }
+        Insert: {
+          class_name?: string | null
+          class_teacher?: string | null
+          contact_details?: Json | null
+          contact_phone?: string | null
+          created_at?: string
+          date_of_birth?: string | null
+          focus_subject?: string | null
+          full_name?: string | null
+          id: string
+          language?: string | null
+          nationality?: string | null
+          photo?: string | null
+          preferred_name?: string | null
+          school_email?: string | null
+          school_name?: string | null
+          school_type?: string | null
+          student_number?: string | null
+          updated_at?: string
+          username?: string | null
+        }
+        Update: {
+          class_name?: string | null
+          class_teacher?: string | null
+          contact_details?: Json | null
+          contact_phone?: string | null
+          created_at?: string
+          date_of_birth?: string | null
+          focus_subject?: string | null
+          full_name?: string | null
+          id?: string
+          language?: string | null
+          nationality?: string | null
+          photo?: string | null
+          preferred_name?: string | null
+          school_email?: string | null
+          school_name?: string | null
+          school_type?: string | null
+          student_number?: string | null
+          updated_at?: string
+          username?: string | null
+        }
+        Relationships: []
+      }
       threads: {
         Row: {
           created_at: string
@@ -79,12 +276,47 @@ export type Database = {
         }
         Relationships: []
       }
+      user_preferences: {
+        Row: {
+          created_at: string
+          id: string
+          preferences: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          preferences?: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          preferences?: Json
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_storage_usage_status: {
+        Args: never
+        Returns: {
+          emergency_cleanup_needed: boolean
+          quota_bytes: number
+          remaining_bytes: number
+          remaining_percent: number
+          used_bytes: number
+          used_percent: number
+          warning_threshold_reached: boolean
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
