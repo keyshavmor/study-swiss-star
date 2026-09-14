@@ -161,6 +161,8 @@ export function Timetable({
                     );
                     const colour = o.event.color ?? CATEGORY_COLOR[o.event.category];
                     const dragging = drag?.key === key;
+                    const readOnly = o.event.readOnly === true;
+
 
                     return (
                       <button
