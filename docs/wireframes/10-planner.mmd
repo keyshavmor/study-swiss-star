@@ -4,7 +4,12 @@ flowchart TD
   Expand --> Views[Timetable Day Month List]
   Expand --> Totals[Classes exams study activity totals]
   Expand --> Conflict[Detect overlapping events]
-  Views --> Interact[Select drag add edit duplicate complete delete]
+  Google[Google Calendar card] --> Link[linkIdentity google\ncalendar.readonly scope]
+  Link --> Token[provider_token in sessionStorage only]
+  Token --> Fetch[Google Calendar v3 events for visible range]
+  Fetch --> Merge[Read-only occurrences with Google badge]
+  Merge --> Views
+  Views --> Interact[Select drag add edit duplicate complete delete\nGoogle events are read-only]
   Interact --> Scope{Recurring event?}
   Scope -->|No| Series[Update event]
   Scope -->|Yes one| Override[Store occurrence override or exception]

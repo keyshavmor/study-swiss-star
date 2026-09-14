@@ -1,8 +1,13 @@
 flowchart TD
-  Root["/ — Public title screen"] --> Auth["/auth"]
-  Root --> Protected{Authenticated route gate}
-  Auth -->|valid session| Home["/home"]
+  Root["/ — Welcome + sign in / sign up"] --> SignedIn{Existing session?}
+  SignedIn -->|yes| Home["/home"]
+  SignedIn -->|no| AuthForm[AuthForm: email or username + password,\nGitHub LinkedIn Spotify]
+  AuthForm -->|success| Home
+  Auth["/auth (legacy URL)"] -->|redirect| Root
+  Auth -->|redirect when signed in| Home
+  Protected{Authenticated route gate} -->|no session| Root
   Protected --> Home
+  Home -->|Sign out: signOut + clear provider token| Root
   Home --> School["/school"]
   Home --> Planner["/planner"]
   School --> Subject["/school/$subject"]
