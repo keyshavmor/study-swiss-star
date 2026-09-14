@@ -145,10 +145,12 @@ export function I18nProvider({ children }: { children: ReactNode }) {
           ? (row.preferences as Record<string, unknown>)
           : {};
       // A new account may not have a preference row yet.
-      await supabase.from("user_preferences").upsert(
-        { user_id: userId, preferences: { ...current, app_language: safe } },
-        { onConflict: "user_id" },
-      );
+      await supabase
+        .from("user_preferences")
+        .upsert(
+          { user_id: userId, preferences: { ...current, app_language: safe } },
+          { onConflict: "user_id" },
+        );
     })().catch(() => {
       // Offline changes remain cached; never expose provider errors or user data.
     });
