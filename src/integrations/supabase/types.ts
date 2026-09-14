@@ -44,11 +44,11 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "messages_thread_id_fkey"
-            columns: ["thread_id"]
+            foreignKeyName: "messages_thread_owner_fkey"
+            columns: ["thread_id", "user_id"]
             isOneToOne: false
             referencedRelation: "threads"
-            referencedColumns: ["id"]
+            referencedColumns: ["id", "user_id"]
           },
         ]
       }
