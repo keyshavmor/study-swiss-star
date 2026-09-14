@@ -538,3 +538,28 @@ Response:
 - **Loading:** Uploading → Parsing → Indexing progress states, up to 300 s.
 - **Display:** on success the material appears in `MaterialsPanel` with status `Indexed`; on
   `parse_failed` it is listed as `Needs review`, never silently dropped.
+
+## Not yet defined: general assistant inference
+
+The general assistant currently has **no** Python endpoint. It must not reuse
+the tutoring `/api/chat` path, which requires tutoring threads and subject
+context. When the backend is ready, the expected shape is:
+
+```
+POST /api/assistant/chat
+{
+  "thread_id": "uuid",
+  "message_id": "uuid",
+  "content": "user text",
+  "attachments": [
+    { "id": "uuid", "bucket": "chat-attachments", "object_path": "<uid>/<thread>/file.pdf",
+      "mime_type": "application/pdf", "byte_size": 12345, "kind": "document" }
+  ],
+  "model": "Qwen/Qwen3.8-27B"
+}
+```
+
+The backend writes its reply directly into `assistant_messages`
+(`role = "assistant"`), and updates `assistant_attachments.parse_status` once a
+file has been parsed. Until then the frontend stores messages/attachments and
+tells the student generation is pending.

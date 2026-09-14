@@ -53,3 +53,12 @@ This folder documents the current Lovable / TanStack Start frontend, the in-repo
 - No UI rewrite, no design-system change, no route restructuring.
 - Supabase auth/chat persistence stays in place; AI generation is local Qwen-only.
 - No RAG/LLM orchestration in TypeScript; the TanStack chat route is only an authenticated proxy.
+
+## Assistant, settings and storage
+
+See [`ASSISTANT_SETTINGS_AND_STORAGE.md`](ASSISTANT_SETTINGS_AND_STORAGE.md).
+Summary: Supabase Auth is the source of truth (email/password + GitHub,
+LinkedIn, Spotify only); the general assistant at `/assistant` uses the separate
+`assistant_*` tables and the private `chat-attachments` bucket; `/settings`
+manages the account, the local Qwen model choice, preferences and storage
+usage/cleanup. Assistant inference and attachment parsing remain backend work.

@@ -83,7 +83,7 @@ components/ui/*                            🟦 UI      shadcn/Radix primitives,
 ## Major component detail
 
 ### `AuthForm.tsx` — 🟩 AUTH
-- **Purpose:** email/password sign-in and sign-up, Google OAuth, redirect after auth.
+- **Purpose:** email/password sign-in and sign-up, password reset, and GitHub / LinkedIn / Spotify OAuth; redirect after auth.
 - **Props:** none (route-level).
 - **Data source:** `supabase.auth` from `frontend/src/integrations/supabase/client.ts`.
 - **Future backend:** none. Python never sees credentials.
@@ -182,3 +182,20 @@ components/ui/*                            🟦 UI      shadcn/Radix primitives,
 - **Purpose:** clickable notifications derived from upcoming exams/deadlines, read tracking.
 - **Data source:** `AppDataProvider`.
 - **Future backend:** optional — backend could suggest study reminders in Stage 2.
+
+## Assistant and settings components
+
+```
+src/components/assistant/AssistantChat.tsx     general assistant workspace
+  ├── conversation sidebar (new / rename / delete)
+  ├── message history + attachment chips
+  └── composer (text + file picker, client-side size validation)
+
+src/components/app/SettingsSections.tsx
+  ├── AccountSection        profiles + Supabase Auth + profile-avatars
+  ├── PreferencesSections   local Qwen model + preference switches
+  └── StorageSection        usage RPC, filters, multi-select deletion
+```
+
+Data access helpers: `src/lib/assistant-data.ts`, `src/lib/account-data.ts`,
+`src/lib/storage-management.ts`.

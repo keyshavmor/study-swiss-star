@@ -42,7 +42,7 @@ sequenceDiagram
     alt no session
         SB-->>UI: null
         UI-->>Student: redirect /auth (AuthForm)
-        Student->>UI: email+password or Google
+        Student->>UI: email+password, reset link, or GitHub / LinkedIn / Spotify
         UI->>SB: signInWithPassword / OAuth
         SB-->>UI: session + access token
         UI-->>Student: redirect back to /home
@@ -331,3 +331,25 @@ sequenceDiagram
     Student->>UI: Retry
     UI->>SF: GET /health → ok → banner clears, AI re-enabled
 ```
+
+## General assistant flow
+
+1. Student opens `/assistant` and presses **New chat** (`assistant_threads` row).
+2. Types a message and optionally attaches images/audio/video (≤ 1 MB each) or
+   PDF/DOCX files.
+3. The frontend stores the message in `assistant_messages`, uploads files to
+   `chat-attachments/<uid>/<threadId>/…` and records
+   `assistant_attachments` with `parse_status = 'unparsed'`.
+4. The UI confirms the message is saved and ready for the local AI backend. No
+   reply is invented; assistant-role rows written later appear in the thread.
+
+## Settings and storage flow
+
+1. `/settings` loads the Supabase profile, `user_preferences` and
+   `get_storage_usage_status()`.
+2. Account edits write to `profiles`; email/password changes go through Supabase
+   Auth; avatars live in the private `profile-avatars` bucket.
+3. The storage section warns at ≤ 10% remaining, and at ≤ 1% invokes
+   `storage-emergency-cleanup` once per session before refreshing usage.
+4. The student filters their own files by type and date, selects them and
+   confirms deletion: Storage `.remove()` first, then metadata reconciliation.

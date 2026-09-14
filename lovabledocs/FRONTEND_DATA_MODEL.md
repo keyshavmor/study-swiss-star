@@ -417,3 +417,47 @@ export interface APIError {
   };
 }
 ```
+
+## Account, assistant and storage types
+
+```ts
+interface AccountProfile {          // profiles
+  id: string; username: string; fullName: string; preferredName: string;
+  photoPath: string;                // object path in profile-avatars
+  nationality: string; contactPhone: string;
+  contactDetails: Record<string, string>;
+}
+
+interface UserPreferences {         // user_preferences.preferences jsonb
+  selected_qwen_model: string;      // one of the 10 Qwen choices
+  exam_reminders: boolean; daily_study_summary: boolean;
+  apple_reminders_sync: boolean; sound_effects: boolean;
+  auto_storage_cleanup: boolean;
+}
+
+interface AssistantThread { id: string; title: string; createdAt: string; updatedAt: string }
+interface AssistantMessage {
+  id: string; threadId: string; role: "user" | "assistant" | "system";
+  content: string; createdAt: string; attachments: AssistantAttachment[];
+}
+interface AssistantAttachment {
+  id: string; messageId: string | null; fileName: string; mimeType: string;
+  byteSize: number; kind: string; objectPath: string; parseStatus: string;
+}
+
+interface StorageItem {             // normalised assistant_attachments + documents
+  id: string; source: "Assistant attachment" | "Study material";
+  name: string; kind: "image" | "audio" | "video" | "document" | "other";
+  mimeType: string; bucket: string; objectPath: string;
+  byteSize: number; createdAt: string;
+}
+
+interface StorageUsageStatus {      // rpc get_storage_usage_status()
+  quota_bytes: number; used_bytes: number; remaining_bytes: number;
+  used_percent: number; remaining_percent: number;
+  warning_threshold_reached: boolean; emergency_cleanup_needed: boolean;
+}
+```
+
+Mirror these with Pydantic models when the backend consumes them. Tutoring
+`Thread`/`Message` types remain unchanged and separate.

@@ -10,7 +10,7 @@ sequenceDiagram
   alt No valid session
     Cloud-->>Gate: No user
     Gate-->>Student: Redirect to /auth
-    Student->>Auth: Email/password or Google sign-in
+    Student->>Auth: Email/password, password reset, or GitHub / LinkedIn / Spotify sign-in
     Auth->>Cloud: Authenticate
     Cloud-->>Auth: Session and access token
     Auth-->>Student: Navigate to /home

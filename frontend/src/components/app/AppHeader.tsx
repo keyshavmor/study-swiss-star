@@ -24,6 +24,7 @@ const NAV = [
   { to: "/home", label: "Home" },
   { to: "/school", label: "School" },
   { to: "/planner", label: "Planner" },
+  { to: "/assistant", label: "Assistant" },
   { to: "/stats", label: "Stats" },
   { to: "/help", label: "Help" },
   { to: "/feedback", label: "Feedback" },

@@ -25,3 +25,13 @@ features remain open; implemented decisions are recorded here to prevent contrac
 | 18 | Is a French B1 simplification pass required? | French must stay at CEFR B1 | Backend applies a B1 constraint in the system prompt for `language: "fr"`. |
 | 19 | Does the frontend ever need direct access to the retrieval store or model server? | Security and coupling | **Resolved: no.** The authenticated TanStack route talks to FastAPI. |
 | 20 | Which model owns AI generation? | Multiple generation paths cause privacy and provenance drift | **Resolved:** all AI generation uses local `Qwen/Qwen3.8-27B`; there is no cloud-generation fallback. |
+
+## Assistant and storage questions
+
+1. Should assistant replies stream, or is a written row in `assistant_messages`
+   plus realtime/refetch enough for the first version?
+2. Which attachment kinds will the backend parse first (PDF/DOCX vs audio)?
+3. Should the general assistant share retrieval/RAG context with tutoring, or
+   stay fully separate as the data model now implies?
+4. Does the model selection apply per request, or does it reload the runtime?
+5. Which `documents` columns are canonical for bucket, object path and byte size?

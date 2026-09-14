@@ -154,3 +154,13 @@ graph LR
 - Do not break SPF combined-subject logic in `frontend/src/lib/grade-math.ts`.
 - Do not put secrets in `VITE_*`.
 - Keep non-AI screens functional with the Python backend offline. Chat reports a clear 503.
+
+## Authentication and account data (current)
+
+Supabase Auth handles email/password plus GitHub, LinkedIn and Spotify OAuth;
+there is no Google/Apple/Microsoft path and no Lovable Cloud Auth. Account
+profile data lives in `profiles`, UI/model settings in
+`user_preferences.preferences`, and files in the private `profile-avatars`,
+`chat-attachments` and `user-materials` buckets. The general assistant
+(`/assistant`) is a separate feature from subject tutoring chat and uses its own
+`assistant_*` tables.

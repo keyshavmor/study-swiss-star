@@ -1,6 +1,7 @@
 /** TanStack route module defining one Alim screen or local API boundary. */
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { Pencil, User } from "lucide-react";
+import { useEffect, useState } from "react";
 import { AcademicYearSelector } from "@/components/app/AcademicYearSelector";
 import { AppShell, PageHeading } from "@/components/app/AppShell";
 import { PageNav } from "@/components/app/Breadcrumbs";
@@ -12,6 +13,8 @@ import { summariseYear } from "@/lib/grade-math";
 import { SCHOOL_SUBJECTS } from "@/lib/mock/subjects";
 import { useAcademicYear } from "@/lib/store/academic-year";
 import { useAppData } from "@/lib/store/app-data";
+import { avatarSignedUrl, fetchAccountProfile, type AccountProfile } from "@/lib/account-data";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/_authenticated/profile")({
   head: () => ({
@@ -37,13 +40,41 @@ export const Route = createFileRoute("/_authenticated/profile")({
 function ProfilePage() {
   const { profile, assessments, events, materials, links } = useAppData();
   const { yearId, year, yearLabel } = useAcademicYear();
+  const [account, setAccount] = useState<AccountProfile | null>(null);
+  const [accountAvatar, setAccountAvatar] = useState("");
+  const [accountEmail, setAccountEmail] = useState("");
+
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      try {
+        const [{ data: userData }, loaded] = await Promise.all([
+          supabase.auth.getUser(),
+          fetchAccountProfile(),
+        ]);
+        if (cancelled) return;
+        setAccountEmail(userData.user?.email ?? "");
+        setAccount(loaded);
+        if (loaded?.photoPath) {
+          const url = await avatarSignedUrl(loaded.photoPath);
+          if (!cancelled) setAccountAvatar(url);
+        }
+      } catch {
+        // Account details stay empty; the local prototype details still render.
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const summary = summariseYear(
     assessments.filter((a) => a.yearId === yearId),
     SCHOOL_SUBJECTS,
   );
   const yearAssessments = assessments.filter((a) => a.yearId === yearId);
-  const displayName = profile.fullName || "Your profile";
+  const displayName = account?.fullName || profile.fullName || "Your profile";
+  const avatarSrc = accountAvatar || profile.photo;
   const notSet = (value: string) => (value.trim() ? value : "Not set");
 
   return (
@@ -76,8 +107,8 @@ function ProfilePage() {
           <section className="app-card p-6">
             <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-4">
               <span className="grid h-20 w-20 shrink-0 place-items-center overflow-hidden rounded-full border border-border bg-surface-2 text-muted-foreground">
-                {profile.photo ? (
-                  <img src={profile.photo} alt="" className="h-full w-full object-cover" />
+                {avatarSrc ? (
+                  <img src={avatarSrc} alt="" className="h-full w-full object-cover" />
                 ) : (
                   <User className="h-8 w-8" />
                 )}
@@ -95,8 +126,14 @@ function ProfilePage() {
           </section>
 
           <Section title="Personal information">
-            <Row label="Full name" value={notSet(profile.fullName)} />
-            <Row label="Preferred name" value={notSet(profile.preferredName)} />
+            <Row label="Full name" value={notSet(account?.fullName || profile.fullName)} />
+            <Row
+              label="Preferred name"
+              value={notSet(account?.preferredName || profile.preferredName)}
+            />
+            <Row label="Nationality" value={notSet(account?.nationality ?? "")} />
+            <Row label="Contact phone" value={notSet(account?.contactPhone ?? "")} />
+            <Row label="Address" value={notSet(account?.contactDetails["address"] ?? "")} />
             <Row
               label="Date of birth"
               value={profile.dateOfBirth ? formatLongDate(profile.dateOfBirth) : "Not set"}
@@ -115,9 +152,10 @@ function ProfilePage() {
           </Section>
 
           <Section title="Account">
+            <Row label="Sign-in email" value={notSet(accountEmail)} />
             <Row label="School email" value={notSet(profile.schoolEmail)} />
             <Row label="Student number" value={notSet(profile.studentNumber)} />
-            <Row label="Username" value={notSet(profile.username)} />
+            <Row label="Username" value={notSet(account?.username || profile.username)} />
           </Section>
         </div>
 
@@ -144,13 +182,21 @@ function ProfilePage() {
           </Section>
 
           <div className="app-card p-5">
-            <h2 className="text-[17px] font-semibold tracking-tight">Prototype</h2>
+            <h2 className="text-[17px] font-semibold tracking-tight">Where this is stored</h2>
             <p className="mt-2 text-[14px] text-muted-foreground">
-              Profile details are stored only in this browser. Nothing is shared with your school.
+              Your account details, picture and contact information are saved to your account. Grades,
+              planner items and materials are still kept in this browser only.
             </p>
-            <Badge variant="secondary" className="mt-3">
-              Local prototype data
-            </Badge>
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              <Badge variant="secondary">Account data</Badge>
+              <Badge variant="secondary">Local prototype data</Badge>
+            </div>
+            <Link
+              to="/settings"
+              className="mt-4 inline-flex text-[14px] font-semibold text-primary hover:text-primary-hover"
+            >
+              Manage account settings
+            </Link>
           </div>
         </aside>
       </div>
