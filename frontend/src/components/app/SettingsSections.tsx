@@ -364,9 +364,7 @@ export function PreferencesSections() {
   useEffect(() => {
     fetchPreferences()
       .then(setPrefs)
-      .catch((err: unknown) =>
-        toast.error(t("settings.preferences.loadError")),
-      )
+      .catch((err: unknown) => toast.error(t("settings.preferences.loadError")))
       .finally(() => setLoading(false));
   }, [t]);
 

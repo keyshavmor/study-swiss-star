@@ -3,12 +3,7 @@ import { Info } from "lucide-react";
 import { FailingBadge } from "@/components/app/Badges";
 import { useI18n } from "@/lib/i18n/provider";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import {
-  PASSING_THRESHOLD,
-  ROUNDING_EXAMPLES,
-  formatHalf,
-  isFailing,
-} from "@/lib/mock/grades";
+import { PASSING_THRESHOLD, ROUNDING_EXAMPLES, formatHalf, isFailing } from "@/lib/mock/grades";
 import { cn } from "@/lib/utils";
 
 /** Exact subject average next to its value rounded to the nearest 0.5. */
