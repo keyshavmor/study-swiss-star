@@ -16,13 +16,34 @@ import {
   fetchGoogleCalendarEvents,
   googleOccurrences,
   GoogleCalendarAuthError,
+  GoogleCalendarError,
   hasGoogleAccess,
   refreshProviderTokenFromSession,
 } from "@/lib/google-calendar";
+import type { GoogleCalendarErrorCode } from "@/lib/google-calendar";
 import { supabase } from "@/integrations/supabase/client";
 import type { Occurrence } from "@/lib/store/app-data";
+import { useI18n } from "@/lib/i18n/provider";
+import type { TranslationKey } from "@/lib/i18n/messages";
 import { track, trackFailure } from "@/lib/telemetry";
 import { toast } from "sonner";
+
+const ERROR_KEY: Record<GoogleCalendarErrorCode, TranslationKey> = {
+  "not-connected": "calendar.error.sessionExpired",
+  "session-expired": "calendar.error.sessionExpired",
+  "access-expired": "calendar.error.accessExpired",
+  "request-failed": "calendar.error.requestFailed",
+  "manual-linking-disabled": "calendar.error.manualLinkingDisabled",
+  "provider-not-enabled": "calendar.error.providerNotEnabled",
+  "connect-failed": "calendar.error.connectFailed",
+};
+
+function errorMessageKey(err: unknown): TranslationKey {
+  if (err instanceof GoogleCalendarAuthError || err instanceof GoogleCalendarError) {
+    return ERROR_KEY[err.code] ?? "calendar.error.notReached";
+  }
+  return "calendar.error.notReached";
+}
 
 const SYNC_INTERVAL_MS = 5 * 60 * 1000;
 
@@ -33,6 +54,7 @@ export function GoogleCalendarCard({
   range: { from: string; to: string };
   onOccurrences: (occurrences: Occurrence[]) => void;
 }) {
+  const { t, formatDate } = useI18n();
   const [connected, setConnected] = useState(false);
   const [busy, setBusy] = useState(false);
   const [lastSync, setLastSync] = useState<Date | null>(null);
@@ -63,16 +85,10 @@ export function GoogleCalendarCard({
       trackFailure("google_calendar_sync_failed", err, { feature: "planner" });
       if (err instanceof GoogleCalendarAuthError) {
         setConnected(false);
-        setStatus(
-          "Google Calendar access is not available in this browser session. Connect again to sync.",
-        );
-      } else {
-        setStatus(
-          err instanceof Error ? err.message : "Google Calendar could not be reached just now.",
-        );
       }
+      setStatus(t(errorMessageKey(err)));
       if (!options?.silent) {
-        toast.error("Google Calendar could not be synced.");
+        toast.error(t("calendar.toastSyncFailed"));
       }
     } finally {
       setBusy(false);
@@ -116,7 +132,7 @@ export function GoogleCalendarCard({
       await connectGoogleCalendar(`${window.location.origin}/planner?google=connected`);
     } catch (err) {
       trackFailure("google_calendar_connect_failed", err, { feature: "planner" });
-      setStatus(err instanceof Error ? err.message : "Google Calendar could not be connected.");
+      setStatus(t(errorMessageKey(err)));
       setBusy(false);
     }
   }
@@ -125,7 +141,7 @@ export function GoogleCalendarCard({
     clearGoogleAccess();
     setConnected(false);
     setLastSync(null);
-    setStatus("Google Calendar is disconnected in this browser.");
+    setStatus(t("calendar.disconnectedStatus"));
     onOccurrencesRef.current([]);
     track({ event_name: "google_calendar_disconnected", feature: "planner" });
   }
@@ -136,23 +152,25 @@ export function GoogleCalendarCard({
         <GoogleCalendarLogo className="h-5 w-5" />
         <h2 className="text-[17px] font-semibold tracking-tight">Google Calendar</h2>
       </div>
-      <p className="mt-2 text-[14px] text-muted-foreground">
-        Show your Google appointments next to your plan. Read-only: nothing in your Google Calendar
-        is ever changed or deleted.
-      </p>
+      <p className="mt-2 text-[14px] text-muted-foreground">{t("calendar.description")}</p>
 
       <div className="mt-3 flex flex-wrap items-center gap-2">
-        <Badge variant="secondary">{connected ? "Connected" : "Not connected"}</Badge>
+        <Badge variant="secondary">
+          {connected ? t("calendar.connected") : t("calendar.notConnected")}
+        </Badge>
         {connected && (
           <span className="tabular text-[12.5px] text-muted-foreground">
             {busy
-              ? "Syncing…"
+              ? t("calendar.syncing")
               : lastSync
-                ? `Last synced ${lastSync.toLocaleTimeString([], {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}`
-                : "Not synced yet"}
+                ? t("calendar.lastSynced", {
+                    time: formatDate(lastSync, {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                      hour12: false,
+                    }),
+                  })
+                : t("calendar.notSyncedYet")}
           </span>
         )}
       </div>
@@ -171,17 +189,17 @@ export function GoogleCalendarCard({
             onClick={() => void sync(range.from, range.to)}
           >
             <RefreshCw className="h-4 w-4" />
-            Sync now
+            {t("calendar.syncNow")}
           </Button>
           <Button variant="ghost" onClick={handleDisconnect}>
             <Unlink className="h-4 w-4" />
-            Disconnect
+            {t("calendar.disconnect")}
           </Button>
         </div>
       ) : (
         <Button className="mt-4 w-full" disabled={busy} onClick={() => void handleConnect()}>
           <GoogleCalendarLogo className="h-4 w-4" />
-          Connect Google Calendar
+          {t("calendar.connect")}
         </Button>
       )}
     </div>

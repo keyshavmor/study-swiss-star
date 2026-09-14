@@ -8,6 +8,7 @@ import { formatHalf, isFailing, roundToHalf } from "@/lib/mock/grades";
 import { SCHOOL_SUBJECTS } from "@/lib/mock/subjects";
 import { useAppData } from "@/lib/store/app-data";
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/lib/i18n/provider";
 
 export function MiniTrendChart({
   data,
@@ -16,6 +17,7 @@ export function MiniTrendChart({
   data?: { label: string; value: number }[];
   className?: string;
 }) {
+  const { t } = useI18n();
   const { assessments } = useAppData();
   const series = data ?? monthlySeries(assessments);
   if (series.length === 0) {
@@ -26,7 +28,7 @@ export function MiniTrendChart({
           className,
         )}
       >
-        No grades yet — the trend appears once you add tests.
+        {t("stats.trend.empty")}
       </p>
     );
   }
@@ -49,6 +51,7 @@ export function StatsOverviewPanel({
   className?: string;
   yearId?: string;
 }) {
+  const { t } = useI18n();
   const { assessments } = useAppData();
   const year = SCHOOL_YEARS.find((y) => y.id === yearId) ?? SCHOOL_YEARS[SCHOOL_YEARS.length - 1]!;
 
@@ -67,19 +70,19 @@ export function StatsOverviewPanel({
 
   return (
     <aside className={cn("app-card p-5", className)}>
-      <h2 className="text-[18px] font-semibold tracking-tight">Statistics</h2>
+      <h2 className="text-[18px] font-semibold tracking-tight">{t("stats.panel.title")}</h2>
       <p className="mt-1 text-[13.5px] text-muted-foreground">
-        {year.label} · {year.gradeLevel}
+        {t("stats.panel.yearLine", { label: year.label, gradeLevel: year.gradeLevel })}
       </p>
 
       {exact === null ? (
         <p className="mt-4 rounded-[18px] bg-surface-2 p-4 text-[14px] text-muted-foreground">
-          Statistics appear here as soon as you add your first test.
+          {t("stats.panel.empty")}
         </p>
       ) : (
         <>
           <div className="mt-4 rounded-[18px] bg-surface-2 p-4">
-            <p className="text-[13px] text-muted-foreground">Yearly average</p>
+            <p className="text-[13px] text-muted-foreground">{t("stats.panel.yearlyAverage")}</p>
             <div className="mt-1 flex items-end gap-3">
               <p
                 className={cn(
@@ -111,25 +114,41 @@ export function StatsOverviewPanel({
                   <ArrowDownRight className="h-4 w-4" />
                 )}
                 {change >= 0 ? "+" : "−"}
-                {Math.abs(change).toFixed(2)} vs previous month
+                {Math.abs(change).toFixed(2)} {t("stats.panel.vsPreviousMonth")}
               </p>
             )}
           </div>
 
-          <p className="mt-5 text-[13px] font-medium text-muted-foreground">Average per month</p>
+          <p className="mt-5 text-[13px] font-medium text-muted-foreground">
+            {t("stats.panel.averagePerMonth")}
+          </p>
           <MiniTrendChart className="mt-2" data={series} />
 
           <div className="mt-4">
-            <Row label="Strongest subject" value={strongest?.name ?? "—"} />
-            <Row label="Focus subject" value={focus?.name ?? "—"} />
-            <Row label="Tests added" value={String(summary.totalTests)} />
             <Row
-              label="Highest grade"
-              value={summary.highestGrade === null ? "—" : summary.highestGrade.toFixed(2)}
+              label={t("stats.panel.strongestSubject")}
+              value={strongest?.name ?? t("stats.emptyValue")}
             />
             <Row
-              label="Lowest grade"
-              value={summary.lowestGrade === null ? "—" : summary.lowestGrade.toFixed(2)}
+              label={t("stats.panel.focusSubject")}
+              value={focus?.name ?? t("stats.emptyValue")}
+            />
+            <Row label={t("stats.panel.testsAdded")} value={String(summary.totalTests)} />
+            <Row
+              label={t("stats.panel.highestGrade")}
+              value={
+                summary.highestGrade === null
+                  ? t("stats.emptyValue")
+                  : summary.highestGrade.toFixed(2)
+              }
+            />
+            <Row
+              label={t("stats.panel.lowestGrade")}
+              value={
+                summary.lowestGrade === null
+                  ? t("stats.emptyValue")
+                  : summary.lowestGrade.toFixed(2)
+              }
             />
           </div>
         </>

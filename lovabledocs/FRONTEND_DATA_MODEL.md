@@ -433,6 +433,23 @@ interface UserPreferences {         // user_preferences.preferences jsonb
   exam_reminders: boolean; daily_study_summary: boolean;
   sound_effects: boolean;
   auto_storage_cleanup: boolean;
+  app_language: "en" | "de" | "ru" | "es" | "fr";   // authoritative UI language
+  assistant_audio_enabled: boolean;   // default true — shows Listen/Stop
+  assistant_audio_autoplay: boolean;  // default false — autoplay newly completed answers only
+}
+
+// public.media_retention_queue — assistant OUTPUT media only, never study uploads
+interface MediaRetentionRow {
+  id: string; user_id: string; attachment_id: string | null;
+  media_kind: "image" | "audio" | "video";
+  storage_bucket: string; object_path: string;
+  descriptor_bucket: string; descriptor_path: string | null;
+  source_url: string | null; source_path: string | null;
+  status: "pending" | "descriptor_ready" | "deleted" | "failed";
+  created_at: string;
+  delete_after: string;               // created_at + 30 minutes
+  deleted_at: string | null;
+  error_code: string | null;
 }
 
 // public.feedback — all columns NOT NULL

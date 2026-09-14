@@ -1,0 +1,15 @@
+flowchart TD
+  Gen[Assistant generates or fetches OUTPUT media\nimage audio video] --> Scope{Ordinary user study upload?}
+  Scope -->|Yes| OutOfPolicy[NOT covered by this policy\nkept under normal storage rules]
+  Scope -->|No, assistant output| Descriptor[FUTURE BACKEND / CODEX not implemented:\ngenerate text descriptor]
+  Descriptor --> Upload[FUTURE BACKEND / CODEX not implemented:\nupload descriptor to private assistant-descriptors bucket]
+  Upload --> Enqueue[FUTURE BACKEND / CODEX not implemented:\nenqueue row in public.media_retention_queue\ndelete_after = created_at + 30 minutes]
+  Enqueue --> Source{Media was fetched rather than generated?}
+  Source -->|Yes| Keep[Retain source_url or source_path alongside descriptor]
+  Source -->|No| Skip[No source fields]
+  Keep --> Wait[Wait until delete_after]
+  Skip --> Wait
+  Wait --> Cleanup[FUTURE BACKEND / CODEX not implemented:\n30-minute cleanup worker deletes original binary]
+  Cleanup --> Retrieve[Later retrieval works from the descriptor only;\noriginal binary must not be expected to exist]
+  ClientLib[frontend/src/lib/media-retention.ts\nIMPLEMENTED LOCAL: typed enqueue/list helpers only] -.-> Enqueue
+  ClientLib --> ListUI[Read retention rows for signed-in user]

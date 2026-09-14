@@ -1,6 +1,7 @@
 /** Alim application component for study, planning, profile, or navigation workflows. */
 import { Info } from "lucide-react";
 import { FailingBadge } from "@/components/app/Badges";
+import { useI18n } from "@/lib/i18n/provider";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   PASSING_THRESHOLD,
@@ -26,10 +27,12 @@ export function AverageWithRounded({
   const exactSize = size === "lg" ? "text-[40px]" : size === "md" ? "text-[26px]" : "text-[18px]";
   const roundedSize = size === "lg" ? "text-[24px]" : size === "md" ? "text-[17px]" : "text-[14px]";
 
+  const { t } = useI18n();
+
   if (exact === null || rounded === null) {
     return (
       <p className={cn("text-[14.5px] text-muted-foreground", className)}>
-        No school-test grades recorded yet.
+        {t("grades.noRecords")}
       </p>
     );
   }
@@ -47,7 +50,7 @@ export function AverageWithRounded({
           >
             {exact.toFixed(2)}
           </p>
-          <p className="mt-1.5 text-[12.5px] text-muted-foreground">Subject average</p>
+          <p className="mt-1.5 text-[12.5px] text-muted-foreground">{t("grades.subjectAverage")}</p>
         </div>
         <div className="pointer-events-auto">
           <p
@@ -60,7 +63,7 @@ export function AverageWithRounded({
             {formatHalf(rounded)}
           </p>
           <p className="mt-1.5 inline-flex items-center gap-1 text-[12.5px] text-grade-muted">
-            Rounded to 0.5
+            {t("grades.roundedTo")}
             <RoundingInfo />
           </p>
         </div>
@@ -75,13 +78,14 @@ export function AverageWithRounded({
 }
 
 export function RoundingInfo({ className }: { className?: string | undefined }) {
+  const { t } = useI18n();
   return (
     <TooltipProvider delayDuration={120}>
       <Tooltip>
         <TooltipTrigger asChild>
           <button
             type="button"
-            aria-label="How rounding works"
+            aria-label={t("grades.roundingInfoAriaLabel")}
             onClick={(event) => event.preventDefault()}
             className={cn(
               "inline-flex h-4 w-4 items-center justify-center rounded-full text-grade-muted transition-colors hover:text-foreground",
@@ -126,6 +130,7 @@ export function GradeLineChart({
   height?: number | undefined;
   className?: string | undefined;
 }) {
+  const { t } = useI18n();
   const min = 1;
   const max = 6;
   const gridLines = [6, 5, 4, 3, 2, 1];
@@ -165,7 +170,10 @@ export function GradeLineChart({
             className="relative w-full"
             style={{ height }}
             role="img"
-            aria-label={`Grade trend from ${data[0]?.label ?? ""} to ${data[data.length - 1]?.label ?? ""} on the Swiss 1.0 to 6.0 scale, with a passing threshold at 4.0`}
+            aria-label={t("grades.trendChartAriaLabel", {
+              from: data[0]?.label ?? "",
+              to: data[data.length - 1]?.label ?? "",
+            })}
           >
             <line
               x1="0"
@@ -211,7 +219,7 @@ export function GradeLineChart({
           </div>
           <p className="mt-1 inline-flex items-center gap-1.5 text-[11.5px] text-warning">
             <span className="h-px w-4 border-t border-dashed border-warning" />
-            Passing threshold 4.0
+            {t("grades.passingThreshold")}
           </p>
         </div>
       </div>

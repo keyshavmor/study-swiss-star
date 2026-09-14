@@ -12,11 +12,22 @@ import { useAppData } from "@/lib/store/app-data";
 import { CATEGORY_COLOR } from "@/lib/store/types";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { useI18n } from "@/lib/i18n/provider";
 
 const SECTIONS: NotificationSection[] = ["Today", "Upcoming", "Earlier"];
 
+const SECTION_KEY: Record<
+  NotificationSection,
+  "notifications.section.today" | "notifications.section.upcoming" | "notifications.section.earlier"
+> = {
+  Today: "notifications.section.today",
+  Upcoming: "notifications.section.upcoming",
+  Earlier: "notifications.section.earlier",
+};
+
 /** Header bell with a clickable notification list. Prototype only. */
 export function NotificationCenter() {
+  const { t } = useI18n();
   const {
     events,
     readNotifications,
@@ -38,11 +49,16 @@ export function NotificationCenter() {
     <>
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
-          <Button variant="ghost" size="icon" aria-label="Notifications" className="relative">
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label={t("notifications.buttonAria")}
+            className="relative"
+          >
             <Bell className="h-[19px] w-[19px]" />
             {unread.length > 0 && (
               <span className="absolute right-1.5 top-1.5 grid h-4 min-w-4 place-items-center rounded-full bg-primary px-1 text-[10px] font-semibold text-primary-foreground">
-                {unread.length > 9 ? "9+" : unread.length}
+                {unread.length > 9 ? t("notifications.countOverflow") : unread.length}
               </span>
             )}
           </Button>
@@ -50,9 +66,9 @@ export function NotificationCenter() {
         <PopoverContent align="end" className="w-[360px] p-0">
           <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 border-b border-border px-4 py-3">
             <div className="min-w-0">
-              <p className="text-[15px] font-semibold tracking-tight">Notifications</p>
+              <p className="text-[15px] font-semibold tracking-tight">{t("notifications.title")}</p>
               <p className="text-[12.5px] text-muted-foreground">
-                {unread.length} unread · from your planner
+                {t("notifications.unreadSummary", { count: unread.length })}
               </p>
             </div>
             {unread.length > 0 && (
@@ -61,16 +77,16 @@ export function NotificationCenter() {
                 size="sm"
                 onClick={() => markAllNotificationsRead(notifications.map((n) => n.key))}
               >
-                Mark all read
+                {t("notifications.markAllRead")}
               </Button>
             )}
           </div>
 
           {notifications.length === 0 ? (
             <div className="px-4 py-8 text-center">
-              <p className="text-[14px] font-medium">You are all caught up</p>
+              <p className="text-[14px] font-medium">{t("notifications.emptyTitle")}</p>
               <p className="mt-1 text-[13px] text-muted-foreground">
-                Notifications appear when you add exams, classes or activities to your planner.
+                {t("notifications.emptyDescription")}
               </p>
             </div>
           ) : (
@@ -82,7 +98,7 @@ export function NotificationCenter() {
                   return (
                     <li key={section}>
                       <p className="px-2 pb-1 pt-3 text-[11.5px] font-semibold uppercase tracking-wide text-muted-foreground">
-                        {section}
+                        {t(SECTION_KEY[section])}
                       </p>
                       <ul className="space-y-1">
                         {items.map((n) => {
@@ -125,7 +141,7 @@ export function NotificationCenter() {
                                     <Button
                                       variant="ghost"
                                       size="icon-sm"
-                                      aria-label="Mark as read"
+                                      aria-label={t("notifications.markReadAria")}
                                       onClick={() => markNotificationRead(n.key)}
                                     >
                                       <Check className="h-3.5 w-3.5" />
@@ -134,10 +150,10 @@ export function NotificationCenter() {
                                   <Button
                                     variant="ghost"
                                     size="icon-sm"
-                                    aria-label="Dismiss notification"
+                                    aria-label={t("notifications.dismissAria")}
                                     onClick={() => {
                                       dismissNotification(n.key);
-                                      toast.success("Notification dismissed");
+                                      toast.success(t("notifications.dismissed"));
                                     }}
                                   >
                                     <X className="h-3.5 w-3.5" />
@@ -156,7 +172,7 @@ export function NotificationCenter() {
           )}
 
           <div className="border-t border-border px-4 py-2.5">
-            <Badge variant="secondary">Prototype · nothing is sent anywhere</Badge>
+            <Badge variant="secondary">{t("notifications.prototypeBadge")}</Badge>
           </div>
         </PopoverContent>
       </Popover>

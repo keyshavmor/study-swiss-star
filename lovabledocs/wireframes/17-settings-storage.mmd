@@ -3,6 +3,7 @@ flowchart TD
     S[/settings/] --> A[Account section]
     S --> M[Local model section]
     S --> P[Preferences section]
+    S --> AU2[Assistant audio section]
     S --> G[Storage section]
 
     A -->|profiles update| DBP[(profiles)]
@@ -12,6 +13,9 @@ flowchart TD
 
     M -->|preferences.selected_qwen_model| DBU[(user_preferences)]
     P -->|exam_reminders, daily_study_summary,<br/>sound_effects,<br/>auto_storage_cleanup| DBU
+    AU2 -->|assistant_audio_enabled default true,<br/>assistant_audio_autoplay default false| DBU
+
+    NoteLang[Language menu lives in the header, not Settings] -.-> S
 
     G -->|rpc get_storage_usage_status| RPC[(usage status)]
     RPC -->|remaining <= 10%| W[Prominent warning]

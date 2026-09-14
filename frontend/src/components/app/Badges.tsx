@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { DEMO_TOOLTIP, FAILING_TOOLTIP, isFailing } from "@/lib/mock/grades";
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/lib/i18n/provider";
 
 function WithTooltip({ tip, children }: { tip: string; children: ReactNode }) {
   return (
@@ -21,13 +22,9 @@ function WithTooltip({ tip, children }: { tip: string; children: ReactNode }) {
 }
 
 /** Marks optional example content shown only while Demo Mode is on. */
-export function DemoBadge({
-  label = "Example data",
-  className,
-}: {
-  label?: string;
-  className?: string;
-}) {
+export function DemoBadge({ label, className }: { label?: string; className?: string }) {
+  const { t } = useI18n();
+  const resolvedLabel = label ?? t("misc.demo.badge");
   return (
     <WithTooltip tip={DEMO_TOOLTIP}>
       <span
@@ -36,20 +33,16 @@ export function DemoBadge({
           className,
         )}
       >
-        {label}
+        {resolvedLabel}
       </span>
     </WithTooltip>
   );
 }
 
 /** Warning badge for averages or grades below the 4.0 passing threshold. */
-export function FailingBadge({
-  label = "Below passing grade",
-  className,
-}: {
-  label?: string;
-  className?: string;
-}) {
+export function FailingBadge({ label, className }: { label?: string; className?: string }) {
+  const { t } = useI18n();
+  const resolvedLabel = label ?? t("misc.demo.failingBadge");
   return (
     <WithTooltip tip={FAILING_TOOLTIP}>
       <span
@@ -59,7 +52,7 @@ export function FailingBadge({
         )}
       >
         <TriangleAlert className="h-3.5 w-3.5" />
-        {label}
+        {resolvedLabel}
       </span>
     </WithTooltip>
   );

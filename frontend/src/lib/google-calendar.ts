@@ -17,10 +17,30 @@ export const GOOGLE_EVENT_COLOR = "#4285F4";
 
 const TOKEN_KEY = "alim.google-calendar.provider-token";
 
+export type GoogleCalendarErrorCode =
+  | "not-connected"
+  | "session-expired"
+  | "access-expired"
+  | "request-failed"
+  | "manual-linking-disabled"
+  | "provider-not-enabled"
+  | "connect-failed";
+
 export class GoogleCalendarAuthError extends Error {
-  constructor(message: string) {
+  code: GoogleCalendarErrorCode;
+  constructor(code: GoogleCalendarErrorCode, message: string) {
     super(message);
     this.name = "GoogleCalendarAuthError";
+    this.code = code;
+  }
+}
+
+export class GoogleCalendarError extends Error {
+  code: GoogleCalendarErrorCode;
+  constructor(code: GoogleCalendarErrorCode, message: string) {
+    super(message);
+    this.name = "GoogleCalendarError";
+    this.code = code;
   }
 }
 
@@ -104,16 +124,21 @@ export async function connectGoogleCalendar(redirectTo: string): Promise<void> {
 
   const message = error.message || "";
   if (/manual linking/i.test(message)) {
-    throw new Error(
+    throw new GoogleCalendarError(
+      "manual-linking-disabled",
       "Google Calendar cannot be connected yet: manual account linking is disabled in the authentication settings.",
     );
   }
   if (/not enabled|unsupported provider/i.test(message)) {
-    throw new Error(
+    throw new GoogleCalendarError(
+      "provider-not-enabled",
       "Google Calendar cannot be connected yet: the Google sign-in provider is not enabled in the authentication settings.",
     );
   }
-  throw new Error(message || "Google Calendar could not be connected.");
+  throw new GoogleCalendarError(
+    "connect-failed",
+    message || "Google Calendar could not be connected.",
+  );
 }
 
 /* --------------------------------------------------------- calendar API --- */
@@ -200,7 +225,10 @@ export async function fetchGoogleCalendarEvents(
 ): Promise<GoogleCalendarEvent[]> {
   const stored = readStored();
   if (!stored) {
-    throw new GoogleCalendarAuthError("Google Calendar is not connected in this browser session.");
+    throw new GoogleCalendarAuthError(
+      "not-connected",
+      "Google Calendar is not connected in this browser session.",
+    );
   }
 
   const timeMin = new Date(`${fromIso}T00:00:00`).toISOString();
@@ -219,11 +247,15 @@ export async function fetchGoogleCalendarEvents(
   if (response.status === 401 || response.status === 403) {
     clearGoogleAccess();
     throw new GoogleCalendarAuthError(
+      "access-expired",
       "Google Calendar access has expired. Reconnect to sync again.",
     );
   }
   if (!response.ok) {
-    throw new Error(`Google Calendar request failed (${response.status}).`);
+    throw new GoogleCalendarError(
+      "request-failed",
+      `Google Calendar request failed (${response.status}).`,
+    );
   }
 
   const payload = (await response.json()) as { items?: GoogleApiEvent[] };

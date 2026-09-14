@@ -2,15 +2,18 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { Bot, CalendarDays, GraduationCap, Home } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/lib/i18n/provider";
+import type { TranslationKey } from "@/lib/i18n/messages";
 
 const ITEMS = [
-  { to: "/home", label: "Home", icon: Home },
-  { to: "/school", label: "School", icon: GraduationCap },
-  { to: "/planner", label: "Planner", icon: CalendarDays },
-  { to: "/assistant", label: "Assistant", icon: Bot },
-] as const;
+  { to: "/home", labelKey: "nav.home", icon: Home },
+  { to: "/school", labelKey: "nav.school", icon: GraduationCap },
+  { to: "/planner", labelKey: "nav.planner", icon: CalendarDays },
+  { to: "/assistant", labelKey: "nav.assistant", icon: Bot },
+] as const satisfies ReadonlyArray<{ to: string; labelKey: TranslationKey; icon: typeof Home }>;
 
 export function MobileNavigation() {
+  const { t } = useI18n();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
   return (
@@ -28,7 +31,7 @@ export function MobileNavigation() {
                 )}
               >
                 <item.icon className="h-[21px] w-[21px]" />
-                {item.label}
+                {t(item.labelKey)}
               </Link>
             </li>
           );

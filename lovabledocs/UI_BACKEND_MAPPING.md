@@ -205,7 +205,7 @@ Legend for **Owner (later)**: `PY` = Python FastAPI, `SB` = Supabase, `LS` = loc
 
 | Field | Load backend/model health |
 | --- | --- |
-| Route | app-wide (`AppShell`), `/settings`, `/diagnostics` |
+| Route | app-wide (`AppShell`), `/settings` |
 | Now | does not exist |
 | Owner later | **PY** |
 | Endpoint | `GET /health`, `GET /api/model/status` |
@@ -220,7 +220,7 @@ Legend for **Owner (later)**: `PY` = Python FastAPI, `SB` = Supabase, `LS` = loc
 
 | Field | Local / remote model status |
 | --- | --- |
-| Component | `/settings` + `/diagnostics` rows, optional small chip in the chat header |
+| Component | `/settings` row, optional small chip in the chat header |
 | Endpoint | `GET /api/model/status` |
 | Display | `llama.cpp · Qwen/Qwen3.8-27B · local · preloaded · 42 ms`; shows `used_model` from the last answer for provenance. |
 
@@ -246,3 +246,6 @@ Legend for **Owner (later)**: `PY` = Python FastAPI, `SB` = Supabase, `LS` = loc
 | `/assistant` history | `assistant_threads`, `assistant_messages` | Supabase |
 | `/assistant` attachments | `chat-attachments` bucket + `assistant_attachments` | Supabase (parsing: Python, future) |
 | `/assistant` replies | not connected yet | Python backend (future) |
+| Language selector (header flag menu) | `user_preferences.preferences.app_language` | Supabase (consumption: frontend `I18nProvider`) |
+| Listen/Stop on assistant messages | browser Web Speech API only, ephemeral | Frontend (`frontend/src/lib/speech.ts`) — never backend |
+| Media retention enqueue (assistant output media) | `public.media_retention_queue` insert via `frontend/src/lib/media-retention.ts` | Supabase row; descriptor generation/upload, cleanup and descriptor-based retrieval are FUTURE BACKEND / CODEX |

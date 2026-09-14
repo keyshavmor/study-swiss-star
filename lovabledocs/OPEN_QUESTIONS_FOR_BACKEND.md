@@ -26,6 +26,16 @@ features remain open; implemented decisions are recorded here to prevent contrac
 | 19 | Does the frontend ever need direct access to the retrieval store or model server? | Security and coupling | **Resolved: no.** The authenticated TanStack route talks to FastAPI. |
 | 20 | Which model owns AI generation? | Multiple generation paths cause privacy and provenance drift | **Resolved:** all AI generation uses local `Qwen/Qwen3.8-27B`; there is no cloud-generation fallback. |
 
+## FUTURE BACKEND / CODEX — response-language precedence (not implemented)
+
+The frontend's future `/api/chat` (and equivalent assistant) request will carry `ui_language`
+and `message_language`. The effective `response_language` must be `message_language` when it is
+confidently one of the five supported languages (`en`, `de`, `ru`, `es`, `fr`), otherwise
+`ui_language`. Today the frontend computes `responseLanguageHint` client-side
+(`frontend/src/lib/i18n/detect.ts`) and keeps it in component state only — it is not sent on the
+current request, so today's contract is unchanged. This precedence rule must be implemented
+server-side once those fields are added.
+
 ## Assistant and storage questions
 
 1. Should assistant replies stream, or is a written row in `assistant_messages`
@@ -35,3 +45,7 @@ features remain open; implemented decisions are recorded here to prevent contrac
    stay fully separate as the data model now implies?
 4. Does the model selection apply per request, or does it reload the runtime?
 5. Which `documents` columns are canonical for bucket, object path and byte size?
+6. FUTURE BACKEND / CODEX: who writes `media_retention_queue` rows and generates descriptors —
+   the inference endpoint itself, or a separate post-processing step?
+7. FUTURE BACKEND / CODEX: what triggers the 30-minute cleanup sweep (cron, edge function, or a
+   check on next access)?

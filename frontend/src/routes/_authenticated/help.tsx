@@ -1,9 +1,12 @@
 /** TanStack route module defining one Alim screen or local API boundary. */
 import { createFileRoute } from "@tanstack/react-router";
+import { FileText } from "lucide-react";
 import { AppShell, PageHeading } from "@/components/app/AppShell";
 import { PageNav } from "@/components/app/Breadcrumbs";
-import { EmptyState } from "@/components/app/States";
-import { Button } from "@/components/ui/button";
+import { useI18n } from "@/lib/i18n/provider";
+import { LANGUAGES } from "@/lib/i18n/languages";
+import type { LanguageCode } from "@/lib/i18n/languages";
+import type { TranslationKey } from "@/lib/i18n/messages";
 
 export const Route = createFileRoute("/_authenticated/help")({
   head: () => ({
@@ -19,41 +22,79 @@ export const Route = createFileRoute("/_authenticated/help")({
       { name: "twitter:card", content: "summary" },
     ],
   }),
-  component: () => (
+  component: HelpPage,
+});
+
+/** Static A4 guides in `public/help-guides`, with their verified page counts. */
+const GUIDE_PAGES: Record<LanguageCode, number> = {
+  en: 13,
+  de: 14,
+  ru: 15,
+  es: 14,
+  fr: 14,
+};
+
+const TOPICS: ReadonlyArray<{ title: TranslationKey; body: TranslationKey }> = [
+  { title: "help.topic.indexing.title", body: "help.topic.indexing.body" },
+  { title: "help.topic.grading.title", body: "help.topic.grading.body" },
+  { title: "help.topic.plans.title", body: "help.topic.plans.body" },
+  { title: "help.topic.calendar.title", body: "help.topic.calendar.body" },
+  { title: "help.topic.language.title", body: "help.topic.language.body" },
+  { title: "help.topic.audio.title", body: "help.topic.audio.body" },
+];
+
+function HelpPage() {
+  const { t } = useI18n();
+
+  return (
     <AppShell>
       <PageNav
-        back={{ to: "/home", label: "Home" }}
-        crumbs={[{ label: "Home", to: "/home" }, { label: "Help" }]}
+        back={{ to: "/home", label: t("help.crumbHome") }}
+        crumbs={[{ label: t("help.crumbHome"), to: "/home" }, { label: t("help.crumb") }]}
       />
-      <PageHeading title="Help" description="Short guides for every part of the assistant." />
+      <PageHeading title={t("help.title")} description={t("help.description")} />
+
       <div className="grid gap-4 sm:grid-cols-2">
-        {[
-          [
-            "How material indexing works",
-            "Upload notes, syllabi and grading criteria; they are indexed for study modes.",
-          ],
-          [
-            "Swiss grading",
-            "Grade = 1.0 + 5.0 × (achieved points ÷ maximum points), from 1.0 to 6.0.",
-          ],
-          ["Study plans", "Plans combine exam dates, free time and your activity schedule."],
-          [
-            "Google Calendar",
-            "Connect Google Calendar in the Planner to see your appointments alongside your plan. They stay read-only.",
-          ],
-        ].map(([title, body]) => (
-          <article key={title} className="app-card p-5">
-            <h2 className="text-[17px] font-semibold tracking-tight">{title}</h2>
-            <p className="mt-2 text-[14.5px] text-muted-foreground">{body}</p>
+        {TOPICS.map((topic) => (
+          <article key={topic.title} className="app-card p-5">
+            <h2 className="text-[17px] font-semibold tracking-tight">{t(topic.title)}</h2>
+            <p className="mt-2 text-[14.5px] text-muted-foreground">{t(topic.body)}</p>
           </article>
         ))}
       </div>
-      <EmptyState
-        className="mt-6"
-        heading="Need something else?"
-        description="Send a note and it will appear in the feedback inbox."
-        action={<Button variant="secondary">Contact support</Button>}
-      />
+
+      <section className="mt-8">
+        <h2 className="text-[19px] font-semibold tracking-tight">{t("help.guides.title")}</h2>
+        <p className="mt-1.5 max-w-2xl text-[14.5px] text-muted-foreground">
+          {t("help.guides.description")}
+        </p>
+        <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {LANGUAGES.map((entry) => (
+            <a
+              key={entry.code}
+              href={`/help-guides/alim-user-guide-${entry.code}.pdf`}
+              target="_blank"
+              rel="noreferrer"
+              className="app-card flex items-center gap-3.5 p-4 transition-colors hover:bg-hover"
+            >
+              <span
+                aria-hidden="true"
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-surface-2 text-[20px]"
+              >
+                {entry.flag}
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-[15px] font-medium">{entry.nativeName}</span>
+                <span className="block text-[13px] text-muted-foreground">
+                  {t("help.guides.meta", { pages: GUIDE_PAGES[entry.code] })}
+                </span>
+              </span>
+              <FileText className="h-[18px] w-[18px] shrink-0 text-muted-foreground" />
+              <span className="sr-only">{t("help.guides.open")}</span>
+            </a>
+          ))}
+        </div>
+      </section>
     </AppShell>
-  ),
-});
+  );
+}

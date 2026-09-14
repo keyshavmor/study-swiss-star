@@ -33,10 +33,18 @@ Standalone: [`01-system-overview.mmd`](wireframes/01-system-overview.mmd)
 flowchart LR
   Student[Student] --> Browser[React UI in browser\nIMPLEMENTED]
   Browser --> Router[TanStack file routes\nIMPLEMENTED]
-  Router --> Providers[Query + Theme + AppData + AcademicYear\nIMPLEMENTED]
+  Router --> Providers[Query + I18n + Theme + AppData + AcademicYear\nIMPLEMENTED]
+  Providers --> I18n[I18nProvider\nfrontend/src/lib/i18n\nen-GB de-CH ru-RU es-ES fr-CH\nIMPLEMENTED]
+  I18n --> LangCache[(localStorage alim.app_language\nflash-avoidance cache only\nIMPLEMENTED LOCAL)]
   Providers --> Local[(Browser storage\nGrades, planner, profile, links, demo\nIMPLEMENTED LOCAL)]
   Router --> Auth[Authenticated route gate\nIMPLEMENTED]
-  Auth --> Cloud[(external Supabase\nIdentity + threads + messages\nIMPLEMENTED CLOUD)]
+  Auth --> Cloud[(external Supabase\nIdentity + threads + messages\nprofiles + user_preferences\nfeedback + usage_events\nmedia_retention_queue\nIMPLEMENTED CLOUD)]
+  I18n --> Cloud
+  Browser --> Fns[Edge Functions\nusername-login, username-availability,\nactivity-log, feedback-submit\nIMPLEMENTED]
+  Fns --> Cloud
+  Fns --> Buckets[(Private buckets\nactivity-logs, feedback-messages,\nchat-attachments, user-materials, profile-avatars,\nassistant-descriptors\nIMPLEMENTED)]
+  Browser --> Speech[Web Speech API speechSynthesis\nfrontend/src/lib/speech.ts\nclient-only, ephemeral, never stored\nIMPLEMENTED LOCAL]
+  Browser --> GCal[Google Calendar v3 read-only\nvia linked Google identity\nNEEDS PROVIDER CONFIG]
   Browser --> ChatRoute[POST /api/chat\nTanStack server route\nIMPLEMENTED]
   ChatRoute --> Cloud
   ChatRoute --> Adapter[context-backend.server.ts\nIMPLEMENTED]
@@ -44,9 +52,10 @@ flowchart LR
   Python --> Context[Context Manager\nintent + budget + memory\nIMPLEMENTED]
   Context --> Retrieval[(SQLite chunks + hybrid retrieval\nIMPLEMENTED)]
   Context --> Files[(PDF DOCX MD TXT corpus\nPARTIAL INGESTION)]
-  Python --> Model[Ollama or vLLM\nCONFIGURED EXTERNALLY]
+  Python --> Model[Local Qwen via llama.cpp localhost:8000\nCONFIGURED EXTERNALLY]
   ChatRoute -. opt-in fallback .-> Gateway[Lovable AI Gateway\nIMPLEMENTED OPTIONAL]
-  Python -. future APIs .-> Future[Quiz, exam, grading, plan, feedback\nPLANNED]
+  Python -. future APIs .-> Future[Quiz, exam, grading, plan, feedback,\nmessage-language contract, media descriptors\nFUTURE BACKEND / CODEX not implemented]
+  Buckets -. 30-minute cleanup worker .-> FutureCleanup[FUTURE BACKEND / CODEX not implemented]
 ```
 
 ## 2. Routes and navigation
@@ -57,34 +66,40 @@ Standalone: [`02-routes-navigation.mmd`](wireframes/02-routes-navigation.mmd)
 
 ```mermaid
 flowchart TD
-  Root["/ — Welcome + sign in / sign up"] --> Auth["/auth (legacy redirect)"]
-  Root --> Protected{Authenticated route gate}
-  Auth -->|valid session| Home["/home"]
+  Root["/ — Welcome + sign in / sign up\nlocalised via cached alim.app_language"] --> SignedIn{Existing session?}
+  SignedIn -->|yes| Home["/home"]
+  SignedIn -->|no| AuthForm[AuthForm: email or username + password,\nGitHub LinkedIn Spotify]
+  AuthForm -->|success| Home
+  Auth["/auth (legacy URL)"] -->|redirect| Root
+  Auth -->|redirect when signed in| Home
+  Protected{Authenticated route gate} -->|no session| Root
   Protected --> Home
+  Home -->|Sign out: signOut + clear provider token| Root
   Home --> School["/school"]
   Home --> Planner["/planner"]
   School --> Subject["/school/$subject"]
   School --> Stats["/stats"]
   Subject --> ChatEntry["/chat"]
   ChatEntry -->|select or create thread| Thread["/chat/$threadId"]
+  Home --> Assistant["/assistant"]
   Home --> Profile["/profile"]
   Home --> Settings["/settings"]
   Home --> Help["/help"]
   Home --> Feedback["/feedback"]
-  Home --> Diagnostics["/diagnostics"]
   Header[Desktop header navigation] --> Home
   Header --> School
   Header --> Planner
+  Header --> Assistant
   Header --> Stats
   Header --> Help
   Header --> Feedback
-  Mobile[Mobile bottom navigation] --> Home
+  HeaderLang[Header-only flag language menu\nnot present in Settings] -.-> Header
+  Mobile[Mobile bottom navigation, 4 items] --> Home
   Mobile --> School
   Mobile --> Planner
-  Mobile --> Stats
+  Mobile --> Assistant
   Footer[Footer navigation] --> Feedback
   Footer --> Help
-  Footer --> Diagnostics
 ```
 
 ## 3. Frontend composition
@@ -97,22 +112,25 @@ Standalone: [`03-frontend-composition.mmd`](wireframes/03-frontend-composition.m
 flowchart TD
   HTML[RootShell\nHTML + head + scripts] --> Root[RootComponent]
   Root --> Query[QueryClientProvider]
-  Query --> Theme[ThemeProvider]
+  Query --> I18nP[I18nProvider\nlanguages.ts detect.ts messages/*]
+  I18nP --> Theme[ThemeProvider]
   Theme --> Data[AppDataProvider]
   Data --> Year[AcademicYearProvider]
   Year --> Outlet[Router Outlet]
   Year --> Toast[Global Toaster]
-  Outlet --> Public[Public screens\nTitle + Auth]
+  Outlet --> Public[Public screens\nWelcome + Auth, localised]
   Outlet --> Gate[Authenticated layout gate]
-  Gate --> Pages[Home School Subject Planner Stats\nProfile Settings Feedback Help Diagnostics]
+  Gate --> Pages[Home School Subject Planner Stats\nAssistant Profile Settings Feedback Help]
   Pages --> Shell[AppShell]
-  Shell --> Header[AppHeader]
+  Shell --> Header[AppHeader\nclock, demo, theme, bell, language menu, avatar]
+  Header --> LangMenu[LanguageMenu\ncomponents/app/LanguageMenu.tsx]
   Shell --> Content[Route content]
-  Shell --> Footer[AppFooter]
-  Shell --> Mobile[MobileNavigation]
+  Shell --> Footer[AppFooter\nFeedback + Help links]
+  Shell --> Mobile[MobileNavigation\nHome School Planner Assistant]
   Gate --> Chat[StudyChat full-height shell]
   Chat --> Threads[ThreadList]
   Chat --> Conversation[AI Elements Conversation + Message]
+  Chat --> Speech[Listen / Stop read-aloud button\nlib/speech.ts, completed assistant messages only]
   Chat --> Composer[AI Elements PromptInput + Shimmer]
   Conversation --> Sources[SourceSnippetList]
   Pages --> UI[shadcn and Radix primitives]
@@ -133,14 +151,24 @@ flowchart LR
   Grade --> UI
   Year[(Browser storage\nacademic year)] --> Academic[AcademicYearProvider]
   Academic --> UI
-  Cloud[(external Supabase\nusers threads messages)] --> ServerFns[Authenticated server functions]
+  Lang[(public.user_preferences.preferences.app_language\nauthoritative)] --> I18n[I18nProvider]
+  LangCache[(localStorage alim.app_language\nflash-avoidance + signed-out cache only)] --> I18n
+  I18n --> UI
+  Audio[(public.user_preferences.preferences\nassistant_audio_enabled default true\nassistant_audio_autoplay default false)] --> SettingsUI[Settings audio controls]
+  SettingsUI --> UI
+  MsgHint[responseLanguageHint\nCLIENT STATE ONLY, not sent to backend today] --> UI
+  SpeechState[speechSynthesis playback state\nephemeral, never persisted] --> UI
+  Cloud[(external Supabase\nusers threads messages\nprofiles user_preferences\nfeedback usage_events\nmedia_retention_queue)] --> ServerFns[Authenticated server functions]
+  Telemetry[telemetry.ts\nsanitized activity + bounded error classification only\nnever raw error text, credentials, chat content, feedback text, calendar details] --> Cloud
+  GoogleToken[(sessionStorage only\nGoogle provider token)] --> GoogleEvents[Read-only Google occurrences\nrender-merged, never stored]
+  GoogleEvents --> UI
   ServerFns --> UI
   Python[(Python SQLite\nchunks memories artifacts)] --> FastAPI[FastAPI]
   FastAPI --> ChatAPI[TanStack /api/chat]
   ChatAPI --> UI
   Static -->|subject/language context| ChatAPI
   Academic -->|year/grade context| ChatAPI
-  Future[(Future Python records\nquiz exam grading plan feedback)] -. planned .-> FastAPI
+  Future[(Future Python records\nquiz exam grading plan feedback\nui_language message_language response_language contract\nmedia descriptor generation + cleanup)] -. FUTURE BACKEND / CODEX not implemented .-> FastAPI
 ```
 
 ## 5. Authentication journey
@@ -155,23 +183,35 @@ sequenceDiagram
   participant Page as Protected page
   participant Gate as _authenticated route gate
   participant Cloud as external Supabase identity
-  participant Auth as /auth and AuthForm
+  participant Auth as / welcome screen and AuthForm
+  participant I18n as I18nProvider
   Student->>Page: Open protected URL
   Page->>Gate: beforeLoad
   Gate->>Cloud: getUser()
   alt No valid session
     Cloud-->>Gate: No user
-    Gate-->>Student: Redirect to /auth
-    Student->>Auth: Email/password, password reset, or GitHub / LinkedIn / Spotify sign-in
-    Auth->>Cloud: Authenticate
+    Gate-->>Student: Redirect to /
+    Auth->>I18n: Read cached alim.app_language\n(localStorage, flash-avoidance only)
+    I18n-->>Auth: Localise welcome/auth copy\nen-GB de-CH ru-RU es-ES fr-CH, English fallback
+    Student->>Auth: Email or username + password, password reset, or GitHub / LinkedIn / Spotify
+    alt Username entered
+      Auth->>Cloud: Edge Function username-login then setSession
+    else Email entered
+      Auth->>Cloud: signInWithPassword
+    end
+    opt Sign up
+      Auth->>Cloud: Edge Function username-availability
+      Auth->>Cloud: signUp with options.data.username
+    end
     Cloud-->>Auth: Session and access token
+    Auth->>Cloud: Load user_preferences.preferences.app_language\n(authoritative once signed in)
     Auth-->>Student: Navigate to /home
   else Valid session
     Cloud-->>Gate: User
     Gate-->>Page: Render protected screen
   end
   Student->>Cloud: Sign out from account menu or chat
-  Cloud-->>Student: Session cleared, navigate to /auth
+  Cloud-->>Student: Session cleared, navigate to /
 ```
 
 ## 6. Home journey
@@ -269,12 +309,13 @@ Standalone: [`09-chat.mmd`](wireframes/09-chat.mmd)
 sequenceDiagram
   actor Student
   participant UI as StudyChat
+  participant I18n as I18nProvider + detectLanguage
   participant Fn as Authenticated server functions
   participant Cloud as external Supabase threads/messages
   participant API as TanStack POST /api/chat
   participant PY as Python FastAPI /api/chat
   participant RAG as Context Manager + retrieval
-  participant LLM as Ollama or vLLM
+  participant LLM as Local Qwen via llama.cpp
   Student->>UI: Open /chat
   UI->>Fn: listThreads or createThread
   Fn->>Cloud: User-scoped thread operation
@@ -284,22 +325,30 @@ sequenceDiagram
   Fn->>Cloud: User-scoped ordered messages
   Cloud-->>UI: Persisted UI messages
   Student->>UI: Submit question
+  UI->>I18n: detectLanguage(text) + effectiveResponseLanguage(text, uiLanguage)
+  I18n-->>UI: responseLanguageHint\nCLIENT STATE ONLY, kept per message
   UI-->>Student: Optimistic message + Thinking
-  UI->>API: UI messages + thread + year + grade with bearer token
+  UI->>API: UI messages + thread + year + grade with bearer token\nresponseLanguageHint is NOT included in this payload today
   API->>Cloud: Verify ownership, then save user message
   API->>PY: Current question and study context with streaming disabled
   PY->>RAG: Build budgeted context and provenance
   RAG-->>PY: Relevant chunks and memory
   PY->>LLM: Compiled context + current question
-  LLM-->>PY: Answer
+  LLM-->>PY: Answer\nlanguage metadata NOT honoured today
   PY-->>API: Answer + sources + model + retrieval summary
   API->>Cloud: Save completed assistant UI message
   API-->>UI: AI SDK text and context-metadata stream parts
   UI-->>Student: Markdown answer + exam tip + collapsible sources
+  opt Listen / Stop read-aloud
+    Student->>UI: Click Listen on a completed assistant message
+    UI->>UI: speechLocaleFor(answerText, uiLanguage) via lib/speech.ts\nWeb Speech API, ephemeral, never stored
+    UI-->>Student: Spoken answer, or graceful no-op when unsupported/no voice
+  end
   opt Python unavailable and fallback enabled
     API->>API: Use Lovable AI Gateway
     API-->>UI: Stream answer without Python sources
   end
+  Note over PY,LLM: FUTURE BACKEND / CODEX not implemented:\nui_language, message_language and effective response_language contract;\nmessage_language wins only when confidently one of the five approved languages.
 ```
 
 ## 10. Planner journey
@@ -420,16 +469,23 @@ Standalone: [`14-supporting-screens.mmd`](wireframes/14-supporting-screens.mmd)
 
 ```mermaid
 flowchart TD
-  Profile["/profile"] --> ProfileData[Edit student profile + academic year\nIMPLEMENTED LOCAL]
-  ProfileData --> Local[(Browser storage)]
-  Settings["/settings"] --> Toggles[Exam reminders daily summary sound effects auto cleanup\nSAVED TO user_preferences]
-  Settings -.-> Model[Backend mode and model status\nPLANNED]
+  Profile["/profile"] --> ProfileData[Account details from Supabase + academic year\nIMPLEMENTED]
+  ProfileData --> Acct[(profiles + profile-avatars)]
+  ProfileData --> Local[(Browser storage for grades and planner)]
+  Settings["/settings"] --> Account[Account profile email password avatar\nIMPLEMENTED]
+  Settings --> Toggles[Preference switches\nPERSISTED IN user_preferences]
+  Settings --> Audio[assistant_audio_enabled default true\nassistant_audio_autoplay default false\nlocalised switches\nPERSISTED IN user_preferences]
+  Settings --> Model[Local Qwen model selector\nPERSISTED IN user_preferences]
+  Settings --> Storage[Storage usage filters and deletion\nIMPLEMENTED]
+  NoteLang[Language selection lives in the header only,\nnot in Settings] -.-> Settings
+  Assistant["/assistant"] --> AssistantData[General AI chat with attachments\nIMPLEMENTED; GENERATION PENDING]
+  AssistantData --> Speech[Listen / Stop read-aloud\nlib/speech.ts, IMPLEMENTED LOCAL]
+  AssistantData --> AssistantDB[(assistant_* tables + chat-attachments)]
   Demo[Demo Mode toggle] --> DemoData[Switch between user state and fresh demo state\nIMPLEMENTED LOCAL]
-  Help["/help"] --> Static[Static help content\nIMPLEMENTED]
-  Feedback["/feedback"] --> Form[Category message validation loading success error\nIMPLEMENTED]
-  Form --> FeedbackFn[Edge Function feedback-submit\npublic.feedback + private feedback-messages bucket]
-  Diagnostics["/diagnostics"] --> Simulated[All services nominal\nCURRENTLY SIMULATED]
-  Diagnostics -.-> Health[GET /health + GET /api/model/status\nBACKEND IMPLEMENTED; FRONTEND WIRING PLANNED]
+  Help["/help"] --> Guides[User guides section\nfive static A4 PDF downloads\nhelp-guides/alim-user-guide-{en,de,ru,es,fr}.pdf\nIMPLEMENTED]
+  Feedback["/feedback"] --> Form[Category + message form\nIMPLEMENTED AND PERSISTED]
+  Form --> FeedbackFn[Edge Function feedback-submit]
+  FeedbackFn --> FeedbackDB[(public.feedback + private feedback-messages bucket)]
   Notifications[NotificationCenter] --> Derived[Derived from local exams and deadlines\nIMPLEMENTED LOCAL]
   SchoolLinks[SchoolLinksSection] --> LinkCRUD[Open add edit duplicate reorder delete\nIMPLEMENTED LOCAL]
   LinkCRUD --> Local
@@ -493,13 +549,160 @@ flowchart TD
 Separate from tutoring chat: `assistant_threads` / `assistant_messages` /
 `assistant_attachments`, attachments in the private `chat-attachments` bucket.
 Replies are written by the local Python backend once that endpoint exists; the
-frontend never fabricates them. See
-[`wireframes/16-assistant.mmd`](wireframes/16-assistant.mmd).
+frontend never fabricates them.
+
+Standalone: [`16-assistant.mmd`](wireframes/16-assistant.mmd)
+
+```mermaid
+%% General-purpose AI assistant: separate data model from tutoring chat.
+sequenceDiagram
+    autonumber
+    actor Student
+    participant UI as AssistantChat (/assistant)
+    participant I18n as detectLanguage / effectiveResponseLanguage
+    participant DB as Supabase assistant_* tables
+    participant ST as Storage chat-attachments
+    participant PY as Local Python backend (future)
+
+    Student->>UI: New chat
+    UI->>DB: insert assistant_threads
+    Student->>UI: Type message + attach files
+    UI->>I18n: Compute responseLanguageHint\nCLIENT STATE ONLY, not sent to backend today
+    UI->>UI: Validate media <= 1 MB, allow PDF/DOCX
+    UI->>DB: insert assistant_messages (role=user)
+    UI->>ST: upload <uid>/<threadId>/<file>
+    UI->>DB: insert assistant_attachments (parse_status=unparsed)
+    UI-->>Student: "Saved and ready for the local AI backend"
+    Note over UI,PY: No reply is fabricated. Generation and parsing<br/>begin once the assistant endpoint is connected.
+    PY-->>DB: (future) insert assistant_messages (role=assistant)
+    DB-->>UI: reply appears in history on next load
+    opt Listen / Stop read-aloud on a completed assistant message
+      Student->>UI: Click Listen
+      UI->>UI: lib/speech.ts speechSynthesis, ephemeral, never stored
+      Note over UI: Autoplay (assistant_audio_autoplay) speaks only<br/>newly completed answers when enabled.
+    end
+    Note over PY,DB: FUTURE BACKEND / CODEX not implemented:<br/>assistant output media descriptor generation, upload to<br/>assistant-descriptors, and media_retention_queue enqueue.
+```
 
 ## 17. Settings and storage management
 
 Account/profile, local Qwen model choice, preferences and storage management
 (usage RPC, warning at 10% remaining, automatic platform cleanup at 1%,
-filtered multi-select deletion). See
-[`wireframes/17-settings-storage.mmd`](wireframes/17-settings-storage.mmd) and
+filtered multi-select deletion).
+
+Standalone: [`17-settings-storage.mmd`](wireframes/17-settings-storage.mmd) and
 [`ASSISTANT_SETTINGS_AND_STORAGE.md`](ASSISTANT_SETTINGS_AND_STORAGE.md).
+
+```mermaid
+%% Settings and storage management against the live Supabase schema.
+flowchart TD
+    S[/settings/] --> A[Account section]
+    S --> M[Local model section]
+    S --> P[Preferences section]
+    S --> AU2[Assistant audio section]
+    S --> G[Storage section]
+
+    A -->|profiles update| DBP[(profiles)]
+    A -->|upload / remove| AV[(profile-avatars bucket)]
+    A -->|auth.updateUser email| AU[Supabase Auth]
+    A -->|auth.updateUser password| AU
+
+    M -->|preferences.selected_qwen_model| DBU[(user_preferences)]
+    P -->|exam_reminders, daily_study_summary,<br/>sound_effects,<br/>auto_storage_cleanup| DBU
+    AU2 -->|assistant_audio_enabled default true,<br/>assistant_audio_autoplay default false| DBU
+
+    NoteLang[Language menu lives in the header, not Settings] -.-> S
+
+    G -->|rpc get_storage_usage_status| RPC[(usage status)]
+    RPC -->|remaining <= 10%| W[Prominent warning]
+    RPC -->|remaining <= 1%| EC[invoke storage-emergency-cleanup<br/>once per session]
+    G -->|list| L[assistant_attachments + documents with storage paths]
+    L -->|select + confirm| D1[Storage .remove first]
+    D1 --> D2[assistant_attachments.deleted_at<br/>documents storage pointer cleared]
+```
+
+## 18. Internationalisation and language preference
+
+How the UI language boots from a local cache, becomes authoritative from
+`user_preferences`, and how per-message language hints and speech locales are
+derived. The Python backend does not honour language metadata today.
+
+Standalone: [`18-i18n-language.mmd`](wireframes/18-i18n-language.mmd)
+
+```mermaid
+flowchart TD
+  Boot[App boot] --> Cache[Read localStorage alim.app_language\nflash-avoidance cache]
+  Cache --> Render[Render with cached or default English language]
+  Boot --> AuthCheck{Signed in?}
+  AuthCheck -->|No| WelcomeLocal[Localise welcome/auth screen from cache]
+  AuthCheck -->|Yes| Load[Load user_preferences.preferences.app_language\nAUTHORITATIVE]
+  Load --> Valid{Value is one of en de ru es fr?}
+  Valid -->|Yes| Apply[Apply language, update cache]
+  Valid -->|No or missing| English[Recover to English default]
+  English --> Apply
+  Apply --> UI[All screens via useI18n / t]
+  Change[Student opens header language menu] --> Pick[Pick a language]
+  Pick --> WriteCache[Write localStorage cache]
+  Pick --> WriteDB[Update user_preferences.preferences.app_language]
+  WriteCache --> UI
+  WriteDB --> UI
+  UI --> Detect[Per-message: detectLanguage / effectiveResponseLanguage\nchat + assistant]
+  Detect --> Hint[responseLanguageHint\nCLIENT STATE ONLY, not sent today]
+  Detect --> SpeechLocale[speechLocaleFor for Listen / Stop read-aloud]
+  Hint -.-> FutureContract[ui_language, message_language, response_language\nFUTURE BACKEND / CODEX not implemented]
+```
+
+## 19. Read-aloud (Listen / Stop)
+
+Browser-only speech synthesis for completed assistant answers in chat and the
+assistant, gated by `assistant_audio_enabled` and `assistant_audio_autoplay`.
+Nothing is uploaded or stored.
+
+Standalone: [`19-read-aloud.mmd`](wireframes/19-read-aloud.mmd)
+
+```mermaid
+flowchart TD
+  Message[Completed assistant message\nStudyChat or AssistantChat] --> Support{speechSupported?\nwindow.speechSynthesis + SpeechSynthesisUtterance}
+  Support -->|No| Hidden[Listen control hidden or disabled]
+  Support -->|Yes| Button[Show Listen / Stop control]
+  Button --> Click[Student clicks Listen]
+  Click --> Locale[speechLocaleFor: detectLanguage over answer text,\nfallback to current UI language]
+  Locale --> VoiceMatch{Matching browser voice found?}
+  VoiceMatch -->|Yes| Speak[window.speechSynthesis.speak]
+  VoiceMatch -->|No| Degrade[Graceful no-op: outcome = no-voice]
+  Speak --> Playing[Playing state, Stop control shown]
+  Playing --> StopClick[Student clicks Stop, or navigates away/unmounts]
+  StopClick --> Cancel[speechSynthesis.cancel]
+  Cancel --> Idle[Idle]
+  Speak --> End[onEnd fires naturally]
+  End --> Idle
+  Autoplay[assistant_audio_autoplay enabled] -. only newly completed answers .-> Click
+  AudioOff[assistant_audio_enabled = false] --> Hidden
+  Note1[Nothing is uploaded or stored;\nplayback is ephemeral and browser-only\nIMPLEMENTED LOCAL] -.-> Speak
+```
+
+## 20. Assistant media retention policy
+
+Future backend policy for assistant-generated or assistant-fetched OUTPUT
+media only: a text descriptor is kept, the original binary is deleted after a
+30-minute window, and ordinary user study uploads are unaffected.
+
+Standalone: [`20-media-retention.mmd`](wireframes/20-media-retention.mmd)
+
+```mermaid
+flowchart TD
+  Gen[Assistant generates or fetches OUTPUT media\nimage audio video] --> Scope{Ordinary user study upload?}
+  Scope -->|Yes| OutOfPolicy[NOT covered by this policy\nkept under normal storage rules]
+  Scope -->|No, assistant output| Descriptor[FUTURE BACKEND / CODEX not implemented:\ngenerate text descriptor]
+  Descriptor --> Upload[FUTURE BACKEND / CODEX not implemented:\nupload descriptor to private assistant-descriptors bucket]
+  Upload --> Enqueue[FUTURE BACKEND / CODEX not implemented:\nenqueue row in public.media_retention_queue\ndelete_after = created_at + 30 minutes]
+  Enqueue --> Source{Media was fetched rather than generated?}
+  Source -->|Yes| Keep[Retain source_url or source_path alongside descriptor]
+  Source -->|No| Skip[No source fields]
+  Keep --> Wait[Wait until delete_after]
+  Skip --> Wait
+  Wait --> Cleanup[FUTURE BACKEND / CODEX not implemented:\n30-minute cleanup worker deletes original binary]
+  Cleanup --> Retrieve[Later retrieval works from the descriptor only;\noriginal binary must not be expected to exist]
+  ClientLib[frontend/src/lib/media-retention.ts\nIMPLEMENTED LOCAL: typed enqueue/list helpers only] -.-> Enqueue
+  ClientLib --> ListUI[Read retention rows for signed-in user]
+```

@@ -31,6 +31,7 @@ __root.tsx                                 🟪 LAYOUT  providers: Query, Theme,
     │   │   ├── app/AcademicYearSelector.tsx 🟨 LOCAL
     │   │   ├── app/LiveClock.tsx          🟦 UI
     │   │   ├── app/NotificationCenter.tsx 🟨 LOCAL
+    │   │   ├── app/LanguageMenu.tsx      🟨 LOCAL (i18n, between bell and avatar)
     │   │   └── ThemeToggle.tsx            🟦 UI
     │   ├── app/MobileNavigation.tsx       🟪 LAYOUT
     │   ├── app/DemoMode.tsx               🟨 LOCAL
@@ -65,8 +66,7 @@ __root.tsx                                 🟪 LAYOUT  providers: Query, Theme,
     │   └── app/EditProfileDialog.tsx      🟨 LOCAL
     ├── settings.tsx                       🟨 LOCAL (🟥 PY: model status, backend mode)
     ├── feedback.tsx                       🟦 UI → 🟥 PY (POST /api/feedback)
-    ├── help.tsx                           🟦 UI
-    ├── diagnostics.tsx                    🟨 LOCAL → 🟥 PY (health + model status)
+    ├── help.tsx                           🟦 UI (5 static PDF guides, no contact-support CTA)
     ├── chat.index.tsx                     🟩 AUTH (thread bootstrap)
     └── chat.$threadId.tsx                 🟥 PY
         └── StudyChat.tsx                  🟥 PY 🟩 AUTH
@@ -79,6 +79,11 @@ __root.tsx                                 🟪 LAYOUT  providers: Query, Theme,
 
 components/ui/*                            🟦 UI      shadcn/Radix primitives, never data-aware
 ```
+
+`lib/i18n/*` (`languages.ts`, `detect.ts`, `provider.tsx`, `messages/*.ts`) is a non-visual
+provider tree, mounted once in `__root.tsx`, consumed by `useI18n()` everywhere. `lib/speech.ts`
+adds ephemeral Listen/Stop to completed assistant messages using the browser Web Speech API — no
+component classification tag, it is a leaf utility with no persistence.
 
 ## Major component detail
 

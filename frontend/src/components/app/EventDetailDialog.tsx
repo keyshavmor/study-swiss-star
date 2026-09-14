@@ -24,11 +24,17 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { durationLabel, formatLongDate, weekdayName } from "@/lib/date-utils";
+import { durationLabel, fromIso, weekdayName } from "@/lib/date-utils";
 import { getSubject } from "@/lib/mock/subjects";
 import type { Occurrence } from "@/lib/store/app-data";
 import { useAppData } from "@/lib/store/app-data";
-import { CATEGORY_COLOR, RECURRENCE_LABEL } from "@/lib/store/types";
+import { useI18n } from "@/lib/i18n/provider";
+import {
+  CATEGORY_COLOR,
+  EVENT_CATEGORY_LABEL_KEY,
+  RECURRENCE_LABEL_KEY,
+  REMINDER_LABEL_KEY,
+} from "@/lib/store/types";
 import { toast } from "sonner";
 
 /**
@@ -49,6 +55,7 @@ export function EventDetailDialog({
   showPlannerAction?: boolean;
 }) {
   const navigate = useNavigate();
+  const { t, formatDate } = useI18n();
   const { markNotificationRead, dismissNotification, readNotifications } = useAppData();
   const [editing, setEditing] = useState(false);
 
@@ -63,12 +70,12 @@ export function EventDetailDialog({
   const today = new Date().toISOString().slice(0, 10);
   const status =
     event.done === true
-      ? "Completed"
+      ? t("events.status.completed")
       : occurrence.date < today
-        ? "Past"
+        ? t("events.status.past")
         : occurrence.date === today
-          ? "Today"
-          : "Upcoming";
+          ? t("events.status.today")
+          : t("events.status.upcoming");
 
   return (
     <>
@@ -80,13 +87,20 @@ export function EventDetailDialog({
               <DialogTitle className="min-w-0 truncate">{occurrence.title}</DialogTitle>
             </div>
             <DialogDescription>
-              {event.category}
+              {t(EVENT_CATEGORY_LABEL_KEY[event.category])}
               {subject ? ` · ${subject.name}` : ""}
             </DialogDescription>
           </DialogHeader>
 
           <div className="rounded-[14px] bg-surface-2 p-4">
-            <p className="text-[15.5px] font-medium">{formatLongDate(occurrence.date)}</p>
+            <p className="text-[15.5px] font-medium">
+              {formatDate(fromIso(occurrence.date), {
+                weekday: "long",
+                day: "numeric",
+                month: "long",
+                year: "numeric",
+              })}
+            </p>
             <p className="tabular mt-1 text-[14px] text-muted-foreground">
               {occurrence.start}–{occurrence.end} ·{" "}
               {durationLabel(occurrence.start, occurrence.end)}
@@ -94,36 +108,46 @@ export function EventDetailDialog({
           </div>
 
           <dl className="mt-1 divide-y divide-border">
-            <Row icon={<CalendarDays className="h-4 w-4" />} label="Weekday">
+            <Row icon={<CalendarDays className="h-4 w-4" />} label={t("events.detail.weekday")}>
               {weekdayName(occurrence.date)}
             </Row>
-            <Row icon={<Clock className="h-4 w-4" />} label="Time">
+            <Row icon={<Clock className="h-4 w-4" />} label={t("events.detail.time")}>
               <span className="tabular">
                 {occurrence.start}–{occurrence.end}
               </span>
             </Row>
-            <Row icon={<MapPin className="h-4 w-4" />} label="Location">
-              {event.location || "Not set"}
+            <Row icon={<MapPin className="h-4 w-4" />} label={t("events.detail.location")}>
+              {event.location || t("events.detail.notSet")}
             </Row>
-            <Row icon={<Repeat className="h-4 w-4" />} label="Recurrence">
-              {RECURRENCE_LABEL[event.recurrence]}
+            <Row icon={<Repeat className="h-4 w-4" />} label={t("events.detail.recurrence")}>
+              {t(RECURRENCE_LABEL_KEY[event.recurrence])}
               {event.recurrence === "weekly" || event.recurrence === "biweekly"
-                ? ` on ${weekdayName(occurrence.originalDate)}`
+                ? t("events.detail.recurrenceOn", { weekday: weekdayName(occurrence.originalDate) })
                 : ""}
             </Row>
-            <Row icon={<Bell className="h-4 w-4" />} label="Reminder">
-              {event.reminder && event.reminder !== "None" ? event.reminder : "No reminder"}
+            <Row icon={<Bell className="h-4 w-4" />} label={t("events.detail.reminder")}>
+              {event.reminder && event.reminder !== "None"
+                ? t(
+                    REMINDER_LABEL_KEY[event.reminder as keyof typeof REMINDER_LABEL_KEY] ??
+                      "events.detail.noReminder",
+                  )
+                : t("events.detail.noReminder")}
             </Row>
-            <Row icon={<Clock className="h-4 w-4" />} label="Travel time">
-              {travel > 0 ? `${travel} min total` : "None"}
+            <Row icon={<Clock className="h-4 w-4" />} label={t("events.detail.travelTime")}>
+              {travel > 0
+                ? t("events.detail.travelTotal", { minutes: travel })
+                : t("events.detail.none")}
             </Row>
-            <Row icon={<StickyNote className="h-4 w-4" />} label="Notes">
-              {event.notes || "No notes"}
+            <Row icon={<StickyNote className="h-4 w-4" />} label={t("events.detail.notes")}>
+              {event.notes || t("events.detail.noNotes")}
             </Row>
-            <Row icon={<CalendarDays className="h-4 w-4" />} label="Related subject">
-              {subject ? subject.name : "None"}
+            <Row
+              icon={<CalendarDays className="h-4 w-4" />}
+              label={t("events.detail.relatedSubject")}
+            >
+              {subject ? subject.name : t("events.detail.none")}
             </Row>
-            <Row icon={<Check className="h-4 w-4" />} label="Status">
+            <Row icon={<Check className="h-4 w-4" />} label={t("events.detail.status")}>
               <Badge variant="secondary">{status}</Badge>
             </Row>
           </dl>
@@ -138,11 +162,11 @@ export function EventDetailDialog({
                     disabled={isRead}
                     onClick={() => {
                       markNotificationRead(notificationKey);
-                      toast.success("Marked as read");
+                      toast.success(t("events.toast.markedRead"));
                     }}
                   >
                     <Check className="h-4 w-4" />
-                    {isRead ? "Read" : "Mark as Read"}
+                    {isRead ? t("events.read") : t("events.markAsRead")}
                   </Button>
                   <Button
                     variant="ghost"
@@ -150,11 +174,11 @@ export function EventDetailDialog({
                     onClick={() => {
                       dismissNotification(notificationKey);
                       onOpenChange(false);
-                      toast.success("Notification dismissed");
+                      toast.success(t("events.toast.dismissed"));
                     }}
                   >
                     <X className="h-4 w-4" />
-                    Dismiss
+                    {t("events.dismiss")}
                   </Button>
                 </>
               )}
@@ -162,7 +186,7 @@ export function EventDetailDialog({
             <div className="flex flex-wrap gap-2">
               <Button variant="secondary" size="sm" onClick={() => setEditing(true)}>
                 <Pencil className="h-4 w-4" />
-                Edit Event
+                {t("events.editEvent")}
               </Button>
               {showPlannerAction && (
                 <Button
@@ -176,7 +200,7 @@ export function EventDetailDialog({
                     });
                   }}
                 >
-                  Open in Planner
+                  {t("events.openInPlanner")}
                 </Button>
               )}
             </div>

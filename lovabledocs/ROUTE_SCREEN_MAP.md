@@ -22,7 +22,6 @@ Auth-gated routes live under `frontend/src/routes/_authenticated/` and are prote
 | `/feedback` | `_authenticated/feedback.tsx` | Feedback | Yes | No (Edge Function `feedback-submit`) |
 | `/help` | `_authenticated/help.tsx` | Help | Yes | Yes |
 | `/settings` | `_authenticated/settings.tsx` | Settings | Yes | Partly |
-| `/diagnostics` | `_authenticated/diagnostics.tsx` | Diagnostics | Yes | No (needs health) |
 | `POST /api/chat` | `frontend/src/routes/api/chat.ts` | Server route | Bearer | No |
 
 ## Detail
@@ -135,7 +134,10 @@ Auth-gated routes live under `frontend/src/routes/_authenticated/` and are prote
 
 
 ### `/help` — Help
-- **File:** `_authenticated/help.tsx` · static content. **Frontend-only: yes.**
+- **File:** `_authenticated/help.tsx` · static content plus five downloadable A4 PDF user
+  guides, one per supported language, served from
+  `frontend/public/help-guides/alim-user-guide-{en,de,ru,es,fr}.pdf`. There is no
+  "Contact support" CTA. **Frontend-only: yes.**
 
 ### `/settings` — Settings
 - **File:** `_authenticated/settings.tsx`
@@ -143,10 +145,9 @@ Auth-gated routes live under `frontend/src/routes/_authenticated/` and are prote
 - **Future backend:** surface backend mode, base URL, model status (read-only).
 - **Endpoints:** `GET /api/model/status`. **Frontend-only: partly.**
 
-### `/diagnostics` — Diagnostics
-- **File:** `_authenticated/diagnostics.tsx`
-- **Purpose:** environment/state inspection; the natural home for backend connectivity checks.
-- **Endpoints:** `GET /health`, `GET /api/model/status`. **Frontend-only: no.**
+The `/diagnostics` route has been removed entirely — there is no environment/state
+inspection screen in the frontend. Backend connectivity checks belong in
+`/settings` and the `BackendStatusBanner` instead.
 
 ### `POST /api/chat` — server route
 - **File:** `frontend/src/routes/api/chat.ts`

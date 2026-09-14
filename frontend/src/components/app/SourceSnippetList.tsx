@@ -1,27 +1,29 @@
 /** Alim application component for study, planning, profile, or navigation workflows. */
 import type { ContextSourceSnippet } from "@/lib/context-backend.types";
+import { useI18n } from "@/lib/i18n/provider";
 
 export function SourceSnippetList({ sources }: { sources: ContextSourceSnippet[] }) {
+  const { t } = useI18n();
   if (!Array.isArray(sources) || sources.length === 0) return null;
 
   return (
     <details className="mt-3 rounded-xl border border-border bg-surface px-4 py-3 text-[13px]">
       <summary className="cursor-pointer font-semibold text-foreground">
-        Sources ({sources.length})
+        {t("misc.sources.title", { count: sources.length })}
       </summary>
       <div className="mt-3 space-y-3">
         {sources.map((source) => {
           const location = [
             source.section,
-            source.chapter ? `Chapter ${source.chapter}` : null,
-            source.page !== null ? `Page ${source.page}` : null,
+            source.chapter ? t("misc.sources.chapter", { chapter: source.chapter }) : null,
+            source.page !== null ? t("misc.sources.page", { page: source.page }) : null,
           ]
             .filter(Boolean)
             .join(" · ");
           const content = (
             <>
               <p className="font-medium text-foreground">
-                {source.material_name ?? "Course material"}
+                {source.material_name ?? t("misc.sources.defaultMaterial")}
               </p>
               {location && <p className="mt-0.5 text-muted-foreground">{location}</p>}
               <p className="mt-1.5 line-clamp-3 text-muted-foreground">{source.snippet}</p>

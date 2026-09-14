@@ -2,6 +2,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowRight, CalendarDays, Clock, GraduationCap, Sparkle, TrendingUp } from "lucide-react";
 import { AcademicYearSelector } from "@/components/app/AcademicYearSelector";
+import { useI18n } from "@/lib/i18n/provider";
 import { AppShell } from "@/components/app/AppShell";
 import { DemoModeBanner } from "@/components/app/DemoMode";
 import { SchoolLinksSection } from "@/components/app/SchoolLinksSection";
@@ -33,6 +34,7 @@ export const Route = createFileRoute("/_authenticated/home")({
 });
 
 function HomePage() {
+  const { t } = useI18n();
   const { assessments, events, profile } = useAppData();
   const { yearId, yearLabel } = useAcademicYear();
 
@@ -59,7 +61,7 @@ function HomePage() {
             {greetingName ? `${greetingName}'s Study Assistant` : "Alim's Study Assistant"}
           </h1>
           <p className="mt-4 max-w-xl text-[16px] text-muted-foreground sm:text-[17px]">
-            {yearLabel} · everything for your Gymnasium exams in one calm place.
+            {t("home.subtitle", { year: yearLabel })}
           </p>
         </div>
         <AcademicYearSelector className="shrink-0" />
@@ -69,38 +71,42 @@ function HomePage() {
         <BigCard
           to="/school"
           icon={<GraduationCap className="h-7 w-7" />}
-          title="School"
-          description="Open your subjects, study materials, quizzes, exams and academic progress."
+          title={t("home.school.title")}
+          description={t("home.school.description")}
         />
         <BigCard
           to="/planner"
           icon={<CalendarDays className="h-7 w-7" />}
-          title="Planner"
-          description="Organise classes, exams, study sessions, activities, deadlines and reminders."
+          title={t("home.planner.title")}
+          description={t("home.planner.description")}
         />
       </div>
 
       <section className="mt-10">
         <h2 className="text-[15px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
-          Today
+          {t("home.today")}
         </h2>
         <div className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <Stat
             icon={<TrendingUp className="h-[18px] w-[18px]" />}
-            label="School-year average"
+            label={t("home.stat.average")}
             value={year.exactYearAverage === null ? "—" : year.exactYearAverage.toFixed(2)}
           />
           <Stat
             icon={<GraduationCap className="h-[18px] w-[18px]" />}
-            label="Next exam"
-            value={nextExam ? `${nextExam.title} · ${formatDate(nextExam.date)}` : "None planned"}
+            label={t("home.stat.nextExam")}
+            value={
+              nextExam
+                ? `${nextExam.title} · ${formatDate(nextExam.date)}`
+                : t("home.stat.nextExam.none")
+            }
           />
           <Stat
             icon={<Clock className="h-[18px] w-[18px]" />}
-            label="Study time today"
+            label={t("home.stat.studyTime")}
             value={
               studyToday === 0
-                ? "Nothing planned"
+                ? t("home.stat.studyTime.none")
                 : durationLabel(
                     "00:00",
                     `${String(Math.floor(studyToday / 60)).padStart(2, "0")}:${String(studyToday % 60).padStart(2, "0")}`,
@@ -109,8 +115,12 @@ function HomePage() {
           />
           <Stat
             icon={<Sparkle className="h-[18px] w-[18px]" />}
-            label="Activity"
-            value={nextActivity ? `${nextActivity.title} · ${nextActivity.start}` : "None today"}
+            label={t("home.stat.activity")}
+            value={
+              nextActivity
+                ? `${nextActivity.title} · ${nextActivity.start}`
+                : t("home.stat.activity.none")
+            }
           />
         </div>
 
@@ -149,6 +159,7 @@ function BigCard({
   title: string;
   description: string;
 }) {
+  const { t } = useI18n();
   return (
     <Link to={to} className="landing-card group flex flex-col gap-5 p-8 sm:p-10">
       <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary">
@@ -161,7 +172,7 @@ function BigCard({
         </p>
       </div>
       <span className="mt-2 inline-flex items-center gap-2 text-[15px] font-medium text-primary">
-        Open {title}
+        {t("home.open", { title })}
         <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-1" />
       </span>
     </Link>

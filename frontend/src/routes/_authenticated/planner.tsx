@@ -46,8 +46,7 @@ import {
   addMonths,
   durationLabel,
   endOfMonth,
-  formatDayMonth,
-  formatMonthTitle,
+  fromIso,
   minutesOf,
   startOfMonth,
   startOfWeek,
@@ -59,14 +58,25 @@ import { getSubject } from "@/lib/mock/subjects";
 import type { Occurrence } from "@/lib/store/app-data";
 import { occurrencesInRange, useAppData } from "@/lib/store/app-data";
 import type { EventCategory, PlannerEvent } from "@/lib/store/types";
-import { CATEGORY_COLOR, EVENT_CATEGORIES } from "@/lib/store/types";
+import { CATEGORY_COLOR, EVENT_CATEGORIES, EVENT_CATEGORY_LABEL_KEY } from "@/lib/store/types";
 import { isGoogleOccurrence } from "@/lib/google-calendar";
 import { track } from "@/lib/telemetry";
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/lib/i18n/provider";
 import { toast } from "sonner";
 
 type PlannerView = "Timetable" | "Day" | "Month" | "List";
 type Scope = "only" | "future" | "series";
+
+const VIEW_LABEL_KEY: Record<
+  PlannerView,
+  "planner.view.timetable" | "planner.view.day" | "planner.view.month" | "planner.view.list"
+> = {
+  Timetable: "planner.view.timetable",
+  Day: "planner.view.day",
+  Month: "planner.view.month",
+  List: "planner.view.list",
+};
 
 export const Route = createFileRoute("/_authenticated/planner")({
   validateSearch: (search: Record<string, unknown>) => ({
@@ -95,16 +105,19 @@ export const Route = createFileRoute("/_authenticated/planner")({
   component: PlannerPage,
 });
 
-function formatHours(minutes: number) {
+function formatHours(t: ReturnType<typeof useI18n>["t"], minutes: number) {
   const h = Math.floor(minutes / 60);
   const m = minutes % 60;
-  if (h === 0) return `${m} min`;
-  return m === 0 ? `${h} h` : `${h} h ${m} min`;
+  if (h === 0) return t("planner.durationMinutes", { count: m });
+  return m === 0
+    ? t("planner.durationHours", { count: h })
+    : t("planner.durationHoursMinutes", { count: h, minutes: m });
 }
 
 function PlannerPage() {
   const search = Route.useSearch();
   const navigate = useNavigate();
+  const { t, formatDate } = useI18n();
   const {
     events,
     updateEvent,
@@ -184,14 +197,20 @@ function PlannerPage() {
         if (b.start < a.end) {
           out.push({
             id: `${a.event.id}-${b.event.id}-${date}`,
-            title: `${a.title} overlaps ${b.title}`,
-            detail: `${formatDayMonth(date)} · ${a.start}–${a.end} and ${b.start}–${b.end}`,
+            title: t("planner.conflictOverlap", { a: a.title, b: b.title }),
+            detail: t("planner.conflictDetail", {
+              date: formatDate(fromIso(date), { day: "numeric", month: "long" }),
+              aStart: a.start,
+              aEnd: a.end,
+              bStart: b.start,
+              bEnd: b.end,
+            }),
           });
         }
       }
     }
     return out;
-  }, [weekOccurrences]);
+  }, [weekOccurrences, t, formatDate]);
 
   const studyMinutes = weekOccurrences
     .filter((o) => o.event.category === "Study session")
@@ -245,7 +264,12 @@ function PlannerPage() {
       feature: "planner",
       properties: { scope, category: occurrence.event.category },
     });
-    toast.success(`Moved to ${formatDayMonth(date)} at ${start}`);
+    toast.success(
+      t("planner.movedToast", {
+        date: formatDate(fromIso(date), { day: "numeric", month: "long" }),
+        time: start,
+      }),
+    );
   }
 
   function handleMove(request: MoveRequest) {
@@ -264,27 +288,30 @@ function PlannerPage() {
 
   const rangeLabel =
     view === "Month"
-      ? formatMonthTitle(anchor)
+      ? formatDate(fromIso(anchor), { month: "long", year: "numeric" })
       : view === "Day"
-        ? formatDayMonth(anchor)
-        : `${formatDayMonth(range.from)} – ${formatDayMonth(range.to)}`;
+        ? formatDate(fromIso(anchor), { day: "numeric", month: "long" })
+        : `${formatDate(fromIso(range.from), { day: "numeric", month: "long" })} – ${formatDate(fromIso(range.to), { day: "numeric", month: "long" })}`;
 
   return (
     <AppShell wide>
       <PageNav
-        back={{ to: "/home", label: "Home" }}
-        crumbs={[{ label: "Home", to: "/home" }, { label: "Planner" }]}
+        back={{ to: "/home", label: t("planner.breadcrumbHome") }}
+        crumbs={[
+          { label: t("planner.breadcrumbHome"), to: "/home" },
+          { label: t("planner.breadcrumbPlanner") },
+        ]}
       />
       <PageHeading
-        title="Planner"
-        description="Your 24-hour timetable. Add classes, exams, study sessions and activities — drag any block to reschedule it."
+        title={t("planner.pageTitle")}
+        description={t("planner.pageDescription")}
         action={
           <EventDialog
             defaults={{ date: view === "Day" ? anchor : weekStart }}
             trigger={
               <Button>
                 <Plus className="h-4 w-4" />
-                Add Item
+                {t("planner.addItem")}
               </Button>
             }
           />
@@ -311,25 +338,35 @@ function PlannerPage() {
                   : "text-muted-foreground hover:bg-hover",
               )}
             >
-              {v}
+              {t(VIEW_LABEL_KEY[v])}
             </button>
           ))}
         </div>
 
-        <Button variant="secondary" size="icon" aria-label="Previous" onClick={() => shift(-1)}>
+        <Button
+          variant="secondary"
+          size="icon"
+          aria-label={t("planner.previous")}
+          onClick={() => shift(-1)}
+        >
           <ChevronLeft className="h-4 w-4" />
         </Button>
         <Button variant="secondary" onClick={() => setAnchor(todayIso())}>
-          Today
+          {t("planner.today")}
         </Button>
-        <Button variant="secondary" size="icon" aria-label="Next" onClick={() => shift(1)}>
+        <Button
+          variant="secondary"
+          size="icon"
+          aria-label={t("planner.next")}
+          onClick={() => shift(1)}
+        >
           <ChevronRight className="h-4 w-4" />
         </Button>
         <span className="tabular ml-1 text-[14px] text-muted-foreground">{rangeLabel}</span>
 
         {(view === "Timetable" || view === "Day") && (
           <label className="ml-auto flex items-center gap-2 text-[13.5px] text-muted-foreground">
-            Full 24 hours
+            {t("planner.fullDay")}
             <Switch checked={fullDay} onCheckedChange={setFullDay} />
           </label>
         )}
@@ -360,7 +397,7 @@ function PlannerPage() {
                 className="h-2.5 w-2.5 rounded-full"
                 style={{ backgroundColor: CATEGORY_COLOR[category] }}
               />
-              {category}
+              {t(EVENT_CATEGORY_LABEL_KEY[category])}
             </button>
           );
         })}
@@ -370,15 +407,15 @@ function PlannerPage() {
         <section className="min-w-0">
           {events.length === 0 && visibleOccurrences.length === 0 ? (
             <EmptyState
-              heading="Your planner is empty"
-              description="Add your classes, exams, study sessions, homework and activities. Nothing is pre-filled — turn on Demo Mode if you want to see an example week, or connect Google Calendar to see your appointments."
+              heading={t("planner.emptyHeading")}
+              description={t("planner.emptyDescription")}
               action={
                 <EventDialog
                   defaults={{ date: weekStart }}
                   trigger={
                     <Button>
                       <Plus className="h-4 w-4" />
-                      Add your first item
+                      {t("planner.addFirstItem")}
                     </Button>
                   }
                 />
@@ -415,7 +452,7 @@ function PlannerPage() {
                 <ul className="space-y-2.5">
                   {visibleOccurrences.length === 0 && (
                     <li className="app-card p-6 text-center text-[14px] text-muted-foreground">
-                      Nothing planned in the next 30 days.
+                      {t("planner.nothingPlanned")}
                     </li>
                   )}
                   {visibleOccurrences.map((o) => {
@@ -449,15 +486,15 @@ function PlannerPage() {
                             {fromGoogle && (
                               <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-surface-2 px-2 py-0.5 text-[11px] font-semibold text-muted-foreground">
                                 <GoogleCalendarLogo className="h-3 w-3" />
-                                Google
+                                {t("planner.googleBadge")}
                               </span>
                             )}
                           </span>
                           <span className="tabular block text-[13px] text-muted-foreground">
-                            {formatDayMonth(o.date)} · {o.start}–{o.end} ·{" "}
-                            {durationLabel(o.start, o.end)}
+                            {formatDate(fromIso(o.date), { day: "numeric", month: "long" })} ·{" "}
+                            {o.start}–{o.end} · {durationLabel(o.start, o.end)}
                             {subject ? ` · ${subject.name}` : ""}
-                            {fromGoogle ? " · read-only" : ""}
+                            {fromGoogle ? t("planner.readOnlySuffix") : ""}
                           </span>
                           {o.event.location && (
                             <span className="mt-0.5 inline-flex items-center gap-1.5 text-[12.5px] text-muted-foreground">
@@ -467,7 +504,7 @@ function PlannerPage() {
                           )}
                         </button>
                         {fromGoogle ? (
-                          <span className="sr-only">Read-only Google Calendar appointment</span>
+                          <span className="sr-only">{t("planner.readOnlyAriaLabel")}</span>
                         ) : (
                           <OccurrenceMenu
                             occurrence={o}
@@ -500,20 +537,23 @@ function PlannerPage() {
           <div className="app-card p-5">
             <div className="flex items-center gap-2.5">
               <Bell className="h-5 w-5" />
-              <h2 className="text-[17px] font-semibold tracking-tight">This week</h2>
+              <h2 className="text-[17px] font-semibold tracking-tight">{t("planner.thisWeek")}</h2>
             </div>
             <dl className="mt-3 space-y-2 text-[14.5px]">
-              <Row label="Classes" value={formatHours(classMinutes)} />
-              <Row label="Exams" value={String(examCount)} />
-              <Row label="Planned study time" value={formatHours(studyMinutes)} />
-              <Row label="Activities incl. travel" value={formatHours(activityMinutes)} />
+              <Row label={t("planner.classes")} value={formatHours(t, classMinutes)} />
+              <Row label={t("planner.exams")} value={String(examCount)} />
+              <Row label={t("planner.plannedStudyTime")} value={formatHours(t, studyMinutes)} />
+              <Row
+                label={t("planner.activitiesInclTravel")}
+                value={formatHours(t, activityMinutes)}
+              />
             </dl>
             <EventDialog
               defaults={{ date: weekStart, category: "Study session" }}
               trigger={
                 <Button variant="secondary" className="mt-4 w-full">
                   <CalendarDays className="h-4 w-4" />
-                  Plan a study session
+                  {t("planner.planStudySession")}
                 </Button>
               }
             />
@@ -523,7 +563,9 @@ function PlannerPage() {
             <div className="app-card p-5">
               <div className="flex items-center gap-2.5">
                 <TriangleAlert className="h-5 w-5 text-warning" />
-                <h2 className="text-[17px] font-semibold tracking-tight">Conflicts</h2>
+                <h2 className="text-[17px] font-semibold tracking-tight">
+                  {t("planner.conflicts")}
+                </h2>
               </div>
               <ul className="mt-3 space-y-3">
                 {conflicts.map((conflict) => (
@@ -537,10 +579,12 @@ function PlannerPage() {
           )}
 
           <div className="app-card p-5">
-            <h2 className="text-[17px] font-semibold tracking-tight">Extracurricular activities</h2>
+            <h2 className="text-[17px] font-semibold tracking-tight">
+              {t("planner.extracurricularActivities")}
+            </h2>
             {activities.length === 0 ? (
               <p className="mt-2 rounded-[14px] bg-surface-2 px-3 py-4 text-[13.5px] text-muted-foreground">
-                Add training, lessons or clubs so study time can be planned around them.
+                {t("planner.noActivities")}
               </p>
             ) : (
               <ul className="mt-3 space-y-2.5">
@@ -564,7 +608,9 @@ function PlannerPage() {
                     {(activity.travelBefore || activity.travelAfter) && (
                       <p className="mt-1 inline-flex items-center gap-1.5 text-[12.5px] text-muted-foreground">
                         <Clock className="h-3.5 w-3.5" />
-                        {(activity.travelBefore ?? 0) + (activity.travelAfter ?? 0)} min travel
+                        {t("planner.minTravel", {
+                          count: (activity.travelBefore ?? 0) + (activity.travelAfter ?? 0),
+                        })}
                       </p>
                     )}
                   </li>
@@ -582,7 +628,7 @@ function PlannerPage() {
               trigger={
                 <Button variant="secondary" className="mt-4 w-full">
                   <Plus className="h-4 w-4" />
-                  Add Activity
+                  {t("planner.addActivity")}
                 </Button>
               }
             />
@@ -606,7 +652,7 @@ function PlannerPage() {
             </DialogTitle>
             <DialogDescription>
               {googleDetail
-                ? `${formatDayMonth(googleDetail.date)} · ${googleDetail.start}–${googleDetail.end}`
+                ? `${formatDate(fromIso(googleDetail.date), { day: "numeric", month: "long" })} · ${googleDetail.start}–${googleDetail.end}`
                 : ""}
             </DialogDescription>
           </DialogHeader>
@@ -617,11 +663,11 @@ function PlannerPage() {
             </p>
           )}
           <p className="text-[13.5px] text-muted-foreground">
-            From your Google Calendar. It is shown here read-only — change it in Google Calendar.
+            {t("planner.googleDialogDescription")}
           </p>
           <DialogFooter>
             <Button variant="secondary" onClick={() => setGoogleDetail(null)}>
-              Close
+              {t("common.close")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -653,8 +699,8 @@ function PlannerPage() {
 
       <ScopeDialog
         open={pendingMove !== null}
-        title="Move recurring event"
-        description="This event repeats. Choose which occurrences should move."
+        title={t("planner.moveRecurringTitle")}
+        description={t("planner.moveRecurringDescription")}
         onCancel={() => setPendingMove(null)}
         onChoose={(scope) => {
           if (pendingMove) applyMove(pendingMove, scope);
@@ -664,13 +710,13 @@ function PlannerPage() {
 
       <ScopeDialog
         open={pendingDelete !== null}
-        title="Delete recurring event"
-        description="This event repeats. Choose what to delete."
+        title={t("planner.deleteRecurringTitle")}
+        description={t("planner.deleteRecurringDescription")}
         destructive
         labels={{
-          only: "This event only",
-          future: "This and future events",
-          series: "Delete entire series",
+          only: t("planner.scope.only"),
+          future: t("planner.scope.future"),
+          series: t("planner.scope.deleteSeries"),
         }}
         onCancel={() => setPendingDelete(null)}
         onChoose={(scope) => {
@@ -680,15 +726,15 @@ function PlannerPage() {
           if (target.event.recurrence === "none" || scope === "series") {
             const snapshot = { ...target.event };
             removeEvent(target.event.id);
-            toast.success("Deleted", {
-              action: { label: "Undo", onClick: () => restoreEvent(snapshot) },
+            toast.success(t("planner.deletedToast"), {
+              action: { label: t("planner.undo"), onClick: () => restoreEvent(snapshot) },
             });
           } else if (scope === "future") {
             endSeriesBefore(target.event.id, target.originalDate);
-            toast.success("This and future events removed");
+            toast.success(t("planner.futureDeletedToast"));
           } else {
             removeOccurrence(target.event.id, target.originalDate);
-            toast.success("Occurrence removed");
+            toast.success(t("planner.occurrenceDeletedToast"));
           }
         }}
       />
@@ -709,22 +755,29 @@ function OccurrenceMenu({
   onDuplicate: () => void;
   onDelete: () => void;
 }) {
+  const { t } = useI18n();
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon-sm" aria-label={`Actions for ${occurrence.title}`}>
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          aria-label={t("planner.actionsFor", { title: occurrence.title })}
+        >
           <MoreHorizontal className="h-4 w-4" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         <DropdownMenuItem onSelect={onToggleDone}>
-          {occurrence.event.done ? "Mark as not done" : "Mark as done"}
+          {occurrence.event.done ? t("planner.markNotDone") : t("planner.markDone")}
         </DropdownMenuItem>
-        <DropdownMenuItem onSelect={() => setTimeout(onEdit, 0)}>Edit</DropdownMenuItem>
-        <DropdownMenuItem onSelect={onDuplicate}>Duplicate</DropdownMenuItem>
+        <DropdownMenuItem onSelect={() => setTimeout(onEdit, 0)}>
+          {t("common.edit")}
+        </DropdownMenuItem>
+        <DropdownMenuItem onSelect={onDuplicate}>{t("planner.duplicate")}</DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem className="text-destructive" onSelect={() => setTimeout(onDelete, 0)}>
-          Delete
+          {t("common.delete")}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
@@ -742,6 +795,7 @@ function MonthGrid({
   onSelect: (occurrence: Occurrence) => void;
   onPickDay: (iso: string) => void;
 }) {
+  const { t } = useI18n();
   const first = startOfMonth(anchor);
   const gridStart = startOfWeek(first);
   const days = Array.from({ length: 42 }, (_, i) => addDays(gridStart, i));
@@ -804,7 +858,7 @@ function MonthGrid({
                 ))}
                 {dayEvents.length > 3 && (
                   <li className="px-1 text-[11px] text-muted-foreground">
-                    +{dayEvents.length - 3} more
+                    {t("planner.moreCount", { count: dayEvents.length - 3 })}
                   </li>
                 )}
               </ul>
@@ -821,11 +875,7 @@ function ScopeDialog({
   title,
   description,
   destructive,
-  labels = {
-    only: "This event only",
-    future: "This and future events",
-    series: "Entire series",
-  },
+  labels,
   onCancel,
   onChoose,
 }: {
@@ -837,6 +887,12 @@ function ScopeDialog({
   onCancel: () => void;
   onChoose: (scope: Scope) => void;
 }) {
+  const { t } = useI18n();
+  const resolvedLabels: Record<Scope, string> = labels ?? {
+    only: t("planner.scope.only"),
+    future: t("planner.scope.future"),
+    series: t("planner.scope.series"),
+  };
   return (
     <Dialog
       open={open}
@@ -857,13 +913,13 @@ function ScopeDialog({
               className="w-full justify-start"
               onClick={() => onChoose(scope)}
             >
-              {labels[scope]}
+              {resolvedLabels[scope]}
             </Button>
           ))}
         </div>
         <DialogFooter>
           <Button variant="ghost" onClick={onCancel}>
-            Cancel
+            {t("common.cancel")}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -34,11 +34,14 @@ import type { EventCategory, PlannerEvent, Recurrence } from "@/lib/store/types"
 import {
   CATEGORY_COLOR,
   EVENT_CATEGORIES,
+  EVENT_CATEGORY_LABEL_KEY,
   LINK_ACCENTS,
-  RECURRENCE_LABEL,
+  RECURRENCE_LABEL_KEY,
+  REMINDER_LABEL_KEY,
   REMINDER_OPTIONS,
 } from "@/lib/store/types";
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/lib/i18n/provider";
 import { toast } from "sonner";
 
 const NO_SUBJECT = "__none";
@@ -101,6 +104,7 @@ export function EventDialog({
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
 }) {
+  const { t } = useI18n();
   const { addEvent, updateEvent, updateOccurrence, splitSeriesFrom } = useAppData();
   const [uncontrolled, setUncontrolled] = useState(false);
   const open = controlledOpen ?? uncontrolled;
@@ -121,20 +125,34 @@ export function EventDialog({
 
   const previewText = (() => {
     if (!repeats) {
-      return `This event will appear once on ${weekdayName(draft.date)}, from ${draft.start} to ${draft.end}.`;
+      return t("events.preview.once", {
+        weekday: weekdayName(draft.date),
+        start: draft.start,
+        end: draft.end,
+      });
     }
     if (usesWeekdays) {
       const days = [...draft.weekdays]
         .sort()
         .map((d) => WEEKDAY_LONG[d])
         .join(", ");
-      const every = draft.recurrence === "weekly" ? "every week" : "every two weeks";
-      return `This event will appear ${every} on ${days || "—"} from ${draft.start} to ${draft.end}.`;
+      return t(
+        draft.recurrence === "weekly" ? "events.preview.weekly" : "events.preview.biweekly",
+        {
+          days: days || "—",
+          start: draft.start,
+          end: draft.end,
+        },
+      );
     }
     if (draft.recurrence === "daily") {
-      return `This event will appear every day from ${draft.start} to ${draft.end}.`;
+      return t("events.preview.daily", { start: draft.start, end: draft.end });
     }
-    return `This event will appear every month on day ${Number(draft.date.slice(8))} from ${draft.start} to ${draft.end}.`;
+    return t("events.preview.monthly", {
+      day: Number(draft.date.slice(8)),
+      start: draft.start,
+      end: draft.end,
+    });
   })();
 
   function save() {
@@ -158,7 +176,7 @@ export function EventDialog({
 
     if (!record) {
       addEvent({ ...payload, done: false });
-      toast.success("Added to your planner");
+      toast.success(t("events.toast.added"));
       setOpen(false);
       return;
     }
@@ -170,13 +188,13 @@ export function EventDialog({
         start: payload.start,
         end: payload.end,
       });
-      toast.success("This occurrence updated");
+      toast.success(t("events.toast.occurrenceUpdated"));
     } else if (isRecurringEdit && occurrenceDate && scope === "future") {
       splitSeriesFrom(record.id, occurrenceDate, payload);
-      toast.success("This and future events updated");
+      toast.success(t("events.toast.futureUpdated"));
     } else {
       updateEvent(record.id, payload);
-      toast.success(isRecurringEdit ? "Entire series updated" : "Planner item updated");
+      toast.success(isRecurringEdit ? t("events.toast.seriesUpdated") : t("events.toast.updated"));
     }
     setOpen(false);
   }
@@ -195,27 +213,24 @@ export function EventDialog({
       {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
       <DialogContent className="max-h-[88vh] overflow-y-auto sm:max-w-[600px]">
         <DialogHeader>
-          <DialogTitle>{record ? "Edit planner item" : "Add planner item"}</DialogTitle>
-          <DialogDescription>
-            Classes, exams, study sessions, homework, activities and reminders — all editable at any
-            time.
-          </DialogDescription>
+          <DialogTitle>{record ? t("events.editTitle") : t("events.addTitle")}</DialogTitle>
+          <DialogDescription>{t("events.dialogDescription")}</DialogDescription>
         </DialogHeader>
 
         <div className="grid gap-4">
           <div className="grid gap-2">
-            <Label htmlFor="ev-title">Event title</Label>
+            <Label htmlFor="ev-title">{t("events.title")}</Label>
             <Input
               id="ev-title"
               value={draft.title}
               onChange={(e) => set("title", e.target.value)}
-              placeholder="Tennis Training"
+              placeholder={t("events.titlePlaceholder")}
             />
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="grid gap-2">
-              <Label>Event type</Label>
+              <Label>{t("events.type")}</Label>
               <Select
                 value={draft.category}
                 onValueChange={(v) => set("category", v as EventCategory)}
@@ -226,20 +241,20 @@ export function EventDialog({
                 <SelectContent>
                   {EVENT_CATEGORIES.map((c) => (
                     <SelectItem key={c} value={c}>
-                      {c}
+                      {t(EVENT_CATEGORY_LABEL_KEY[c])}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
             <div className="grid gap-2">
-              <Label>Subject (optional)</Label>
+              <Label>{t("events.subject")}</Label>
               <Select value={draft.subjectSlug} onValueChange={(v) => set("subjectSlug", v)}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value={NO_SUBJECT}>No subject</SelectItem>
+                  <SelectItem value={NO_SUBJECT}>{t("events.noSubject")}</SelectItem>
                   {SUBJECTS.map((s) => (
                     <SelectItem key={s.slug} value={s.slug}>
                       {s.name}
@@ -250,7 +265,7 @@ export function EventDialog({
             </div>
 
             <div className="grid gap-2">
-              <Label htmlFor="ev-date">Date</Label>
+              <Label htmlFor="ev-date">{t("events.date")}</Label>
               <Input
                 id="ev-date"
                 type="date"
@@ -266,12 +281,12 @@ export function EventDialog({
               />
             </div>
             <div className="grid gap-2">
-              <Label>Weekday</Label>
+              <Label>{t("events.weekday")}</Label>
               <Input value={weekdayName(draft.date)} readOnly className="text-muted-foreground" />
             </div>
 
             <div className="grid gap-2">
-              <Label htmlFor="ev-start">Start time (24h)</Label>
+              <Label htmlFor="ev-start">{t("events.startTime")}</Label>
               <Input
                 id="ev-start"
                 type="time"
@@ -280,7 +295,7 @@ export function EventDialog({
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="ev-end">End time (24h)</Label>
+              <Label htmlFor="ev-end">{t("events.endTime")}</Label>
               <Input
                 id="ev-end"
                 type="time"
@@ -293,7 +308,7 @@ export function EventDialog({
           <div className="rounded-[14px] border border-border p-4">
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="grid gap-2">
-                <Label>Repeats</Label>
+                <Label>{t("events.repeats")}</Label>
                 <Select
                   value={draft.recurrence}
                   onValueChange={(v) => {
@@ -309,9 +324,9 @@ export function EventDialog({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {(Object.keys(RECURRENCE_LABEL) as Recurrence[]).map((r) => (
+                    {(Object.keys(RECURRENCE_LABEL_KEY) as Recurrence[]).map((r) => (
                       <SelectItem key={r} value={r}>
-                        {RECURRENCE_LABEL[r]}
+                        {t(RECURRENCE_LABEL_KEY[r])}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -319,7 +334,7 @@ export function EventDialog({
               </div>
               {repeats && (
                 <div className="grid gap-2">
-                  <Label htmlFor="ev-until">Repeat until (optional)</Label>
+                  <Label htmlFor="ev-until">{t("events.repeatUntil")}</Label>
                   <Input
                     id="ev-until"
                     type="date"
@@ -332,7 +347,7 @@ export function EventDialog({
 
             {usesWeekdays && (
               <div className="mt-4 grid gap-2">
-                <Label>Repeat on</Label>
+                <Label>{t("events.repeatOn")}</Label>
                 <div className="flex gap-1.5">
                   {WEEKDAY_INITIAL.map((initial, index) => {
                     const on = draft.weekdays.includes(index);
@@ -363,7 +378,7 @@ export function EventDialog({
                   })}
                 </div>
                 {draft.weekdays.length === 0 && (
-                  <p className="text-[13px] text-warning">Choose at least one weekday.</p>
+                  <p className="text-[13px] text-warning">{t("events.chooseWeekday")}</p>
                 )}
               </div>
             )}
@@ -375,16 +390,16 @@ export function EventDialog({
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="grid gap-2">
-              <Label htmlFor="ev-location">Location (optional)</Label>
+              <Label htmlFor="ev-location">{t("events.location")}</Label>
               <Input
                 id="ev-location"
                 value={draft.location}
                 onChange={(e) => set("location", e.target.value)}
-                placeholder="Sporthalle Zentrum"
+                placeholder={t("events.locationPlaceholder")}
               />
             </div>
             <div className="grid gap-2">
-              <Label>Reminder</Label>
+              <Label>{t("events.reminder")}</Label>
               <Select value={draft.reminder} onValueChange={(v) => set("reminder", v)}>
                 <SelectTrigger>
                   <SelectValue />
@@ -392,14 +407,14 @@ export function EventDialog({
                 <SelectContent>
                   {REMINDER_OPTIONS.map((r) => (
                     <SelectItem key={r} value={r}>
-                      {r}
+                      {t(REMINDER_LABEL_KEY[r])}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="ev-travel-before">Travel time before (min)</Label>
+              <Label htmlFor="ev-travel-before">{t("events.travelBefore")}</Label>
               <Input
                 id="ev-travel-before"
                 inputMode="numeric"
@@ -409,7 +424,7 @@ export function EventDialog({
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="ev-travel-after">Travel time after (min)</Label>
+              <Label htmlFor="ev-travel-after">{t("events.travelAfter")}</Label>
               <Input
                 id="ev-travel-after"
                 inputMode="numeric"
@@ -421,7 +436,7 @@ export function EventDialog({
           </div>
 
           <div className="grid gap-2">
-            <Label>Colour</Label>
+            <Label>{t("events.colour")}</Label>
             <div className="flex flex-wrap items-center gap-2">
               <button
                 type="button"
@@ -437,13 +452,13 @@ export function EventDialog({
                   className="h-3.5 w-3.5 rounded-full"
                   style={{ backgroundColor: CATEGORY_COLOR[draft.category] }}
                 />
-                Category colour
+                {t("events.categoryColour")}
               </button>
               {LINK_ACCENTS.map((c) => (
                 <button
                   key={c}
                   type="button"
-                  aria-label={`Colour ${c}`}
+                  aria-label={t("events.colourNamed", { colour: c })}
                   onClick={() => set("color", c)}
                   className={cn(
                     "h-9 w-9 rounded-full border-2 transition-transform",
@@ -456,7 +471,7 @@ export function EventDialog({
           </div>
 
           <div className="grid gap-2">
-            <Label htmlFor="ev-notes">Notes (optional)</Label>
+            <Label htmlFor="ev-notes">{t("events.notes")}</Label>
             <Textarea
               id="ev-notes"
               value={draft.notes}
@@ -465,18 +480,18 @@ export function EventDialog({
           </div>
 
           {draft.end <= draft.start && (
-            <p className="text-[13px] text-warning">The end time must be after the start time.</p>
+            <p className="text-[13px] text-warning">{t("events.endBeforeStart")}</p>
           )}
 
           {isRecurringEdit && occurrenceDate && (
             <div className="rounded-[14px] border border-border p-4">
-              <Label className="mb-2 block">Apply changes to</Label>
+              <Label className="mb-2 block">{t("events.applyChangesTo")}</Label>
               <div className="grid gap-2 sm:grid-cols-3">
                 {(
                   [
-                    ["only", "This event only"],
-                    ["future", "This and future events"],
-                    ["series", "Entire series"],
+                    ["only", t("events.scope.only")],
+                    ["future", t("events.scope.future")],
+                    ["series", t("events.scope.series")],
                   ] as [EditScope, string][]
                 ).map(([value, label]) => (
                   <button
@@ -496,8 +511,7 @@ export function EventDialog({
               </div>
               {scope === "only" && (
                 <p className="mt-2 text-[13px] text-muted-foreground">
-                  Only the date, time and title change for this occurrence. The rest of the series
-                  stays as it is.
+                  {t("events.scope.onlyHint")}
                 </p>
               )}
             </div>
@@ -506,10 +520,10 @@ export function EventDialog({
 
         <DialogFooter>
           <Button variant="ghost" onClick={() => setOpen(false)}>
-            Cancel
+            {t("events.cancel")}
           </Button>
           <Button disabled={invalid} onClick={save}>
-            {record ? "Save changes" : "Add to planner"}
+            {record ? t("events.saveChanges") : t("events.addToPlanner")}
           </Button>
         </DialogFooter>
       </DialogContent>

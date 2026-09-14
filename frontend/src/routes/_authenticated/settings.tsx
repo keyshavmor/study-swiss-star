@@ -7,6 +7,7 @@ import {
   PreferencesSections,
   StorageSection,
 } from "@/components/app/SettingsSections";
+import { useI18n } from "@/lib/i18n/provider";
 
 export const Route = createFileRoute("/_authenticated/settings")({
   head: () => ({
@@ -29,16 +30,14 @@ export const Route = createFileRoute("/_authenticated/settings")({
 });
 
 function SettingsPage() {
+  const { t } = useI18n();
   return (
     <AppShell>
       <PageNav
-        back={{ to: "/home", label: "Home" }}
-        crumbs={[{ label: "Home", to: "/home" }, { label: "Settings" }]}
+        back={{ to: "/home", label: t("nav.home") }}
+        crumbs={[{ label: t("nav.home"), to: "/home" }, { label: t("nav.settings") }]}
       />
-      <PageHeading
-        title="Settings"
-        description="Your account, the local model, storage and study preferences."
-      />
+      <PageHeading title={t("settings.page.title")} description={t("settings.page.description")} />
       <div className="max-w-3xl space-y-5">
         <AccountSection />
         <PreferencesSections />

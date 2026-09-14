@@ -21,6 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useI18n } from "@/lib/i18n/provider";
 import { CURRENT_YEAR_ID } from "@/lib/mock/academic";
 import { SUBJECTS } from "@/lib/mock/subjects";
 import { useAppData } from "@/lib/store/app-data";
@@ -56,6 +57,7 @@ export function TranscriptImportDialog({
   trigger: ReactNode;
   subjectSlug?: string;
 }) {
+  const { t } = useI18n();
   const { addAssessment } = useAppData();
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState<"upload" | "review">("upload");
@@ -102,9 +104,12 @@ export function TranscriptImportDialog({
     });
     setOpen(false);
     reset();
-    toast.success(`${valid.length} grade${valid.length === 1 ? "" : "s"} imported`, {
-      description: "Imported grades can be edited or deleted like any other test.",
-    });
+    toast.success(
+      valid.length === 1
+        ? t("grades.transcript.toastSingular", { count: valid.length })
+        : t("grades.transcript.toastPlural", { count: valid.length }),
+      { description: t("grades.transcript.toastDescription") },
+    );
   }
 
   return (
@@ -119,21 +124,23 @@ export function TranscriptImportDialog({
       <DialogContent className="max-h-[88vh] overflow-y-auto sm:max-w-[620px]">
         <DialogHeader>
           <DialogTitle>
-            {step === "upload" ? "Upload transcript" : "Review extracted grades"}
+            {step === "upload"
+              ? t("grades.transcript.uploadTitle")
+              : t("grades.transcript.reviewTitle")}
           </DialogTitle>
           <DialogDescription>
             {step === "upload"
-              ? "Prototype only — no file is parsed. You enter the grades you want to import."
-              : "Check every row. Imported grades stay editable afterwards."}
+              ? t("grades.transcript.uploadDescription")
+              : t("grades.transcript.reviewDescription")}
           </DialogDescription>
         </DialogHeader>
 
         {step === "upload" ? (
           <div className="rounded-[18px] border border-dashed border-border-strong bg-surface-2 p-8 text-center">
             <Upload className="mx-auto h-6 w-6 text-muted-foreground" />
-            <p className="mt-3 text-[14.5px] font-medium">Drop a transcript PDF or photo here</p>
+            <p className="mt-3 text-[14.5px] font-medium">{t("grades.transcript.dropHeading")}</p>
             <p className="mt-1 text-[13px] text-muted-foreground">
-              Extraction is simulated — you confirm each grade yourself.
+              {t("grades.transcript.dropSubtext")}
             </p>
           </div>
         ) : (
@@ -142,7 +149,7 @@ export function TranscriptImportDialog({
               <div key={row.key} className="grid gap-3 rounded-[16px] bg-surface-2 p-3.5">
                 <div className="grid gap-3 sm:grid-cols-2">
                   <div className="grid gap-2">
-                    <Label>Subject</Label>
+                    <Label>{t("grades.transcript.subject")}</Label>
                     <Select
                       value={row.subjectSlug}
                       onValueChange={(v) => update(row.key, { subjectSlug: v })}
@@ -160,26 +167,28 @@ export function TranscriptImportDialog({
                     </Select>
                   </div>
                   <div className="grid gap-2">
-                    <Label htmlFor={`${row.key}-title`}>Assessment title</Label>
+                    <Label htmlFor={`${row.key}-title`}>
+                      {t("grades.transcript.assessmentTitle")}
+                    </Label>
                     <Input
                       id={`${row.key}-title`}
                       value={row.title}
                       onChange={(e) => update(row.key, { title: e.target.value })}
-                      placeholder="Semester test"
+                      placeholder={t("grades.transcript.titlePlaceholder")}
                     />
                   </div>
                   <div className="grid gap-2">
-                    <Label htmlFor={`${row.key}-grade`}>Grade</Label>
+                    <Label htmlFor={`${row.key}-grade`}>{t("grades.transcript.grade")}</Label>
                     <Input
                       id={`${row.key}-grade`}
                       inputMode="decimal"
                       value={row.grade}
                       onChange={(e) => update(row.key, { grade: e.target.value })}
-                      placeholder="5.0"
+                      placeholder={t("grades.transcript.gradePlaceholder")}
                     />
                   </div>
                   <div className="grid gap-2">
-                    <Label htmlFor={`${row.key}-date`}>Date</Label>
+                    <Label htmlFor={`${row.key}-date`}>{t("grades.transcript.date")}</Label>
                     <Input
                       id={`${row.key}-date`}
                       type="date"
@@ -194,7 +203,7 @@ export function TranscriptImportDialog({
                   className="justify-self-start text-destructive"
                   onClick={() => setRows((prev) => prev.filter((r) => r.key !== row.key))}
                 >
-                  Remove row
+                  {t("grades.transcript.removeRow")}
                 </Button>
               </div>
             ))}
@@ -203,7 +212,7 @@ export function TranscriptImportDialog({
               size="sm"
               onClick={() => setRows((prev) => [...prev, blankRow(prev.length + 1)])}
             >
-              Add another row
+              {t("grades.transcript.addRow")}
             </Button>
           </div>
         )}
@@ -212,17 +221,19 @@ export function TranscriptImportDialog({
           {step === "upload" ? (
             <>
               <Button variant="ghost" onClick={() => setOpen(false)}>
-                Cancel
+                {t("common.cancel")}
               </Button>
-              <Button onClick={startReview}>Continue</Button>
+              <Button onClick={startReview}>{t("grades.transcript.continue")}</Button>
             </>
           ) : (
             <>
               <Button variant="ghost" onClick={() => setStep("upload")}>
-                Go back
+                {t("grades.transcript.goBack")}
               </Button>
               <Button disabled={valid.length === 0} onClick={importRows}>
-                Import {valid.length || ""} grade{valid.length === 1 ? "" : "s"}
+                {valid.length === 1
+                  ? t("grades.transcript.importSingular", { count: valid.length })
+                  : t("grades.transcript.importPlural", { count: valid.length })}
               </Button>
             </>
           )}

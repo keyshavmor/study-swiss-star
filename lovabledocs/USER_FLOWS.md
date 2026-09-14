@@ -357,3 +357,28 @@ sequenceDiagram
    `storage-emergency-cleanup` once per session before refreshing usage.
 4. The student filters their own files by type and date, selects them and
    confirms deletion: Storage `.remove()` first, then metadata reconciliation.
+
+## Language-switch flow — implemented, frontend-only
+
+1. Student opens the flag dropdown in `AppHeader` (`LanguageMenu.tsx`) and picks one of
+   English/German/Russian/Spanish/French.
+2. `I18nProvider` swaps the active message bundle immediately and reformats dates/numbers.
+3. If signed in, the choice is written to `user_preferences.preferences.app_language` (authoritative)
+   and cached in `localStorage` (`alim.app_language`) only to avoid a flash of the wrong language on
+   the next load and to localise the signed-out welcome screen.
+4. `FUTURE BACKEND / CODEX (not implemented)`: the local Python backend does not yet read
+   `app_language` when generating chat, quiz or grading responses — see
+   `SUBJECT_MODEL_AND_LANGUAGE_RULES.md`.
+
+## Read-aloud (Listen/Stop) flow — implemented, frontend-only
+
+1. A completed assistant message renders a Listen control when
+   `user_preferences.preferences.assistant_audio_enabled` is `true` (default).
+2. Pressing Listen calls `speak()` from `frontend/src/lib/speech.ts`, which uses the browser's Web
+   Speech API; pressing it again (or Stop) calls `stopSpeaking()`. Nothing is uploaded, recorded or
+   persisted — playback is ephemeral and entirely client-side.
+3. When `assistant_audio_autoplay` is `true`, a newly completed answer autoplays once; historical
+   messages loaded from `assistant_messages` never autoplay.
+4. If `speechSupported` is `false` for the browser, the control shows a "not supported" state instead
+   of failing silently.
+5. The local Python backend is not involved and does not generate audio today.

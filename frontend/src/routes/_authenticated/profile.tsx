@@ -8,13 +8,13 @@ import { PageNav } from "@/components/app/Breadcrumbs";
 import { EditProfileDialog } from "@/components/app/EditProfileDialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { formatLongDate } from "@/lib/date-utils";
 import { summariseYear } from "@/lib/grade-math";
 import { SCHOOL_SUBJECTS } from "@/lib/mock/subjects";
 import { useAcademicYear } from "@/lib/store/academic-year";
 import { useAppData } from "@/lib/store/app-data";
 import { avatarSignedUrl, fetchAccountProfile, type AccountProfile } from "@/lib/account-data";
 import { supabase } from "@/integrations/supabase/client";
+import { useI18n } from "@/lib/i18n/provider";
 
 export const Route = createFileRoute("/_authenticated/profile")({
   head: () => ({
@@ -38,6 +38,7 @@ export const Route = createFileRoute("/_authenticated/profile")({
 });
 
 function ProfilePage() {
+  const { t, formatDate } = useI18n();
   const { profile, assessments, events, materials, links } = useAppData();
   const { yearId, year, yearLabel } = useAcademicYear();
   const [account, setAccount] = useState<AccountProfile | null>(null);
@@ -73,25 +74,25 @@ function ProfilePage() {
     SCHOOL_SUBJECTS,
   );
   const yearAssessments = assessments.filter((a) => a.yearId === yearId);
-  const displayName = account?.fullName || profile.fullName || "Your profile";
+  const displayName = account?.fullName || profile.fullName || t("profile.page.title");
   const avatarSrc = accountAvatar || profile.photo;
-  const notSet = (value: string) => (value.trim() ? value : "Not set");
+  const notSet = (value: string) => (value.trim() ? value : t("profile.notSet"));
 
   return (
     <AppShell>
       <PageNav
-        back={{ to: "/home", label: "Home" }}
-        crumbs={[{ label: "Home", to: "/home" }, { label: "Profile" }]}
+        back={{ to: "/home", label: t("nav.home") }}
+        crumbs={[{ label: t("nav.home"), to: "/home" }, { label: t("nav.profile") }]}
       />
       <PageHeading
-        title="Profile"
-        description="Your details, school information and academic summary. Everything here is editable."
+        title={t("profile.page.title")}
+        description={t("profile.page.description")}
         action={
           <EditProfileDialog
             trigger={
               <Button>
                 <Pencil className="h-4 w-4" />
-                Edit Profile
+                {t("profile.editButton")}
               </Button>
             }
           />
@@ -116,7 +117,9 @@ function ProfilePage() {
               <div className="min-w-0">
                 <h2 className="truncate text-[24px] font-semibold tracking-tight">{displayName}</h2>
                 <p className="mt-1 text-[14.5px] text-muted-foreground">
-                  {profile.className ? `Class ${profile.className} · ${yearLabel}` : yearLabel}
+                  {profile.className
+                    ? t("profile.className", { className: profile.className, year: yearLabel })
+                    : yearLabel}
                 </p>
                 {profile.schoolName && (
                   <p className="text-[14px] text-muted-foreground">{profile.schoolName}</p>
@@ -125,77 +128,97 @@ function ProfilePage() {
             </div>
           </section>
 
-          <Section title="Personal information">
-            <Row label="Full name" value={notSet(account?.fullName || profile.fullName)} />
+          <Section title={t("profile.personal.title")}>
             <Row
-              label="Preferred name"
+              label={t("profile.personal.fullName")}
+              value={notSet(account?.fullName || profile.fullName)}
+            />
+            <Row
+              label={t("profile.personal.preferredName")}
               value={notSet(account?.preferredName || profile.preferredName)}
             />
-            <Row label="Nationality" value={notSet(account?.nationality ?? "")} />
-            <Row label="Contact phone" value={notSet(account?.contactPhone ?? "")} />
-            <Row label="Address" value={notSet(account?.contactDetails["address"] ?? "")} />
             <Row
-              label="Date of birth"
-              value={profile.dateOfBirth ? formatLongDate(profile.dateOfBirth) : "Not set"}
+              label={t("profile.personal.nationality")}
+              value={notSet(account?.nationality ?? "")}
             />
-            <Row label="Interface language" value={notSet(profile.language)} />
+            <Row
+              label={t("profile.personal.contactPhone")}
+              value={notSet(account?.contactPhone ?? "")}
+            />
+            <Row
+              label={t("profile.personal.address")}
+              value={notSet(account?.contactDetails["address"] ?? "")}
+            />
+            <Row
+              label={t("profile.personal.dateOfBirth")}
+              value={profile.dateOfBirth ? formatDate(profile.dateOfBirth) : t("profile.notSet")}
+            />
+            <Row label={t("profile.personal.interfaceLanguage")} value={notSet(profile.language)} />
           </Section>
 
-          <Section title="School information">
-            <Row label="School" value={notSet(profile.schoolName)} />
-            <Row label="School type" value={notSet(profile.schoolType)} />
-            <Row label="Academic year" value={year.label} />
-            <Row label="Grade level" value={year.gradeLevel} />
-            <Row label="Class" value={notSet(profile.className)} />
-            <Row label="Class teacher" value={notSet(profile.classTeacher)} />
-            <Row label="Focus subject" value={notSet(profile.focusSubject)} />
+          <Section title={t("profile.school.title")}>
+            <Row label={t("profile.school.name")} value={notSet(profile.schoolName)} />
+            <Row label={t("profile.school.type")} value={notSet(profile.schoolType)} />
+            <Row label={t("profile.school.academicYear")} value={year.label} />
+            <Row label={t("profile.school.gradeLevel")} value={year.gradeLevel} />
+            <Row label={t("profile.school.class")} value={notSet(profile.className)} />
+            <Row label={t("profile.school.classTeacher")} value={notSet(profile.classTeacher)} />
+            <Row label={t("profile.school.focusSubject")} value={notSet(profile.focusSubject)} />
           </Section>
 
-          <Section title="Account">
-            <Row label="Sign-in email" value={notSet(accountEmail)} />
-            <Row label="School email" value={notSet(profile.schoolEmail)} />
-            <Row label="Student number" value={notSet(profile.studentNumber)} />
-            <Row label="Username" value={notSet(account?.username || profile.username)} />
+          <Section title={t("profile.account.title")}>
+            <Row label={t("profile.account.signInEmail")} value={notSet(accountEmail)} />
+            <Row label={t("profile.account.schoolEmail")} value={notSet(profile.schoolEmail)} />
+            <Row label={t("profile.account.studentNumber")} value={notSet(profile.studentNumber)} />
+            <Row
+              label={t("profile.account.username")}
+              value={notSet(account?.username || profile.username)}
+            />
           </Section>
         </div>
 
         <aside className="flex h-fit flex-col gap-5 lg:sticky lg:top-24">
-          <Section title={`Academic summary · ${year.label}`}>
+          <Section title={t("profile.summary.title", { year: year.label })}>
             <Row
-              label="Year average"
+              label={t("profile.summary.yearAverage")}
               value={summary.exactYearAverage === null ? "—" : summary.exactYearAverage.toFixed(2)}
             />
             <Row
-              label="Rounded average"
+              label={t("profile.summary.roundedAverage")}
               value={
                 summary.roundedYearAverage === null ? "—" : summary.roundedYearAverage.toFixed(1)
               }
             />
-            <Row label="Assessments recorded" value={String(yearAssessments.length)} />
-            <Row label="Subjects with grades" value={String(summary.subjectAverages.length)} />
+            <Row
+              label={t("profile.summary.assessmentsRecorded")}
+              value={String(yearAssessments.length)}
+            />
+            <Row
+              label={t("profile.summary.subjectsWithGrades")}
+              value={String(summary.subjectAverages.length)}
+            />
           </Section>
 
-          <Section title="Your content">
-            <Row label="Planner items" value={String(events.length)} />
-            <Row label="Materials" value={String(materials.length)} />
-            <Row label="School links" value={String(links.length)} />
+          <Section title={t("profile.content.title")}>
+            <Row label={t("profile.content.plannerItems")} value={String(events.length)} />
+            <Row label={t("profile.content.materials")} value={String(materials.length)} />
+            <Row label={t("profile.content.schoolLinks")} value={String(links.length)} />
           </Section>
 
           <div className="app-card p-5">
-            <h2 className="text-[17px] font-semibold tracking-tight">Where this is stored</h2>
-            <p className="mt-2 text-[14px] text-muted-foreground">
-              Your account details, picture and contact information are saved to your account.
-              Grades, planner items and materials are still kept in this browser only.
-            </p>
+            <h2 className="text-[17px] font-semibold tracking-tight">
+              {t("profile.storage.title")}
+            </h2>
+            <p className="mt-2 text-[14px] text-muted-foreground">{t("profile.storage.body")}</p>
             <div className="mt-3 flex flex-wrap items-center gap-2">
-              <Badge variant="secondary">Account data</Badge>
-              <Badge variant="secondary">Local prototype data</Badge>
+              <Badge variant="secondary">{t("profile.storage.accountBadge")}</Badge>
+              <Badge variant="secondary">{t("profile.storage.localBadge")}</Badge>
             </div>
             <Link
               to="/settings"
               className="mt-4 inline-flex text-[14px] font-semibold text-primary hover:text-primary-hover"
             >
-              Manage account settings
+              {t("profile.storage.manageLink")}
             </Link>
           </div>
         </aside>

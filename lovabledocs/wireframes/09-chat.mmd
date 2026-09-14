@@ -1,12 +1,13 @@
 sequenceDiagram
   actor Student
   participant UI as StudyChat
+  participant I18n as I18nProvider + detectLanguage
   participant Fn as Authenticated server functions
   participant Cloud as external Supabase threads/messages
   participant API as TanStack POST /api/chat
   participant PY as Python FastAPI /api/chat
   participant RAG as Context Manager + retrieval
-  participant LLM as Ollama or vLLM
+  participant LLM as Local Qwen via llama.cpp
   Student->>UI: Open /chat
   UI->>Fn: listThreads or createThread
   Fn->>Cloud: User-scoped thread operation
@@ -16,19 +17,27 @@ sequenceDiagram
   Fn->>Cloud: User-scoped ordered messages
   Cloud-->>UI: Persisted UI messages
   Student->>UI: Submit question
+  UI->>I18n: detectLanguage(text) + effectiveResponseLanguage(text, uiLanguage)
+  I18n-->>UI: responseLanguageHint\nCLIENT STATE ONLY, kept per message
   UI-->>Student: Optimistic message + Thinking
-  UI->>API: UI messages + thread + year + grade with bearer token
+  UI->>API: UI messages + thread + year + grade with bearer token\nresponseLanguageHint is NOT included in this payload today
   API->>Cloud: Verify ownership, then save user message
   API->>PY: Current question and study context with streaming disabled
   PY->>RAG: Build budgeted context and provenance
   RAG-->>PY: Relevant chunks and memory
   PY->>LLM: Compiled context + current question
-  LLM-->>PY: Answer
+  LLM-->>PY: Answer\nlanguage metadata NOT honoured today
   PY-->>API: Answer + sources + model + retrieval summary
   API->>Cloud: Save completed assistant UI message
   API-->>UI: AI SDK text and context-metadata stream parts
   UI-->>Student: Markdown answer + exam tip + collapsible sources
+  opt Listen / Stop read-aloud
+    Student->>UI: Click Listen on a completed assistant message
+    UI->>UI: speechLocaleFor(answerText, uiLanguage) via lib/speech.ts\nWeb Speech API, ephemeral, never stored
+    UI-->>Student: Spoken answer, or graceful no-op when unsupported/no voice
+  end
   opt Python unavailable and fallback enabled
     API->>API: Use Lovable AI Gateway
     API-->>UI: Stream answer without Python sources
   end
+  Note over PY,LLM: FUTURE BACKEND / CODEX not implemented:\nui_language, message_language and effective response_language contract;\nmessage_language wins only when confidently one of the five approved languages.

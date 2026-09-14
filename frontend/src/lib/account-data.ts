@@ -4,6 +4,7 @@
  * data isolated per user. No secret keys are used here.
  */
 import { supabase } from "@/integrations/supabase/client";
+import { DEFAULT_LANGUAGE, normaliseLanguage, type LanguageCode } from "@/lib/i18n/languages";
 import type { Json, TablesUpdate } from "@/integrations/supabase/types";
 
 export const AVATAR_BUCKET = "profile-avatars";
@@ -38,6 +39,10 @@ export type QwenModel = (typeof QWEN_MODELS)[number];
 
 export interface UserPreferences {
   selected_qwen_model: string;
+  /** One of the five approved application languages. */
+  app_language: LanguageCode;
+  assistant_audio_enabled: boolean;
+  assistant_audio_autoplay: boolean;
   exam_reminders: boolean;
   daily_study_summary: boolean;
   sound_effects: boolean;
@@ -46,6 +51,9 @@ export interface UserPreferences {
 
 export const DEFAULT_PREFERENCES: UserPreferences = {
   selected_qwen_model: QWEN_MODELS[0],
+  app_language: DEFAULT_LANGUAGE,
+  assistant_audio_enabled: true,
+  assistant_audio_autoplay: false,
   exam_reminders: true,
   daily_study_summary: true,
   sound_effects: false,
@@ -185,9 +193,14 @@ export async function fetchPreferences(): Promise<UserPreferences> {
     selected_qwen_model: (QWEN_MODELS as readonly string[]).includes(model)
       ? model
       : DEFAULT_PREFERENCES.selected_qwen_model,
+    app_language:
+      stored["app_language"] === undefined
+        ? DEFAULT_LANGUAGE
+        : normaliseLanguage(stored["app_language"]),
+    assistant_audio_enabled: bool("assistant_audio_enabled") as boolean,
+    assistant_audio_autoplay: bool("assistant_audio_autoplay") as boolean,
     exam_reminders: bool("exam_reminders") as boolean,
     daily_study_summary: bool("daily_study_summary") as boolean,
-
     sound_effects: bool("sound_effects") as boolean,
     auto_storage_cleanup: bool("auto_storage_cleanup") as boolean,
   };

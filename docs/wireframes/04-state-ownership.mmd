@@ -6,8 +6,15 @@ flowchart LR
   Grade --> UI
   Year[(Browser storage\nacademic year)] --> Academic[AcademicYearProvider]
   Academic --> UI
-  Cloud[(external Supabase\nusers threads messages\nprofiles user_preferences\nfeedback usage_events)] --> ServerFns[Authenticated server functions]
-  Telemetry[telemetry.ts\nsanitized activity + error events] --> Cloud
+  Lang[(public.user_preferences.preferences.app_language\nauthoritative)] --> I18n[I18nProvider]
+  LangCache[(localStorage alim.app_language\nflash-avoidance + signed-out cache only)] --> I18n
+  I18n --> UI
+  Audio[(public.user_preferences.preferences\nassistant_audio_enabled default true\nassistant_audio_autoplay default false)] --> SettingsUI[Settings audio controls]
+  SettingsUI --> UI
+  MsgHint[responseLanguageHint\nCLIENT STATE ONLY, not sent to backend today] --> UI
+  SpeechState[speechSynthesis playback state\nephemeral, never persisted] --> UI
+  Cloud[(external Supabase\nusers threads messages\nprofiles user_preferences\nfeedback usage_events\nmedia_retention_queue)] --> ServerFns[Authenticated server functions]
+  Telemetry[telemetry.ts\nsanitized activity + bounded error classification only\nnever raw error text, credentials, chat content, feedback text, calendar details] --> Cloud
   GoogleToken[(sessionStorage only\nGoogle provider token)] --> GoogleEvents[Read-only Google occurrences\nrender-merged, never stored]
   GoogleEvents --> UI
   ServerFns --> UI
@@ -16,4 +23,4 @@ flowchart LR
   ChatAPI --> UI
   Static -->|subject/language context| ChatAPI
   Academic -->|year/grade context| ChatAPI
-  Future[(Future Python records\nquiz exam grading plan feedback)] -. planned .-> FastAPI
+  Future[(Future Python records\nquiz exam grading plan feedback\nui_language message_language response_language contract\nmedia descriptor generation + cleanup)] -. FUTURE BACKEND / CODEX not implemented .-> FastAPI

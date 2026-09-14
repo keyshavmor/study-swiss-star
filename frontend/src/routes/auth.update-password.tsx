@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { toast } from "sonner";
+import { useI18n } from "@/lib/i18n/provider";
 
 export const Route = createFileRoute("/auth/update-password")({
   head: () => ({
@@ -28,6 +29,7 @@ export const Route = createFileRoute("/auth/update-password")({
 });
 
 function UpdatePasswordPage() {
+  const { t } = useI18n();
   const navigate = useNavigate();
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
@@ -36,7 +38,7 @@ function UpdatePasswordPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (password !== confirm) {
-      toast.error("The two passwords do not match.");
+      toast.error(t("auth.passwordsDoNotMatch"));
       return;
     }
     setIsLoading(true);
@@ -46,7 +48,7 @@ function UpdatePasswordPage() {
       toast.error(error.message);
       return;
     }
-    toast.success("Password updated.");
+    toast.success(t("auth.passwordUpdated"));
     navigate({ to: "/home" });
   };
 
@@ -61,16 +63,14 @@ function UpdatePasswordPage() {
             <GraduationCap className="h-6 w-6" />
           </div>
           <h1 className="text-[30px] font-bold tracking-[-0.02em] text-foreground">
-            Choose a new password
+            {t("auth.newPasswordTitle")}
           </h1>
-          <p className="mt-3 text-[15px] text-muted-foreground">
-            Open this page from the reset link in your email, then set your new password.
-          </p>
+          <p className="mt-3 text-[15px] text-muted-foreground">{t("auth.newPasswordSubtitle")}</p>
         </div>
         <form onSubmit={handleSubmit} className="app-card space-y-5 p-7">
           <div className="space-y-2">
             <Label htmlFor="password" className="text-[13px] font-semibold text-muted-foreground">
-              New password
+              {t("auth.newPasswordLabel")}
             </Label>
             <Input
               id="password"
@@ -84,7 +84,7 @@ function UpdatePasswordPage() {
           </div>
           <div className="space-y-2">
             <Label htmlFor="confirm" className="text-[13px] font-semibold text-muted-foreground">
-              Repeat new password
+              {t("auth.repeatPasswordLabel")}
             </Label>
             <Input
               id="confirm"
@@ -96,7 +96,7 @@ function UpdatePasswordPage() {
             />
           </div>
           <Button type="submit" className="w-full" disabled={isLoading}>
-            {isLoading ? "Saving…" : "Update password"}
+            {isLoading ? t("auth.saving") : t("auth.updatePassword")}
           </Button>
         </form>
       </div>
