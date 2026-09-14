@@ -1,0 +1,31 @@
+%% Status: CURRENT — FRONTEND / CURRENT — SUPABASE (Edge Function)
+%% Source: frontend/src/components/AuthForm.tsx (handleSignIn, username branch)
+sequenceDiagram
+    participant User
+    participant Auth as AuthForm.tsx
+    participant Fn as Edge Function: username-login
+    participant Supa as Supabase Auth
+
+    User->>Auth: enter identifier (no "@") + password
+    Auth->>Auth: normaliseUsername() + validateUsername()
+    alt invalid username format
+        Auth-->>User: usernameLengthError / usernameCharsError
+    else valid
+        Auth->>Fn: functions.invoke("username-login", { username, password })
+        Note over Fn: BACKEND IMPLEMENTATION UNKNOWN<br/>(Edge Function resolves username -> account,<br/>verifies password, issues tokens)
+        alt error or missing tokens
+            Fn-->>Auth: error / no access_token
+            Auth-->>User: usernamePasswordError toast
+        else success
+            Fn-->>Auth: { access_token, refresh_token }
+            Auth->>Supa: auth.setSession({ access_token, refresh_token })
+            alt setSession error
+                Supa-->>Auth: error
+                Auth-->>User: authenticationFailed toast
+            else success
+                Supa-->>Auth: session established
+                Auth->>Auth: track auth_signin_succeeded (method: username)
+                Auth->>User: navigate to /home
+            end
+        end
+    end

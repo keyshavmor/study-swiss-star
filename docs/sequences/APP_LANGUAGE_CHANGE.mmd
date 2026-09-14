@@ -1,0 +1,32 @@
+%% Status: CURRENT — FRONTEND / CURRENT — SUPABASE
+%% Source: frontend/src/components/app/LanguageMenu.tsx, frontend/src/lib/i18n/provider.tsx,
+%% frontend/src/lib/i18n/languages.ts
+sequenceDiagram
+    participant User
+    participant Menu as LanguageMenu.tsx
+    participant Provider as I18nProvider (lib/i18n/provider.tsx)
+    participant LS as localStorage ("alim.app_language")
+    participant Supa as Supabase (user_preferences)
+
+    User->>Menu: select a language (one of 7: en, de, gsw, ru, es, fr, it)
+    Menu->>Provider: setLanguage(next)
+    Provider->>Provider: normaliseLanguage(next)
+    Provider->>Provider: setLanguageState(safe) — React state updates immediately
+    Note over Provider: All useI18n() consumers re-render immediately<br/>with the new language, before any network round trip
+    Provider->>LS: writeCachedLanguage(safe) (flash-avoidance + signed-out cache only)
+    Provider->>Supa: auth.getUser()
+    alt no signed-in user
+        Provider-->>Provider: return (cache-only change persists for this browser)
+    else signed-in
+        Supa-->>Provider: userId
+        Provider->>Supa: select preferences from user_preferences where user_id = userId
+        alt read failed
+            Supa-->>Provider: error
+            Note over Provider: never overwrite existing preferences on a failed read
+        else read ok
+            Supa-->>Provider: current preferences JSON (or none for a new account)
+            Provider->>Supa: upsert user_preferences<br/>{ user_id, preferences: { ...current, app_language: safe } }<br/>onConflict: "user_id"
+            Supa-->>Provider: ack (or swallowed error — never surfaced to the user)
+        end
+    end
+    Note over Supa: public.user_preferences.preferences.app_language is authoritative<br/>for a signed-in user across sessions/devices

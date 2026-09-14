@@ -1,11 +1,13 @@
+%% Tutoring chat (StudyChat.tsx). Corrected: no Lovable AI Gateway fallback exists in
+%% frontend/src/routes/api/chat.ts today; that path has been removed from this diagram.
 sequenceDiagram
   actor Student
-  participant UI as StudyChat
-  participant I18n as I18nProvider + detectLanguage
+  participant UI as StudyChat.tsx
+  participant I18n as I18nProvider + detectLanguage (lib/i18n/detect.ts)
   participant Fn as Authenticated server functions
   participant Cloud as external Supabase threads/messages
-  participant API as TanStack POST /api/chat
-  participant PY as Python FastAPI /api/chat
+  participant API as frontend/src/routes/api/chat.ts POST /api/chat
+  participant PY as Local Python backend FastAPI /api/chat
   participant RAG as Context Manager + retrieval
   participant LLM as Local Qwen via llama.cpp
   Student->>UI: Open /chat
@@ -18,26 +20,26 @@ sequenceDiagram
   Cloud-->>UI: Persisted UI messages
   Student->>UI: Submit question
   UI->>I18n: detectLanguage(text) + effectiveResponseLanguage(text, uiLanguage)
-  I18n-->>UI: responseLanguageHint\nCLIENT STATE ONLY, kept per message
-  UI-->>Student: Optimistic message + Thinking
-  UI->>API: UI messages + thread + year + grade with bearer token\nresponseLanguageHint is NOT included in this payload today
-  API->>Cloud: Verify ownership, then save user message
-  API->>PY: Current question and study context with streaming disabled
+  I18n-->>UI: responseLanguageHint, CLIENT STATE ONLY, kept per message
+  UI-->>Student: Optimistic message + Thinking indicator
+  UI->>API: UI messages + threadId + academicYear + gradeLevel, bearer token<br/>responseLanguageHint is NOT included in this payload today
+  API->>Cloud: Verify thread ownership (threads.id + user_id), then insert user message
+  API->>PY: requestContextAnswer (context-backend.server.ts): question + subject/language/year/grade, stream:false
   PY->>RAG: Build budgeted context and provenance
   RAG-->>PY: Relevant chunks and memory
   PY->>LLM: Compiled context + current question
-  LLM-->>PY: Answer\nlanguage metadata NOT honoured today
-  PY-->>API: Answer + sources + model + retrieval summary
-  API->>Cloud: Save completed assistant UI message
-  API-->>UI: AI SDK text and context-metadata stream parts
+  LLM-->>PY: Answer text (response-language enforcement NOT implemented today)
+  PY-->>API: ContextChatResponse: answer, sources, used_model, retrieval_summary
+  API->>Cloud: Insert completed assistant message (onFinish)
+  API-->>UI: AI SDK stream: text-start/text-delta/text-end + data part context-metadata
   UI-->>Student: Markdown answer + exam tip + collapsible sources
   opt Listen / Stop read-aloud
     Student->>UI: Click Listen on a completed assistant message
-    UI->>UI: speechLocaleFor(answerText, uiLanguage) via lib/speech.ts\nWeb Speech API, ephemeral, never stored
+    UI->>UI: speechLocaleFor(answerText, uiLanguage), lib/speech.ts<br/>Web Speech API, ephemeral, never stored
     UI-->>Student: Spoken answer, or graceful no-op when unsupported/no voice
   end
-  opt Python unavailable and fallback enabled
-    API->>API: Use Lovable AI Gateway
-    API-->>UI: Stream answer without Python sources
+  opt Python backend unreachable or returns an error
+    API-->>UI: HTTP error with ContextBackendError.status (default 503) and message
+    UI-->>Student: Error surfaced in chat; no fallback answer is generated
   end
-  Note over PY,LLM: FUTURE BACKEND / CODEX not implemented:\nui_language, message_language and effective response_language contract;\nmessage_language wins only when confidently one of the seven approved languages.
+  Note over PY,LLM: BACKEND TODO FOR CODEX: ui_language, message_language and effective<br/>response_language contract. message_language should win only when confidently<br/>one of the seven approved languages (en/de/gsw/ru/es/fr/it).

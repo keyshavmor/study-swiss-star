@@ -1,15 +1,17 @@
+%% Assistant output media + 30-minute descriptor retention (lib/media-retention.ts,
+%% public.media_retention_queue). Descriptor must exist before original media is deleted.
 flowchart TD
-  Gen[Assistant generates or fetches OUTPUT media\nimage audio video] --> Scope{Ordinary user study upload?}
-  Scope -->|Yes| OutOfPolicy[NOT covered by this policy\nkept under normal storage rules]
-  Scope -->|No, assistant output| Descriptor[FUTURE BACKEND / CODEX not implemented:\ngenerate text descriptor]
-  Descriptor --> Upload[FUTURE BACKEND / CODEX not implemented:\nupload descriptor to private assistant-descriptors bucket]
-  Upload --> Enqueue[FUTURE BACKEND / CODEX not implemented:\nenqueue row in public.media_retention_queue\ndelete_after = created_at + 30 minutes]
-  Enqueue --> Source{Media was fetched rather than generated?}
-  Source -->|Yes| Keep[Retain source_url or source_path alongside descriptor]
-  Source -->|No| Skip[No source fields]
-  Keep --> Wait[Wait until delete_after]
+  Gen["Assistant generates or fetches OUTPUT media (image/audio/video)"] --> Scope{"Ordinary user study upload?"}
+  Scope -->|Yes| OutOfPolicy["NOT covered by this policy; kept under normal storage rules"]
+  Scope -->|No, assistant output| Descriptor["Generate text descriptor<br/>BACKEND TODO FOR CODEX"]
+  Descriptor --> Upload["Upload descriptor to private assistant-descriptors bucket<br/>BACKEND TODO FOR CODEX"]
+  Upload --> Enqueue["enqueueAssistantMedia (lib/media-retention.ts)<br/>insert public.media_retention_queue row<br/>delete_after = created_at + 30 minutes<br/>CURRENT - FRONTEND helper; caller must already have a descriptor path"]
+  Enqueue --> Source{"Media was fetched rather than generated?"}
+  Source -->|Yes| Keep["Retain source_url or source_path alongside descriptor"]
+  Source -->|No| Skip["No source fields"]
+  Keep --> Wait["Wait until delete_after"]
   Skip --> Wait
-  Wait --> Cleanup[FUTURE BACKEND / CODEX not implemented:\n30-minute cleanup worker deletes original binary]
-  Cleanup --> Retrieve[Later retrieval works from the descriptor only;\noriginal binary must not be expected to exist]
-  ClientLib[frontend/src/lib/media-retention.ts\nIMPLEMENTED LOCAL: typed enqueue/list helpers only] -.-> Enqueue
-  ClientLib --> ListUI[Read retention rows for signed-in user]
+  Wait --> Cleanup["30-minute cleanup worker deletes original binary<br/>BACKEND TODO FOR CODEX: no descriptor means no deletion"]
+  Cleanup --> Retrieve["Later retrieval works from the descriptor only;<br/>original binary must not be expected to exist"]
+  ClientLib["frontend/src/lib/media-retention.ts<br/>CURRENT - FRONTEND: typed enqueue/list helpers only,<br/>never generates descriptors client-side"] -.-> Enqueue
+  ClientLib --> ListUI["listRetentionQueue: read retention rows for signed-in user"]

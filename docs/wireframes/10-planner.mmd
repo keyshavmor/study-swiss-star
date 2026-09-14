@@ -1,25 +1,26 @@
+%% /planner (routes/_authenticated/planner.tsx) including read-only Google Calendar merge.
 flowchart TD
-  Open[Open /planner] --> Events[Read PlannerEvent records]
-  Events --> Expand[occurrencesInRange\ncalendar-safe recurrence expansion]
-  Expand --> Views[Timetable Day Month List]
-  Expand --> Totals[Classes exams study activity totals]
-  Expand --> Conflict[Detect overlapping events]
-  Google[Google Calendar card] --> Link[linkIdentity google\ncalendar.readonly scope]
-  Link --> Token[provider_token in sessionStorage only]
-  Token --> Fetch[Google Calendar v3 events for visible range]
-  Fetch --> Merge[Read-only occurrences with Google badge]
+  Open["Open /planner"] --> Events["Read PlannerEvent records"]
+  Events --> Expand["occurrencesInRange: calendar-safe recurrence expansion"]
+  Expand --> Views["Timetable / Day / Month / List views"]
+  Expand --> Totals["Classes, exams, study, activity totals"]
+  Expand --> Conflict["Detect overlapping events"]
+  Google["Connect Google Calendar card"] --> Link["supabase.auth.linkIdentity('google', { scopes: calendar.readonly })<br/>lib/google-calendar.ts"]
+  Link --> Token["Google provider token kept in sessionStorage only<br/>never in the database, localStorage or telemetry"]
+  Token --> Fetch["Google Calendar v3 events.list for the visible range<br/>CURRENT - EXTERNAL INTEGRATION"]
+  Fetch --> Merge["Read-only occurrences rendered with a Google badge<br/>never written back to Google, never persisted to Supabase"]
   Merge --> Views
-  Views --> Interact[Select drag add edit duplicate complete delete\nGoogle events are read-only]
-  Interact --> Scope{Recurring event?}
-  Scope -->|No| Series[Update event]
-  Scope -->|Yes one| Override[Store occurrence override or exception]
-  Scope -->|Yes future| Split[End head and create tail series]
-  Scope -->|Yes all| Series
-  Series --> Store[(Browser storage\nIMPLEMENTED LOCAL)]
+  Views --> Interact["Select / drag / add / edit / duplicate / complete / delete<br/>Google-sourced events are always read-only"]
+  Interact --> Scope{"Recurring event?"}
+  Scope -->|No| Series["Update event"]
+  Scope -->|Yes, this one| Override["Store occurrence override or exception"]
+  Scope -->|Yes, this and future| Split["End head series and create tail series"]
+  Scope -->|Yes, all| Series
+  Series --> Store["Browser storage (AppDataProvider)<br/>CURRENT - FRONTEND"]
   Override --> Store
   Split --> Store
-  Generate[Generate study plan action\nPLANNED] -.-> Context[Send exams + free slots + limits]
-  Context -.-> Python[POST /api/study-plan/generate]
-  Python -.-> Review[Review proposal; no automatic write]
-  Review -.-> Confirm[Student confirms]
+  Generate["Generate study plan action"] -.-> Context["Send exams + free slots + limits"]
+  Context -.-> Python["POST /api/study-plan/generate<br/>BACKEND TODO FOR CODEX"]
+  Python -.-> Review["Review proposal; no automatic write"]
+  Review -.-> Confirm["Student confirms"]
   Confirm -.-> Store

@@ -1,0 +1,60 @@
+flowchart LR
+  ROOT["__root.tsx<br/>providers"] --> AUTHR["index.tsx / auth.tsx<br/>AuthForm.tsx"]
+  ROOT --> GATE["_authenticated/route.tsx"]
+
+  GATE --> HOME["home.tsx"]
+  GATE --> SCHOOLIDX["school.index.tsx"]
+  GATE --> SCHOOLSUB["school.$subject.tsx"]
+  GATE --> PLANNER["planner.tsx"]
+  GATE --> CHATIDX["chat.index.tsx / chat.$threadId.tsx"]
+  GATE --> ASSTIDX["assistant.index.tsx / assistant.$threadId.tsx"]
+  GATE --> STATS["stats.tsx"]
+  GATE --> HELP["help.tsx"]
+  GATE --> FEEDBACK["feedback.tsx"]
+  GATE --> PROFILE["profile.tsx"]
+  GATE --> SETTINGS["settings.tsx"]
+
+  AUTHR --> SUPACLIENT["integrations/supabase/client.ts"]
+
+  HOME --> APPDATA["lib/store/app-data.tsx"]
+  HOME --> ACCOUNTDATA["lib/account-data.ts"]
+  APPDATA --> SUPACLIENT
+  ACCOUNTDATA --> SUPACLIENT
+
+  SCHOOLIDX --> STORAGEMGMT["lib/storage-management.ts"]
+  SCHOOLSUB --> GRADEMATH["lib/grade-math.ts"]
+  SCHOOLSUB --> STORAGEMGMT
+  STORAGEMGMT --> SUPACLIENT
+
+  PLANNER --> GCAL["lib/google-calendar.ts"]
+  PLANNER --> ACADYEAR["lib/store/academic-year.tsx"]
+  GCAL --> GOOGLEAPI["Google Calendar API v3<br/>EXTERNAL"]
+  ACADYEAR --> SUPACLIENT
+
+  CHATIDX --> STUDYCHAT["components/StudyChat.tsx"]
+  STUDYCHAT --> CHATFN["lib/chat.functions.ts"]
+  STUDYCHAT --> SPEECH["lib/speech.ts"]
+  CHATFN --> SUPACLIENT
+  STUDYCHAT --> APICHAT["routes/api/chat.ts"]
+
+  ASSTIDX --> ASSTCHAT["components/assistant/AssistantChat.tsx"]
+  ASSTCHAT --> ASSTDATA["lib/assistant-data.ts"]
+  ASSTCHAT --> MEDIARET["lib/media-retention.ts"]
+  ASSTDATA --> SUPACLIENT
+  MEDIARET --> SUPACLIENT
+  ASSTCHAT --> APICHAT
+
+  STATS --> GRADEMATH
+  STATS --> TELEMETRY["lib/telemetry.ts"]
+  TELEMETRY --> SUPACLIENT
+
+  FEEDBACK --> EDGEFEEDBACK["Edge Function: feedback-submit"]
+  EDGEFEEDBACK --> SUPACLIENT
+
+  PROFILE --> ACCOUNTDATA
+  SETTINGS --> ACCOUNTDATA
+  SETTINGS --> STORAGEMGMT
+
+  APICHAT --> CTXBACKEND["lib/context-backend.server.ts"]
+  CTXBACKEND --> LOCALBACKEND["Local Python backend :8001<br/>EXPECTED BACKEND CONTRACT"]
+  APICHAT --> SUPACLIENT

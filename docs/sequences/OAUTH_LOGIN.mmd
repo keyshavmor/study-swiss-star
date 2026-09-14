@@ -1,0 +1,23 @@
+%% Status: CURRENT — FRONTEND / CURRENT — EXTERNAL INTEGRATION
+%% Source: frontend/src/components/AuthForm.tsx (handleOAuth), frontend/src/routes/__root.tsx (onAuthStateChange)
+sequenceDiagram
+    participant User
+    participant Auth as AuthForm.tsx
+    participant Supa as Supabase Auth
+    participant Provider as GitHub / LinkedIn (linkedin_oidc) / Spotify
+    participant Root as __root.tsx (onAuthStateChange)
+
+    User->>Auth: click "Continue with GitHub/LinkedIn/Spotify"
+    Auth->>Auth: track oauth_signin_started
+    Auth->>Supa: auth.signInWithOAuth({ provider, redirectTo: "/home" })
+    Supa->>Provider: redirect browser to provider consent screen
+    User->>Provider: authenticate + approve
+    Provider-->>Supa: OAuth callback with code/token
+    Supa-->>Root: session established, fires SIGNED_IN
+    Root->>Root: onAuthStateChange handles SIGNED_IN (telemetry, I18nProvider reload)
+    Root-->>User: redirected to /home
+    alt signInWithOAuth call itself fails (e.g. provider disabled)
+        Supa-->>Auth: error
+        Auth->>Auth: track oauth_signin_failed
+        Auth-->>User: oauthSignInFailed toast
+    end

@@ -1,0 +1,33 @@
+%% Status: CURRENT — FRONTEND / CURRENT — SUPABASE (persistence) — BACKEND TODO FOR CODEX (generation)
+%% Source: frontend/src/components/assistant/AssistantChat.tsx, frontend/src/lib/assistant-data.ts,
+%% frontend/src/lib/storage-management.ts (CHAT_ATTACHMENT_BUCKET)
+sequenceDiagram
+    participant User
+    participant Assistant as AssistantChat.tsx
+    participant Lib as lib/assistant-data.ts
+    participant DB as Supabase (assistant_threads, assistant_messages, assistant_attachments)
+    participant Storage as Storage bucket: chat-attachments
+
+    User->>Assistant: open/create a conversation
+    Assistant->>Lib: createAssistantThread() / listAssistantThreads()
+    Lib->>DB: insert/select assistant_threads (RLS: user_id = auth.uid())
+    DB-->>Lib: thread row(s)
+    Lib-->>Assistant: AssistantThread[]
+
+    User->>Assistant: type message, optionally attach files
+    Assistant->>Lib: validateAttachment(file) per file<br/>(images/audio/video <= 1 MiB; PDF/DOCX otherwise)
+    alt invalid attachment
+        Lib-->>Assistant: validation error message
+        Assistant-->>User: reject file
+    end
+    Assistant->>Lib: sendAssistantMessage({ threadId, content, files })
+    Lib->>DB: insert assistant_messages (role: "user", content, parts, metadata.attachment_count)
+    loop for each accepted file
+        Lib->>Storage: upload to chat-attachments/<uid>/...
+        Lib->>DB: insert assistant_attachments (message_id, file_name, mime_type, byte_size,<br/>kind, object_path, parse_status: "unparsed")
+    end
+    DB-->>Lib: inserted message + attachment rows
+    Lib-->>Assistant: AssistantMessage (with attachments)
+    Assistant-->>User: renders the user's message and attachment chips
+
+    Note over Assistant,DB: No assistant reply is fabricated by the frontend.<br/>BACKEND TODO FOR CODEX: assistant generation and attachment parsing<br/>(parse_status transitions) are not implemented — assistant_messages<br/>assistant-role rows are never written by this client.

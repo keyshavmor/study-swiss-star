@@ -1,0 +1,36 @@
+stateDiagram-v2
+    [*] --> SIGNED_OUT
+
+    SIGNED_OUT --> AUTHENTICATING: submit email or username sign-in on `/` or `/auth`
+    SIGNED_OUT --> SIGNING_UP: submit sign-up form on `/` or `/auth`
+    SIGNED_OUT --> OAUTH_REDIRECT: click GitHub, LinkedIn or Spotify button
+
+    SIGNING_UP --> AWAITING_CONFIRMATION: supabase.auth.signUp succeeds<br/>(email confirmation required)
+    SIGNING_UP --> AUTH_FAILED: signUp error or username taken
+
+    AWAITING_CONFIRMATION --> SIGNED_IN: confirmation link followed,<br/>session established
+    AWAITING_CONFIRMATION --> SIGNED_OUT: user abandons confirmation
+
+    AUTHENTICATING --> SIGNED_IN: signInWithPassword ok,<br/>or username-login + setSession ok
+    AUTHENTICATING --> AUTH_FAILED: invalid credentials<br/>(generic message, no enumeration)
+
+    OAUTH_REDIRECT --> SIGNED_IN: provider callback ok,<br/>redirected to `/home`
+    OAUTH_REDIRECT --> AUTH_FAILED: oauth_signin_failed telemetry,<br/>provider error or denial
+
+    AUTH_FAILED --> SIGNED_OUT: user retries on `/` or `/auth`
+
+    SIGNED_IN --> REFRESHING_SESSION: onAuthStateChange USER_UPDATED,<br/>or silent token refresh
+    REFRESHING_SESSION --> SIGNED_IN: refresh succeeds
+    REFRESHING_SESSION --> SIGNED_OUT: refresh fails,<br/>_authenticated beforeLoad redirect to `/`
+
+    SIGNED_IN --> protected_route: navigate to `/home` or any<br/>_authenticated/* route
+    protected_route --> SIGNED_IN: beforeLoad getUser() succeeds
+    protected_route --> SIGNED_OUT: beforeLoad getUser() fails,<br/>redirect({ to: "/" })
+
+    SIGNED_IN --> SIGNING_OUT: user triggers signOutCompletely()
+    SIGNING_OUT --> SIGNED_OUT: supabase.auth.signOut() resolves,<br/>Google sessionStorage token cleared
+
+    state protected_route {
+      [*] --> checking_user
+      checking_user --> [*]
+    }

@@ -1,0 +1,42 @@
+flowchart TB
+    subgraph Frontend["Frontend features"]
+        Profile["profile.tsx<br/>avatar upload"]
+        Chat["chat.* / assistant.*<br/>attachments"]
+        School["school.* materials"]
+        Feedback["feedback.tsx"]
+        Telemetry["telemetry.ts<br/>(all instrumented actions)"]
+        StorageMgmt["storage-management.ts<br/>usage + cleanup"]
+        MediaRetention["media-retention.ts<br/>(enqueue only)"]
+    end
+
+    subgraph Functions["Edge Functions (deployed externally)"]
+        FeedbackFn["feedback-submit"]
+        ActivityFn["activity-log"]
+        CleanupFn["storage-emergency-cleanup"]
+        DescriptorWorker["BACKEND TODO FOR CODEX:<br/>descriptor generation + cleanup worker"]
+    end
+
+    subgraph Buckets["Private Storage buckets"]
+        AvatarBucket["profile-avatars<br/>2 MiB limit"]
+        MaterialsBucket["user-materials"]
+        ChatBucket["chat-attachments<br/>1 MiB limit"]
+        FeedbackBucket["feedback-messages"]
+        ActivityBucket["activity-logs"]
+        DescriptorBucket["assistant-descriptors"]
+    end
+
+    subgraph RPC["RPC / quota"]
+        QuotaRPC["get_storage_usage_status()<br/>1 GiB quota"]
+    end
+
+    Profile -->|upload/read/delete own prefix| AvatarBucket
+    School -->|upload/read/delete own prefix| MaterialsBucket
+    Chat -->|upload/read/delete own prefix| ChatBucket
+    Feedback --> FeedbackFn --> FeedbackBucket
+    Telemetry --> ActivityFn --> ActivityBucket
+    StorageMgmt --> QuotaRPC
+    StorageMgmt --> CleanupFn --> MaterialsBucket
+    CleanupFn --> ChatBucket
+    MediaRetention -.->|records path only,<br/>never writes bytes| DescriptorBucket
+    DescriptorWorker -.->|not implemented| DescriptorBucket
+    DescriptorWorker -.->|deletes originals<br/>after 30 min| ChatBucket

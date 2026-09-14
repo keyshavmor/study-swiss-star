@@ -1,0 +1,17 @@
+%% Status: CURRENT — FRONTEND (navigation/UI only) — BACKEND GENERATION UNKNOWN
+%% Source: frontend/src/routes/_authenticated/school.$subject.tsx (SubjectMode tabs)
+sequenceDiagram
+    participant User
+    participant Dashboard as school.$subject.tsx
+    participant Mode as Subject mode tab (Quiz Mode / Exam Mode / Study Plan / Knowledge Analysis / Subject Tools)
+    participant Backend as Local Python backend
+
+    User->>Dashboard: open a subject, select a mode tab
+    Dashboard->>Mode: setMode(selected)
+    Mode-->>User: renders the mode's panel/UI
+
+    Note over Mode,Backend: BACKEND GENERATION UNKNOWN.<br/>The frontend defines UI entry points for Quiz Mode, Exam Mode,<br/>Study Plan, Knowledge Analysis and Subject Tools, but no verified<br/>request/response contract exists for generating quizzes, exams,<br/>study plans or tool output from the local Python backend.
+    Mode--xBackend: (expected, unimplemented) request generated content for this mode
+    Backend--xMode: BACKEND TODO FOR CODEX — no implementation observed
+
+    Note over Dashboard: Chat mode is the one verified, working mode —<br/>see SUBJECT_CHAT.mmd for its full request/response flow.

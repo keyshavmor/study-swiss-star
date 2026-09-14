@@ -1,0 +1,37 @@
+flowchart TB
+  subgraph FRONTEND["Frontend access points"]
+    BROWSERCLIENT["integrations/supabase/client.ts<br/>browser"]
+    SERVERCLIENT["routes/api/chat.ts<br/>request-scoped server client"]
+  end
+
+  subgraph SUPABASE["Supabase project ucacmeadsufiedxrgqit"]
+    AUTH["Auth<br/>password, username-login, OAuth, Google link"]
+    subgraph PG["PostgreSQL"]
+      TBLS["feedback, usage_events, profiles,<br/>user_preferences, media_retention_queue,<br/>documents, document_chunks,<br/>assistant_threads, assistant_messages,<br/>assistant_attachments, threads, messages"]
+      RPC["RPC: get_storage_usage_status()"]
+    end
+    RLS["RLS layer<br/>per-table user_id = auth.uid() policies"]
+    subgraph STORAGE["Storage (private buckets)"]
+      BUCKETS["profile-avatars, user-materials,<br/>chat-attachments, feedback-messages,<br/>activity-logs, assistant-descriptors"]
+    end
+    subgraph EDGE["Edge Functions"]
+      EF1["username-login"]
+      EF2["username-availability"]
+      EF3["activity-log"]
+      EF4["feedback-submit"]
+      EF5["storage-emergency-cleanup"]
+    end
+    RETENTION["Retention infrastructure<br/>media_retention_queue driven cleanup"]
+  end
+
+  BROWSERCLIENT --> AUTH
+  BROWSERCLIENT --> PG
+  BROWSERCLIENT --> STORAGE
+  BROWSERCLIENT --> EF1 & EF2 & EF3 & EF4 & EF5
+  SERVERCLIENT --> AUTH
+  SERVERCLIENT --> PG
+
+  PG --> RLS
+  STORAGE --> RLS
+  EF5 --> RETENTION
+  RETENTION --> TBLS

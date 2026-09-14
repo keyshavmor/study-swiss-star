@@ -1,0 +1,26 @@
+stateDiagram-v2
+    [*] --> Uploaded
+
+    Uploaded: Binary uploaded to bucket<br/>(e.g. chat-attachments, uid prefix)
+    MetadataRow: assistant_attachments row created<br/>(bucket, path, mime, size)
+    DescriptorPending: Awaiting descriptor<br/>BACKEND TODO FOR CODEX
+    DescriptorReady: Descriptor uploaded to<br/>assistant-descriptors bucket<br/>BACKEND TODO FOR CODEX
+    Queued: media_retention_queue row<br/>delete_after = created_at + 30m
+    WaitingThreshold: Waiting for 30-minute threshold
+    BinaryRemoved: Original object deleted,<br/>deleted_at stamped<br/>BACKEND TODO FOR CODEX
+    DescriptorRetrieval: Later AI turns read descriptor<br/>instead of original binary<br/>BACKEND TODO FOR CODEX
+
+    Uploaded --> MetadataRow
+    MetadataRow --> DescriptorPending: assistant OUTPUT media only
+    DescriptorPending --> DescriptorReady: descriptor generated + uploaded
+    DescriptorReady --> Queued: descriptor_path set,<br/>status = descriptor_ready
+    Queued --> WaitingThreshold
+    WaitingThreshold --> BinaryRemoved: now() >= delete_after<br/>AND descriptor_path is not null
+    BinaryRemoved --> DescriptorRetrieval
+
+    MetadataRow --> [*]: ordinary user study uploads<br/>(user-materials, chat-attachments)<br/>NOT covered by this policy
+
+    note right of WaitingThreshold
+        Safety rule: no descriptor => the
+        binary must not be deleted.
+    end note

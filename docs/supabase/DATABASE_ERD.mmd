@@ -1,0 +1,136 @@
+erDiagram
+    AUTH_USERS ||--o{ THREADS : owns
+    AUTH_USERS ||--o{ MESSAGES : owns
+    AUTH_USERS ||--o{ ASSISTANT_THREADS : owns
+    AUTH_USERS ||--o{ ASSISTANT_MESSAGES : owns
+    AUTH_USERS ||--o{ ASSISTANT_ATTACHMENTS : owns
+    AUTH_USERS ||--o{ DOCUMENTS : owns
+    AUTH_USERS ||--o| PROFILES : owns
+    AUTH_USERS ||--o| USER_PREFERENCES : owns
+    AUTH_USERS ||--o{ FEEDBACK : owns
+    AUTH_USERS ||--o{ USAGE_EVENTS : owns
+    AUTH_USERS ||--o{ MEDIA_RETENTION_QUEUE : owns
+    THREADS ||--o{ MESSAGES : contains
+    ASSISTANT_THREADS ||--o{ ASSISTANT_MESSAGES : contains
+    ASSISTANT_THREADS ||--o{ ASSISTANT_ATTACHMENTS : references
+    ASSISTANT_MESSAGES ||--o{ ASSISTANT_ATTACHMENTS : references
+    DOCUMENTS ||--o{ DOCUMENT_CHUNKS : chunks
+    ASSISTANT_ATTACHMENTS ||--o| MEDIA_RETENTION_QUEUE : "queued for cleanup"
+
+    AUTH_USERS {
+        uuid id PK
+    }
+    THREADS {
+        uuid id PK
+        uuid user_id FK
+        text title
+        text subject
+        timestamptz created_at
+        timestamptz updated_at
+    }
+    MESSAGES {
+        uuid id PK
+        uuid thread_id FK
+        uuid user_id FK
+        text role
+        text content
+        jsonb parts
+        timestamptz created_at
+    }
+    ASSISTANT_THREADS {
+        uuid id PK
+        uuid user_id FK
+        text title
+        timestamptz created_at
+        timestamptz updated_at
+    }
+    ASSISTANT_MESSAGES {
+        uuid id PK
+        uuid thread_id FK
+        uuid user_id FK
+        text role
+        text content
+        jsonb parts
+        jsonb metadata
+        timestamptz created_at
+    }
+    ASSISTANT_ATTACHMENTS {
+        uuid id PK
+        uuid user_id FK
+        uuid thread_id FK
+        uuid message_id FK
+        text storage_bucket
+        text object_path
+        text file_name
+        text mime_type
+        int byte_size
+        text kind
+        text parse_status
+        timestamptz deleted_at
+    }
+    DOCUMENTS {
+        uuid id PK
+        uuid user_id FK
+        timestamptz created_at
+        json loose_columns
+    }
+    DOCUMENT_CHUNKS {
+        uuid id PK
+        uuid document_id FK
+        uuid user_id FK
+        json loose_columns
+    }
+    PROFILES {
+        uuid user_id PK
+        text username
+        text full_name
+        text preferred_name
+        text photo
+        text nationality
+        text contact_phone
+        jsonb contact_details
+        date date_of_birth
+        timestamptz created_at
+        timestamptz updated_at
+    }
+    USER_PREFERENCES {
+        uuid user_id PK
+        text academic_year
+        jsonb preferences
+        timestamptz created_at
+        timestamptz updated_at
+    }
+    FEEDBACK {
+        uuid id PK
+        uuid user_id FK
+        text category
+        text message
+        jsonb context
+        timestamptz created_at
+    }
+    USAGE_EVENTS {
+        uuid id PK
+        uuid user_id FK
+        text event_name
+        text feature
+        text subject
+        jsonb properties
+        timestamptz occurred_at
+    }
+    MEDIA_RETENTION_QUEUE {
+        uuid id PK
+        uuid user_id FK
+        uuid attachment_id FK
+        text media_kind
+        text storage_bucket
+        text object_path
+        text descriptor_bucket
+        text descriptor_path
+        text source_url
+        text source_path
+        text status
+        timestamptz created_at
+        timestamptz delete_after
+        timestamptz deleted_at
+        text error_code
+    }

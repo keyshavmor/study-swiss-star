@@ -1,0 +1,23 @@
+%% Status: CURRENT — FRONTEND (contract only) — BACKEND TODO FOR CODEX (generation)
+%% Source: frontend/src/lib/media-retention.ts, frontend/src/lib/assistant-data.ts
+sequenceDiagram
+    participant User
+    participant Assistant as AssistantChat.tsx
+    participant Backend as Local Python backend (BACKEND TODO FOR CODEX)
+    participant Retention as lib/media-retention.ts (enqueueAssistantMedia)
+    participant DB as Supabase table: media_retention_queue
+    participant DescBucket as Storage bucket: assistant-descriptors
+    participant MediaBucket as Storage bucket (e.g. chat-attachments)
+
+    User->>Assistant: sends a message expecting assistant-generated/fetched media (image/audio/video)
+    Assistant--xBackend: (expected) request media generation/fetch
+    Note over Backend: BACKEND TODO FOR CODEX: assistant media generation is not<br/>implemented in this frontend/backend boundary today.
+    Backend--xDescBucket: (expected) backend uploads a text descriptor BEFORE the media may be deleted
+    Backend--xMediaBucket: (expected) backend stores/generates the media object
+    Backend--xRetention: (expected) caller with an already-uploaded descriptor path
+    Retention->>DB: insert media_retention_queue row<br/>{ user_id, attachment_id?, media_kind, storage_bucket, object_path,<br/>descriptor_bucket: "assistant-descriptors", descriptor_path?,<br/>source_url?/source_path?, status: descriptor_path ? "descriptor_ready" : "pending",<br/>delete_after: created_at + 30 minutes }
+    DB-->>Retention: row created
+    Retention-->>Assistant: enqueued (client never generates descriptors itself)
+    Assistant-->>User: renders media response (once backend produces it)
+
+    Note over Retention,DB: See MEDIA_RETENTION.mmd for the descriptor-before-delete<br/>rule and the 30-minute cleanup lifecycle.
