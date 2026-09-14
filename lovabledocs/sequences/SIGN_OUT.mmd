@@ -1,0 +1,32 @@
+%% Status: CURRENT — FRONTEND
+%% Source: frontend/src/lib/sign-out.ts, frontend/src/lib/google-calendar.ts,
+%% frontend/src/routes/__root.tsx, frontend/src/routes/_authenticated/route.tsx
+sequenceDiagram
+    participant User
+    participant UI as Caller (e.g. StudyChat.tsx / SettingsSections.tsx)
+    participant SignOut as lib/sign-out.ts (signOutCompletely)
+    participant Telemetry as activity-log Edge Function
+    participant Supa as Supabase Auth
+    participant Google as lib/google-calendar.ts (clearGoogleAccess)
+    participant Root as __root.tsx (onAuthStateChange)
+    participant Gate as _authenticated/route.tsx (ssr:false gate)
+
+    User->>UI: click "Sign out"
+    UI->>SignOut: signOutCompletely()
+    SignOut->>Telemetry: logActivity({ event_name: "auth_signout" })
+    Note over SignOut: telemetry sent BEFORE session ends<br/>so the event is still attributed to the user
+    SignOut->>Supa: auth.signOut()
+    alt signOut error
+        Supa-->>SignOut: error
+        SignOut->>Telemetry: trackFailure("auth_signout_failed")
+        SignOut->>Google: clearGoogleAccess() (finally block, still runs)
+        SignOut-->>UI: throws error
+    else success
+        Supa-->>SignOut: session cleared
+        SignOut->>Google: clearGoogleAccess() (removes sessionStorage Google provider token)
+        SignOut-->>UI: resolves
+    end
+    Supa-->>Root: fires SIGNED_OUT via onAuthStateChange
+    Root->>Root: I18nProvider stops treating Supabase as authoritative
+    Gate->>Gate: ssr:false gate detects no session
+    Gate-->>User: redirect to /auth

@@ -1,0 +1,68 @@
+%% Status: CURRENT — FRONTEND / CURRENT — SUPABASE
+%% Source: frontend/src/lib/account-data.ts, frontend/src/components/app/EditProfileDialog.tsx,
+%% frontend/src/components/app/SettingsSections.tsx, frontend/src/lib/storage-management.ts
+sequenceDiagram
+    participant User
+    participant ProfilePage as profile.tsx / EditProfileDialog.tsx
+    participant SettingsPage as settings.tsx (AccountSection, PreferencesSections, StorageSection)
+    participant Acct as lib/account-data.ts
+    participant DB as Supabase (profiles, user_preferences)
+    participant AvatarBucket as Storage bucket: profile-avatars
+    participant StorageLib as lib/storage-management.ts
+
+    rect rgb(245,245,245)
+    Note over ProfilePage,DB: Profile fields
+    User->>ProfilePage: open Edit Profile, change name/username/nationality/phone/etc.
+    ProfilePage->>Acct: updateAccountProfile(patch)
+    Acct->>DB: update profiles set ... where user_id = auth.uid()
+    DB-->>Acct: ok
+    Acct-->>ProfilePage: updated AccountProfile
+    end
+
+    rect rgb(245,245,245)
+    Note over ProfilePage,AvatarBucket: Avatar upload
+    User->>ProfilePage: choose a new avatar image (<= 2 MiB, AVATAR_MAX_BYTES)
+    ProfilePage->>Acct: uploadAvatar(file)
+    Acct->>AvatarBucket: upload to profile-avatars/<uid>/avatar-<timestamp>.<ext> (upsert: true)
+    Acct->>DB: updateAccountProfile({ photoPath: objectPath })
+    alt a previous avatar existed at a different path
+        Acct->>AvatarBucket: remove([previousPhotoPath])
+    end
+    Acct-->>ProfilePage: new photoPath
+    ProfilePage->>Acct: avatarSignedUrl(photoPath) (60-minute signed URL)
+    Acct-->>ProfilePage: signed URL
+    ProfilePage-->>User: renders avatar image
+    User->>ProfilePage: remove avatar
+    ProfilePage->>Acct: removeAvatar()
+    Acct->>AvatarBucket: remove([photoPath])
+    Acct->>DB: updateAccountProfile({ photoPath: null })
+    end
+
+    rect rgb(245,245,245)
+    Note over SettingsPage,DB: Preferences (model choice, audio, reminders, language policy, etc.)
+    User->>SettingsPage: change a preference toggle/select
+    SettingsPage->>Acct: fetchPreferences() / updatePreferences(patch)
+    Acct->>DB: select/upsert user_preferences.preferences (onConflict: user_id)
+    DB-->>Acct: ok
+    Acct-->>SettingsPage: updated UserPreferences
+    end
+
+    rect rgb(245,245,245)
+    Note over SettingsPage,StorageLib: Storage controls
+    User->>SettingsPage: open Storage section
+    SettingsPage->>StorageLib: fetchStorageUsage() via RPC get_storage_usage_status()
+    StorageLib-->>SettingsPage: quota/used/remaining/percent/warning/emergency flags (1 GiB quota)
+    SettingsPage->>StorageLib: listStorageItems() (assistant_attachments + documents, defensive read)
+    StorageLib-->>SettingsPage: StorageItem[]
+    User->>SettingsPage: select items to delete
+    SettingsPage->>StorageLib: deleteStorageItems(items)
+    StorageLib->>StorageLib: verify each item.objectPath starts with the signed-in user's uid
+    StorageLib->>AvatarBucket: (or relevant bucket) storage.remove(paths) — Storage API first
+    StorageLib->>DB: soft-delete assistant_attachments / mark documents deleted
+    alt storage usage in emergency range
+        User->>SettingsPage: trigger emergency cleanup
+        SettingsPage->>StorageLib: invokeEmergencyCleanup()
+        StorageLib->>StorageLib: functions.invoke("storage-emergency-cleanup")
+        Note over StorageLib: BACKEND IMPLEMENTATION UNKNOWN: the Edge Function decides<br/>what to remove; not verified from frontend code.
+    end
+    end

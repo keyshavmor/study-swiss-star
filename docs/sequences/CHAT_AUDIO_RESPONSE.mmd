@@ -1,0 +1,41 @@
+%% Status: CURRENT — FRONTEND (browser-only, ephemeral)
+%% Source: frontend/src/lib/speech.ts, frontend/src/components/StudyChat.tsx,
+%% frontend/src/components/assistant/AssistantChat.tsx, frontend/src/lib/account-data.ts
+sequenceDiagram
+    participant User
+    participant Chat as StudyChat.tsx / AssistantChat.tsx
+    participant Prefs as fetchPreferences() (assistant_audio_enabled / assistant_audio_autoplay)
+    participant Speech as lib/speech.ts
+    participant Browser as window.speechSynthesis (Web Speech API)
+
+    Chat->>Prefs: fetchPreferences() on mount
+    Prefs-->>Chat: UserPreferences { assistant_audio_enabled, assistant_audio_autoplay, ... }
+
+    alt assistant finishes a NEW message and autoplay is on
+        Chat->>Chat: assistant_audio_enabled && assistant_audio_autoplay?
+        Chat->>Speech: speak({ text, uiLanguage })
+    else user clicks "Listen"
+        User->>Chat: click Listen on a finished assistant message
+        Chat->>Speech: speak({ text, uiLanguage })
+    end
+
+    Speech->>Speech: speechSupported()?
+    alt unsupported (no speechSynthesis / no SpeechSynthesisUtterance)
+        Speech-->>Chat: "unsupported"
+        Chat-->>User: toast assistant.audio.unsupported
+    else supported
+        Speech->>Speech: speechLocaleFor(text, uiLanguage)<br/>= effectiveResponseLanguage(text, uiLanguage) mapped to a locale
+        Speech->>Speech: voiceForLocale(locale) — search window.speechSynthesis.getVoices()
+        alt no matching voice available
+            Speech-->>Chat: "no-voice"
+            Chat-->>User: toast assistant.audio.noVoice
+        else voice found
+            Speech->>Browser: speechSynthesis.cancel() then speak(utterance)
+            Speech-->>Chat: "spoken"
+            Chat-->>User: shows "Stop" button, speakingId set
+            User->>Chat: click Stop (or navigate away / unmount)
+            Chat->>Speech: stopSpeaking()
+            Speech->>Browser: speechSynthesis.cancel()
+        end
+    end
+    Note over Speech,Browser: Nothing is uploaded or persisted.<br/>Speech is ephemeral browser audio only;<br/>the local AI backend is not involved and produces no audio today.

@@ -1,34 +1,35 @@
+%% Authentication flow via _authenticated/route.tsx and AuthForm.tsx.
 sequenceDiagram
   actor Student
   participant Page as Protected page
-  participant Gate as _authenticated route gate
-  participant Cloud as external Supabase identity
-  participant Auth as / welcome screen and AuthForm
+  participant Gate as _authenticated/route.tsx gate
+  participant Cloud as external Supabase (auth)
+  participant Auth as index.tsx welcome screen + AuthForm.tsx
   participant I18n as I18nProvider
   Student->>Page: Open protected URL
   Page->>Gate: beforeLoad
-  Gate->>Cloud: getUser()
+  Gate->>Cloud: supabase.auth.getUser()
   alt No valid session
     Cloud-->>Gate: No user
     Gate-->>Student: Redirect to /
-    Auth->>I18n: Read cached alim.app_language\n(localStorage, flash-avoidance only)
-    I18n-->>Auth: Localise welcome/auth copy\nen-GB de-DE gsw-CH ru-RU es-ES fr-CH it-CH, English fallback
-    Student->>Auth: Email or username + password, password reset, or GitHub / LinkedIn / Spotify
+    Auth->>I18n: Read cached alim.app_language (localStorage, flash-avoidance only)
+    I18n-->>Auth: Localise welcome/auth copy<br/>en de gsw ru es fr it, English fallback
+    Student->>Auth: Email or username + password, password reset,<br/>or GitHub / LinkedIn / Spotify OAuth
     alt Username entered
-      Auth->>Cloud: Edge Function username-login then setSession
+      Auth->>Cloud: Edge Function username-login, then setSession
     else Email entered
       Auth->>Cloud: signInWithPassword
     end
     opt Sign up
-      Auth->>Cloud: Edge Function username-availability
+      Auth->>Cloud: Edge Function username-availability (failure is not treated as taken)
       Auth->>Cloud: signUp with options.data.username
     end
     Cloud-->>Auth: Session and access token
-    Auth->>Cloud: Load user_preferences.preferences.app_language\n(authoritative once signed in)
+    Auth->>Cloud: Load user_preferences.preferences.app_language (authoritative once signed in)
     Auth-->>Student: Navigate to /home
   else Valid session
     Cloud-->>Gate: User
     Gate-->>Page: Render protected screen
   end
-  Student->>Cloud: Sign out from account menu or chat
+  Student->>Cloud: Sign out via signOutCompletely (lib/sign-out.ts), header avatar menu
   Cloud-->>Student: Session cleared, navigate to /

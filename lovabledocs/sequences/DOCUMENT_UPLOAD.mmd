@@ -1,0 +1,29 @@
+%% Status: CURRENT — FRONTEND (MaterialsPanel is local prototype state) /
+%% CURRENT — SUPABASE (assistant attachment path is real) — BACKEND TODO FOR CODEX (ingestion)
+%% Source: frontend/src/components/app/MaterialsPanel.tsx, frontend/src/lib/store/app-data.tsx,
+%% frontend/src/lib/assistant-data.ts, frontend/src/lib/storage-management.ts
+sequenceDiagram
+    participant User
+    participant Materials as MaterialsPanel.tsx (subject "Materials")
+    participant AppData as AppDataProvider (lib/store/app-data.tsx)
+    participant LS as localStorage ("asa.data.v2")
+    participant Assistant as AssistantChat.tsx (general assistant attachments)
+    participant Storage as Storage bucket: chat-attachments
+    participant DB as Supabase (assistant_attachments)
+
+    rect rgb(245,245,245)
+    Note over Materials,LS: Subject "Materials" panel — study-material metadata is<br/>local prototype state only, not uploaded to Supabase Storage today.
+    User->>Materials: add a material (name, type, section, subject, url/notes)
+    Materials->>AppData: addMaterial(input)
+    AppData->>LS: persist DataState (materials[]) to localStorage
+    end
+
+    rect rgb(245,245,245)
+    Note over Assistant,DB: General Assistant attachments ARE real Supabase uploads.
+    User->>Assistant: attach a file to an assistant message
+    Assistant->>Assistant: validateAttachment(file) — 1 MiB limit for image/audio/video,<br/>PDF/DOCX otherwise
+    Assistant->>Storage: upload to chat-attachments/<uid>/...
+    Assistant->>DB: insert assistant_attachments row (parse_status: "unparsed")
+    end
+
+    Note over DB: BACKEND TODO FOR CODEX: there is no separate "study document"<br/>ingestion pipeline invoked by the frontend. The `documents` /<br/>`document_chunks` tables referenced by storage-management.ts are read<br/>defensively for storage accounting only; nothing in the frontend<br/>writes to them.

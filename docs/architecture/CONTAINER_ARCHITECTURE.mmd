@@ -1,0 +1,71 @@
+flowchart TB
+  subgraph BROWSER["Trust boundary: Browser"]
+    ROUTER["Router<br/>frontend/src/routes"]
+    AUTHUI["Auth UI<br/>AuthForm.tsx"]
+    HOME["Home"]
+    SCHOOL["School / Subject workspace"]
+    PLANNER["Planner"]
+    ASSISTANT["Assistant / Chat<br/>StudyChat.tsx, AssistantChat.tsx"]
+    STATS["Statistics"]
+    HELP["Help"]
+    FEEDBACK["Feedback"]
+    PROFILE["Profile / Settings"]
+    I18N["i18n layer<br/>lib/i18n/*"]
+    SPEECH["Speech layer<br/>lib/speech.ts"]
+    SUPACLIENT["Supabase client<br/>integrations/supabase/client.ts"]
+    GCAL["Google Calendar client<br/>lib/google-calendar.ts"]
+  end
+
+  subgraph APPSERVER["Trust boundary: TanStack server runtime"]
+    APICHAT["/api/chat server route<br/>frontend/src/routes/api/chat.ts"]
+  end
+
+  subgraph SUPABASECLOUD["Trust boundary: Supabase cloud (ucacmeadsufiedxrgqit)"]
+    SAUTH["Auth"]
+    SPG["PostgreSQL"]
+    SSTORAGE["Storage"]
+    SEDGE["Edge Functions"]
+    SRLS["RLS layer"]
+    SRETENTION["Retention infrastructure<br/>media_retention_queue"]
+  end
+
+  subgraph LOCALMACHINE["Trust boundary: Student local machine"]
+    CHATEP["Chat endpoint :8001<br/>EXPECTED BACKEND CONTRACT"]
+    CTXMGR["Context manager<br/>BACKEND IMPLEMENTATION UNKNOWN"]
+    RAG["Retrieval / RAG<br/>BACKEND IMPLEMENTATION UNKNOWN"]
+    DOCPROC["Document processing<br/>BACKEND IMPLEMENTATION UNKNOWN"]
+    MEMORY["Student memory<br/>BACKEND IMPLEMENTATION UNKNOWN"]
+    ORCH["AI orchestration<br/>BACKEND IMPLEMENTATION UNKNOWN"]
+    MODELIF["Local model interface<br/>BACKEND IMPLEMENTATION UNKNOWN"]
+    MEDIAPROC["Media processing<br/>BACKEND IMPLEMENTATION UNKNOWN"]
+    WEBRET["Web retrieval<br/>BACKEND IMPLEMENTATION UNKNOWN"]
+    MODEL["Local model runtime :8000<br/>llama.cpp / Qwen"]
+  end
+
+  ROUTER --> AUTHUI & HOME & SCHOOL & PLANNER & ASSISTANT & STATS & HELP & FEEDBACK & PROFILE
+  HOME --> I18N
+  ASSISTANT --> SPEECH
+  ROUTER --> SUPACLIENT
+  PLANNER --> GCAL
+  ASSISTANT --> APICHAT
+
+  SUPACLIENT --> SAUTH
+  SUPACLIENT --> SPG
+  SUPACLIENT --> SSTORAGE
+  SUPACLIENT --> SEDGE
+  SPG --> SRLS
+  SSTORAGE --> SRLS
+  SEDGE --> SRETENTION
+
+  APICHAT --> SAUTH
+  APICHAT --> SPG
+  APICHAT -->|"POST /api/chat, X-Student-Id header"| CHATEP
+  CHATEP --> CTXMGR
+  CTXMGR --> RAG
+  CTXMGR --> DOCPROC
+  CTXMGR --> MEMORY
+  CTXMGR --> ORCH
+  ORCH --> MODELIF
+  MODELIF --> MODEL
+  CTXMGR --> MEDIAPROC
+  CTXMGR --> WEBRET

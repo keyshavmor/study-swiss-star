@@ -1,0 +1,29 @@
+%% Status: CURRENT — FRONTEND / CURRENT — SUPABASE (Edge Function)
+%% Source: frontend/src/routes/_authenticated/feedback.tsx, frontend/src/lib/telemetry.ts
+sequenceDiagram
+    participant User
+    participant Page as feedback.tsx
+    participant Fn as Edge Function: feedback-submit
+    participant DB as Supabase table: feedback
+    participant Bucket as Storage bucket: feedback-messages
+    participant Log as lib/telemetry.ts (activity-log)
+    participant Admin as Admin retrieval (BACKEND IMPLEMENTATION UNKNOWN)
+
+    User->>Page: choose category (idea/bug/general), write message (>= 10 chars)
+    Page->>Fn: functions.invoke("feedback-submit", { message, category,<br/>context: { route, user_agent, submitted_at } })
+    Note over Fn,Bucket: BACKEND IMPLEMENTATION UNKNOWN internals of the function itself,<br/>but the expected effect per FACTS.md is:
+    Fn->>DB: insert feedback row (id, user_id, category, message, context, created_at)
+    Fn->>Bucket: write a mirror object into feedback-messages (private, <uid>/... convention)
+    alt function error
+        Fn-->>Page: error
+        Page->>Log: trackFailure("feedback_submit_failed", err, { category })
+        Page-->>User: error.submitFailedGeneric
+    else success
+        Fn-->>Page: ok
+        Page->>Log: track("feedback_submitted", { category })
+        Page-->>User: success toast + saved confirmation
+    end
+
+    Admin--xDB: (expected) admin surface reads feedback rows
+    Admin--xBucket: (expected) admin surface reads feedback-messages objects
+    Note over Admin: BACKEND IMPLEMENTATION UNKNOWN — no admin retrieval UI or API<br/>is present in this frontend codebase; retrieval is inferred only.

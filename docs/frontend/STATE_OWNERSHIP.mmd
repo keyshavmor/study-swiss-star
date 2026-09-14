@@ -1,0 +1,62 @@
+flowchart LR
+  subgraph URL["URL / router state"]
+    A1["Active chat thread id"]
+    A2["Active assistant thread id"]
+    A3["Active subject slug"]
+  end
+  subgraph RCS["React component state"]
+    B1["Google Calendar events (fetched)"]
+    B2["responseLanguageHint (in-memory ref)"]
+    B3["Auth form fields"]
+  end
+  subgraph CTX["Context / provider state"]
+    C1["Planner events + assessments<br/>(AppDataProvider)"]
+    C2["Academic year selection<br/>(AcademicYearProvider)"]
+    C3["Theme<br/>(ThemeProvider)"]
+    C4["App language (live value)<br/>(I18nProvider)"]
+  end
+  subgraph LS["localStorage"]
+    D1["asa.data.v2 (planner/assessments/materials/links/profile)"]
+    D2["asa.year.v1 (academic year)"]
+    D3["alim.app_language (language cache)"]
+    D4["theme cache"]
+  end
+  subgraph SS["sessionStorage"]
+    E1["Google provider OAuth token"]
+  end
+  subgraph AUTH["Supabase Auth session"]
+    F1["Active user"]
+  end
+  subgraph PG["Supabase PostgreSQL"]
+    G1["profiles.username"]
+    G2["user_preferences.preferences (app_language, audio, model, ...)"]
+    G3["threads / messages"]
+    G4["assistant_threads / assistant_messages / assistant_attachments"]
+    G5["feedback"]
+    G6["usage_events"]
+    G7["media_retention_queue"]
+    G8["documents / document_chunks"]
+  end
+  subgraph ST["Supabase Storage"]
+    H1["profile-avatars"]
+    H2["chat-attachments"]
+    H3["feedback-messages"]
+    H4["activity-logs"]
+    H5["assistant-descriptors"]
+    H6["user-materials"]
+  end
+  subgraph EXT["Provider / OAuth tokens"]
+    I1["GitHub / LinkedIn / Spotify sign-in (Supabase-managed)"]
+  end
+  subgraph BE["Local backend / model-context state"]
+    J1["Retrieval + model context per chat turn"]
+    J2["Local Qwen runtime (port 8000)"]
+  end
+
+  C1 --> D1
+  C2 --> D2
+  C4 --> D3
+  C3 --> D4
+  C4 --> G2
+  G4 --> H2
+  G1 --> H1

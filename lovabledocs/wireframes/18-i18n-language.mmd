@@ -1,20 +1,22 @@
+%% Seven-language i18n flow: languages.ts, detect.ts, format.ts, provider.ts.
 flowchart TD
-  Boot[App boot] --> Cache[Read localStorage alim.app_language\nflash-avoidance cache]
-  Cache --> Render[Render with cached or default English language]
-  Boot --> AuthCheck{Signed in?}
-  AuthCheck -->|No| WelcomeLocal[Localise welcome/auth screen from cache]
-  AuthCheck -->|Yes| Load[Load user_preferences.preferences.app_language\nAUTHORITATIVE]
-  Load --> Valid{Value is one of en de gsw ru es fr it?}
-  Valid -->|Yes| Apply[Apply language, update cache]
-  Valid -->|No or missing| English[Recover to English default]
+  Boot["App boot"] --> Cache["Read localStorage alim.app_language, flash-avoidance cache"]
+  Cache --> Render["Render with cached or default English language"]
+  Boot --> AuthCheck{"Signed in?"}
+  AuthCheck -->|No| WelcomeLocal["Localise welcome/auth screen from cache"]
+  AuthCheck -->|Yes| Load["Load user_preferences.preferences.app_language, AUTHORITATIVE"]
+  Load --> Valid{"Value is one of en de gsw ru es fr it?"}
+  Valid -->|Yes| Apply["Apply language, update cache"]
+  Valid -->|No or missing| English["Recover to English default"]
   English --> Apply
-  Apply --> UI[All screens via useI18n / t]
-  Change[Student opens header language menu] --> Pick[Pick a language]
-  Pick --> WriteCache[Write localStorage cache]
-  Pick --> WriteDB[Update user_preferences.preferences.app_language]
+  Apply --> UI["All screens via useI18n() / t()"]
+  Change["Student opens LanguageMenu.tsx in AppHeader<br/>between NotificationCenter and the profile avatar"] --> Pick["Pick a flag: en/de/gsw/ru/es/fr/it"]
+  Pick --> WriteCache["Write localStorage alim.app_language"]
+  Pick --> WriteDB["Update user_preferences.preferences.app_language"]
   WriteCache --> UI
   WriteDB --> UI
-  UI --> Detect[Per-message: detectLanguage / effectiveResponseLanguage\nchat + assistant]
-  Detect --> Hint[responseLanguageHint\nCLIENT STATE ONLY, not sent today]
-  Detect --> SpeechLocale[speechLocaleFor for Listen / Stop read-aloud]
-  Hint -.-> FutureContract[ui_language, message_language, response_language\nFUTURE BACKEND / CODEX not implemented]
+  UI --> Format["lib/i18n/format.ts: formatDate/formatWeekday/formatTime etc.<br/>dd/mm/yyyy, weekday, 24h HH:mm"]
+  UI --> Detect["Per-message: detectLanguage / effectiveResponseLanguage (chat + assistant)"]
+  Detect --> Hint["responseLanguageHint, CLIENT STATE ONLY, not sent today"]
+  Detect --> SpeechLocale["speechLocaleFor for Listen/Stop read-aloud"]
+  Hint -.-> FutureContract["ui_language, message_language, response_language contract<br/>BACKEND TODO FOR CODEX"]

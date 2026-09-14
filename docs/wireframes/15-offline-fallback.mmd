@@ -1,17 +1,18 @@
+%% REWRITTEN: previous version documented an opt-in "Lovable AI Gateway" fallback that does
+%% not exist in current code. /api/chat now returns a plain error when the Python backend is
+%% unreachable or fails; there is no cloud-model fallback path today.
 flowchart TD
-  Start[App operation] --> Cloud{external Supabase reachable?}
-  Cloud -->|No before sign-in| AuthBlocked[Protected pages unavailable]
-  Cloud -->|Session already valid| LocalScreens[Local screens may remain usable]
-  Cloud -->|Yes| Gate[Authentication and chat history available]
-  Gate --> Python{Python backend reachable?}
-  Python -->|Yes| AI[Context-backed chat works]
-  Python -->|No| Fallback{Opt-in Lovable fallback enabled?}
-  Fallback -->|Yes| Gateway[Cloud AI answer\nIMPLEMENTED OPTIONAL]
-  Fallback -->|No| Error[Chat returns clear 503\nIMPLEMENTED]
-  Python -. future health UI .-> Banner[Non-blocking offline banner + Retry\nPLANNED]
-  Banner -.-> Disable[Disable AI-only actions\nPLANNED]
-  Error --> Continue[School grades stats planner profile links remain local]
+  Start["App operation"] --> Cloud{"external Supabase reachable?"}
+  Cloud -->|No, before sign-in| AuthBlocked["Protected pages unavailable, redirected to /"]
+  Cloud -->|Session already valid| LocalScreens["Local-only screens (school, stats, planner, profile links)<br/>may remain usable"]
+  Cloud -->|Yes| Gate["Authentication and chat/thread history available"]
+  Gate --> Python{"Local Python backend (default 127.0.0.1:8001) reachable?"}
+  Python -->|Yes| AI["Context-backed chat works via POST /api/chat"]
+  Python -->|No, or backend error| Error["frontend/src/routes/api/chat.ts returns ContextBackendError.status<br/>(default 503) with a message; no fallback answer is generated<br/>CURRENT - FRONTEND"]
+  Python -. future health UI .-> Banner["Non-blocking offline banner + Retry<br/>BACKEND TODO FOR CODEX / frontend not wired"]
+  Banner -.-> Disable["Disable AI-only actions<br/>PLANNED"]
+  Error --> Continue["School, grades, stats, planner, profile and links remain usable locally"]
   Disable --> Continue
-  Continue --> Store[(Browser storage)]
-  ModelDown{Model unavailable but FastAPI reachable} --> Degraded["/health returns degraded"]
+  Continue --> Store["Browser storage (AppDataProvider)"]
+  ModelDown{"Local model runtime down but FastAPI reachable"} --> Degraded["Backend health endpoint may report degraded<br/>BACKEND IMPLEMENTATION UNKNOWN"]
   Degraded -. planned UI .-> Banner

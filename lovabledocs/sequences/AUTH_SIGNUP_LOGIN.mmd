@@ -1,0 +1,46 @@
+%% Status: CURRENT — FRONTEND
+%% Source: frontend/src/components/AuthForm.tsx, frontend/src/lib/telemetry.ts
+%% Email/password signup (with username-availability pre-check) then email/password login.
+sequenceDiagram
+    participant User
+    participant Auth as AuthForm.tsx
+    participant Avail as Edge Function: username-availability
+    participant Supa as Supabase Auth (auth.signUp / signInWithPassword)
+    participant Telemetry as activity-log Edge Function
+
+    Note over Auth: Sign-up mode
+    User->>Auth: enter username, email, password
+    Auth->>Auth: validateUsername() (client pattern check)
+    Auth->>Avail: functions.invoke("username-availability", { username })
+    alt function call failed (network/error)
+        Note over Auth: failure is NOT treated as "taken"<br/>continue; unique index stays final authority
+    else valid === false
+        Avail-->>Auth: { valid: false }
+        Auth-->>User: usernameCharsError
+    else available === false
+        Avail-->>Auth: { available: false }
+        Auth-->>User: usernameTaken
+    else available
+        Avail-->>Auth: { valid: true, available: true }
+    end
+    Auth->>Supa: auth.signUp({ email, password, options.data: { username } })
+    alt duplicate/unique error mentioning username
+        Supa-->>Auth: error
+        Auth-->>User: usernameTaken
+    else success
+        Supa-->>Auth: success (email confirmation required)
+        Auth->>Telemetry: track auth_signup_succeeded
+        Auth-->>User: toast "check email to confirm", switch to sign-in mode
+    end
+
+    Note over Auth: Sign-in mode (email/password)
+    User->>Auth: enter email, password
+    Auth->>Supa: auth.signInWithPassword({ email, password })
+    alt error
+        Supa-->>Auth: error
+        Auth-->>User: authenticationFailed toast
+    else success
+        Supa-->>Auth: session
+        Auth->>Telemetry: track auth_signin_succeeded (method: email)
+        Auth->>User: navigate to /home
+    end

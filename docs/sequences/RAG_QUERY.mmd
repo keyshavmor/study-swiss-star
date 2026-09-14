@@ -1,0 +1,27 @@
+%% Status: CURRENT — FRONTEND / EXPECTED BACKEND CONTRACT — BACKEND IMPLEMENTATION UNKNOWN
+%% Source: frontend/src/lib/context-backend.server.ts, frontend/src/lib/context-backend.types.ts,
+%% frontend/src/components/app/SourceSnippetList.tsx, frontend/src/routes/api/chat.ts
+sequenceDiagram
+    participant Chat as StudyChat.tsx
+    participant API as api/chat.ts
+    participant Ctx as context-backend.server.ts
+    participant Backend as Local Python backend (/api/chat)
+    participant Retrieval as Retrieval step (BACKEND IMPLEMENTATION UNKNOWN)
+    participant Budget as Context/token budget step (BACKEND IMPLEMENTATION UNKNOWN)
+    participant Model as Local model (llama.cpp / Qwen, port 8000 — backend-owned)
+    participant Sources as SourceSnippetList.tsx
+
+    Chat->>API: user question (see SUBJECT_CHAT.mmd for full request flow)
+    API->>Ctx: requestContextAnswer({ question, subject_id, language, academic_year, grade_level,<br/>include_sources: true, allow_web: true, stream: false })
+    Ctx->>Backend: POST /api/chat with the above body
+    Note over Backend,Retrieval: BACKEND IMPLEMENTATION UNKNOWN beyond the documented contract.<br/>Expected stages inferred only from the response shape:
+    Backend->>Retrieval: (expected) retrieve candidate chunks/collections for subject_id
+    Retrieval->>Budget: (expected) select/trim chunks to fit context budget
+    Budget->>Model: (expected) generate answer using selected context<br/>(local model runtime is NOT called directly by the frontend)
+    Model-->>Backend: (expected) generated answer text
+    Backend-->>Ctx: ContextChatResponse {<br/>  answer,<br/>  sources: [{ source_id, material_id, material_name, section, page, chapter?, snippet, score, url }],<br/>  exam_tip,<br/>  used_model,<br/>  retrieval_summary: { chunks_considered, chunks_used, collections },<br/>  language, created_at<br/>}
+    Ctx-->>API: ContextChatResponse
+    API-->>Chat: text stream + data-context-metadata { sources, examTip, usedModel, retrievalSummary }
+    Chat->>Sources: render contextMetadata.data.sources via SourceSnippetList.tsx
+    Sources-->>Chat: expandable "Sources" list — material name, section/chapter/page, snippet, optional link
+    Note over Backend,Model: BACKEND IMPLEMENTATION UNKNOWN: retrieval algorithm, budget policy,<br/>and which model used_model refers to are not verified from frontend code.

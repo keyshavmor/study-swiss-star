@@ -1,0 +1,39 @@
+flowchart TB
+  subgraph BROWSERNODE["Student's browser"]
+    UI["Gymi Genius SPA<br/>React 19 + TanStack Router"]
+  end
+
+  subgraph EDGE["TanStack server runtime<br/>Cloudflare-Worker-class edge<br/>no child_process / native deps"]
+    APICHAT["/api/chat server route<br/>env: SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY,<br/>ALIM_CONTEXT_BACKEND_URL, ALIM_CONTEXT_BACKEND_TIMEOUT_MS"]
+  end
+
+  subgraph SUPABASECLOUD["Supabase cloud<br/>project ucacmeadsufiedxrgqit"]
+    SAUTH["Auth"]
+    SPG["PostgreSQL + RLS"]
+    SSTORAGE["Storage"]
+    SEDGE["Edge Functions"]
+  end
+
+  subgraph LOCALMACHINE["Student's local machine"]
+    BACKEND["FastAPI backend :8001<br/>BACKEND IMPLEMENTATION UNKNOWN"]
+    MODEL["llama.cpp / Qwen :8000<br/>BACKEND IMPLEMENTATION UNKNOWN"]
+  end
+
+  subgraph EXTERNAL["External providers"]
+    GOOGLE["Google OAuth + Calendar API v3"]
+    OTHEROAUTH["GitHub / LinkedIn / Spotify OAuth"]
+  end
+
+  UI -->|"env: VITE_SUPABASE_*"| SAUTH
+  UI --> SPG
+  UI --> SSTORAGE
+  UI --> SEDGE
+  UI -->|"Bearer token"| APICHAT
+  APICHAT --> SAUTH
+  APICHAT --> SPG
+  APICHAT -->|"HTTP, X-Student-Id"| BACKEND
+  BACKEND --> MODEL
+  UI --> GOOGLE
+  UI --> OTHEROAUTH
+  SAUTH --> GOOGLE
+  SAUTH --> OTHEROAUTH

@@ -1,0 +1,35 @@
+%% Status: CURRENT — FRONTEND (contract/read side) — BACKEND TODO FOR CODEX (cleanup worker, descriptor generation)
+%% Source: frontend/src/lib/media-retention.ts
+sequenceDiagram
+    participant Backend as Local Python backend (BACKEND TODO FOR CODEX)
+    participant Retention as lib/media-retention.ts
+    participant DB as Supabase table: media_retention_queue
+    participant DescBucket as Storage bucket: assistant-descriptors
+    participant MediaBucket as Original media storage bucket
+    participant User
+    participant UI as Settings / Storage UI (listRetentionQueue)
+    participant Cleanup as 30-minute cleanup worker (BACKEND TODO FOR CODEX)
+
+    Note over Backend,DescBucket: Hard rule: a textual descriptor MUST be written to the private<br/>assistant-descriptors bucket BEFORE the original media may be deleted.
+    Backend--xDescBucket: (expected) upload descriptor for generated/fetched media
+    Backend->>Retention: enqueueAssistantMedia({ userId, mediaKind, storageBucket, objectPath,<br/>descriptorPath, sourceUrl?/sourcePath? })
+    Retention->>DB: insert media_retention_queue row<br/>status = descriptorPath ? "descriptor_ready" : "pending"<br/>delete_after = now() + 30 minutes (RETENTION_MINUTES)
+
+    User->>UI: view stored media / storage usage
+    UI->>Retention: listRetentionQueue(userId)
+    Retention->>DB: select rows where user_id = userId, order by created_at desc
+    DB-->>Retention: rows
+    Retention->>Retention: minutesUntilDeletion(delete_after) / isOriginalExpired(row)
+    Retention-->>UI: rows with countdown / expired flag
+    UI-->>User: shows remaining time before the original media is deleted
+
+    Note over Cleanup,MediaBucket: BACKEND TODO FOR CODEX: the 30-minute cleanup worker that actually<br/>deletes the original media object once delete_after has passed,<br/>and updates status to "deleted"/deleted_at, is not implemented<br/>anywhere in this frontend codebase.
+    Cleanup--xMediaBucket: (expected) delete original object once delete_after <= now()
+    Cleanup--xDB: (expected) update status = "deleted", deleted_at = now()
+
+    rect rgb(245,245,245)
+    Note over User,DescBucket: Descriptor retrieval after original deletion
+    User->>UI: open media whose original has expired
+    UI->>DescBucket: (expected) fetch descriptor at descriptor_path
+    Note over UI: The descriptor becomes the retrieval surface — the original<br/>binary must not be expected to exist once status = "deleted".
+    end

@@ -1,0 +1,20 @@
+%% Status: BACKEND IMPLEMENTATION UNKNOWN (expected contract only)
+%% Source: FACTS.md ("Local Python backend boundary"), frontend/src/integrations/supabase/types.ts
+%% (documents / document_chunks tables), frontend/src/lib/storage-management.ts
+sequenceDiagram
+    participant Upload as Study material upload (path UNKNOWN in frontend)
+    participant Bucket as Storage bucket: user-materials
+    participant Backend as Local Python backend (BACKEND IMPLEMENTATION UNKNOWN)
+    participant Chunker as Ingestion/chunking step (BACKEND IMPLEMENTATION UNKNOWN)
+    participant Embedder as Embedding step (BACKEND IMPLEMENTATION UNKNOWN)
+    participant DB as Supabase (documents, document_chunks)
+
+    Note over Upload,Bucket: No frontend code path currently uploads study materials<br/>into the user-materials bucket or the documents table.<br/>This diagram documents the EXPECTED contract implied by the schema<br/>(documents/document_chunks referenced in frontend/src/integrations/supabase/types.ts<br/>and read defensively by lib/storage-management.ts), not an observed flow.
+
+    Upload--xBucket: (expected) file uploaded to user-materials/<uid>/...
+    Bucket--xBackend: (expected) backend notified or polls for new objects
+    Backend--xChunker: (expected) extract text, split into chunks
+    Chunker--xEmbedder: (expected) generate embeddings per chunk
+    Embedder--xDB: (expected) insert documents row + document_chunks rows
+
+    Note over Backend,DB: BACKEND IMPLEMENTATION UNKNOWN:<br/>ingestion trigger, chunking strategy, embedding model and<br/>document_chunks schema/columns are not verified against any<br/>frontend or migration source. Column names are known to vary<br/>per deployment (storage-management.ts reads them defensively).
