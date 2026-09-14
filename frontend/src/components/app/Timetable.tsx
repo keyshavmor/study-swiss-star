@@ -63,9 +63,12 @@ export function Timetable({
   }
 
   function commit(occurrence: Occurrence, state: DragState) {
+    // Read-only occurrences (e.g. Google Calendar) can never be moved.
+    if (occurrence.event.readOnly) return;
     const dayDelta = Math.round(state.dx / columnWidth());
     const minuteDelta = Math.round(((state.dy / HOUR_HEIGHT) * 60) / SNAP_MINUTES) * SNAP_MINUTES;
     if (dayDelta === 0 && minuteDelta === 0) return;
+
 
     const duration = minutesOf(occurrence.end) - minutesOf(occurrence.start);
     const startMinutes = Math.max(
