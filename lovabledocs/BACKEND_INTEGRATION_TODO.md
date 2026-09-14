@@ -66,3 +66,14 @@ This checklist reflects the repository after the Context Manager implementation.
 - Do not change the 15-subject/SPF/Swiss-grade rules as part of backend work.
 - Do not put model credentials in `VITE_*` variables.
 - Keep retrieval, memory policy, and prompt compilation in Python.
+
+## Added by the assistant/settings/storage frontend work
+
+- [ ] Implement an assistant inference endpoint and write replies into
+      `assistant_messages` (`role = 'assistant'`).
+- [ ] Parse `assistant_attachments` (PDF/DOCX/image/audio/video) and update
+      `parse_status`; today every row stays `unparsed`.
+- [ ] Read `user_preferences.preferences.selected_qwen_model` when loading the
+      local model instead of a hard-coded default.
+- [ ] Populate `documents` storage columns consistently so the settings storage
+      list can show every study material with size and date.
