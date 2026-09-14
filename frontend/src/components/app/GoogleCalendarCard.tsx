@@ -40,47 +40,44 @@ export function GoogleCalendarCard({
   const onOccurrencesRef = useRef(onOccurrences);
   onOccurrencesRef.current = onOccurrences;
 
-  const sync = useCallback(
-    async (from: string, to: string, options?: { silent?: boolean }) => {
-      if (!hasGoogleAccess()) {
+  const sync = useCallback(async (from: string, to: string, options?: { silent?: boolean }) => {
+    if (!hasGoogleAccess()) {
+      setConnected(false);
+      onOccurrencesRef.current([]);
+      return;
+    }
+    setBusy(true);
+    try {
+      const events = await fetchGoogleCalendarEvents(from, to);
+      onOccurrencesRef.current(googleOccurrences(events));
+      setLastSync(new Date());
+      setStatus(null);
+      setConnected(true);
+      track({
+        event_name: "google_calendar_sync_succeeded",
+        feature: "planner",
+        properties: { event_count: events.length },
+      });
+    } catch (err) {
+      onOccurrencesRef.current([]);
+      trackFailure("google_calendar_sync_failed", err, { feature: "planner" });
+      if (err instanceof GoogleCalendarAuthError) {
         setConnected(false);
-        onOccurrencesRef.current([]);
-        return;
+        setStatus(
+          "Google Calendar access is not available in this browser session. Connect again to sync.",
+        );
+      } else {
+        setStatus(
+          err instanceof Error ? err.message : "Google Calendar could not be reached just now.",
+        );
       }
-      setBusy(true);
-      try {
-        const events = await fetchGoogleCalendarEvents(from, to);
-        onOccurrencesRef.current(googleOccurrences(events));
-        setLastSync(new Date());
-        setStatus(null);
-        setConnected(true);
-        track({
-          event_name: "google_calendar_sync_succeeded",
-          feature: "planner",
-          properties: { event_count: events.length },
-        });
-      } catch (err) {
-        onOccurrencesRef.current([]);
-        trackFailure("google_calendar_sync_failed", err, { feature: "planner" });
-        if (err instanceof GoogleCalendarAuthError) {
-          setConnected(false);
-          setStatus(
-            "Google Calendar access is not available in this browser session. Connect again to sync.",
-          );
-        } else {
-          setStatus(
-            err instanceof Error ? err.message : "Google Calendar could not be reached just now.",
-          );
-        }
-        if (!options?.silent) {
-          toast.error("Google Calendar could not be synced.");
-        }
-      } finally {
-        setBusy(false);
+      if (!options?.silent) {
+        toast.error("Google Calendar could not be synced.");
       }
-    },
-    [],
-  );
+    } finally {
+      setBusy(false);
+    }
+  }, []);
 
   // Pick up a provider token that arrived with the OAuth redirect.
   useEffect(() => {

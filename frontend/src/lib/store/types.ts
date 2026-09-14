@@ -151,7 +151,6 @@ export interface PlannerEvent {
   readOnly?: boolean;
 }
 
-
 export type MaterialSection =
   | "Learning Material"
   | "Syllabus"

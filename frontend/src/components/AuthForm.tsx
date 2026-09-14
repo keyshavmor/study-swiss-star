@@ -69,7 +69,11 @@ export function AuthForm() {
     if (value.includes("@")) {
       const { error } = await supabase.auth.signInWithPassword({ email: value, password });
       if (error) throw error;
-      track({ event_name: "auth_signin_succeeded", feature: "auth", properties: { method: "email" } });
+      track({
+        event_name: "auth_signin_succeeded",
+        feature: "auth",
+        properties: { method: "email" },
+      });
       await goHome();
       return;
     }
@@ -149,7 +153,10 @@ export function AuthForm() {
             ? "auth_password_reset_failed"
             : "auth_signin_failed",
         err,
-        { feature: "auth", properties: { method: identifier.includes("@") ? "email" : "username" } },
+        {
+          feature: "auth",
+          properties: { method: identifier.includes("@") ? "email" : "username" },
+        },
       );
       toast.error(err instanceof Error ? err.message : "Authentication failed");
     } finally {

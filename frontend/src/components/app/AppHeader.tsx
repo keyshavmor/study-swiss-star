@@ -23,7 +23,6 @@ import { signOutCompletely } from "@/lib/sign-out";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
-
 const NAV = [
   { to: "/home", label: "Home" },
   { to: "/school", label: "School" },
@@ -55,7 +54,6 @@ export function AppHeader() {
     await router.invalidate();
     await navigate({ to: "/", replace: true });
   }
-
 
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-surface/95 backdrop-blur-none">
@@ -171,7 +169,6 @@ export function AppHeader() {
                 <LogOut className="h-4 w-4" />
                 Sign out
               </DropdownMenuItem>
-
             </DropdownMenuContent>
           </DropdownMenu>
         </div>

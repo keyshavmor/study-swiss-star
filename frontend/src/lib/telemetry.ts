@@ -27,7 +27,8 @@ const MAX_STRING = 200;
 const MAX_PROPERTIES = 12;
 
 /** Keys that must never leave the browser, whatever the caller passes. */
-const FORBIDDEN_KEY = /(password|token|secret|key|authorization|cookie|message|content|prompt|body|title|description|location|summary|email)/i;
+const FORBIDDEN_KEY =
+  /(password|token|secret|key|authorization|cookie|message|content|prompt|body|title|description|location|summary|email)/i;
 
 function sanitiseValue(value: unknown): Primitive | undefined {
   if (value === null) return null;

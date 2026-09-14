@@ -65,7 +65,6 @@ import { track } from "@/lib/telemetry";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
-
 type PlannerView = "Timetable" | "Day" | "Month" | "List";
 type Scope = "only" | "future" | "series";
 
@@ -156,12 +155,14 @@ function PlannerPage() {
    */
   const visibleOccurrences = useMemo(
     () =>
-      [...occurrences, ...googleOccurrences.filter((o) => o.date >= range.from && o.date <= range.to)].sort(
-        (a, b) => (a.date === b.date ? a.start.localeCompare(b.start) : a.date.localeCompare(b.date)),
+      [
+        ...occurrences,
+        ...googleOccurrences.filter((o) => o.date >= range.from && o.date <= range.to),
+      ].sort((a, b) =>
+        a.date === b.date ? a.start.localeCompare(b.start) : a.date.localeCompare(b.date),
       ),
     [occurrences, googleOccurrences, range.from, range.to],
   );
-
 
   const weekOccurrences = useMemo(
     () =>
@@ -218,7 +219,10 @@ function PlannerPage() {
       if (view === "Month") return addMonths(current, delta);
       return addDays(current, delta * 7);
     });
-    void navigate({ to: "/planner", search: { date: undefined, event: undefined, google: undefined } });
+    void navigate({
+      to: "/planner",
+      search: { date: undefined, event: undefined, google: undefined },
+    });
   }
 
   function applyMove(request: MoveRequest, scope: Scope) {
@@ -257,7 +261,6 @@ function PlannerPage() {
     if (isGoogleOccurrence(occurrence)) setGoogleDetail(occurrence);
     else setSelected(occurrence);
   }
-
 
   const rangeLabel =
     view === "Month"
@@ -493,100 +496,97 @@ function PlannerPage() {
           )}
         </section>
 
+        <aside className="flex h-fit flex-col gap-5 xl:sticky xl:top-24">
+          <div className="app-card p-5">
+            <div className="flex items-center gap-2.5">
+              <Bell className="h-5 w-5" />
+              <h2 className="text-[17px] font-semibold tracking-tight">This week</h2>
+            </div>
+            <dl className="mt-3 space-y-2 text-[14.5px]">
+              <Row label="Classes" value={formatHours(classMinutes)} />
+              <Row label="Exams" value={String(examCount)} />
+              <Row label="Planned study time" value={formatHours(studyMinutes)} />
+              <Row label="Activities incl. travel" value={formatHours(activityMinutes)} />
+            </dl>
+            <EventDialog
+              defaults={{ date: weekStart, category: "Study session" }}
+              trigger={
+                <Button variant="secondary" className="mt-4 w-full">
+                  <CalendarDays className="h-4 w-4" />
+                  Plan a study session
+                </Button>
+              }
+            />
+          </div>
 
-          <aside className="flex h-fit flex-col gap-5 xl:sticky xl:top-24">
+          {conflicts.length > 0 && (
             <div className="app-card p-5">
               <div className="flex items-center gap-2.5">
-                <Bell className="h-5 w-5" />
-                <h2 className="text-[17px] font-semibold tracking-tight">This week</h2>
+                <TriangleAlert className="h-5 w-5 text-warning" />
+                <h2 className="text-[17px] font-semibold tracking-tight">Conflicts</h2>
               </div>
-              <dl className="mt-3 space-y-2 text-[14.5px]">
-                <Row label="Classes" value={formatHours(classMinutes)} />
-                <Row label="Exams" value={String(examCount)} />
-                <Row label="Planned study time" value={formatHours(studyMinutes)} />
-                <Row label="Activities incl. travel" value={formatHours(activityMinutes)} />
-              </dl>
-              <EventDialog
-                defaults={{ date: weekStart, category: "Study session" }}
-                trigger={
-                  <Button variant="secondary" className="mt-4 w-full">
-                    <CalendarDays className="h-4 w-4" />
-                    Plan a study session
-                  </Button>
-                }
-              />
+              <ul className="mt-3 space-y-3">
+                {conflicts.map((conflict) => (
+                  <li key={conflict.id} className="rounded-[16px] bg-surface-2 p-3.5">
+                    <p className="text-[14.5px] font-medium">{conflict.title}</p>
+                    <p className="mt-1 text-[13px] text-muted-foreground">{conflict.detail}</p>
+                  </li>
+                ))}
+              </ul>
             </div>
+          )}
 
-            {conflicts.length > 0 && (
-              <div className="app-card p-5">
-                <div className="flex items-center gap-2.5">
-                  <TriangleAlert className="h-5 w-5 text-warning" />
-                  <h2 className="text-[17px] font-semibold tracking-tight">Conflicts</h2>
-                </div>
-                <ul className="mt-3 space-y-3">
-                  {conflicts.map((conflict) => (
-                    <li key={conflict.id} className="rounded-[16px] bg-surface-2 p-3.5">
-                      <p className="text-[14.5px] font-medium">{conflict.title}</p>
-                      <p className="mt-1 text-[13px] text-muted-foreground">{conflict.detail}</p>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            <div className="app-card p-5">
-              <h2 className="text-[17px] font-semibold tracking-tight">
-                Extracurricular activities
-              </h2>
-              {activities.length === 0 ? (
-                <p className="mt-2 rounded-[14px] bg-surface-2 px-3 py-4 text-[13.5px] text-muted-foreground">
-                  Add training, lessons or clubs so study time can be planned around them.
-                </p>
-              ) : (
-                <ul className="mt-3 space-y-2.5">
-                  {activities.map((activity) => (
-                    <li key={activity.id} className="rounded-[16px] bg-surface-2 p-3.5">
-                      <p className="text-[14.5px] font-medium">{activity.title}</p>
-                      <p className="tabular text-[12.5px] text-muted-foreground">
-                        {activity.recurrence !== "none"
-                          ? `${(activity.weekdays ?? [weekdayIndex(activity.date)])
-                              .map((d) => WEEKDAY_SHORT[d])
-                              .join(", ")} · `
-                          : ""}
-                        {activity.start}–{activity.end}
+          <div className="app-card p-5">
+            <h2 className="text-[17px] font-semibold tracking-tight">Extracurricular activities</h2>
+            {activities.length === 0 ? (
+              <p className="mt-2 rounded-[14px] bg-surface-2 px-3 py-4 text-[13.5px] text-muted-foreground">
+                Add training, lessons or clubs so study time can be planned around them.
+              </p>
+            ) : (
+              <ul className="mt-3 space-y-2.5">
+                {activities.map((activity) => (
+                  <li key={activity.id} className="rounded-[16px] bg-surface-2 p-3.5">
+                    <p className="text-[14.5px] font-medium">{activity.title}</p>
+                    <p className="tabular text-[12.5px] text-muted-foreground">
+                      {activity.recurrence !== "none"
+                        ? `${(activity.weekdays ?? [weekdayIndex(activity.date)])
+                            .map((d) => WEEKDAY_SHORT[d])
+                            .join(", ")} · `
+                        : ""}
+                      {activity.start}–{activity.end}
+                    </p>
+                    {activity.location && (
+                      <p className="mt-1 inline-flex items-center gap-1.5 text-[12.5px] text-muted-foreground">
+                        <MapPin className="h-3.5 w-3.5" />
+                        {activity.location}
                       </p>
-                      {activity.location && (
-                        <p className="mt-1 inline-flex items-center gap-1.5 text-[12.5px] text-muted-foreground">
-                          <MapPin className="h-3.5 w-3.5" />
-                          {activity.location}
-                        </p>
-                      )}
-                      {(activity.travelBefore || activity.travelAfter) && (
-                        <p className="mt-1 inline-flex items-center gap-1.5 text-[12.5px] text-muted-foreground">
-                          <Clock className="h-3.5 w-3.5" />
-                          {(activity.travelBefore ?? 0) + (activity.travelAfter ?? 0)} min travel
-                        </p>
-                      )}
-                    </li>
-                  ))}
-                </ul>
-              )}
-              <EventDialog
-                defaults={{
-                  date: weekStart,
-                  category: "Extracurricular activity",
-                  recurrence: "weekly",
-                  start: "18:30",
-                  end: "20:00",
-                }}
-                trigger={
-                  <Button variant="secondary" className="mt-4 w-full">
-                    <Plus className="h-4 w-4" />
-                    Add Activity
-                  </Button>
-                }
-              />
-            </div>
+                    )}
+                    {(activity.travelBefore || activity.travelAfter) && (
+                      <p className="mt-1 inline-flex items-center gap-1.5 text-[12.5px] text-muted-foreground">
+                        <Clock className="h-3.5 w-3.5" />
+                        {(activity.travelBefore ?? 0) + (activity.travelAfter ?? 0)} min travel
+                      </p>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            )}
+            <EventDialog
+              defaults={{
+                date: weekStart,
+                category: "Extracurricular activity",
+                recurrence: "weekly",
+                start: "18:30",
+                end: "20:00",
+              }}
+              trigger={
+                <Button variant="secondary" className="mt-4 w-full">
+                  <Plus className="h-4 w-4" />
+                  Add Activity
+                </Button>
+              }
+            />
+          </div>
 
           <GoogleCalendarCard range={range} onOccurrences={setGoogleOccurrences} />
         </aside>
@@ -626,7 +626,6 @@ function PlannerPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
 
       {selected && (
         <EventDetailDialog

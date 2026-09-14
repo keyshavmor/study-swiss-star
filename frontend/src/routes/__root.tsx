@@ -17,7 +17,6 @@ import { installGlobalErrorTelemetry, track } from "@/lib/telemetry";
 import { AppDataProvider } from "@/lib/store/app-data";
 import { AcademicYearProvider } from "@/lib/store/academic-year";
 
-
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 
@@ -149,7 +148,6 @@ function RootComponent() {
       data.subscription.unsubscribe();
     };
   }, [queryClient, router]);
-
 
   return (
     <QueryClientProvider client={queryClient}>

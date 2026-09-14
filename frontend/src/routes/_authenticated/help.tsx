@@ -41,7 +41,6 @@ export const Route = createFileRoute("/_authenticated/help")({
             "Google Calendar",
             "Connect Google Calendar in the Planner to see your appointments alongside your plan. They stay read-only.",
           ],
-
         ].map(([title, body]) => (
           <article key={title} className="app-card p-5">
             <h2 className="text-[17px] font-semibold tracking-tight">{title}</h2>

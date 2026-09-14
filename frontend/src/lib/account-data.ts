@@ -52,7 +52,6 @@ export const DEFAULT_PREFERENCES: UserPreferences = {
   auto_storage_cleanup: true,
 };
 
-
 function asRecord(value: Json | null | undefined): Record<string, unknown> {
   return value && typeof value === "object" && !Array.isArray(value)
     ? (value as Record<string, unknown>)

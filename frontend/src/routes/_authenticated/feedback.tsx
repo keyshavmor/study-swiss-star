@@ -77,7 +77,10 @@ function FeedbackPage() {
       track({ event_name: "feedback_submitted", feature: "feedback", properties: { category } });
       toast.success("Thank you — your feedback was saved.");
     } catch (err) {
-      trackFailure("feedback_submit_failed", err, { feature: "feedback", properties: { category } });
+      trackFailure("feedback_submit_failed", err, {
+        feature: "feedback",
+        properties: { category },
+      });
       setError(
         err instanceof Error
           ? `Your feedback was not saved: ${err.message}`

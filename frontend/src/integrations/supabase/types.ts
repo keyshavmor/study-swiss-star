@@ -76,7 +76,6 @@ export type Database = {
         Relationships: [];
       };
       profiles: {
-
         Row: {
           id: string;
           username: string | null;

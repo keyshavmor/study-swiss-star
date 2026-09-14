@@ -71,7 +71,6 @@ export function Timetable({
     const minuteDelta = Math.round(((state.dy / HOUR_HEIGHT) * 60) / SNAP_MINUTES) * SNAP_MINUTES;
     if (dayDelta === 0 && minuteDelta === 0) return;
 
-
     const duration = minutesOf(occurrence.end) - minutesOf(occurrence.start);
     const startMinutes = Math.max(
       0,
@@ -164,7 +163,6 @@ export function Timetable({
                     const colour = o.event.color ?? CATEGORY_COLOR[o.event.category];
                     const dragging = drag?.key === key;
                     const readOnly = o.event.readOnly === true;
-
 
                     return (
                       <button
