@@ -457,7 +457,7 @@ export function StudyChat({ threadId }: StudyChatProps) {
                 if (!value) return;
                 track({ event_name: "chat_message_sent", feature: "chat" });
                 // FUTURE BACKEND / CODEX: send { ui_language, message_language } so the model
-                // answers in message_language when it is confidently one of the five supported
+                // answers in message_language when it is confidently one of the seven supported
                 // languages; otherwise ui_language.
                 const responseLanguageHint = effectiveResponseLanguage(value, language);
                 pendingHintRef.current = responseLanguageHint;

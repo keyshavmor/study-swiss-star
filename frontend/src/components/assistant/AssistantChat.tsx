@@ -204,7 +204,7 @@ export function AssistantChat({ threadId }: { threadId?: string }) {
     if (!content && files.length === 0) return;
     setSending(true);
     // FUTURE BACKEND / CODEX: send { ui_language, message_language } so the model answers in
-    // message_language when it is confidently one of the five supported languages; otherwise
+    // message_language when it is confidently one of the seven supported languages; otherwise
     // ui_language.
     const responseLanguageHint = effectiveResponseLanguage(content, language);
     // Counts only — the message text and attachment contents are never sent.

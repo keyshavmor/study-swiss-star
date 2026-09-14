@@ -21,7 +21,6 @@ Where each kind of data lives today, and where it should live once the Python ba
 | Materials (indexed corpus) | `backend/app/services/documents.py` | Python | Local SQLite chunks + cached embeddings | Persistent | **Python** | No | **Yes** | No | Text ingestion API is live; PDF/DOCX parser service is optional-dependency based |
 | School links | `frontend/src/lib/store/app-data.tsx`, `SchoolLinksSection` | `AppDataProvider` | `localStorage` | Full CRUD | localStorage | Yes | No | No | No backend need |
 | Student profile | `frontend/src/lib/store/app-data.tsx`, `EditProfileDialog` | `AppDataProvider` | `localStorage` | Editable | localStorage | Yes | No | Stage 3 optional | `grade_level` and language prefs are sent as request context |
-| Demo data | `frontend/src/lib/store/demo-data.ts`, `app/DemoMode.tsx` | `AppDataProvider` | `localStorage` | Toggleable, resettable | localStorage | **Yes** | No | No | Must keep working with the backend offline |
 | Academic year context | `frontend/src/lib/store/academic-year.tsx`, `frontend/src/lib/mock/academic.ts` | `AcademicYearProvider` | context + `localStorage` | Session-persistent | Frontend | Yes | No | No | Default 2026–27, Grade 11; sent on every AI request |
 | Feedback | `_authenticated/feedback.tsx` | controlled form | `public.feedback` + private `feedback-messages` bucket via `feedback-submit` | Persistent | **Supabase** | No | No | No | Form clears only after a confirmed save |
 | Activity / error events | `frontend/src/lib/telemetry.ts` | none (fire-and-forget) | `public.usage_events` + private `activity-logs` bucket via `activity-log` | Persistent | **Supabase** | No | No | No | Sanitized, bounded payloads; never tokens, form or chat content |
@@ -43,7 +42,7 @@ Where each kind of data lives today, and where it should live once the Python ba
 
 ### Stage 1 — Route chat context to Python (implemented)
 - Keep the UI, design system, routes and the 15-subject model untouched.
-- Keep all prototype data (grades, planner, materials, links, profile, demo mode) in `localStorage`.
+- Keep all prototype data (grades, planner, materials, links, profile) in `localStorage`. There is no demo mode; `DemoMode.tsx` and the `demoMode` store flag were removed.
 - Keep Supabase auth and chat thread/message persistence exactly as-is.
 - `context-backend.server.ts` keeps the existing authenticated chat route and proxies to Python.
 - `SourceSnippetList` renders provenance returned with assistant data parts.
@@ -84,7 +83,7 @@ Where each kind of data lives today, and where it should live once the Python ba
 | Assistant attachments | private `chat-attachments` bucket |
 | Study materials | private `user-materials` bucket + `documents` |
 
-Grades, planner items, materials list and demo mode still live in
+Grades, planner items and materials list still live in
 `localStorage` via `src/lib/store/app-data.tsx`; that migration is separate
 work. Storage deletion always goes through the Storage API first and only then
 reconciles metadata; `storage.objects` is never written directly, and paths are
