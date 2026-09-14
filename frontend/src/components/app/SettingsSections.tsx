@@ -90,7 +90,7 @@ export function AccountSection() {
       setProfile(loaded);
       setAvatarUrl(loaded?.photoPath ? await avatarSignedUrl(loaded.photoPath) : "");
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : t("settings.account.loadError"));
+      toast.error(t("settings.account.loadError"));
     } finally {
       setLoading(false);
     }
@@ -119,7 +119,7 @@ export function AccountSection() {
       toast.success(t("settings.account.profileSaved"));
     } catch (err) {
       trackFailure("settings_profile_save_failed", err, { feature: "settings" });
-      toast.error(err instanceof Error ? err.message : t("settings.account.profileSaveError"));
+      toast.error(t("settings.account.profileSaveError"));
     } finally {
       setSaving(false);
     }
@@ -135,7 +135,7 @@ export function AccountSection() {
       toast.success(t("settings.account.avatarUpdated"));
     } catch (err) {
       trackFailure("settings_avatar_update_failed", err, { feature: "settings" });
-      toast.error(err instanceof Error ? err.message : t("settings.account.avatarUpdateError"));
+      toast.error(t("settings.account.avatarUpdateError"));
     }
     if (fileRef.current) fileRef.current.value = "";
   };
@@ -149,7 +149,7 @@ export function AccountSection() {
       toast.success(t("settings.account.avatarRemoved"));
     } catch (err) {
       trackFailure("settings_avatar_remove_failed", err, { feature: "settings" });
-      toast.error(err instanceof Error ? err.message : t("settings.account.avatarRemoveError"));
+      toast.error(t("settings.account.avatarRemoveError"));
     }
   };
 
@@ -158,7 +158,8 @@ export function AccountSection() {
     const { error } = await supabase.auth.updateUser({ email: newEmail.trim() });
     if (error) {
       trackFailure("settings_email_change_failed", error, { feature: "settings" });
-      toast.error(error.message);
+      console.error("account update failed", error);
+      toast.error(t("settings.account.updateError"));
       return;
     }
     track({ event_name: "settings_email_change_requested", feature: "settings" });
@@ -174,7 +175,8 @@ export function AccountSection() {
     const { error } = await supabase.auth.updateUser({ password });
     if (error) {
       trackFailure("settings_password_change_failed", error, { feature: "settings" });
-      toast.error(error.message);
+      console.error("account update failed", error);
+      toast.error(t("settings.account.updateError"));
       return;
     }
     track({ event_name: "settings_password_changed", feature: "settings" });
@@ -363,7 +365,7 @@ export function PreferencesSections() {
     fetchPreferences()
       .then(setPrefs)
       .catch((err: unknown) =>
-        toast.error(err instanceof Error ? err.message : t("settings.preferences.loadError")),
+        toast.error(t("settings.preferences.loadError")),
       )
       .finally(() => setLoading(false));
   }, [t]);
@@ -386,7 +388,7 @@ export function PreferencesSections() {
         feature: "settings",
         properties: { preference: Object.keys(next)[0] ?? "" },
       });
-      toast.error(err instanceof Error ? err.message : t("settings.preferences.saveError"));
+      toast.error(t("settings.preferences.saveError"));
     }
   };
 
@@ -527,7 +529,7 @@ export function StorageSection() {
       setItems(list);
       return status;
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : t("settings.storage.loadError"));
+      toast.error(t("settings.storage.loadError"));
       return null;
     } finally {
       setLoading(false);
@@ -544,7 +546,7 @@ export function StorageSection() {
           toast.success(t("settings.storage.cleanupDone"));
           await load();
         } catch (err) {
-          toast.error(err instanceof Error ? err.message : t("settings.storage.cleanupError"));
+          toast.error(t("settings.storage.cleanupError"));
         }
       }
     })();
@@ -585,7 +587,7 @@ export function StorageSection() {
       await load();
       toast.success(t("settings.storage.deleted"));
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : t("settings.storage.deleteError"));
+      toast.error(t("settings.storage.deleteError"));
       await load();
     } finally {
       setBusy(false);
