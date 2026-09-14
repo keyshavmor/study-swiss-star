@@ -75,7 +75,6 @@ export async function fetchAccountProfile(): Promise<AccountProfile | null> {
     .from("profiles")
     .select("*")
     .eq("user_id", userId)
-
     .maybeSingle();
   if (error) throw new Error(error.message);
   if (!data) return null;
@@ -111,14 +110,15 @@ export async function updateAccountProfile(patch: {
   if (!userId) throw new Error("You are signed out.");
 
   const update: TablesUpdate<"profiles"> = {};
-  if (patch.username !== undefined) update["username"] = patch.username || null;
-  if (patch.fullName !== undefined) update["full_name"] = patch.fullName || null;
-  if (patch.preferredName !== undefined) update["preferred_name"] = patch.preferredName || null;
-  if (patch.nationality !== undefined) update["nationality"] = patch.nationality || null;
-  if (patch.contactPhone !== undefined) update["contact_phone"] = patch.contactPhone || null;
+  // The production columns are NOT NULL, so cleared values are written as "".
+  if (patch.username !== undefined) update["username"] = patch.username ?? "";
+  if (patch.fullName !== undefined) update["full_name"] = patch.fullName ?? "";
+  if (patch.preferredName !== undefined) update["preferred_name"] = patch.preferredName ?? "";
+  if (patch.nationality !== undefined) update["nationality"] = patch.nationality ?? "";
+  if (patch.contactPhone !== undefined) update["contact_phone"] = patch.contactPhone ?? "";
   if (patch.contactDetails !== undefined)
     update["contact_details"] = patch.contactDetails as unknown as Json;
-  if (patch.photoPath !== undefined) update["photo"] = patch.photoPath;
+  if (patch.photoPath !== undefined) update["photo"] = patch.photoPath ?? "";
 
   const { error } = await supabase.from("profiles").update(update).eq("user_id", userId);
   if (error) throw new Error(error.message);
