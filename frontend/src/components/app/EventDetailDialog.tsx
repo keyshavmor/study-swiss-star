@@ -172,7 +172,7 @@ export function EventDetailDialog({
                     onOpenChange(false);
                     void navigate({
                       to: "/planner",
-                      search: { date: occurrence.date, event: event.id },
+                      search: { date: occurrence.date, event: event.id, google: undefined },
                     });
                   }}
                 >
