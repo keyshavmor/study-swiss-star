@@ -185,7 +185,11 @@ export function AccountSection() {
       <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-4">
         <span className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-full border border-border bg-surface-2 text-muted-foreground">
           {avatarUrl ? (
-            <img src={avatarUrl} alt="Your profile picture" className="h-full w-full object-cover" />
+            <img
+              src={avatarUrl}
+              alt="Your profile picture"
+              className="h-full w-full object-cover"
+            />
           ) : (
             <User className="h-6 w-6" />
           )}
@@ -209,7 +213,9 @@ export function AccountSection() {
           )}
         </div>
       </div>
-      <p className="text-[13px] text-muted-foreground">Images up to 2 MB, private to your account.</p>
+      <p className="text-[13px] text-muted-foreground">
+        Images up to 2 MB, private to your account.
+      </p>
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2">
@@ -410,9 +416,7 @@ export function PreferencesSections() {
             >
               <div>
                 <span className="text-[15px] font-medium">{item.label}</span>
-                {item.hint && (
-                  <p className="mt-1 text-[13px] text-muted-foreground">{item.hint}</p>
-                )}
+                {item.hint && <p className="mt-1 text-[13px] text-muted-foreground">{item.hint}</p>}
               </div>
               <Switch
                 checked={Boolean(prefs[item.key])}

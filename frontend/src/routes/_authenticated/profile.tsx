@@ -184,8 +184,8 @@ function ProfilePage() {
           <div className="app-card p-5">
             <h2 className="text-[17px] font-semibold tracking-tight">Where this is stored</h2>
             <p className="mt-2 text-[14px] text-muted-foreground">
-              Your account details, picture and contact information are saved to your account. Grades,
-              planner items and materials are still kept in this browser only.
+              Your account details, picture and contact information are saved to your account.
+              Grades, planner items and materials are still kept in this browser only.
             </p>
             <div className="mt-3 flex flex-wrap items-center gap-2">
               <Badge variant="secondary">Account data</Badge>
