@@ -1,6 +1,8 @@
 /** Alim application component for study, planning, profile, or navigation workflows. */
 import { useRef, useState } from "react";
+import { GoogleCalendarLogo } from "@/components/app/BrandLogos";
 import { addDays, minutesOf, timeOf, todayIso, WEEKDAY_SHORT } from "@/lib/date-utils";
+
 import type { Occurrence } from "@/lib/store/app-data";
 import { CATEGORY_COLOR } from "@/lib/store/types";
 import { cn } from "@/lib/utils";
