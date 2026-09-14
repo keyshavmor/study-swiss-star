@@ -215,10 +215,7 @@ export async function savePreferences(next: Partial<UserPreferences>): Promise<U
 
   const { error } = await supabase
     .from("user_preferences")
-    .upsert(
-      { user_id: userId, preferences: merged as unknown as Json },
-      { onConflict: "user_id" },
-    );
+    .upsert({ user_id: userId, preferences: merged as unknown as Json }, { onConflict: "user_id" });
   if (error) throw new Error(error.message);
   return merged;
 }
