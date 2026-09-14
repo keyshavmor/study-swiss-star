@@ -120,7 +120,7 @@ export async function updateAccountProfile(patch: {
     update["contact_details"] = patch.contactDetails as unknown as Json;
   if (patch.photoPath !== undefined) update["photo"] = patch.photoPath;
 
-  const { error } = await supabase.from("profiles").update(update).eq("id", userId);
+  const { error } = await supabase.from("profiles").update(update).eq("user_id", userId);
   if (error) throw new Error(error.message);
 }
 
