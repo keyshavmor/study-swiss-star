@@ -185,14 +185,22 @@ Legend for **Owner (later)**: `PY` = Python FastAPI, `SB` = Supabase, `LS` = loc
 
 | Field | Save feedback |
 | --- | --- |
-| Route | `/feedback` (plus 👍/👎 on chat answers) |
-| Now | local form + toast |
-| Owner later | **PY** |
-| Endpoint | `POST /api/feedback` |
-| Request | `category, rating, message, route, thread_id, message_id, subject_id, language, app_version` |
-| Response | `{feedback_id, created_at}` |
-| Loading | submit spinner | Error: keep the draft locally and retry later | Empty: submit disabled while empty |
-| Mock fallback | stored in `localStorage` queue |
+| Route | `/feedback` |
+| Now | implemented against Supabase |
+| Owner | **Supabase Edge Function `feedback-submit`** |
+| Call | `supabase.functions.invoke("feedback-submit", { message, category, context })` |
+| Request | `message` (10–4000 chars), `category` (idea/bug/general), `context` (route, user agent, timestamp) |
+| Effect | row in `public.feedback` + text mirror in the private `feedback-messages` bucket |
+| Loading | submit spinner | Error: draft stays in the textarea | Empty: submit disabled while empty |
+| Telemetry | `feedback_submitted` / `feedback_submit_failed` — never the message text |
+
+| Field | Activity and error logging |
+| --- | --- |
+| Route | app-wide |
+| Owner | **Supabase Edge Function `activity-log`** |
+| Call | `supabase.functions.invoke("activity-log", { event_name, feature?, subject?, properties? })` via `frontend/src/lib/telemetry.ts` |
+| Effect | row in `public.usage_events` (`user_id` nullable) + object in the private `activity-logs` bucket |
+| Rules | fire-and-forget, never blocks the UI; sensitive keys dropped, strings capped; anonymous only for `auth_signin_failed` / `oauth_signin_failed` |
 
 | Field | Load backend/model health |
 | --- | --- |

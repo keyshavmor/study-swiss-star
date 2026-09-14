@@ -41,9 +41,13 @@ sequenceDiagram
     UI->>SB: getSession()
     alt no session
         SB-->>UI: null
-        UI-->>Student: redirect /auth (AuthForm)
-        Student->>UI: email+password, reset link, or GitHub / LinkedIn / Spotify
-        UI->>SB: signInWithPassword / OAuth
+        UI-->>Student: redirect / (welcome + AuthForm)
+        Student->>UI: email or username + password, reset link, or GitHub / LinkedIn / Spotify
+        alt username (no @)
+            UI->>SB: invoke username-login → setSession
+        else email
+            UI->>SB: signInWithPassword / signInWithOAuth(redirectTo /home)
+        end
         SB-->>UI: session + access token
         UI-->>Student: redirect back to /home
     else session valid
@@ -277,16 +281,16 @@ sequenceDiagram
     participant SF as Frontend server bridge
     participant PY as Python FastAPI
     participant LS as localStorage/AppDataProvider
-    Student->>UI: 👎 on an answer or /feedback form
-    SF->>PY: POST /api/feedback {category, rating, message, route, thread_id, message_id, subject_id, language}
+    Student->>UI: /feedback form (category + message)
+    UI->>SB: invoke feedback-submit {message, category, context}
     alt success
-        PY-->>SF: {feedback_id, created_at}
-        SF-->>UI: success toast
-    else backend offline
-        SF-->>UI: failure
-        UI->>LS: queue feedback locally
-        UI-->>Student: "Saved locally — will send when the backend is back."
+        SB-->>UI: row in public.feedback + text mirror in feedback-messages bucket
+        UI-->>Student: success state; form cleared
+    else failure
+        SB-->>UI: error
+        UI-->>Student: error state; message kept in the textarea
     end
+    Note over UI: telemetry logs success/failure only — never the message text
 ```
 
 ## 13. Loading a previous chat thread

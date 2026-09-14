@@ -11,7 +11,7 @@ flowchart TD
     A -->|auth.updateUser password| AU
 
     M -->|preferences.selected_qwen_model| DBU[(user_preferences)]
-    P -->|exam_reminders, daily_study_summary,<br/>apple_reminders_sync, sound_effects,<br/>auto_storage_cleanup| DBU
+    P -->|exam_reminders, daily_study_summary,<br/>sound_effects,<br/>auto_storage_cleanup| DBU
 
     G -->|rpc get_storage_usage_status| RPC[(usage status)]
     RPC -->|remaining <= 10%| W[Prominent warning]

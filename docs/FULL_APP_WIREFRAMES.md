@@ -57,7 +57,7 @@ Standalone: [`02-routes-navigation.mmd`](wireframes/02-routes-navigation.mmd)
 
 ```mermaid
 flowchart TD
-  Root["/ — Public title screen"] --> Auth["/auth"]
+  Root["/ — Welcome + sign in / sign up"] --> Auth["/auth (legacy redirect)"]
   Root --> Protected{Authenticated route gate}
   Auth -->|valid session| Home["/home"]
   Protected --> Home

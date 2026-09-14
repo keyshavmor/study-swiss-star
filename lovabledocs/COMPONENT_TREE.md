@@ -19,7 +19,7 @@ Classification of every significant component in the existing frontend.
 
 ```
 __root.tsx                                 🟪 LAYOUT  providers: Query, Theme, AppData, AcademicYear, Toaster
-├── routes/index.tsx                       🟦 UI      title screen
+├── routes/index.tsx                       🟦 UI      welcome + auth screen
 │   ├── ThemeToggle.tsx                    🟦 UI
 │   └── app/LiveClock.tsx                  🟦 UI      24h clock
 ├── routes/auth.tsx                        🟩 AUTH

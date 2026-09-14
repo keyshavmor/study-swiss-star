@@ -3,15 +3,19 @@ sequenceDiagram
   participant Page as Protected page
   participant Gate as _authenticated route gate
   participant Cloud as external Supabase identity
-  participant Auth as /auth and AuthForm
+  participant Auth as / welcome screen and AuthForm
   Student->>Page: Open protected URL
   Page->>Gate: beforeLoad
   Gate->>Cloud: getUser()
   alt No valid session
     Cloud-->>Gate: No user
-    Gate-->>Student: Redirect to /auth
-    Student->>Auth: Email/password, password reset, or GitHub / LinkedIn / Spotify sign-in
-    Auth->>Cloud: Authenticate
+    Gate-->>Student: Redirect to /
+    Student->>Auth: Email or username + password, password reset, or GitHub / LinkedIn / Spotify
+    alt Username entered
+      Auth->>Cloud: Edge Function username-login then setSession
+    else Email entered
+      Auth->>Cloud: signInWithPassword
+    end
     Cloud-->>Auth: Session and access token
     Auth-->>Student: Navigate to /home
   else Valid session

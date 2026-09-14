@@ -57,7 +57,7 @@ Standalone: [`02-routes-navigation.mmd`](wireframes/02-routes-navigation.mmd)
 
 ```mermaid
 flowchart TD
-  Root["/ — Public title screen"] --> Auth["/auth"]
+  Root["/ — Welcome + sign in / sign up"] --> Auth["/auth (legacy redirect)"]
   Root --> Protected{Authenticated route gate}
   Auth -->|valid session| Home["/home"]
   Protected --> Home
@@ -422,12 +422,12 @@ Standalone: [`14-supporting-screens.mmd`](wireframes/14-supporting-screens.mmd)
 flowchart TD
   Profile["/profile"] --> ProfileData[Edit student profile + academic year\nIMPLEMENTED LOCAL]
   ProfileData --> Local[(Browser storage)]
-  Settings["/settings"] --> Toggles[Exam reminders daily summary Apple sync sound\nPROTOTYPE UI ONLY]
+  Settings["/settings"] --> Toggles[Exam reminders daily summary sound effects auto cleanup\nSAVED TO user_preferences]
   Settings -.-> Model[Backend mode and model status\nPLANNED]
   Demo[Demo Mode toggle] --> DemoData[Switch between user state and fresh demo state\nIMPLEMENTED LOCAL]
   Help["/help"] --> Static[Static help content\nIMPLEMENTED]
-  Feedback["/feedback"] --> Form[Form and success toast\nIMPLEMENTED UI ONLY]
-  Form -.-> FeedbackAPI[POST /api/feedback + local retry queue\nPLANNED]
+  Feedback["/feedback"] --> Form[Category message validation loading success error\nIMPLEMENTED]
+  Form --> FeedbackFn[Edge Function feedback-submit\npublic.feedback + private feedback-messages bucket]
   Diagnostics["/diagnostics"] --> Simulated[All services nominal\nCURRENTLY SIMULATED]
   Diagnostics -.-> Health[GET /health + GET /api/model/status\nBACKEND IMPLEMENTED; FRONTEND WIRING PLANNED]
   Notifications[NotificationCenter] --> Derived[Derived from local exams and deadlines\nIMPLEMENTED LOCAL]
