@@ -14,6 +14,14 @@ by everything on this page.
   app calls `supabase.auth.signInWithPassword`; otherwise it invokes this function and then
   `supabase.auth.setSession({ access_token, refresh_token })` before landing on `/home`.
 
+### `username-availability`
+- **Call:** `supabase.functions.invoke("username-availability", { body: { username } })`
+- **Returns:** `{ available: boolean, valid: boolean }`.
+- **Frontend use:** sign-up calls it after the local format check and before
+  `supabase.auth.signUp`. `available === false` shows "That username is already taken. Please pick
+  another one."; if the function itself is unavailable the app continues and the unique index in the
+  database stays the final authority — it never claims a name is taken on a failed check.
+
 ### `activity-log`
 - **Call:** `supabase.functions.invoke("activity-log", { body: { event_name, feature?, subject?, properties? } })`
 - **Effect:** writes a row to `public.usage_events` and a matching object to the private Storage
@@ -21,6 +29,14 @@ by everything on this page.
 - **Anonymous access:** permitted only for `auth_signin_failed` and `oauth_signin_failed`.
 - **Frontend use:** `frontend/src/lib/telemetry.ts`. Calls are fire-and-forget and never block or
   break the action that triggered them.
+- **Payload policy:** the module drops forbidden keys, bounds strings and property counts, and sends
+  only an error classification (`error_name`, and `error_status`/`error_code` when explicitly
+  present) — never a raw `Error.message`, password, token, form value, chat prompt or response,
+  document content, feedback text, or Google Calendar title/description/location.
+- **Instrumented operations:** page views, global `error`/`unhandledrejection`, sign-in/sign-up/OAuth
+  success and failure, sign-out, planner create/update/duplicate/delete/move/series changes,
+  Google Calendar connect/sync/disconnect, feedback submit, settings/profile/preference saves, and
+  assistant/chat send/complete/failure (status only).
 
 ### `feedback-submit`
 - **Call:** authenticated `supabase.functions.invoke("feedback-submit", { body: { message, category, context } })`

@@ -13,7 +13,9 @@ attachment parsing are deliberately still future backend work.
   then `/auth/update-password` calls `supabase.auth.updateUser({ password })`.
 - Username sign-in: the single "Email or username" field routes usernames to the
   `username-login` Edge Function, then `supabase.auth.setSession`. Sign-up requires a
-  username (`^[a-z0-9._-]{3,30}$`) sent as `options.data.username`.
+  username (`^[a-z0-9._-]{3,30}$`, normalized to lowercase) sent as
+  `options.data.username`, and is checked first through the `username-availability`
+  Edge Function so a taken name is reported clearly.
 - OAuth providers offered: **GitHub** (`github`), **LinkedIn** (`linkedin_oidc`),
   **Spotify** (`spotify`), each with its real brand logo. `redirectTo` is
   `${window.location.origin}/home`.
@@ -40,13 +42,15 @@ further frontend changes. No replies are fabricated in the frontend.
 
 ## Live schema used by the frontend
 
-- `profiles(id, username, full_name, preferred_name, photo, nationality, contact_phone, contact_details jsonb, …)`
+- `profiles(user_id, username, full_name, preferred_name, photo, nationality, contact_phone, contact_details jsonb, …)`
   — `photo` holds an object path inside the private `profile-avatars` bucket.
 - `user_preferences(user_id, preferences jsonb)` — keys used by the UI:
   `selected_qwen_model`, `exam_reminders`, `daily_study_summary`,
   `sound_effects`, `auto_storage_cleanup`.
-- `feedback(id, user_id, category, message, context jsonb, created_at)` and
-  `usage_events(id, user_id nullable, event_name, feature, subject, properties jsonb, created_at)`
+- `feedback(id, user_id, category, message, context jsonb, created_at)` — every column
+  is `NOT NULL` — and
+  `usage_events(id, user_id nullable, event_name, feature, subject, properties jsonb NOT NULL, occurred_at)`
+  — the timestamp is `occurred_at`, there is no `created_at`
   — written through the `feedback-submit` and `activity-log` Edge Functions.
 - `assistant_threads(id, user_id, title, created_at, updated_at)`
 - `assistant_messages(id, thread_id, user_id, role, content, parts, metadata, created_at)`

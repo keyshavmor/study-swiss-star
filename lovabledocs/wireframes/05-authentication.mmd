@@ -16,6 +16,10 @@ sequenceDiagram
     else Email entered
       Auth->>Cloud: signInWithPassword
     end
+    opt Sign up
+      Auth->>Cloud: Edge Function username-availability
+      Auth->>Cloud: signUp with options.data.username
+    end
     Cloud-->>Auth: Session and access token
     Auth-->>Student: Navigate to /home
   else Valid session
@@ -23,4 +27,4 @@ sequenceDiagram
     Gate-->>Page: Render protected screen
   end
   Student->>Cloud: Sign out from account menu or chat
-  Cloud-->>Student: Session cleared, navigate to /auth
+  Cloud-->>Student: Session cleared, navigate to /

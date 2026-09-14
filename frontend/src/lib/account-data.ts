@@ -74,7 +74,8 @@ export async function fetchAccountProfile(): Promise<AccountProfile | null> {
   const { data, error } = await supabase
     .from("profiles")
     .select("*")
-    .eq("id", userId)
+    .eq("user_id", userId)
+
     .maybeSingle();
   if (error) throw new Error(error.message);
   if (!data) return null;
@@ -119,7 +120,7 @@ export async function updateAccountProfile(patch: {
     update["contact_details"] = patch.contactDetails as unknown as Json;
   if (patch.photoPath !== undefined) update["photo"] = patch.photoPath;
 
-  const { error } = await supabase.from("profiles").update(update).eq("id", userId);
+  const { error } = await supabase.from("profiles").update(update).eq("user_id", userId);
   if (error) throw new Error(error.message);
 }
 

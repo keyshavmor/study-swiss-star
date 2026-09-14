@@ -39,6 +39,7 @@ import {
   type AssistantThread,
 } from "@/lib/assistant-data";
 import { toast } from "sonner";
+import { track, trackFailure } from "@/lib/telemetry";
 
 const KIND_ICON: Record<string, typeof FileText> = {
   image: ImageIcon,
@@ -142,7 +143,9 @@ export function AssistantChat({ threadId }: { threadId?: string }) {
       const thread = await createAssistantThread();
       await refreshThreads();
       navigate({ to: "/assistant/$threadId", params: { threadId: thread.id } });
+      track({ event_name: "assistant_thread_created", feature: "assistant" });
     } catch (err) {
+      trackFailure("assistant_thread_create_failed", err, { feature: "assistant" });
       toast.error(err instanceof Error ? err.message : "Could not start a conversation");
     }
   };
@@ -163,6 +166,12 @@ export function AssistantChat({ threadId }: { threadId?: string }) {
     const content = text.trim();
     if (!content && files.length === 0) return;
     setSending(true);
+    // Counts only — the message text and attachment contents are never sent.
+    track({
+      event_name: "assistant_message_send_started",
+      feature: "assistant",
+      properties: { attachment_count: files.length },
+    });
     try {
       let targetId = threadId;
       if (!targetId) {
@@ -179,7 +188,13 @@ export function AssistantChat({ threadId }: { threadId?: string }) {
         await renameAssistantThread(activeThread.id, deriveThreadTitle(content));
       }
       await refreshThreads();
+      track({
+        event_name: "assistant_message_saved",
+        feature: "assistant",
+        properties: { attachment_count: files.length },
+      });
     } catch (err) {
+      trackFailure("assistant_message_failed", err, { feature: "assistant" });
       toast.error(err instanceof Error ? err.message : "Could not save your message");
     } finally {
       setSending(false);
@@ -203,6 +218,7 @@ export function AssistantChat({ threadId }: { threadId?: string }) {
     try {
       await deleteAssistantThread(id);
       await refreshThreads();
+      track({ event_name: "assistant_thread_deleted", feature: "assistant" });
       if (id === threadId) navigate({ to: "/assistant" });
       toast.success("Conversation deleted");
     } catch (err) {

@@ -36,8 +36,10 @@ Auth-gated routes live under `frontend/src/routes/_authenticated/` and are prote
 - **Data source:**
   - email + password → `supabase.auth.signInWithPassword`
   - username + password → Edge Function `username-login`, then `supabase.auth.setSession`
-  - sign-up → `supabase.auth.signUp` with a compulsory `options.data.username`
-    (`^[a-z0-9._-]{3,30}$`); the auth trigger creates `profiles.username`
+  - sign-up → Edge Function `username-availability` first (a taken name is reported clearly; if the
+    check cannot run, the unique index in the database stays the final authority), then
+    `supabase.auth.signUp` with a compulsory `options.data.username`
+    (`^[a-z0-9._-]{3,30}$`, lowercased); the auth trigger creates `profiles.username`
   - password reset → `supabase.auth.resetPasswordForEmail` (always email-based; if the user typed a
     username we ask for the email rather than resolving it, to avoid account enumeration)
   - OAuth → `supabase.auth.signInWithOAuth` for `github`, `linkedin_oidc`, `spotify` with

@@ -52,6 +52,11 @@ interface UsernameLoginResult {
   refresh_token?: string;
 }
 
+interface UsernameAvailabilityResult {
+  available?: boolean;
+  valid?: boolean;
+}
+
 export function AuthForm() {
   const [mode, setMode] = useState<Mode>("signin");
   const [identifier, setIdentifier] = useState("");
@@ -105,6 +110,22 @@ export function AuthForm() {
     const normalised = normaliseUsername(username);
     const invalid = validateUsername(normalised);
     if (invalid) throw new Error(invalid);
+
+    // Ask the availability function first, so the student sees a clear message
+    // instead of a database constraint error. When the check itself cannot run
+    // we continue and let the unique index stay the final authority.
+    const availability = await supabase.functions.invoke<UsernameAvailabilityResult>(
+      "username-availability",
+      { body: { username: normalised } },
+    );
+    if (!availability.error && availability.data) {
+      if (availability.data.valid === false) {
+        throw new Error("Use only letters, numbers, dots, underscores and hyphens.");
+      }
+      if (availability.data.available === false) {
+        throw new Error("That username is already taken. Please pick another one.");
+      }
+    }
 
     const { error } = await supabase.auth.signUp({
       email: signupEmail.trim(),

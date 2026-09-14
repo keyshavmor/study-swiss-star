@@ -84,33 +84,51 @@ export function track(event: ActivityEvent): void {
   void logActivity(event);
 }
 
-/** A short, non-sensitive description of a thrown value. */
-export function describeError(error: unknown): { error_name: string; error_message: string } {
+/**
+ * Classify a thrown value without forwarding its message.
+ *
+ * Error messages routinely contain user content (an email address, a form
+ * value, a calendar title, a database row), so they are never sent. Only the
+ * constructor name and an explicit numeric/short status or code are kept.
+ */
+export function classifyError(error: unknown): Record<string, Primitive> {
+  const out: Record<string, Primitive> = { error_name: "UnknownError" };
   if (error instanceof Error) {
-    return {
-      error_name: error.name.slice(0, 80),
-      error_message: error.message.slice(0, MAX_STRING),
-    };
+    out["error_name"] = error.name.slice(0, 80);
+  } else if (typeof error === "string") {
+    out["error_name"] = "StringError";
   }
-  return { error_name: "UnknownError", error_message: String(error).slice(0, MAX_STRING) };
+
+  if (error && typeof error === "object") {
+    const candidate = error as { status?: unknown; statusCode?: unknown; code?: unknown };
+    const status = candidate.status ?? candidate.statusCode;
+    if (typeof status === "number" && Number.isFinite(status)) out["error_status"] = status;
+    // Supabase/Postgres codes are short, opaque identifiers such as "23505".
+    if (typeof candidate.code === "string" && candidate.code.length <= 12) {
+      out["error_code"] = candidate.code;
+    } else if (typeof candidate.code === "number") {
+      out["error_code"] = candidate.code;
+    }
+  }
+  return out;
 }
 
-/** Log a failed operation with a sanitised error description. */
+/**
+ * Log a failed operation as a bounded, non-sensitive classification.
+ * The raw error is deliberately not forwarded; show it in the UI instead.
+ */
 export function trackFailure(
   event_name: string,
   error: unknown,
   extra?: { feature?: string; subject?: string; properties?: Record<string, Primitive> },
 ): void {
-  const described = describeError(error);
   track({
     event_name,
     ...(extra?.feature ? { feature: extra.feature } : {}),
     ...(extra?.subject ? { subject: extra.subject } : {}),
     properties: {
       ...extra?.properties,
-      error_name: described.error_name,
-      // The message is a sanitised error string, never user content.
-      error_detail: described.error_message,
+      ...classifyError(error),
     },
   });
 }

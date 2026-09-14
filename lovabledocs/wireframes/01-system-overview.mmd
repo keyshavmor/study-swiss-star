@@ -4,7 +4,11 @@ flowchart LR
   Router --> Providers[Query + Theme + AppData + AcademicYear\nIMPLEMENTED]
   Providers --> Local[(Browser storage\nGrades, planner, profile, links, demo\nIMPLEMENTED LOCAL)]
   Router --> Auth[Authenticated route gate\nIMPLEMENTED]
-  Auth --> Cloud[(external Supabase\nIdentity + threads + messages\nIMPLEMENTED CLOUD)]
+  Auth --> Cloud[(external Supabase\nIdentity + threads + messages\nprofiles + user_preferences\nfeedback + usage_events\nIMPLEMENTED CLOUD)]
+  Browser --> Fns[Edge Functions\nusername-login, username-availability,\nactivity-log, feedback-submit\nIMPLEMENTED]
+  Fns --> Cloud
+  Fns --> Buckets[(Private buckets\nactivity-logs, feedback-messages,\nchat-attachments, user-materials, profile-avatars)]
+  Browser --> GCal[Google Calendar v3 read-only\nvia linked Google identity\nNEEDS PROVIDER CONFIG]
   Browser --> ChatRoute[POST /api/chat\nTanStack server route\nIMPLEMENTED]
   ChatRoute --> Cloud
   ChatRoute --> Adapter[context-backend.server.ts\nIMPLEMENTED]
