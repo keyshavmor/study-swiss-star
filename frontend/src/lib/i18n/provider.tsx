@@ -95,7 +95,7 @@ export function I18nProvider({ children }: { children: ReactNode }) {
       const { data } = await supabase.auth.getUser();
       const userId = data.user?.id;
       if (!userId) return;
-      const { data: row } = await supabase
+      const { data: row, error } = await supabase
         .from("user_preferences")
         .select("preferences")
         .eq("user_id", userId)
@@ -105,7 +105,7 @@ export function I18nProvider({ children }: { children: ReactNode }) {
         stored && typeof stored === "object" && !Array.isArray(stored)
           ? (stored as Record<string, unknown>)["app_language"]
           : undefined;
-      if (cancelled || stateValue === undefined) return;
+      if (cancelled || error) return;
       const next = normaliseLanguage(stateValue);
       setLanguageState(next);
       writeCachedLanguage(next);
@@ -133,20 +133,25 @@ export function I18nProvider({ children }: { children: ReactNode }) {
       const { data } = await supabase.auth.getUser();
       const userId = data.user?.id;
       if (!userId) return;
-      const { data: row } = await supabase
+      const { data: row, error } = await supabase
         .from("user_preferences")
         .select("preferences")
         .eq("user_id", userId)
         .maybeSingle();
+      // Never overwrite existing preferences when the read failed.
+      if (error) return;
       const current =
         row?.preferences && typeof row.preferences === "object" && !Array.isArray(row.preferences)
           ? (row.preferences as Record<string, unknown>)
           : {};
-      await supabase
-        .from("user_preferences")
-        .update({ preferences: { ...current, app_language: safe } })
-        .eq("user_id", userId);
-    })();
+      // A new account may not have a preference row yet.
+      await supabase.from("user_preferences").upsert(
+        { user_id: userId, preferences: { ...current, app_language: safe } },
+        { onConflict: "user_id" },
+      );
+    })().catch(() => {
+      // Offline changes remain cached; never expose provider errors or user data.
+    });
   }, []);
 
   const value = useMemo<I18nValue>(() => {

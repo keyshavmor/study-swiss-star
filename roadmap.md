@@ -1,5 +1,10 @@
 # Roadmap
 
+## Current verification pass
+- Verify removals, translations, speech controls, and message-language metadata; correct remaining frontend gaps.
+- Verify guide assets and matching documentation; run formatting/lint and inspect automatic build checks.
+- Check public preview languages; authenticated checks require an available production session.
+
 ## Done
 - Sync `supabase/config.toml` to project ref `ucacmeadsufiedxrgqit`.
 - Add migration hardening chat ownership + private `user-materials` storage policies.
