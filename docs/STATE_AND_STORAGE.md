@@ -65,3 +65,21 @@ Where each kind of data lives today, and where it should live once the Python ba
 | Grade math diverging between TS and Python | Python returns exact `swiss_grade` + `grade_formula`; the frontend owns rounding and colours |
 | Subject IDs drifting | IDs are frozen in `SUBJECT_MODEL_AND_LANGUAGE_RULES.md`; backend validates and 404s unknown IDs |
 | Backend offline degrading the whole app | All non-AI screens must work without the backend; enforced by the manual test checklist |
+
+## Supabase-backed state (implemented)
+
+| State | Location |
+| --- | --- |
+| Account profile, avatar path, contact details, nationality | `profiles` |
+| Model choice + preference switches | `user_preferences.preferences` |
+| General assistant threads/messages | `assistant_threads`, `assistant_messages` |
+| Assistant attachment metadata | `assistant_attachments` |
+| Avatar images | private `profile-avatars` bucket |
+| Assistant attachments | private `chat-attachments` bucket |
+| Study materials | private `user-materials` bucket + `documents` |
+
+Grades, planner items, materials list and demo mode still live in
+`localStorage` via `src/lib/store/app-data.tsx`; that migration is separate
+work. Storage deletion always goes through the Storage API first and only then
+reconciles metadata; `storage.objects` is never written directly, and paths are
+verified to start with the signed-in user's id.

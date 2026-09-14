@@ -36,7 +36,7 @@ Auth-gated routes live under `frontend/src/routes/_authenticated/` and are prote
 ### `/auth` — Sign in / sign up
 - **File:** `frontend/src/routes/auth.tsx` · **Auth:** no (redirects when signed in)
 - **Components:** `AuthForm.tsx`, `Input`, `Button`.
-- **Data source:** `supabase.auth.signInWithPassword` / `signUp` / Google OAuth.
+- **Data source:** `supabase.auth.signInWithPassword` / `signUp` / `resetPasswordForEmail`, and `signInWithOAuth` for `github`, `linkedin_oidc`, `spotify`.
 - **Storage:** Supabase session in browser storage.
 - **Future backend:** none in Stage 1. Python backend trusts a locally-signed-in user; optional
   `X-Student-Id` header. **Endpoints:** none. **Frontend-only: no.**
@@ -139,3 +139,23 @@ Auth-gated routes live under `frontend/src/routes/_authenticated/` and are prote
   the response to an AI SDK UI stream, including source metadata, and inserts the assistant message.
 - **Failure policy:** returns 503 when the local Qwen backend is unavailable; there is no cloud AI
   fallback.
+
+## `/auth/update-password` (public)
+
+- **Purpose:** set a new password after following the recovery email link.
+- **Data source:** `supabase.auth.updateUser({ password })`.
+
+## `/assistant` and `/assistant/$threadId` (protected)
+
+- **Purpose:** general-purpose AI chat, separate from subject tutoring.
+- **Data source:** `assistant_threads`, `assistant_messages`,
+  `assistant_attachments`, plus the private `chat-attachments` bucket.
+- **Note:** assistant replies are produced by the local Python backend once that
+  endpoint exists; the frontend only persists user messages and attachments.
+
+## `/settings` (protected, rebuilt)
+
+- **Sections:** Account, Local model, Preferences, Storage.
+- **Data source:** `profiles`, `user_preferences`, Supabase Auth,
+  `profile-avatars`, `get_storage_usage_status()`, `storage-emergency-cleanup`,
+  `assistant_attachments`, `documents`.

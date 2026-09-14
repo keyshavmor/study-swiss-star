@@ -162,7 +162,7 @@ sequenceDiagram
   alt No valid session
     Cloud-->>Gate: No user
     Gate-->>Student: Redirect to /auth
-    Student->>Auth: Email/password or Google sign-in
+    Student->>Auth: Email/password, password reset, or GitHub / LinkedIn / Spotify sign-in
     Auth->>Cloud: Authenticate
     Cloud-->>Auth: Session and access token
     Auth-->>Student: Navigate to /home
@@ -487,3 +487,19 @@ flowchart TD
 - Do not count SPF Biology and SPF Chemistry as two top-level subjects.
 - Do not duplicate chat writes between the TanStack route and Python.
 - Mark new diagram paths as implemented only after the corresponding UI and API path works end to end.
+
+## 16. General assistant
+
+Separate from tutoring chat: `assistant_threads` / `assistant_messages` /
+`assistant_attachments`, attachments in the private `chat-attachments` bucket.
+Replies are written by the local Python backend once that endpoint exists; the
+frontend never fabricates them. See
+[`wireframes/16-assistant.mmd`](wireframes/16-assistant.mmd).
+
+## 17. Settings and storage management
+
+Account/profile, local Qwen model choice, preferences and storage management
+(usage RPC, warning at 10% remaining, automatic platform cleanup at 1%,
+filtered multi-select deletion). See
+[`wireframes/17-settings-storage.mmd`](wireframes/17-settings-storage.mmd) and
+[`ASSISTANT_SETTINGS_AND_STORAGE.md`](ASSISTANT_SETTINGS_AND_STORAGE.md).

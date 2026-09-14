@@ -225,3 +225,15 @@ Legend for **Owner (later)**: `PY` = Python FastAPI, `SB` = Supabase, `LS` = loc
 | Chat threads / messages | **Stays in Supabase**, unless it blocks fully-offline local use. |
 | Prototype data (grades, planner, materials, links, profile, demo mode) | **Stays in `localStorage`.** |
 | AI inference, RAG, sources, quizzes, exams, grading, study plans, feedback | **Moves to Python** in Stage 1/2. |
+
+## Assistant, settings and storage mapping
+
+| UI surface | Backend touchpoint | Owner |
+| --- | --- | --- |
+| Auth card | Supabase Auth (email/password, reset, GitHub/LinkedIn/Spotify) | Supabase |
+| `/settings` Account | `profiles`, Supabase Auth, `profile-avatars` | Supabase |
+| `/settings` Local model | `user_preferences.preferences.selected_qwen_model` | Supabase (execution: Python) |
+| `/settings` Storage | `get_storage_usage_status()`, Storage API, `storage-emergency-cleanup` | Supabase |
+| `/assistant` history | `assistant_threads`, `assistant_messages` | Supabase |
+| `/assistant` attachments | `chat-attachments` bucket + `assistant_attachments` | Supabase (parsing: Python, future) |
+| `/assistant` replies | not connected yet | Python backend (future) |
