@@ -4,7 +4,7 @@
  * data isolated per user. No secret keys are used here.
  */
 import { supabase } from "@/integrations/supabase/client";
-import type { Json } from "@/integrations/supabase/types";
+import type { Json, TablesUpdate } from "@/integrations/supabase/types";
 
 export const AVATAR_BUCKET = "profile-avatars";
 export const AVATAR_MAX_BYTES = 2 * 1024 * 1024;
@@ -107,7 +107,7 @@ export async function updateAccountProfile(patch: {
   const userId = await getCurrentUserId();
   if (!userId) throw new Error("You are signed out.");
 
-  const update: Record<string, Json | null> = {};
+  const update: TablesUpdate<"profiles"> = {};
   if (patch.username !== undefined) update["username"] = patch.username || null;
   if (patch.fullName !== undefined) update["full_name"] = patch.fullName || null;
   if (patch.preferredName !== undefined) update["preferred_name"] = patch.preferredName || null;
