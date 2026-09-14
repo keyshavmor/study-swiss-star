@@ -2,7 +2,7 @@ sequenceDiagram
   actor Student
   participant Page as Protected page
   participant Gate as _authenticated route gate
-  participant Cloud as Lovable Cloud identity
+  participant Cloud as external Supabase identity
   participant Auth as /auth and AuthForm
   Student->>Page: Open protected URL
   Page->>Gate: beforeLoad

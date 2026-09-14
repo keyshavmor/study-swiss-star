@@ -6,7 +6,7 @@ flowchart LR
   Grade --> UI
   Year[(Browser storage\nacademic year)] --> Academic[AcademicYearProvider]
   Academic --> UI
-  Cloud[(Lovable Cloud\nusers threads messages)] --> ServerFns[Authenticated server functions]
+  Cloud[(external Supabase\nusers threads messages)] --> ServerFns[Authenticated server functions]
   ServerFns --> UI
   Python[(Python SQLite\nchunks memories artifacts)] --> FastAPI[FastAPI]
   FastAPI --> ChatAPI[TanStack /api/chat]

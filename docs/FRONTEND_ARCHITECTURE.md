@@ -14,7 +14,7 @@ local Python FastAPI backend.
 | Styling | Tailwind CSS v4 | Tokens in `frontend/src/styles.css` via `@theme` |
 | Primitives | Radix UI / shadcn | `frontend/src/components/ui/*` |
 | Data fetching | TanStack Query | `QueryClientProvider` in `frontend/src/routes/__root.tsx` |
-| Auth + chat storage | Supabase (Lovable Cloud) | `frontend/src/integrations/supabase/*` |
+| Auth + chat storage | Supabase (external project ucacmeadsufiedxrgqit) | `frontend/src/integrations/supabase/*` |
 | AI | Local Python context backend and preloaded Qwen runtime | `frontend/src/lib/context-backend.server.ts`, `frontend/src/routes/api/chat.ts` |
 
 ## 2. TanStack Start model

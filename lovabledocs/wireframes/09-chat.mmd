@@ -2,7 +2,7 @@ sequenceDiagram
   actor Student
   participant UI as StudyChat
   participant Fn as Authenticated server functions
-  participant Cloud as Lovable Cloud threads/messages
+  participant Cloud as external Supabase threads/messages
   participant API as TanStack POST /api/chat
   participant PY as Python FastAPI /api/chat
   participant RAG as Context Manager + retrieval
