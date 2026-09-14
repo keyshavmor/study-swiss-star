@@ -217,6 +217,10 @@ export function Timetable({
                           });
                         }}
                         onPointerUp={() => {
+                          if (readOnly) {
+                            onSelect(o);
+                            return;
+                          }
                           setDrag((d) => {
                             if (!d || d.key !== key) return null;
                             if (d.moved) commit(o, d);
@@ -228,12 +232,14 @@ export function Timetable({
                       >
                         <span
                           className={cn(
-                            "block truncate text-[12.5px] font-semibold leading-tight",
+                            "flex items-center gap-1 text-[12.5px] font-semibold leading-tight",
                             o.event.done && "line-through",
                           )}
                         >
-                          {o.title}
+                          {readOnly && <GoogleCalendarLogo className="h-3 w-3 shrink-0" />}
+                          <span className="truncate">{o.title}</span>
                         </span>
+
                         {height > 34 && (
                           <span className="tabular block truncate text-[11.5px] text-muted-foreground">
                             {o.start}–{o.end}
