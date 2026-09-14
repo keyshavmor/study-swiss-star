@@ -48,7 +48,7 @@ export const stats = {
     "stats.emptyValue": "—",
   },
   de: {
-    "stats.crumb.home": "Startseite",
+    "stats.crumb.home": "Start",
     "stats.crumb.school": "Schule",
     "stats.crumb.statistics": "Statistik",
     "stats.back.school": "Schule",

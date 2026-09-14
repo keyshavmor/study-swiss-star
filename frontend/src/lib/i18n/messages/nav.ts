@@ -97,7 +97,7 @@ export const nav = {
     "nav.assistant": "Assistant",
     "nav.stats": "Statistiques",
     "nav.help": "Aide",
-    "nav.feedback": "Retour",
+    "nav.feedback": "Commentaires",
     "nav.profile": "Profil",
     "nav.settings": "Réglages",
     "nav.chat": "Chat d'étude",

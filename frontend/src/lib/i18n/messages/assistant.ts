@@ -40,7 +40,7 @@ export const assistant = {
   de: {
     "assistant.pageTitle": "Assistent",
     "assistant.pageDescription": "Allgemeiner Chat mit Anhängen, getrennt von der Fach-Nachhilfe.",
-    "assistant.crumbHome": "Startseite",
+    "assistant.crumbHome": "Start",
     "assistant.crumbAssistant": "Assistent",
     "assistant.crumbConversation": "Unterhaltung",
     "assistant.newChat": "Neuer Chat",

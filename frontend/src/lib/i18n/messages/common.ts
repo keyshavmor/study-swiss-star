@@ -53,10 +53,10 @@ export const common = {
     "common.error.generic": "Etwas ist schiefgelaufen. Bitte versuche es erneut.",
     "common.notFound.title": "Seite nicht gefunden",
     "common.notFound.body": "Diese Seite existiert nicht oder wurde verschoben.",
-    "common.goHome": "Zur Startseite",
+    "common.goHome": "Zum Start",
     "common.error.pageTitle": "Diese Seite wurde nicht geladen",
     "common.error.pageBody":
-      "Etwas ist schiefgelaufen. Du kannst neu laden oder zur Startseite zurückkehren.",
+      "Etwas ist schiefgelaufen. Du kannst neu laden oder zum Start zurückkehren.",
     "common.theme.toggle": "Hellen oder dunklen Modus wechseln",
   },
   gsw: {
