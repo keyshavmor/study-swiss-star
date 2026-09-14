@@ -130,7 +130,7 @@ export function StudyChat({ threadId }: StudyChatProps) {
     }),
     onError: (err) => {
       trackFailure("chat_message_failed", err, { feature: "chat" });
-      toast.error(err.message || t("chat.sendFailed"));
+      toast.error(t("chat.sendFailed"));
     },
     onFinish: ({ message }) => {
       // Status only — prompts and responses are never sent to telemetry.
@@ -152,6 +152,16 @@ export function StudyChat({ threadId }: StudyChatProps) {
       }
     },
   });
+
+  useEffect(() => {
+    // Keep hints keyed to user-message IDs without extending the transport contract.
+    // FUTURE BACKEND / CODEX can consume these alongside ui_language.
+    for (const message of chat.messages) {
+      if (message.role !== "user" || responseLanguageHints.current.has(message.id)) continue;
+      const text = message.parts.map((part) => (part.type === "text" ? part.text : "")).join("");
+      responseLanguageHints.current.set(message.id, effectiveResponseLanguage(text, language));
+    }
+  }, [chat.messages, language]);
 
   useEffect(() => {
     if (!activeThreadId && threads && threads.length > 0) {
@@ -306,7 +316,7 @@ export function StudyChat({ threadId }: StudyChatProps) {
             <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground">
               <GraduationCap className="h-[18px] w-[18px]" />
             </span>
-            <span className="text-[15px] font-semibold">School</span>
+            <span className="text-[15px] font-semibold">{t("nav.school")}</span>
           </div>
           <div className="hidden lg:block">
             <p className="text-[12px] font-semibold uppercase tracking-wide text-muted-foreground">

@@ -34,7 +34,7 @@ export function speechLocaleFor(text: string, uiLanguage: LanguageCode): string 
 function voiceForLocale(locale: string): SpeechSynthesisVoice | undefined {
   const voices = availableVoices();
   if (voices.length === 0) return undefined;
-  const base = locale.split("-")[0]!.toLowerCase();
+  const base = (locale.split("-")[0] ?? "en").toLowerCase();
   return (
     voices.find((voice) => voice.lang.toLowerCase() === locale.toLowerCase()) ??
     voices.find((voice) => voice.lang.toLowerCase().startsWith(base))
@@ -50,8 +50,8 @@ export interface SpeakOptions {
 }
 
 /**
- * Speaks the given text. Returns synchronously whether playback actually
- * started, so callers never claim audio played when it did not.
+ * Queues speech only when a matching voice is available. The synchronous
+ * result indicates acceptance by the browser, not proof of audible playback.
  */
 export function speak({ text, uiLanguage, onEnd }: SpeakOptions): SpeakOutcome {
   if (!speechSupported()) return "unsupported";
@@ -59,10 +59,9 @@ export function speak({ text, uiLanguage, onEnd }: SpeakOptions): SpeakOutcome {
   if (!trimmed) return "error";
 
   const locale = speechLocaleFor(trimmed, uiLanguage);
-  const voices = availableVoices();
   const voice = voiceForLocale(locale);
-  // Voices can be empty until the engine loads them; that is not a failure.
-  if (voices.length > 0 && !voice) return "no-voice";
+  // An empty list is also unavailable; users can retry after voices load.
+  if (!voice) return "no-voice";
 
   try {
     window.speechSynthesis.cancel();
