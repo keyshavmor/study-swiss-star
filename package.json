@@ -8,8 +8,9 @@
   "scripts": {
     "frontend:install": "cd frontend && bun install",
     "dev": "bun run frontend:install && cd frontend && bun run dev",
-    "build": "bun run frontend:install && cd frontend && bun run build",
-    "build:dev": "bun run frontend:install && cd frontend && bun run build:dev",
+    "postbuild:link-dist": "rm -rf dist && ln -s frontend/dist dist",
+    "build": "bun run frontend:install && (cd frontend && bun run build) && bun run postbuild:link-dist",
+    "build:dev": "bun run frontend:install && (cd frontend && bun run build:dev) && bun run postbuild:link-dist",
     "preview": "cd frontend && bun run preview",
     "typecheck": "bun run frontend:install && cd frontend && bun run typecheck"
   }
