@@ -12,6 +12,7 @@ import type {
   StudentProfile,
 } from "@/lib/store/types";
 import { EMPTY_PROFILE, EMPTY_STATE } from "@/lib/store/types";
+import { track } from "@/lib/telemetry";
 
 const STORAGE_KEY = "asa.data.v2";
 const DEMO_KEY = "asa.demo.v1";
@@ -19,6 +20,29 @@ const DEMO_KEY = "asa.demo.v1";
 function uid(prefix: string) {
   return `${prefix}-${Math.random().toString(36).slice(2, 9)}`;
 }
+
+/**
+ * Central planner telemetry. Only structural facts are recorded — never the
+ * title, notes, location or any other content of an appointment, and never
+ * anything about Google-origin (read-only) events.
+ */
+function trackPlanner(
+  event_name: string,
+  event: PlannerEvent | undefined,
+  properties?: Record<string, string | number | boolean>,
+): void {
+  if (event?.externalSource === "google") return;
+  track({
+    event_name,
+    feature: "planner",
+    properties: {
+      ...properties,
+      category: event?.category ?? null,
+      recurring: event ? Boolean(event.repeat && event.repeat !== "none") : null,
+    },
+  });
+}
+
 
 interface DataContextValue extends DataState {
   demoMode: boolean;
