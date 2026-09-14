@@ -6,7 +6,7 @@ This pack is a code-navigation aid for maintainers and coding agents. It maps th
 
 - **IMPLEMENTED** — executable in the current repository.
 - **IMPLEMENTED LOCAL** — runs in the frontend and persists in browser storage.
-- **IMPLEMENTED CLOUD** — uses Lovable Cloud for identity or chat persistence.
+- **IMPLEMENTED CLOUD** — uses external Supabase for identity or chat persistence.
 - **PLANNED** — documented contract or placeholder UI, not currently wired end to end.
 - **OPTIONAL** — exists but is enabled only through explicit configuration.
 
@@ -17,7 +17,7 @@ Start with diagrams 1–4 for architecture, routing, composition, and state owne
 ## Non-negotiable boundaries
 
 1. The frontend owns the fixed 15-subject presentation model, subject languages, SPF display combination, Swiss grade rounding, and failing-grade styling.
-2. Lovable Cloud currently owns authentication and per-user chat threads/messages.
+2. external Supabase currently owns authentication and per-user chat threads/messages.
 3. Browser storage currently owns grades, planner events, local materials, school links, profile, academic year, notifications, and demo mode.
 4. Python owns AI context compilation, retrieval, memories, source provenance, document indexing, and local/remote model calls.
 5. The TanStack `POST /api/chat` route is the authenticated bridge and the single current writer of chat transcript rows.
@@ -36,7 +36,7 @@ flowchart LR
   Router --> Providers[Query + Theme + AppData + AcademicYear\nIMPLEMENTED]
   Providers --> Local[(Browser storage\nGrades, planner, profile, links, demo\nIMPLEMENTED LOCAL)]
   Router --> Auth[Authenticated route gate\nIMPLEMENTED]
-  Auth --> Cloud[(Lovable Cloud\nIdentity + threads + messages\nIMPLEMENTED CLOUD)]
+  Auth --> Cloud[(external Supabase\nIdentity + threads + messages\nIMPLEMENTED CLOUD)]
   Browser --> ChatRoute[POST /api/chat\nTanStack server route\nIMPLEMENTED]
   ChatRoute --> Cloud
   ChatRoute --> Adapter[context-backend.server.ts\nIMPLEMENTED]
@@ -133,7 +133,7 @@ flowchart LR
   Grade --> UI
   Year[(Browser storage\nacademic year)] --> Academic[AcademicYearProvider]
   Academic --> UI
-  Cloud[(Lovable Cloud\nusers threads messages)] --> ServerFns[Authenticated server functions]
+  Cloud[(external Supabase\nusers threads messages)] --> ServerFns[Authenticated server functions]
   ServerFns --> UI
   Python[(Python SQLite\nchunks memories artifacts)] --> FastAPI[FastAPI]
   FastAPI --> ChatAPI[TanStack /api/chat]
@@ -154,7 +154,7 @@ sequenceDiagram
   actor Student
   participant Page as Protected page
   participant Gate as _authenticated route gate
-  participant Cloud as Lovable Cloud identity
+  participant Cloud as external Supabase identity
   participant Auth as /auth and AuthForm
   Student->>Page: Open protected URL
   Page->>Gate: beforeLoad
@@ -270,7 +270,7 @@ sequenceDiagram
   actor Student
   participant UI as StudyChat
   participant Fn as Authenticated server functions
-  participant Cloud as Lovable Cloud threads/messages
+  participant Cloud as external Supabase threads/messages
   participant API as TanStack POST /api/chat
   participant PY as Python FastAPI /api/chat
   participant RAG as Context Manager + retrieval
@@ -443,7 +443,7 @@ Standalone: [`15-offline-fallback.mmd`](wireframes/15-offline-fallback.mmd)
 
 ```mermaid
 flowchart TD
-  Start[App operation] --> Cloud{Lovable Cloud reachable?}
+  Start[App operation] --> Cloud{external Supabase reachable?}
   Cloud -->|No before sign-in| AuthBlocked[Protected pages unavailable]
   Cloud -->|Session already valid| LocalScreens[Local screens may remain usable]
   Cloud -->|Yes| Gate[Authentication and chat history available]

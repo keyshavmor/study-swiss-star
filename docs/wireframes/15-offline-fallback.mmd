@@ -1,5 +1,5 @@
 flowchart TD
-  Start[App operation] --> Cloud{Lovable Cloud reachable?}
+  Start[App operation] --> Cloud{external Supabase reachable?}
   Cloud -->|No before sign-in| AuthBlocked[Protected pages unavailable]
   Cloud -->|Session already valid| LocalScreens[Local screens may remain usable]
   Cloud -->|Yes| Gate[Authentication and chat history available]
