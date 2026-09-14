@@ -24,6 +24,18 @@ import {
   normaliseLanguage,
   type LanguageCode,
 } from "./languages";
+import {
+  formatDate as fmtDate,
+  formatDateCompact as fmtDateCompact,
+  formatDateTime as fmtDateTime,
+  formatMonth as fmtMonth,
+  formatNumber as fmtNumber,
+  formatTime as fmtTime,
+  formatWeekday as fmtWeekday,
+  formatWeekdayDate as fmtWeekdayDate,
+  formatWeekdayDateTime as fmtWeekdayDateTime,
+  type DateInput,
+} from "./format";
 import { dictionaries, type TranslationKey } from "./messages";
 
 type Vars = Record<string, string | number>;
@@ -33,7 +45,22 @@ export interface I18nValue {
   locale: string;
   setLanguage: (next: LanguageCode) => void;
   t: (key: TranslationKey, vars?: Vars) => string;
-  formatDate: (value: Date | string | number, options?: Intl.DateTimeFormatOptions) => string;
+  /** `dd/mm/yyyy` */
+  formatDate: (value: DateInput) => string;
+  /** `dd/mm` */
+  formatDateCompact: (value: DateInput) => string;
+  /** Localized weekday name (explicit Swiss German labels). */
+  formatWeekday: (value: DateInput, style?: "long" | "short") => string;
+  /** `<weekday>, dd/mm/yyyy` */
+  formatWeekdayDate: (value: DateInput, style?: "long" | "short") => string;
+  /** 24-hour `HH:mm` */
+  formatTime: (value: DateInput) => string;
+  /** `dd/mm/yyyy HH:mm` */
+  formatDateTime: (value: DateInput) => string;
+  /** `<weekday>, dd/mm/yyyy HH:mm` */
+  formatWeekdayDateTime: (value: DateInput) => string;
+  /** `mm/yyyy` */
+  formatMonth: (value: DateInput) => string;
   formatNumber: (value: number, options?: Intl.NumberFormatOptions) => string;
 }
 
@@ -163,15 +190,15 @@ export function I18nProvider({ children }: { children: ReactNode }) {
       locale,
       setLanguage,
       t: (key, vars) => translate(language, key, vars),
-      formatDate: (input, options) => {
-        const date = input instanceof Date ? input : new Date(input);
-        if (Number.isNaN(date.getTime())) return "";
-        return new Intl.DateTimeFormat(
-          locale,
-          options ?? { day: "2-digit", month: "short", year: "numeric" },
-        ).format(date);
-      },
-      formatNumber: (input, options) => new Intl.NumberFormat(locale, options).format(input),
+      formatDate: (input) => fmtDate(input),
+      formatDateCompact: (input) => fmtDateCompact(input),
+      formatWeekday: (input, style) => fmtWeekday(input, language, style),
+      formatWeekdayDate: (input, style) => fmtWeekdayDate(input, language, style),
+      formatTime: (input) => fmtTime(input),
+      formatDateTime: (input) => fmtDateTime(input),
+      formatWeekdayDateTime: (input) => fmtWeekdayDateTime(input, language),
+      formatMonth: (input) => fmtMonth(input),
+      formatNumber: (input, options) => fmtNumber(input, language, options),
     };
   }, [language, setLanguage]);
 
@@ -188,11 +215,15 @@ export function useI18n(): I18nValue {
     locale,
     setLanguage: () => {},
     t: (key, vars) => translate(DEFAULT_LANGUAGE, key, vars),
-    formatDate: (input, options) =>
-      new Intl.DateTimeFormat(locale, options).format(
-        input instanceof Date ? input : new Date(input),
-      ),
-    formatNumber: (input, options) => new Intl.NumberFormat(locale, options).format(input),
+    formatDate: (input) => fmtDate(input),
+    formatDateCompact: (input) => fmtDateCompact(input),
+    formatWeekday: (input, style) => fmtWeekday(input, DEFAULT_LANGUAGE, style),
+    formatWeekdayDate: (input, style) => fmtWeekdayDate(input, DEFAULT_LANGUAGE, style),
+    formatTime: (input) => fmtTime(input),
+    formatDateTime: (input) => fmtDateTime(input),
+    formatWeekdayDateTime: (input) => fmtWeekdayDateTime(input, DEFAULT_LANGUAGE),
+    formatMonth: (input) => fmtMonth(input),
+    formatNumber: (input, options) => fmtNumber(input, DEFAULT_LANGUAGE, options),
   };
 }
 

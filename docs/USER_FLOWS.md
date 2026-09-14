@@ -18,7 +18,7 @@ sequenceDiagram
     Student->>UI: open http://localhost:8080
     UI->>UI: mount __root providers (Query, Theme, AppData, AcademicYear)
     UI->>LS: hydrate assessments, events, materials, links, profile
-    LS-->>UI: prototype state (or demo seed if demo mode on)
+    LS-->>UI: prototype state (no demo/seed mode — removed)
     UI->>SF: GET /health
     SF->>PY: GET http://localhost:8001/health
     alt backend up

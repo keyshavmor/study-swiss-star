@@ -1,6 +1,7 @@
 /** Frontend utility or server adapter used by the local Alim application. */
 import type { Assessment } from "@/lib/store/types";
 import { PASSING_THRESHOLD, roundToHalf } from "@/lib/mock/grades";
+import { formatMonth } from "@/lib/i18n/format";
 
 /** Swiss formula: 1.0 + 5.0 × (points ÷ maximum points), clamped to 1.0–6.0. */
 export function pointsToGrade(points: number | null, maxPoints: number | null): number | null {
@@ -18,22 +19,6 @@ export function gradeOf(assessment: Assessment): number | null {
 export function percentageOf(assessment: Assessment): number | null {
   if (assessment.points === null || !assessment.maxPoints) return null;
   return Math.round((assessment.points / assessment.maxPoints) * 100);
-}
-
-export function formatDate(iso: string): string {
-  const d = new Date(`${iso}T00:00:00`);
-  if (Number.isNaN(d.getTime())) return iso;
-  return new Intl.DateTimeFormat("en-GB", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  }).format(d);
-}
-
-export function formatMonthYear(iso: string): string {
-  const d = new Date(`${iso}T00:00:00`);
-  if (Number.isNaN(d.getTime())) return iso;
-  return new Intl.DateTimeFormat("en-GB", { month: "long", year: "numeric" }).format(d);
 }
 
 export interface SubjectSummary {
@@ -227,9 +212,7 @@ export function monthlySeries(all: Assessment[]): { label: string; value: number
       buckets.set(key, list);
     });
   return [...buckets.entries()].map(([key, values]) => ({
-    label: new Intl.DateTimeFormat("en-GB", { month: "short" }).format(
-      new Date(`${key}-01T00:00:00`),
-    ),
+    label: formatMonth(`${key}-01`),
     value: values.reduce((s, v) => s + v, 0) / values.length,
   }));
 }

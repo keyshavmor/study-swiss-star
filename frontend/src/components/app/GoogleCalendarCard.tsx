@@ -54,7 +54,7 @@ export function GoogleCalendarCard({
   range: { from: string; to: string };
   onOccurrences: (occurrences: Occurrence[]) => void;
 }) {
-  const { t, formatDate } = useI18n();
+  const { t, formatTime } = useI18n();
   const [connected, setConnected] = useState(false);
   const [busy, setBusy] = useState(false);
   const [lastSync, setLastSync] = useState<Date | null>(null);
@@ -164,11 +164,7 @@ export function GoogleCalendarCard({
               ? t("calendar.syncing")
               : lastSync
                 ? t("calendar.lastSynced", {
-                    time: formatDate(lastSync, {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                      hour12: false,
-                    }),
+                    time: formatTime(lastSync),
                   })
                 : t("calendar.notSyncedYet")}
           </span>

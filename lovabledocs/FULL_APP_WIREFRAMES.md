@@ -18,7 +18,7 @@ Start with diagrams 1–4 for architecture, routing, composition, and state owne
 
 1. The frontend owns the fixed 15-subject presentation model, subject languages, SPF display combination, Swiss grade rounding, and failing-grade styling.
 2. external Supabase currently owns authentication and per-user chat threads/messages.
-3. Browser storage currently owns grades, planner events, local materials, school links, profile, academic year, notifications, and demo mode.
+3. Browser storage currently owns grades, planner events, local materials, school links, profile, academic year, and notifications.
 4. Python owns AI context compilation, retrieval, memories, source provenance, document indexing, and local/remote model calls.
 5. The TanStack `POST /api/chat` route is the authenticated bridge and the single current writer of chat transcript rows.
 6. Quiz, mock-exam, answer-grading, study-plan, feedback, subject metadata, material-list, and health UI integrations are planned unless a diagram explicitly marks a backend-only endpoint as implemented.
@@ -34,9 +34,9 @@ flowchart LR
   Student[Student] --> Browser[React UI in browser\nIMPLEMENTED]
   Browser --> Router[TanStack file routes\nIMPLEMENTED]
   Router --> Providers[Query + I18n + Theme + AppData + AcademicYear\nIMPLEMENTED]
-  Providers --> I18n[I18nProvider\nfrontend/src/lib/i18n\nen-GB de-CH ru-RU es-ES fr-CH\nIMPLEMENTED]
+  Providers --> I18n[I18nProvider\nfrontend/src/lib/i18n\nen-GB de-DE gsw-CH ru-RU es-ES fr-CH it-CH\nIMPLEMENTED]
   I18n --> LangCache[(localStorage alim.app_language\nflash-avoidance cache only\nIMPLEMENTED LOCAL)]
-  Providers --> Local[(Browser storage\nGrades, planner, profile, links, demo\nIMPLEMENTED LOCAL)]
+  Providers --> Local[(Browser storage\nGrades, planner, profile, links\nIMPLEMENTED LOCAL)]
   Router --> Auth[Authenticated route gate\nIMPLEMENTED]
   Auth --> Cloud[(external Supabase\nIdentity + threads + messages\nprofiles + user_preferences\nfeedback + usage_events\nmedia_retention_queue\nIMPLEMENTED CLOUD)]
   I18n --> Cloud
@@ -122,7 +122,7 @@ flowchart TD
   Outlet --> Gate[Authenticated layout gate]
   Gate --> Pages[Home School Subject Planner Stats\nAssistant Profile Settings Feedback Help]
   Pages --> Shell[AppShell]
-  Shell --> Header[AppHeader\nclock, demo, theme, bell, language menu, avatar]
+  Shell --> Header[AppHeader\nclock, theme toggle, notification bell, language menu, avatar]
   Header --> LangMenu[LanguageMenu\ncomponents/app/LanguageMenu.tsx]
   Shell --> Content[Route content]
   Shell --> Footer[AppFooter\nFeedback + Help links]
@@ -145,7 +145,7 @@ Standalone: [`04-state-ownership.mmd`](wireframes/04-state-ownership.mmd)
 ```mermaid
 flowchart LR
   Static[Static frontend\n15 subjects + languages + SPF mapping] --> UI[Rendered UI]
-  Local[(Browser storage\nassessments events materials links profile demo)] --> AppData[AppDataProvider]
+  Local[(Browser storage\nassessments events materials links profile)] --> AppData[AppDataProvider]
   AppData --> UI
   AppData --> Grade[grade-math.ts\nSwiss formula + summaries + SPF]
   Grade --> UI
@@ -192,7 +192,7 @@ sequenceDiagram
     Cloud-->>Gate: No user
     Gate-->>Student: Redirect to /
     Auth->>I18n: Read cached alim.app_language\n(localStorage, flash-avoidance only)
-    I18n-->>Auth: Localise welcome/auth copy\nen-GB de-CH ru-RU es-ES fr-CH, English fallback
+    I18n-->>Auth: Localise welcome/auth copy\nen-GB de-DE gsw-CH ru-RU es-ES fr-CH it-CH, English fallback
     Student->>Auth: Email or username + password, password reset, or GitHub / LinkedIn / Spotify
     alt Username entered
       Auth->>Cloud: Edge Function username-login then setSession
@@ -348,7 +348,7 @@ sequenceDiagram
     API->>API: Use Lovable AI Gateway
     API-->>UI: Stream answer without Python sources
   end
-  Note over PY,LLM: FUTURE BACKEND / CODEX not implemented:\nui_language, message_language and effective response_language contract;\nmessage_language wins only when confidently one of the five approved languages.
+  Note over PY,LLM: FUTURE BACKEND / CODEX not implemented:\nui_language, message_language and effective response_language contract;\nmessage_language wins only when confidently one of the seven approved languages.
 ```
 
 ## 10. Planner journey
@@ -364,7 +364,12 @@ flowchart TD
   Expand --> Views[Timetable Day Month List]
   Expand --> Totals[Classes exams study activity totals]
   Expand --> Conflict[Detect overlapping events]
-  Views --> Interact[Select drag add edit duplicate complete delete]
+  Google[Google Calendar card] --> Link[linkIdentity google\ncalendar.readonly scope]
+  Link --> Token[provider_token in sessionStorage only]
+  Token --> Fetch[Google Calendar v3 events for visible range]
+  Fetch --> Merge[Read-only occurrences with Google badge]
+  Merge --> Views
+  Views --> Interact[Select drag add edit duplicate complete delete\nGoogle events are read-only]
   Interact --> Scope{Recurring event?}
   Scope -->|No| Series[Update event]
   Scope -->|Yes one| Override[Store occurrence override or exception]
@@ -463,7 +468,7 @@ flowchart TD
 
 ## 14. Supporting screens
 
-Profile, settings, demo, help, feedback, diagnostics, notifications, and links.
+Profile, settings, help, feedback, notifications, and links.
 
 Standalone: [`14-supporting-screens.mmd`](wireframes/14-supporting-screens.mmd)
 
@@ -481,8 +486,7 @@ flowchart TD
   Assistant["/assistant"] --> AssistantData[General AI chat with attachments\nIMPLEMENTED; GENERATION PENDING]
   AssistantData --> Speech[Listen / Stop read-aloud\nlib/speech.ts, IMPLEMENTED LOCAL]
   AssistantData --> AssistantDB[(assistant_* tables + chat-attachments)]
-  Demo[Demo Mode toggle] --> DemoData[Switch between user state and fresh demo state\nIMPLEMENTED LOCAL]
-  Help["/help"] --> Guides[User guides section\nfive static A4 PDF downloads\nhelp-guides/alim-user-guide-{en,de,ru,es,fr}.pdf\nIMPLEMENTED]
+  Help["/help"] --> Guides[User guides section\nseven static A4 PDF downloads\nhelp-guides/alim-user-guide-{en,de,gsw,ru,es,fr,it}.pdf\nIMPLEMENTED]
   Feedback["/feedback"] --> Form[Category + message form\nIMPLEMENTED AND PERSISTED]
   Form --> FeedbackFn[Edge Function feedback-submit]
   FeedbackFn --> FeedbackDB[(public.feedback + private feedback-messages bucket)]
@@ -510,7 +514,7 @@ flowchart TD
   Fallback -->|No| Error[Chat returns clear 503\nIMPLEMENTED]
   Python -. future health UI .-> Banner[Non-blocking offline banner + Retry\nPLANNED]
   Banner -.-> Disable[Disable AI-only actions\nPLANNED]
-  Error --> Continue[School grades stats planner profile links demo remain local]
+  Error --> Continue[School grades stats planner profile links remain local]
   Disable --> Continue
   Continue --> Store[(Browser storage)]
   ModelDown{Model unavailable but FastAPI reachable} --> Degraded["/health returns degraded"]
@@ -636,7 +640,7 @@ flowchart TD
   Boot --> AuthCheck{Signed in?}
   AuthCheck -->|No| WelcomeLocal[Localise welcome/auth screen from cache]
   AuthCheck -->|Yes| Load[Load user_preferences.preferences.app_language\nAUTHORITATIVE]
-  Load --> Valid{Value is one of en de ru es fr?}
+  Load --> Valid{Value is one of en de gsw ru es fr it?}
   Valid -->|Yes| Apply[Apply language, update cache]
   Valid -->|No or missing| English[Recover to English default]
   English --> Apply

@@ -181,7 +181,7 @@ export function StudyChat({ threadId }: StudyChatProps) {
       await refetchThreads();
       navigate({ to: "/chat/$threadId", params: { threadId: thread.id } });
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : t("chat.createFailed"));
+      toast.error(t("chat.createFailed"));
     }
   };
 
@@ -193,7 +193,7 @@ export function StudyChat({ threadId }: StudyChatProps) {
         navigate({ to: "/chat" });
       }
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : t("chat.deleteFailed"));
+      toast.error(t("chat.deleteFailed"));
     }
   };
 

@@ -49,6 +49,31 @@ export const calendar = {
       "Google Calendar cha na nöd verbunde werde: dr Google-Aamäldigsanbieter isch i de Authentifizierigs-Istellige nöd aktiviert.",
     "calendar.error.connectFailed": "Google Calendar het nöd verbunde werde chönne.",
   },
+  gsw: {
+    "calendar.description":
+      "Zeig dini Google-Termin näbe dim Plan a. Nur läse: I dim Google Calendar wird nie öppis gänderet oder glöscht.",
+    "calendar.connected": "Verbunde",
+    "calendar.notConnected": "Nöd verbunde",
+    "calendar.syncing": "Am Synchronisiere…",
+    "calendar.lastSynced": "Letschtmal synchronisiert um {time}",
+    "calendar.notSyncedYet": "No nie synchronisiert",
+    "calendar.syncNow": "Jetzt synchronisiere",
+    "calendar.disconnect": "Trenne",
+    "calendar.connect": "Google Calendar verbinde",
+    "calendar.toastSyncFailed": "Google Calendar het nöd chönne synchronisiert werde.",
+    "calendar.disconnectedStatus": "Google Calendar isch i däm Browser trennt.",
+    "calendar.error.sessionExpired":
+      "Dr Zuegriff uf Google Calendar isch i däre Browser-Sitzig nöd verfüegbar. Verbind di nomol, zum synchronisiere.",
+    "calendar.error.notReached": "Google Calendar het grad nöd chönne erreicht werde.",
+    "calendar.error.accessExpired":
+      "Dr Zuegriff uf Google Calendar isch abgloffe. Verbind di nomol, zum wieder synchronisiere.",
+    "calendar.error.requestFailed": "D'Aafrag a Google Calendar isch fehlgschlage.",
+    "calendar.error.manualLinkingDisabled":
+      "Google Calendar cha na nöd verbunde werde: d'manuelli Kontoverchnüpfig isch i de Authentifizierigs-Iistellige deaktiviert.",
+    "calendar.error.providerNotEnabled":
+      "Google Calendar cha na nöd verbunde werde: dr Google-Aamäldigsanbieter isch i de Authentifizierigs-Iistellige nöd aktiviert.",
+    "calendar.error.connectFailed": "Google Calendar het nöd chönne verbunde werde.",
+  },
   ru: {
     "calendar.description":
       "Показывать ваши встречи из Google рядом с вашим планом. Только чтение: в вашем Google Calendar ничего никогда не меняется и не удаляется.",
@@ -122,5 +147,30 @@ export const calendar = {
     "calendar.error.providerNotEnabled":
       "Google Calendar ne peut pas encore être connecté : le fournisseur de connexion Google n'est pas activé dans les paramètres d'authentification.",
     "calendar.error.connectFailed": "Google Calendar n'a pas pu être connecté.",
+  },
+  it: {
+    "calendar.description":
+      "Mostra i tuoi appuntamenti Google accanto al tuo piano. Sola lettura: nel tuo Google Calendar non viene mai modificato o eliminato nulla.",
+    "calendar.connected": "Connesso",
+    "calendar.notConnected": "Non connesso",
+    "calendar.syncing": "Sincronizzazione…",
+    "calendar.lastSynced": "Ultima sincronizzazione {time}",
+    "calendar.notSyncedYet": "Non ancora sincronizzato",
+    "calendar.syncNow": "Sincronizza ora",
+    "calendar.disconnect": "Disconnetti",
+    "calendar.connect": "Connetti Google Calendar",
+    "calendar.toastSyncFailed": "Non è stato possibile sincronizzare Google Calendar.",
+    "calendar.disconnectedStatus": "Google Calendar è disconnesso in questo browser.",
+    "calendar.error.sessionExpired":
+      "L'accesso a Google Calendar non è disponibile in questa sessione del browser. Riconnettiti per sincronizzare.",
+    "calendar.error.notReached": "Non è stato possibile contattare Google Calendar in questo momento.",
+    "calendar.error.accessExpired":
+      "L'accesso a Google Calendar è scaduto. Riconnettiti per sincronizzare di nuovo.",
+    "calendar.error.requestFailed": "La richiesta a Google Calendar non è riuscita.",
+    "calendar.error.manualLinkingDisabled":
+      "Google Calendar non può ancora essere connesso: il collegamento manuale dell'account è disabilitato nelle impostazioni di autenticazione.",
+    "calendar.error.providerNotEnabled":
+      "Google Calendar non può ancora essere connesso: il provider di accesso Google non è abilitato nelle impostazioni di autenticazione.",
+    "calendar.error.connectFailed": "Non è stato possibile connettere Google Calendar.",
   },
 };

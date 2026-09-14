@@ -83,11 +83,9 @@ function FeedbackPage() {
         feature: "feedback",
         properties: { category },
       });
-      setError(
-        err instanceof Error
-          ? t("feedback.error.submitFailed", { message: err.message })
-          : t("feedback.error.submitFailedGeneric"),
-      );
+      // Provider messages are English; keep the visible copy localized.
+      console.error("feedback submit failed", err);
+      setError(t("feedback.error.submitFailedGeneric"));
     } finally {
       setSending(false);
     }

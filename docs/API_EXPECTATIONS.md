@@ -300,7 +300,7 @@ data: {"message_id":"msg_01HZYB3K","sources":[...],"exam_tip":"...","used_model"
 
 ### FUTURE BACKEND / CODEX — response-language precedence (not implemented)
 
-The frontend now has a five-language UI (`en`, `de`, `ru`, `es`, `fr`; see
+The frontend now has a seven-language UI (``en`, `de`, `gsw`, `ru`, `es`, `fr`, `it`; see
 `SUBJECT_MODEL_AND_LANGUAGE_RULES.md`). The **future** request contract for `/api/chat`
 adds two fields alongside the existing `language`:
 
@@ -312,7 +312,7 @@ adds two fields alongside the existing `language`:
 ```
 
 Precedence rule (**not implemented today**): the effective `response_language` is
-`message_language` when it is confidently one of the five supported languages,
+`message_language` when it is confidently one of the seven supported languages,
 otherwise it falls back to `ui_language`.
 
 Today the frontend computes a per-message `responseLanguageHint` client-side

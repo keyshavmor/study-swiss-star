@@ -76,7 +76,7 @@ segment does not appear in the URL.
 | --- | --- | --- |
 | `QueryClientProvider` | `@tanstack/react-query` | Server-state cache for server functions and (future) Python API calls. Keys like `["threads"]`, `["messages", threadId]`. |
 | `ThemeProvider` | `frontend/src/hooks/use-theme.tsx` | Light/dark class toggle, persisted locally. |
-| `AppDataProvider` | `frontend/src/lib/store/app-data.tsx` | All prototype data: assessments, planner events, materials, school links, profile, demo mode. Context + `localStorage`. |
+| `AppDataProvider` | `frontend/src/lib/store/app-data.tsx` | All prototype data: assessments, planner events, materials, school links, profile. Context + `localStorage`. There is no demo mode: the previous `DemoMode` component and `demoMode` store state have been removed. |
 | `AcademicYearProvider` | `frontend/src/lib/store/academic-year.tsx` | Global academic-year context (default 2026–27, Grade 11). |
 | `Toaster` | `frontend/src/components/ui/sonner` | Global toasts for success/error states. |
 | `I18nProvider` | `frontend/src/lib/i18n/provider.tsx` | App-wide translation/date/number formatting. Supabase `user_preferences.preferences.app_language` is authoritative for signed-in users; a `localStorage` cache (`alim.app_language`) only prevents a flash of the wrong language and localises the signed-out welcome screen. |
@@ -86,7 +86,7 @@ segment does not appear in the URL.
 | Folder | Role |
 | --- | --- |
 | `frontend/src/components/ui/*` | shadcn/Radix primitives. Pure UI, no data. |
-| `frontend/src/components/app/*` | Product components: `AppShell`, `AppHeader`, `SubjectCard`, `GradeDisplay`, `StatsOverviewPanel`, `Timetable`, `MaterialsPanel`, `AssessmentDialog`, `EventDialog`, `TranscriptImportDialog`, `NotificationCenter`, `DemoMode`, `States`, `LiveClock`, `Badges`, `Breadcrumbs`, `AcademicYearSelector`, `SchoolLinksSection`. Read/write `AppDataProvider`. |
+| `frontend/src/components/app/*` | Product components: `AppShell`, `AppHeader`, `SubjectCard`, `GradeDisplay`, `StatsOverviewPanel`, `Timetable`, `MaterialsPanel`, `AssessmentDialog`, `EventDialog`, `TranscriptImportDialog`, `NotificationCenter`, `States`, `LiveClock`, `Badges`, `Breadcrumbs`, `AcademicYearSelector`, `SchoolLinksSection`. Read/write `AppDataProvider`. |
 | `frontend/src/components/ai-elements/*` | Chat rendering primitives: `conversation`, `message`, `prompt-input`, `shimmer`. Transport-agnostic. |
 | `frontend/src/components/StudyChat.tsx`, `ThreadList.tsx`, `AuthForm.tsx` | Chat shell, thread sidebar, auth form. |
 | `frontend/src/lib/i18n/*` | Central i18n: `languages.ts` (5 codes/flags/locales, `normaliseLanguage`), `detect.ts` (`detectLanguage`, `effectiveResponseLanguage`), `provider.tsx` (`I18nProvider`, `useI18n`), `messages/*.ts` per feature area, English as typed source of truth and fallback. |
@@ -108,8 +108,7 @@ and persists the assistant message. `StudyChat.tsx` renders source metadata with
 generation fallback.
 
 ### c. localStorage prototype data
-`AppDataProvider` hydrates from `localStorage`, seeded from `frontend/src/lib/store/demo-data.ts` only when
-demo mode is on. Grade math is computed client-side in `frontend/src/lib/grade-math.ts` from
+`AppDataProvider` hydrates from `localStorage` (no demo/seed mode — that was removed). Grade math is computed client-side in `frontend/src/lib/grade-math.ts` from
 `Assessment[]`. Static subject metadata lives in `frontend/src/lib/mock/subjects.ts`.
 
 ## 9. Python backend insertion points
@@ -119,7 +118,7 @@ single transcript writer. Other planned AI features can use a browser-side clien
 
 ### Internationalisation (implemented, frontend-only today)
 
-The whole frontend is internationalised into exactly five languages: English (`en`, locale `en-GB`), German (`de`, `de-CH`), Russian (`ru`, `ru-RU`), Spanish (`es`, `es-ES`) and French (`fr`, `fr-CH`). A flag dropdown (`frontend/src/components/app/LanguageMenu.tsx`) sits in `AppHeader` between the notification bell and the profile avatar — there is no language control in `/settings`. Selecting a language writes `user_preferences.preferences.app_language` (authoritative) and caches it in `localStorage` under `alim.app_language` only to avoid a flash of the wrong language and to localise the signed-out welcome screen. Missing translation keys fall back to English. `FUTURE BACKEND / CODEX` still needs to honour language metadata on generation requests — the local Python backend does not read `app_language` today.
+The whole frontend is internationalised into exactly seven languages: English (`en`, locale `en-GB`), German (`de`, `de-DE`), Swiss German (`gsw`, `gsw-CH`, Intl fallback `de-CH`), Russian (`ru`, `ru-RU`), Spanish (`es`, `es-ES`) and French (`fr`, `fr-CH`). A flag dropdown (`frontend/src/components/app/LanguageMenu.tsx`) sits in `AppHeader` between the notification bell and the profile avatar — there is no language control in `/settings`. Selecting a language writes `user_preferences.preferences.app_language` (authoritative) and caches it in `localStorage` under `alim.app_language` only to avoid a flash of the wrong language and to localise the signed-out welcome screen. Missing translation keys fall back to English. `FUTURE BACKEND / CODEX` still needs to honour language metadata on generation requests — the local Python backend does not read `app_language` today.
 
 | Concern | Insertion point |
 | --- | --- |

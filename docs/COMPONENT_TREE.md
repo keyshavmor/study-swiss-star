@@ -34,7 +34,6 @@ __root.tsx                                 🟪 LAYOUT  providers: Query, Theme,
     │   │   ├── app/LanguageMenu.tsx      🟨 LOCAL (i18n, between bell and avatar)
     │   │   └── ThemeToggle.tsx            🟦 UI
     │   ├── app/MobileNavigation.tsx       🟪 LAYOUT
-    │   ├── app/DemoMode.tsx               🟨 LOCAL
     │   └── app/BackendStatusBanner.tsx    🟥 PY      (to be created)
     ├── home.tsx                           🟨 LOCAL
     │   ├── app/SchoolLinksSection.tsx     🟨 LOCAL
@@ -92,7 +91,7 @@ component classification tag, it is a leaf utility with no persistence.
 - **Props:** none (route-level).
 - **Data source:** `supabase.auth` from `frontend/src/integrations/supabase/client.ts`.
 - **Future backend:** none. Python never sees credentials.
-- **Integration notes:** do not modify. If local demo without auth is required, add a separate
+- **Integration notes:** do not modify. If local guest access without auth is required, add a separate
   guest path — never weaken the `_authenticated` gate.
 
 ### `StudyChat.tsx` — 🟥 PY
@@ -124,7 +123,7 @@ component classification tag, it is a leaf utility with no persistence.
   modify these primitives.
 
 ### `app/AppShell.tsx` — 🟪 LAYOUT
-- **Purpose:** page frame: header, mobile nav, demo banner, content slot.
+- **Purpose:** page frame: header, mobile nav, content slot.
 - **Props:** `{ title, breadcrumbs?, actions?, children }`.
 - **Data source:** context providers only.
 - **Future backend:** hosts `BackendStatusBanner`.
@@ -173,10 +172,6 @@ component classification tag, it is a leaf utility with no persistence.
 - **Data source:** simulated parse, writes `Assessment` records with `importedFrom`.
 - **Future backend:** real parsing via `POST /api/import/document` with a transcript mode.
 - **Integration notes:** keep the review step; never write grades without confirmation.
-
-### `app/DemoMode.tsx` — 🟨 LOCAL
-- **Purpose:** demo-data toggle + banner, seeded from `frontend/src/lib/store/demo-data.ts`.
-- **Future backend:** must keep working with the backend offline; also gates mock AI answers.
 
 ### `app/States.tsx` — 🟦 UI
 - **Purpose:** shared loading / empty / error presentational states.

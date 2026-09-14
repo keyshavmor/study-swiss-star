@@ -12,7 +12,7 @@ sequenceDiagram
     Cloud-->>Gate: No user
     Gate-->>Student: Redirect to /
     Auth->>I18n: Read cached alim.app_language\n(localStorage, flash-avoidance only)
-    I18n-->>Auth: Localise welcome/auth copy\nen-GB de-CH ru-RU es-ES fr-CH, English fallback
+    I18n-->>Auth: Localise welcome/auth copy\nen-GB de-DE gsw-CH ru-RU es-ES fr-CH it-CH, English fallback
     Student->>Auth: Email or username + password, password reset, or GitHub / LinkedIn / Spotify
     alt Username entered
       Auth->>Cloud: Edge Function username-login then setSession

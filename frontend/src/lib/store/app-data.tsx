@@ -2,7 +2,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import { addDays, daysBetween, startOfWeek, weekdayIndex } from "@/lib/date-utils";
-import { createDemoState } from "@/lib/store/demo-data";
 import type {
   Assessment,
   DataState,
@@ -15,7 +14,6 @@ import { EMPTY_PROFILE, EMPTY_STATE } from "@/lib/store/types";
 import { track } from "@/lib/telemetry";
 
 const STORAGE_KEY = "asa.data.v2";
-const DEMO_KEY = "asa.demo.v1";
 
 function uid(prefix: string) {
   return `${prefix}-${Math.random().toString(36).slice(2, 9)}`;
@@ -44,8 +42,6 @@ function trackPlanner(
 }
 
 interface DataContextValue extends DataState {
-  demoMode: boolean;
-  setDemoMode: (on: boolean) => void;
   hasAnyData: boolean;
 
   addAssessment: (input: Omit<Assessment, "id">) => Assessment;
@@ -118,12 +114,9 @@ function readStored(): DataState {
 export function AppDataProvider({ children }: { children: ReactNode }) {
   const [hydrated, setHydrated] = useState(false);
   const [userState, setUserState] = useState<DataState>(EMPTY_STATE);
-  const [demoState, setDemoState] = useState<DataState>(() => createDemoState());
-  const [demoMode, setDemoModeState] = useState(false);
 
   useEffect(() => {
     setUserState(readStored());
-    setDemoModeState(window.localStorage.getItem(DEMO_KEY) === "on");
     setHydrated(true);
   }, []);
 
@@ -132,14 +125,8 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(userState));
   }, [hydrated, userState]);
 
-  const setDemoMode = useCallback((on: boolean) => {
-    setDemoModeState(on);
-    if (typeof window !== "undefined") window.localStorage.setItem(DEMO_KEY, on ? "on" : "off");
-    if (on) setDemoState(createDemoState());
-  }, []);
-
-  const state = demoMode ? demoState : userState;
-  const setState = demoMode ? setDemoState : setUserState;
+  const state = userState;
+  const setState = setUserState;
 
   const value = useMemo<DataContextValue>(() => {
     const patchList = <T extends { id: string }>(list: T[], id: string, patch: Partial<T>) =>
@@ -147,8 +134,6 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
 
     return {
       ...state,
-      demoMode,
-      setDemoMode,
       hasAnyData:
         state.assessments.length > 0 ||
         state.events.length > 0 ||
@@ -361,7 +346,7 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
 
       clearAll: () => setState(() => ({ ...EMPTY_STATE, profile: { ...EMPTY_PROFILE } })),
     };
-  }, [state, setState, demoMode, setDemoMode]);
+  }, [state, setState]);
 
   return <DataContext.Provider value={value}>{children}</DataContext.Provider>;
 }

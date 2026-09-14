@@ -9,7 +9,6 @@ import { AppShell, PageHeading } from "@/components/app/AppShell";
 import { PageNav } from "@/components/app/Breadcrumbs";
 import { AssessmentDialog } from "@/components/app/AssessmentDialog";
 import { FailingBadge } from "@/components/app/Badges";
-import { DemoModeBanner, DemoModeButton } from "@/components/app/DemoMode";
 import { RoundingInfo } from "@/components/app/GradeDisplay";
 import { EmptyState } from "@/components/app/States";
 import { StatsOverviewPanel } from "@/components/app/StatsOverviewPanel";
@@ -82,7 +81,7 @@ const FILTER_KEYS: { value: FilterKey; key: TranslationKey }[] = [
 
 function SchoolPage() {
   const { t } = useI18n();
-  const { assessments, demoMode } = useAppData();
+  const { assessments } = useAppData();
   const { yearId, year } = useAcademicYear();
   const [sort, setSort] = useState<SortKey>("name");
   const [filter, setFilter] = useState<FilterKey>("all");
@@ -158,12 +157,9 @@ function SchoolPage() {
                 </Button>
               }
             />
-            <DemoModeButton className="hidden sm:inline-flex" />
           </div>
         }
       />
-
-      <DemoModeBanner />
 
       <div className="mb-5">
         <AcademicYearSelector />
@@ -372,9 +368,6 @@ function SchoolPage() {
               </AccordionItem>
             </Accordion>
 
-            {demoMode && (
-              <p className="mt-3 text-[13px] text-muted-foreground">{t("school.demoModeNote")}</p>
-            )}
           </section>
         </div>
 

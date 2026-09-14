@@ -10,7 +10,7 @@ flowchart TD
   Fallback -->|No| Error[Chat returns clear 503\nIMPLEMENTED]
   Python -. future health UI .-> Banner[Non-blocking offline banner + Retry\nPLANNED]
   Banner -.-> Disable[Disable AI-only actions\nPLANNED]
-  Error --> Continue[School grades stats planner profile links demo remain local]
+  Error --> Continue[School grades stats planner profile links remain local]
   Disable --> Continue
   Continue --> Store[(Browser storage)]
   ModelDown{Model unavailable but FastAPI reachable} --> Degraded["/health returns degraded"]

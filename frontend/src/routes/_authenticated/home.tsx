@@ -4,10 +4,9 @@ import { ArrowRight, CalendarDays, Clock, GraduationCap, Sparkle, TrendingUp } f
 import { AcademicYearSelector } from "@/components/app/AcademicYearSelector";
 import { useI18n } from "@/lib/i18n/provider";
 import { AppShell } from "@/components/app/AppShell";
-import { DemoModeBanner } from "@/components/app/DemoMode";
 import { SchoolLinksSection } from "@/components/app/SchoolLinksSection";
 import { addDays, durationLabel, minutesOf, todayIso } from "@/lib/date-utils";
-import { formatDate, summariseYear } from "@/lib/grade-math";
+import { summariseYear } from "@/lib/grade-math";
 import { SCHOOL_SUBJECTS } from "@/lib/mock/subjects";
 import { useAcademicYear } from "@/lib/store/academic-year";
 import { occurrencesInRange, useAppData } from "@/lib/store/app-data";
@@ -34,7 +33,7 @@ export const Route = createFileRoute("/_authenticated/home")({
 });
 
 function HomePage() {
-  const { t } = useI18n();
+  const { t, formatDate } = useI18n();
   const { assessments, events, profile } = useAppData();
   const { yearId, yearLabel } = useAcademicYear();
 
@@ -139,8 +138,6 @@ function HomePage() {
             ))}
           </ul>
         )}
-
-        <DemoModeBanner className="mt-5" />
       </section>
 
       <SchoolLinksSection className="mt-12" />
@@ -159,7 +156,7 @@ function BigCard({
   title: string;
   description: string;
 }) {
-  const { t } = useI18n();
+  const { t, formatDate } = useI18n();
   return (
     <Link to={to} className="landing-card group flex flex-col gap-5 p-8 sm:p-10">
       <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary">

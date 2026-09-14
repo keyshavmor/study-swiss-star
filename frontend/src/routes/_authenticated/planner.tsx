@@ -15,7 +15,6 @@ import { useEffect, useMemo, useState } from "react";
 import { AppShell, PageHeading } from "@/components/app/AppShell";
 import { AcademicYearSelector } from "@/components/app/AcademicYearSelector";
 import { PageNav } from "@/components/app/Breadcrumbs";
-import { DemoModeBanner } from "@/components/app/DemoMode";
 import { EventDetailDialog } from "@/components/app/EventDetailDialog";
 import { EventDialog } from "@/components/app/EventDialog";
 import { GoogleCalendarCard } from "@/components/app/GoogleCalendarCard";
@@ -321,8 +320,6 @@ function PlannerPage() {
       <div className="mb-5">
         <AcademicYearSelector />
       </div>
-
-      <DemoModeBanner className="mb-5" />
 
       <div className="mb-4 flex flex-wrap items-center gap-2">
         <div className="flex rounded-full border border-border p-0.5">

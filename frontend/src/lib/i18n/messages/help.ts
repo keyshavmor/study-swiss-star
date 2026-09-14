@@ -1,4 +1,4 @@
-/** Help screen copy, including the five downloadable user guides. */
+/** Help screen copy, including the seven downloadable user guides. */
 
 export const help = {
   en: {
@@ -56,6 +56,34 @@ export const help = {
       "Vollständiges druckbares Handbuch in jeder unterstützten Sprache. Wähle deine Sprache, um es zu öffnen.",
     "help.guides.open": "Handbuch öffnen",
     "help.guides.meta": "PDF · A4 · {pages} Seiten",
+  },
+  gsw: {
+    "help.crumbHome": "Start",
+    "help.crumb": "Hilf",
+    "help.title": "Hilf",
+    "help.description": "Churzi Aaleitige für jede Teil vom Assistent.",
+    "help.topic.indexing.title": "So funktioniert d Materialindexierig",
+    "help.topic.indexing.body":
+      "Lad Notize, Lehrpläni und Bewertigschriterie ue; die werded für d Lernmodi indexiert.",
+    "help.topic.grading.title": "Schwiizer Notenskala",
+    "help.topic.grading.body":
+      "Note = 1.0 + 5.0 × (erreichti Pünkt ÷ maximali Pünkt), vo 1.0 bis 6.0.",
+    "help.topic.plans.title": "Lernpläni",
+    "help.topic.plans.body": "Pläni verbinded Prüefigstermin, freiii Ziit und dis Wuchenprogramm.",
+    "help.topic.calendar.title": "Google Calendar",
+    "help.topic.calendar.body":
+      "Verbind Google Calendar im Planer, zum dini Termin näbe em Lernplan gseh. Sie bliibed nur läsbar.",
+    "help.topic.language.title": "Sproche",
+    "help.topic.language.body":
+      "Mit em Flagge-Knopf im Kopfbereich wechslisch d ganzi App zwüsche Änglisch, Dütsch, Russisch, Spanisch und Französisch.",
+    "help.topic.audio.title": "Antworte alose",
+    "help.topic.audio.body":
+      "Antworte vom Assistent chan dis Browser vorläse. Ii- und usschalte chasch das i de Iistellige bi de Audioantworte.",
+    "help.guides.title": "Benutzerhandbücher",
+    "help.guides.description":
+      "Vollständigs, druckbars Handbuech i jeder unterstützte Sproch. Wähl dini Sproch zum öffne.",
+    "help.guides.open": "Handbuech öffne",
+    "help.guides.meta": "PDF · A4 · {pages} Site",
   },
   ru: {
     "help.crumbHome": "Главная",
@@ -143,5 +171,33 @@ export const help = {
       "Guide complet et imprimable dans chaque langue prise en charge. Choisis ta langue pour l'ouvrir.",
     "help.guides.open": "Ouvrir le guide",
     "help.guides.meta": "PDF · A4 · {pages} pages",
+  },
+  it: {
+    "help.crumbHome": "Home",
+    "help.crumb": "Aiuto",
+    "help.title": "Aiuto",
+    "help.description": "Brevi guide per ogni parte dell'assistente.",
+    "help.topic.indexing.title": "Come funziona l'indicizzazione dei materiali",
+    "help.topic.indexing.body":
+      "Carica appunti, programmi e criteri di valutazione; vengono indicizzati per le modalità di studio.",
+    "help.topic.grading.title": "Sistema di valutazione svizzero",
+    "help.topic.grading.body":
+      "Voto = 1.0 + 5.0 × (punti ottenuti ÷ punti massimi), da 1.0 a 6.0.",
+    "help.topic.plans.title": "Piani di studio",
+    "help.topic.plans.body": "I piani combinano le date degli esami, il tempo libero e il tuo orario di attività.",
+    "help.topic.calendar.title": "Google Calendar",
+    "help.topic.calendar.body":
+      "Collega Google Calendar nel Pianificatore per vedere i tuoi appuntamenti accanto al piano. Restano di sola lettura.",
+    "help.topic.language.title": "Lingue",
+    "help.topic.language.body":
+      "Usa il pulsante bandiera nell'intestazione per passare l'intera app tra inglese, tedesco, russo, spagnolo e francese.",
+    "help.topic.audio.title": "Ascoltare le risposte",
+    "help.topic.audio.body":
+      "Le risposte dell'assistente possono essere lette ad alta voce dal tuo browser. Attivalo o disattivalo nelle Impostazioni, alla voce risposte audio.",
+    "help.guides.title": "Guide utente",
+    "help.guides.description":
+      "Guida completa e stampabile in ogni lingua supportata. Scegli la tua lingua per aprirla.",
+    "help.guides.open": "Apri la guida",
+    "help.guides.meta": "PDF · A4 · {pages} pagine",
   },
 };

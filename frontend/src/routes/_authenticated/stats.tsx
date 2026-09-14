@@ -8,7 +8,6 @@ import { AppShell, PageHeading } from "@/components/app/AppShell";
 import { PageNav } from "@/components/app/Breadcrumbs";
 import { AssessmentActions } from "@/components/app/AssessmentActions";
 import { AssessmentDialog } from "@/components/app/AssessmentDialog";
-import { DemoModeBanner, DemoModeButton } from "@/components/app/DemoMode";
 import { EmptyState } from "@/components/app/States";
 import { MiniTrendChart } from "@/components/app/StatsOverviewPanel";
 import { Button } from "@/components/ui/button";
@@ -30,7 +29,6 @@ import {
 } from "@/components/ui/table";
 import { useAcademicYear } from "@/lib/store/academic-year";
 import {
-  formatDate,
   gradeOf,
   monthlySeries,
   percentageOf,
@@ -65,7 +63,7 @@ export const Route = createFileRoute("/_authenticated/stats")({
 });
 
 function StatsPage() {
-  const { t } = useI18n();
+  const { t, formatDate } = useI18n();
   const { assessments } = useAppData();
   const { yearId, year } = useAcademicYear();
   const [subject, setSubject] = useState("all");
@@ -113,12 +111,9 @@ function StatsPage() {
                 </Button>
               }
             />
-            <DemoModeButton className="hidden sm:inline-flex" />
           </div>
         }
       />
-
-      <DemoModeBanner />
 
       <div className="mb-6 flex flex-wrap gap-3">
         <AcademicYearSelector />

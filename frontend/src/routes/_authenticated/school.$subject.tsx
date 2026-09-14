@@ -16,7 +16,6 @@ import { PageNav } from "@/components/app/Breadcrumbs";
 import { AssessmentActions } from "@/components/app/AssessmentActions";
 import { AssessmentDialog } from "@/components/app/AssessmentDialog";
 import { FailingBadge } from "@/components/app/Badges";
-import { DemoModeBanner } from "@/components/app/DemoMode";
 import { AverageWithRounded, GradeLineChart } from "@/components/app/GradeDisplay";
 import { MaterialsPanel } from "@/components/app/MaterialsPanel";
 import { useI18n } from "@/lib/i18n/provider";
@@ -71,7 +70,7 @@ const MODE_ICONS: Record<SubjectMode, typeof MessageSquare> = {
 };
 
 function SubjectDashboard() {
-  const { t, formatDate } = useI18n();
+  const { t, formatDate, formatMonth } = useI18n();
   const { subject } = Route.useLoaderData();
   const components = subject.components ?? [];
   const [activeSlug, setActiveSlug] = useState<string>(components[0] ?? subject.slug);
@@ -146,7 +145,6 @@ function SubjectDashboard() {
             />
           </dl>
         </div>
-        <DemoModeBanner className="mt-5" />
       </div>
 
       {components.length > 0 && (
@@ -338,7 +336,7 @@ function SubjectDashboard() {
               {combined.counted.length > 1 && (
                 <GradeLineChart
                   data={combined.counted.map((t) => ({
-                    label: formatDate(t.date, { month: "long", year: "numeric" }),
+                    label: formatMonth(t.date),
                     value: gradeOf(t) as number,
                   }))}
                 />
@@ -376,7 +374,7 @@ function SubjectDashboard() {
                   {grades.counted.length > 1 && (
                     <GradeLineChart
                       data={grades.counted.map((t) => ({
-                        label: formatDate(t.date, { month: "long", year: "numeric" }),
+                        label: formatMonth(t.date),
                         value: gradeOf(t) as number,
                       }))}
                     />

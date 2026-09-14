@@ -1,18 +1,10 @@
-/** misc translations for the five approved application languages. */
+/** misc translations for the seven approved application languages. */
 export const misc = {
   en: {
     "misc.clock.currentTime": "Current time {time}",
-    "misc.demo.badge": "Example data",
-    "misc.demo.failingBadge": "Below passing grade",
-    "misc.demo.viewButton": "View Demo Content",
-    "misc.demo.onToast": "Demo Mode on",
-    "misc.demo.onToastDescription": "Example content is shown. Your own data is untouched.",
-    "misc.demo.offToast": "Demo Mode off",
-    "misc.demo.offToastDescription": "Back to your own data.",
-    "misc.demo.bannerTitle": "Demo Mode is on.",
-    "misc.demo.bannerBody":
-      "Everything shown is example content — your own records are hidden until you exit.",
-    "misc.demo.exitButton": "Exit Demo Mode",
+    "misc.badge.failing": "Below passing grade",
+    "misc.badge.failingTooltip":
+      "In the Swiss 1–6 grading scale, grades and averages below 4.0 are failing and need attention.",
     "misc.year.previous": "Previous academic year",
     "misc.year.next": "Next academic year",
     "misc.year.label": "Academic year",
@@ -25,18 +17,9 @@ export const misc = {
   },
   de: {
     "misc.clock.currentTime": "Aktuelle Zeit {time}",
-    "misc.demo.badge": "Beispieldaten",
-    "misc.demo.failingBadge": "Unter der Bestehensnote",
-    "misc.demo.viewButton": "Demo-Inhalte anzeigen",
-    "misc.demo.onToast": "Demo-Modus aktiv",
-    "misc.demo.onToastDescription":
-      "Es werden Beispielinhalte angezeigt. Deine eigenen Daten bleiben unverändert.",
-    "misc.demo.offToast": "Demo-Modus deaktiviert",
-    "misc.demo.offToastDescription": "Zurück zu deinen eigenen Daten.",
-    "misc.demo.bannerTitle": "Demo-Modus ist aktiv.",
-    "misc.demo.bannerBody":
-      "Alles Angezeigte sind Beispielinhalte — deine eigenen Einträge sind bis zum Beenden ausgeblendet.",
-    "misc.demo.exitButton": "Demo-Modus beenden",
+    "misc.badge.failing": "Unter der Bestehensnote",
+    "misc.badge.failingTooltip":
+      "In der Schweizer Notenskala von 1–6 gelten Noten und Durchschnitte unter 4.0 als ungenügend und bedürfen Aufmerksamkeit.",
     "misc.year.previous": "Vorheriges Schuljahr",
     "misc.year.next": "Nächstes Schuljahr",
     "misc.year.label": "Schuljahr",
@@ -47,19 +30,26 @@ export const misc = {
     "misc.breadcrumb.label": "Breadcrumb",
     "misc.breadcrumb.backTo": "Zurück zu {label}",
   },
+  gsw: {
+    "misc.clock.currentTime": "Aktuelli Ziit {time}",
+    "misc.badge.failing": "Under de Bestehensnote",
+    "misc.badge.failingTooltip":
+      "I de Schwiizer Notenskala vo 1–6 gälte Note und Durchschnitt under 4.0 als ungenügend und bruuche Ufmerksamkeit.",
+    "misc.year.previous": "Vorherigs Schuejahr",
+    "misc.year.next": "Nächschts Schuejahr",
+    "misc.year.label": "Schuejahr",
+    "misc.sources.title": "Quelle ({count})",
+    "misc.sources.chapter": "Kapitel {chapter}",
+    "misc.sources.page": "Siite {page}",
+    "misc.sources.defaultMaterial": "Kursmaterial",
+    "misc.breadcrumb.label": "Breadcrumb",
+    "misc.breadcrumb.backTo": "Zrugg zu {label}",
+  },
   ru: {
     "misc.clock.currentTime": "Текущее время {time}",
-    "misc.demo.badge": "Демо-данные",
-    "misc.demo.failingBadge": "Ниже проходного балла",
-    "misc.demo.viewButton": "Показать демо-контент",
-    "misc.demo.onToast": "Демо-режим включён",
-    "misc.demo.onToastDescription": "Показан демонстрационный контент. Ваши данные не изменены.",
-    "misc.demo.offToast": "Демо-режим выключен",
-    "misc.demo.offToastDescription": "Возврат к вашим собственным данным.",
-    "misc.demo.bannerTitle": "Демо-режим включён.",
-    "misc.demo.bannerBody":
-      "Всё показанное — демонстрационный контент, ваши записи скрыты до выхода.",
-    "misc.demo.exitButton": "Выйти из демо-режима",
+    "misc.badge.failing": "Ниже проходного балла",
+    "misc.badge.failingTooltip":
+      "По швейцарской шкале оценок от 1 до 6 оценки и средние баллы ниже 4.0 считаются неудовлетворительными и требуют внимания.",
     "misc.year.previous": "Предыдущий учебный год",
     "misc.year.next": "Следующий учебный год",
     "misc.year.label": "Учебный год",
@@ -72,18 +62,9 @@ export const misc = {
   },
   es: {
     "misc.clock.currentTime": "Hora actual {time}",
-    "misc.demo.badge": "Datos de ejemplo",
-    "misc.demo.failingBadge": "Bajo la nota de aprobado",
-    "misc.demo.viewButton": "Ver contenido de demostración",
-    "misc.demo.onToast": "Modo demo activado",
-    "misc.demo.onToastDescription":
-      "Se muestra contenido de ejemplo. Tus propios datos no se modifican.",
-    "misc.demo.offToast": "Modo demo desactivado",
-    "misc.demo.offToastDescription": "De vuelta a tus propios datos.",
-    "misc.demo.bannerTitle": "El modo demo está activado.",
-    "misc.demo.bannerBody":
-      "Todo lo mostrado es contenido de ejemplo; tus propios registros están ocultos hasta que salgas.",
-    "misc.demo.exitButton": "Salir del modo demo",
+    "misc.badge.failing": "Bajo la nota de aprobado",
+    "misc.badge.failingTooltip":
+      "En la escala suiza de notas de 1 a 6, las notas y promedios por debajo de 4.0 son insuficientes y requieren atención.",
     "misc.year.previous": "Año escolar anterior",
     "misc.year.next": "Año escolar siguiente",
     "misc.year.label": "Año escolar",
@@ -96,18 +77,9 @@ export const misc = {
   },
   fr: {
     "misc.clock.currentTime": "Heure actuelle {time}",
-    "misc.demo.badge": "Données d'exemple",
-    "misc.demo.failingBadge": "Sous la moyenne requise",
-    "misc.demo.viewButton": "Voir le contenu de démonstration",
-    "misc.demo.onToast": "Mode démo activé",
-    "misc.demo.onToastDescription":
-      "Un contenu d'exemple est affiché. Tes propres données restent intactes.",
-    "misc.demo.offToast": "Mode démo désactivé",
-    "misc.demo.offToastDescription": "Retour à tes propres données.",
-    "misc.demo.bannerTitle": "Le mode démo est activé.",
-    "misc.demo.bannerBody":
-      "Tout ce qui est affiché est un contenu d'exemple — tes propres données sont masquées jusqu'à la sortie.",
-    "misc.demo.exitButton": "Quitter le mode démo",
+    "misc.badge.failing": "Sous la moyenne requise",
+    "misc.badge.failingTooltip":
+      "Dans l'échelle suisse de notes de 1 à 6, les notes et moyennes inférieures à 4.0 sont insuffisantes et méritent votre attention.",
     "misc.year.previous": "Année scolaire précédente",
     "misc.year.next": "Année scolaire suivante",
     "misc.year.label": "Année scolaire",
@@ -117,5 +89,20 @@ export const misc = {
     "misc.sources.defaultMaterial": "Support de cours",
     "misc.breadcrumb.label": "Fil d'Ariane",
     "misc.breadcrumb.backTo": "Retour à {label}",
+  },
+  it: {
+    "misc.clock.currentTime": "Ora attuale {time}",
+    "misc.badge.failing": "Sotto la soglia di sufficienza",
+    "misc.badge.failingTooltip":
+      "Nella scala di valutazione svizzera da 1 a 6, i voti e le medie inferiori a 4.0 sono insufficienti e richiedono attenzione.",
+    "misc.year.previous": "Anno scolastico precedente",
+    "misc.year.next": "Anno scolastico successivo",
+    "misc.year.label": "Anno scolastico",
+    "misc.sources.title": "Fonti ({count})",
+    "misc.sources.chapter": "Capitolo {chapter}",
+    "misc.sources.page": "Pagina {page}",
+    "misc.sources.defaultMaterial": "Materiale del corso",
+    "misc.breadcrumb.label": "Percorso di navigazione",
+    "misc.breadcrumb.backTo": "Torna a {label}",
   },
 };

@@ -36,6 +36,24 @@ export const home = {
     "home.stat.activity.none": "Heute nichts",
     "home.open": "{title} öffnen",
   },
+  gsw: {
+    "home.subtitle": "{year} · alles für dini Gymiprüefige a eim rueige Ort.",
+    "home.school.title": "Schuel",
+    "home.school.description":
+      "Öffne dini Fächer, Lernmaterial, Quiz, Prüefige und dini Fortschritt.",
+    "home.planner.title": "Planer",
+    "home.planner.description":
+      "Organisier Lektione, Prüefige, Lerneinheite, Aktivitäte, Fristä und Erinnerige.",
+    "home.today": "Hüt",
+    "home.stat.average": "Notedurchschnitt Schuejahr",
+    "home.stat.nextExam": "Nächschti Prüefig",
+    "home.stat.nextExam.none": "Nüt gplant",
+    "home.stat.studyTime": "Lernziit hüt",
+    "home.stat.studyTime.none": "Nüt gplant",
+    "home.stat.activity": "Aktivität",
+    "home.stat.activity.none": "Hüt nüt",
+    "home.open": "{title} öffne",
+  },
   ru: {
     "home.subtitle": "{year} · всё для подготовки к экзаменам гимназии в одном спокойном месте.",
     "home.school.title": "Школа",
@@ -89,5 +107,23 @@ export const home = {
     "home.stat.activity": "Activité",
     "home.stat.activity.none": "Rien aujourd'hui",
     "home.open": "Ouvrir {title}",
+  },
+  it: {
+    "home.subtitle": "{year} · tutto per i tuoi esami del liceo in un unico posto tranquillo.",
+    "home.school.title": "Scuola",
+    "home.school.description":
+      "Apri le tue materie, i materiali di studio, i quiz, gli esami e i tuoi progressi.",
+    "home.planner.title": "Agenda",
+    "home.planner.description":
+      "Organizza lezioni, esami, sessioni di studio, attività, scadenze e promemoria.",
+    "home.today": "Oggi",
+    "home.stat.average": "Media dell'anno scolastico",
+    "home.stat.nextExam": "Prossimo esame",
+    "home.stat.nextExam.none": "Niente in programma",
+    "home.stat.studyTime": "Tempo di studio oggi",
+    "home.stat.studyTime.none": "Niente in programma",
+    "home.stat.activity": "Attività",
+    "home.stat.activity.none": "Niente oggi",
+    "home.open": "Apri {title}",
   },
 };

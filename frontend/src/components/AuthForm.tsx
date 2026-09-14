@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { GitHubLogo, LinkedInLogo, SpotifyLogo } from "@/components/app/BrandLogos";
 import { track, trackFailure } from "@/lib/telemetry";
 import { toast } from "sonner";
+import { UiError, localizedMessage } from "@/lib/ui-error";
 import { useI18n } from "@/lib/i18n/provider";
 import type { TranslationKey } from "@/lib/i18n/messages";
 
@@ -88,7 +89,7 @@ export function AuthForm() {
 
     const normalised = normaliseUsername(value);
     const invalid = validateUsername(normalised, t);
-    if (invalid) throw new Error(invalid);
+    if (invalid) throw new UiError(invalid);
 
     const { data, error } = await supabase.functions.invoke<UsernameLoginResult>("username-login", {
       body: { username: normalised, password },
@@ -112,7 +113,7 @@ export function AuthForm() {
   const handleSignUp = async () => {
     const normalised = normaliseUsername(username);
     const invalid = validateUsername(normalised, t);
-    if (invalid) throw new Error(invalid);
+    if (invalid) throw new UiError(invalid);
 
     // Ask the availability function first, so the student sees a clear message
     // instead of a database constraint error. When the check itself cannot run
@@ -123,10 +124,10 @@ export function AuthForm() {
     );
     if (!availability.error && availability.data) {
       if (availability.data.valid === false) {
-        throw new Error(t("auth.usernameCharsError"));
+        throw new UiError(t("auth.usernameCharsError"));
       }
       if (availability.data.available === false) {
-        throw new Error(t("auth.usernameTaken"));
+        throw new UiError(t("auth.usernameTaken"));
       }
     }
 
@@ -140,7 +141,7 @@ export function AuthForm() {
     });
     if (error) {
       if (/username/i.test(error.message) && /(exists|duplicate|unique)/i.test(error.message)) {
-        throw new Error(t("auth.usernameTaken"));
+        throw new UiError(t("auth.usernameTaken"));
       }
       throw error;
     }
@@ -182,7 +183,9 @@ export function AuthForm() {
           properties: { method: identifier.includes("@") ? "email" : "username" },
         },
       );
-      toast.error(err instanceof Error ? err.message : t("auth.authenticationFailed"));
+      // Raw provider errors are English: log them, show localized copy.
+      if (!localizedMessage(err)) console.error("auth failed", err);
+      toast.error(localizedMessage(err) ?? t("auth.authenticationFailed"));
     } finally {
       setIsLoading(false);
     }
@@ -200,7 +203,8 @@ export function AuthForm() {
         feature: "auth",
         properties: { provider },
       });
-      toast.error(error.message || t("auth.oauthSignInFailed", { provider: label }));
+      console.error("oauth sign-in failed", error);
+      toast.error(t("auth.oauthSignInFailed", { provider: label }));
       setIsLoading(false);
     }
   };
