@@ -27,24 +27,24 @@ export type Database = {
       feedback: {
         Row: {
           id: string;
-          user_id: string | null;
-          category: string | null;
+          user_id: string;
+          category: string;
           message: string;
-          context: Json | null;
-          created_at: string | null;
+          context: Json;
+          created_at: string;
         };
         Insert: {
           id?: string;
-          user_id?: string | null;
-          category?: string | null;
+          user_id: string;
+          category: string;
           message: string;
-          context?: Json | null;
-          created_at?: string | null;
+          context: Json;
+          created_at?: string;
         };
         Update: {
-          category?: string | null;
+          category?: string;
           message?: string;
-          context?: Json | null;
+          context?: Json;
         };
         Relationships: [];
       };
@@ -55,8 +55,8 @@ export type Database = {
           event_name: string;
           feature: string | null;
           subject: string | null;
-          properties: Json | null;
-          created_at: string | null;
+          properties: Json;
+          occurred_at: string;
         };
         Insert: {
           id?: string;
@@ -64,20 +64,20 @@ export type Database = {
           event_name: string;
           feature?: string | null;
           subject?: string | null;
-          properties?: Json | null;
-          created_at?: string | null;
+          properties?: Json;
+          occurred_at?: string;
         };
         Update: {
           event_name?: string;
           feature?: string | null;
           subject?: string | null;
-          properties?: Json | null;
+          properties?: Json;
         };
         Relationships: [];
       };
       profiles: {
         Row: {
-          id: string;
+          user_id: string;
           username: string | null;
           full_name: string | null;
           preferred_name: string | null;
@@ -90,7 +90,7 @@ export type Database = {
           [key: string]: Json | undefined;
         };
         Insert: {
-          id: string;
+          user_id: string;
           username?: string | null;
           full_name?: string | null;
           preferred_name?: string | null;
@@ -111,6 +111,7 @@ export type Database = {
         };
         Relationships: [];
       };
+
       user_preferences: {
         Row: {
           id: string;
