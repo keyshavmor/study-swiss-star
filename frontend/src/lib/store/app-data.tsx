@@ -43,7 +43,6 @@ function trackPlanner(
   });
 }
 
-
 interface DataContextValue extends DataState {
   demoMode: boolean;
   setDemoMode: (on: boolean) => void;

@@ -57,7 +57,6 @@ interface UsernameAvailabilityResult {
   valid?: boolean;
 }
 
-
 export function AuthForm() {
   const [mode, setMode] = useState<Mode>("signin");
   const [identifier, setIdentifier] = useState("");
@@ -127,8 +126,6 @@ export function AuthForm() {
         throw new Error("That username is already taken. Please pick another one.");
       }
     }
-
-
 
     const { error } = await supabase.auth.signUp({
       email: signupEmail.trim(),
