@@ -27,20 +27,29 @@ Auth-gated routes live under `frontend/src/routes/_authenticated/` and are prote
 
 ## Detail
 
-### `/` — Title screen
-- **File:** `frontend/src/routes/index.tsx` · **Auth:** no
-- **Purpose:** entry screen with "School" and "Planner" cards, theme toggle.
-- **Components:** `ThemeToggle`, `LiveClock`, `Button`, `Card`.
-- **Data source / storage:** static JSX; theme in `localStorage`.
-- **Future backend:** none. **Endpoints:** none. **Can stay frontend-only: yes.**
-
-### `/auth` — Sign in / sign up
-- **File:** `frontend/src/routes/auth.tsx` · **Auth:** no (redirects when signed in)
-- **Components:** `AuthForm.tsx`, `Input`, `Button`.
-- **Data source:** `supabase.auth.signInWithPassword` / `signUp` / `resetPasswordForEmail`, and `signInWithOAuth` for `github`, `linkedin_oidc`, `spotify`.
+### `/` — Welcome + authentication
+- **File:** `frontend/src/routes/index.tsx` · **Auth:** no; `beforeLoad` redirects signed-in users to `/home`
+- **Purpose:** the single entry screen. Short welcome copy explaining the study assistant, plus the
+  sign-in / sign-up form. The old "School"/"Planner" landing cards no longer live here — the
+  post-login dashboard is `/home`.
+- **Components:** `AuthForm.tsx`, `ThemeToggle`, `BrandLogos` (GitHub, LinkedIn, Spotify).
+- **Data source:**
+  - email + password → `supabase.auth.signInWithPassword`
+  - username + password → Edge Function `username-login`, then `supabase.auth.setSession`
+  - sign-up → `supabase.auth.signUp` with a compulsory `options.data.username`
+    (`^[a-z0-9._-]{3,30}$`); the auth trigger creates `profiles.username`
+  - password reset → `supabase.auth.resetPasswordForEmail` (always email-based; if the user typed a
+    username we ask for the email rather than resolving it, to avoid account enumeration)
+  - OAuth → `supabase.auth.signInWithOAuth` for `github`, `linkedin_oidc`, `spotify` with
+    `redirectTo` = `${origin}/home`
 - **Storage:** Supabase session in browser storage.
-- **Future backend:** none in Stage 1. Python backend trusts a locally-signed-in user; optional
-  `X-Student-Id` header. **Endpoints:** none. **Frontend-only: no.**
+- **Frontend-only: no.**
+
+### `/auth` — Legacy authentication URL
+- **File:** `frontend/src/routes/auth.tsx` · **Auth:** no
+- **Purpose:** kept only so old links keep working. It redirects to `/home` when a session exists
+  and to `/` otherwise; there is no second auth implementation.
+
 
 ### `/home` — Home dashboard
 - **File:** `_authenticated/home.tsx`
