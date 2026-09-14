@@ -208,7 +208,7 @@ function PlannerPage() {
       }
     }
     return out;
-  }, [weekOccurrences, t, formatDate]);
+  }, [weekOccurrences, t, formatDateCompact]);
 
   const studyMinutes = weekOccurrences
     .filter((o) => o.event.category === "Study session")
