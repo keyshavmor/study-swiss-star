@@ -369,7 +369,7 @@ export function PreferencesSections() {
     { key: "exam_reminders", label: "Exam reminders" },
     { key: "daily_study_summary", label: "Daily study summary" },
     { key: "sound_effects", label: "Sound effects" },
-    { key: "sound_effects", label: "Sound effects" },
+
     {
       key: "auto_storage_cleanup",
       label: "Automatic cleanup when storage is nearly full",
