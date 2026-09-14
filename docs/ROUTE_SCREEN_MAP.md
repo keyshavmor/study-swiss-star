@@ -8,8 +8,9 @@ Auth-gated routes live under `frontend/src/routes/_authenticated/` and are prote
 
 | URL | Route file | Screen | Auth | Frontend-only possible? |
 | --- | --- | --- | --- | --- |
-| `/` | `frontend/src/routes/index.tsx` | Title screen | No | Yes |
-| `/auth` | `frontend/src/routes/auth.tsx` | Sign in / sign up | No | No (Supabase) |
+| `/` | `frontend/src/routes/index.tsx` | Welcome + sign in / sign up | No (redirects signed-in users to `/home`) | No (Supabase) |
+| `/auth` | `frontend/src/routes/auth.tsx` | Redirect only (`/` when signed out, `/home` when signed in) | No | No (Supabase) |
+
 | `/home` | `_authenticated/home.tsx` | Home dashboard | Yes | Yes (today) |
 | `/chat` | `_authenticated/chat.index.tsx` | Chat redirect | Yes | No |
 | `/chat/$threadId` | `_authenticated/chat.$threadId.tsx` | Study chat | Yes | No |
