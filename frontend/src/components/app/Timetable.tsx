@@ -190,6 +190,7 @@ export function Timetable({
                           o.event.done && "opacity-60",
                         )}
                         onPointerDown={(e) => {
+                          if (readOnly) return;
                           (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
                           setDrag({
                             key,
@@ -201,6 +202,7 @@ export function Timetable({
                             moved: false,
                           });
                         }}
+
                         onPointerMove={(e) => {
                           setDrag((d) => {
                             if (!d || d.key !== key) return d;
