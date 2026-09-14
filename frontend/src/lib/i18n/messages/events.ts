@@ -1,4 +1,4 @@
-/** events translations for the five approved application languages. */
+/** events translations for the seven approved application languages. */
 export const events = {
   en: {
     "events.category.schoolClass": "School class",

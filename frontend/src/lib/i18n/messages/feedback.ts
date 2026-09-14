@@ -1,4 +1,4 @@
-/** feedback translations for the five approved application languages. */
+/** feedback translations for the seven approved application languages. */
 export const feedback = {
   en: {
     "feedback.heading": "Feedback",

@@ -1,4 +1,4 @@
-/** stats translations for the five approved application languages. */
+/** stats translations for the seven approved application languages. */
 export const stats = {
   en: {
     "stats.crumb.home": "Home",

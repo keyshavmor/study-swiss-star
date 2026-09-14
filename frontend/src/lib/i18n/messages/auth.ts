@@ -1,4 +1,4 @@
-/** auth translations for the five approved application languages. */
+/** auth translations for the seven approved application languages. */
 export const auth = {
   en: {
     "auth.appName": "Alim's Study Assistant",

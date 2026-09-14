@@ -1,4 +1,4 @@
-/** chat translations for the five approved application languages. */
+/** chat translations for the seven approved application languages. */
 export const chat = {
   en: {
     "chat.newSession": "New study session",

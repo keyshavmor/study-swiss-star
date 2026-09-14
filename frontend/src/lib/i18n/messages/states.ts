@@ -1,4 +1,4 @@
-/** states translations for the five approved application languages. */
+/** states translations for the seven approved application languages. */
 export const states = {
   en: {},
   de: {},

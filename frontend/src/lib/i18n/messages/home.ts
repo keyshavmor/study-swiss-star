@@ -1,4 +1,4 @@
-/** home translations for the five approved application languages. */
+/** home translations for the seven approved application languages. */
 export const home = {
   en: {
     "home.subtitle": "{year} · everything for your Gymnasium exams in one calm place.",

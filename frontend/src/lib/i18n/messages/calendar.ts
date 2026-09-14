@@ -1,4 +1,4 @@
-/** calendar translations for the five approved application languages. */
+/** calendar translations for the seven approved application languages. */
 export const calendar = {
   en: {
     "calendar.description":

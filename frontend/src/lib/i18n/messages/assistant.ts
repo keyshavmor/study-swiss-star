@@ -1,4 +1,4 @@
-/** assistant translations for the five approved application languages. */
+/** assistant translations for the seven approved application languages. */
 export const assistant = {
   en: {
     "assistant.pageTitle": "Assistant",

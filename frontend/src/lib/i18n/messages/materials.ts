@@ -1,4 +1,4 @@
-/** materials translations for the five approved application languages. */
+/** materials translations for the seven approved application languages. */
 export const materials = {
   en: {
     "materials.dialog.title.edit": "Edit material",

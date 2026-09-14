@@ -1,4 +1,4 @@
-/** subject translations for the five approved application languages. */
+/** subject translations for the seven approved application languages. */
 export const subject = {
   en: {
     "subject.notFound.heading": "Subject not found",

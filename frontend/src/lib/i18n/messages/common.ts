@@ -1,4 +1,4 @@
-/** common translations for the five approved application languages. */
+/** common translations for the seven approved application languages. */
 export const common = {
   en: {
     "common.appName": "Alim's Study Assistant",

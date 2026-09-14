@@ -1,4 +1,4 @@
-/** grades translations for the five approved application languages. */
+/** grades translations for the seven approved application languages. */
 export const grades = {
   en: {
     "grades.trend.improving": "Improving",

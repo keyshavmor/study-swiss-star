@@ -42,7 +42,7 @@ export type ReplyLanguagePolicy = "message_then_app" | "app_only";
 
 export interface UserPreferences {
   selected_qwen_model: string;
-  /** One of the five approved application languages. */
+  /** One of the seven approved application languages. */
   app_language: LanguageCode;
   /**
    * Live Supabase default is `message_then_app`: a confidently detected message
