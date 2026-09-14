@@ -303,10 +303,7 @@ export function AssistantChat({ threadId }: { threadId?: string }) {
             messages.map((message) => (
               <div
                 key={message.id}
-                className={cn(
-                  "flex",
-                  message.role === "user" ? "justify-end" : "justify-start",
-                )}
+                className={cn("flex", message.role === "user" ? "justify-end" : "justify-start")}
               >
                 <div
                   className={cn(
