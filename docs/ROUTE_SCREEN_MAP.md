@@ -19,7 +19,7 @@ Auth-gated routes live under `frontend/src/routes/_authenticated/` and are prote
 | `/planner` | `_authenticated/planner.tsx` | Weekly planner | Yes | Yes (except study-plan generation) |
 | `/stats` | `_authenticated/stats.tsx` | Statistics | Yes | Yes |
 | `/profile` | `_authenticated/profile.tsx` | Student profile | Yes | Yes |
-| `/feedback` | `_authenticated/feedback.tsx` | Feedback | Yes | No (should persist) |
+| `/feedback` | `_authenticated/feedback.tsx` | Feedback | Yes | No (Edge Function `feedback-submit`) |
 | `/help` | `_authenticated/help.tsx` | Help | Yes | Yes |
 | `/settings` | `_authenticated/settings.tsx` | Settings | Yes | Partly |
 | `/diagnostics` | `_authenticated/diagnostics.tsx` | Diagnostics | Yes | No (needs health) |
