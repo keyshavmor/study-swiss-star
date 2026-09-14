@@ -3,8 +3,8 @@
 Sequence diagrams for the current chat path and the target paths for unfinished subject tools.
 Unless a section says implemented, it is a target flow. Participants:
 **Student**, **UI** (Lovable frontend), **SF** (TanStack route or planned API client),
-**PY** (Python FastAPI), **SB** (Supabase), **LS** (localStorage / `AppDataProvider`),
-**RAG** (SQLite chunks / hybrid retrieval), **FILES** (subject files), **LLM** (local OpenAI-compatible server).
+**PY** (local Python FastAPI), **SB** (canonical Supabase), **STATE** (Supabase-backed `AppDataProvider` plus UUID cache),
+**RAG** (user-scoped Supabase chunks / local hybrid retrieval), **FILES** (private Storage objects), **LLM** (local OpenAI-compatible server).
 
 ## 1. Local app startup (target; health banner not yet implemented)
 
@@ -12,13 +12,13 @@ Unless a section says implemented, it is a target flow. Participants:
 sequenceDiagram
     participant Student
     participant UI as Lovable UI
-    participant LS as localStorage/AppDataProvider
+    participant LS as Supabase-backed AppDataProvider
     participant SF as Frontend server bridge
     participant PY as Python FastAPI
     Student->>UI: open http://localhost:8080
     UI->>UI: mount __root providers (Query, Theme, AppData, AcademicYear)
-    UI->>LS: hydrate assessments, events, materials, links, profile
-    LS-->>UI: prototype state (or demo seed if demo mode on)
+    UI->>LS: hydrate this auth.users.id from Supabase
+    LS-->>UI: user state (or isolated demo seed)
     UI->>SF: GET /health
     SF->>PY: GET http://localhost:8001/health
     alt backend up
@@ -42,7 +42,7 @@ sequenceDiagram
     alt no session
         SB-->>UI: null
         UI-->>Student: redirect /auth (AuthForm)
-        Student->>UI: email+password or Google
+        Student->>UI: email+password, Google, Apple, or Microsoft
         UI->>SB: signInWithPassword / OAuth
         SB-->>UI: session + access token
         UI-->>Student: redirect back to /home
@@ -58,7 +58,7 @@ sequenceDiagram
 sequenceDiagram
     participant Student
     participant UI as Lovable UI
-    participant LS as localStorage/AppDataProvider
+    participant LS as Supabase-backed AppDataProvider
     participant SF as Frontend server bridge
     participant PY as Python FastAPI
     Student->>UI: open /school
@@ -79,7 +79,7 @@ sequenceDiagram
 sequenceDiagram
     participant Student
     participant UI as Lovable UI
-    participant LS as localStorage/AppDataProvider
+    participant LS as Supabase-backed AppDataProvider
     participant SF as Frontend server bridge
     participant PY as Python FastAPI
     Student->>UI: click subject card → /school/physics
@@ -100,7 +100,7 @@ sequenceDiagram
 sequenceDiagram
     participant Student
     participant UI as Lovable UI
-    participant LS as localStorage/AppDataProvider
+    participant LS as Supabase-backed AppDataProvider
     participant SF as Frontend server bridge
     participant PY as Python FastAPI
     Student->>UI: open /school/spf
@@ -124,15 +124,15 @@ sequenceDiagram
     participant SF as TanStack /api/chat
     participant SB as Supabase
     participant PY as Python FastAPI
-    participant RAG as Context Manager/SQLite
+    participant RAG as Context Manager/Supabase rows
     participant WEB as Budgeted web retrieval
     participant FILES as Subject files
     participant LLM as Qwen3.8-27B/llama.cpp
     Student->>UI: type question, submit
     UI->>UI: Shimmer "Thinking…", composer disabled
     UI->>SF: sendMessage(question)
-    SF->>SB: persist user message (Stage 1 writer)
-    SF->>PY: POST /api/chat {thread_id, current question, subject/language/year/grade, include_sources:true, allow_web:true, stream:false}
+    SF->>SB: persist user message (canonical transcript writer)
+    SF->>PY: POST /api/chat + Authorization bearer {thread_id, current question, subject/language/year/grade, include_sources:true, allow_web:true, stream:false}
     PY->>RAG: intent-gated dense + BM25 retrieval, RRF, rerank, deduplicate, budget
     opt explicit latest/current/web intent
         PY->>WEB: search relevant current information
@@ -202,7 +202,7 @@ sequenceDiagram
     participant PY as Python FastAPI
     participant RAG as Hybrid context retrieval
     participant LLM as Qwen3.8-27B/llama.cpp
-    participant LS as localStorage/AppDataProvider
+    participant LS as Supabase-backed AppDataProvider
     Student->>UI: submit answer for exam question (max 8 points)
     UI-->>Student: "Marking…" spinner
     SF->>PY: POST /api/grade {question, student_answer, max_points:8, rubric_id, subject_id, language}
@@ -224,7 +224,7 @@ sequenceDiagram
 sequenceDiagram
     participant Student
     participant UI as Lovable UI
-    participant LS as localStorage/AppDataProvider
+    participant LS as Supabase-backed AppDataProvider
     participant SF as Frontend server bridge
     participant PY as Python FastAPI
     participant LLM as Qwen3.8-27B/llama.cpp
@@ -251,7 +251,7 @@ sequenceDiagram
     participant PY as Python FastAPI
     participant FILES as Subject files
     participant RAG as Hybrid context retrieval
-    participant LS as localStorage/AppDataProvider
+    participant LS as Supabase-backed AppDataProvider
     Student->>UI: MaterialsPanel → upload "Kinetik — Skript.pdf" (section: Learning Material)
     UI-->>Student: Uploading → Parsing → Indexing
     SF->>PY: POST /api/import/document (multipart: file, subject_id, component_subject_id, section, language)
@@ -276,7 +276,7 @@ sequenceDiagram
     participant UI as Lovable UI
     participant SF as Frontend server bridge
     participant PY as Python FastAPI
-    participant LS as localStorage/AppDataProvider
+    participant LS as Supabase-backed AppDataProvider
     Student->>UI: 👎 on an answer or /feedback form
     SF->>PY: POST /api/feedback {category, rating, message, route, thread_id, message_id, subject_id, language}
     alt success
@@ -319,7 +319,7 @@ sequenceDiagram
     participant UI as Lovable UI
     participant SF as Frontend server bridge
     participant PY as Python FastAPI
-    participant LS as localStorage/AppDataProvider
+    participant LS as Supabase-backed AppDataProvider
     UI->>SF: GET /health (startup + every 60 s)
     SF->>PY: GET /health
     PY--xSF: ECONNREFUSED / timeout

@@ -13,7 +13,7 @@ from ..models import (
     ConversationMessage,
     ConversationSummary,
 )
-from ..store import SQLiteContextStore
+from ..store_base import ContextStore
 from ..text import lexical_overlap
 from ..tokenization import TokenCounter
 
@@ -65,7 +65,7 @@ class ConversationMemoryManager:
 
     def __init__(
         self,
-        store: SQLiteContextStore,
+        store: ContextStore,
         counter: TokenCounter,
         config: ConversationConfig,
         summarizer: ConversationSummarizer | None = None,

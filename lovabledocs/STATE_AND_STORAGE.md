@@ -1,67 +1,37 @@
-# State & Storage Ownership
+# State and storage ownership
 
-Where each kind of data lives today, and where it should live once the Python backend exists.
+This is the current architecture decision. It supersedes the former staged/localStorage design.
 
-## Ownership table
+| Data | Canonical owner | Local behavior |
+| --- | --- | --- |
+| Auth identity | Supabase Auth `auth.users.id` | Browser holds the normal Supabase session |
+| Profile, preferences, assessments, planner, links, notifications | Supabase Postgres with RLS | `AppDataProvider` keeps optimistic memory state and an account-scoped disposable cache |
+| Threads and UI messages | Supabase `threads` / `messages` | One authoritative transcript; Python reads it for context but does not duplicate it |
+| Original student files | Private `user-materials` Storage bucket | Objects use `{auth.uid()}/…`; local parsing uses a deleted temporary file |
+| Document metadata/chunks/embeddings | Supabase `documents` / `document_chunks` with direct ownership | Parsing, chunking, token counting, embedding, retrieval, and reranking execute locally |
+| Memories, events, summaries, artifacts, working memory | Supabase Postgres with RLS | Context and memory algorithms execute locally |
+| Quiz/exam/grading/study-plan/usage/feedback history | Supabase Postgres with RLS | Local Qwen generates/evaluates; cloud stores durable results |
+| Theme | Device | Pure device preference may remain local |
+| Demo data | Device/in-memory | Isolated from signed-in data and never uploaded |
+| Non-sensitive web/reference cache | Local ephemeral cache | Must contain no durable private user history |
+| SQLite | Unit/E2E test adapter | Never the production canonical user store |
 
-| Data type | Current file/module | Current owner | Current storage | Lifecycle today | Future owner | Stay in localStorage? | Move to Python? | Stay in Supabase? | Notes / risk |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Chat threads | `frontend/src/lib/chat.functions.ts` (`listThreads`, `createThread`, `deleteThread`) | Supabase | Postgres `threads` | Per user, permanent | Supabase (Stage 1) | No | Optional (Stage 2) | **Yes** | Moving them breaks cross-device history; only move if fully offline use is required |
-| Chat messages | `frontend/src/routes/api/chat.ts`, `listMessages` | Supabase | Postgres `messages` | Permanent display transcript | Supabase display transcript + Python context mirror | No | Context mirror | Yes | TanStack is the only Supabase writer; Python's mirror supports compaction/retrieval |
-| AI answer metadata (sources, model, retrieval) | Python response + AI SDK data part | Python/UI message | SQLite context + Supabase message `parts` | Per answer | **Python** | No | Yes | Yes, inside message parts | Restored with the stored UI message |
-| Context memories and summaries | `backend/app/context/*` | Python | Local SQLite | Persistent/expiry by type | **Python** | No | Yes | No | Student, episodic, conversation, working, and artifact memory are separate tables |
-| Subject list (15 subjects) | `frontend/src/lib/mock/subjects.ts` | Frontend | static module | Compile-time | **Frontend** | n/a | No | No | Backend must never redefine the list |
-| Subject languages | `frontend/src/lib/mock/subjects.ts` | Frontend | static module | Compile-time | Frontend (sent as request context) | n/a | No | No | Mapped to `de/en/fr` at the API boundary |
-| SPF combined info | `frontend/src/lib/mock/subjects.ts` + `grade-math.ts` (`summariseSubjectView`) | Frontend | static + derived | Runtime | **Frontend** for display, Python for corpus routing | n/a | No | No | Do not duplicate combining logic in Python |
-| Assessments / grades | `frontend/src/lib/store/app-data.tsx`, `types.ts` | `AppDataProvider` | `localStorage` | Full CRUD, user-owned | localStorage (Stage 1–2) | **Yes** | No | Stage 3 optional | Risk: single-browser only, cleared with site data |
-| Grade math results | `frontend/src/lib/grade-math.ts` | Frontend | derived, not stored | Recomputed each render | **Frontend** | n/a | No | No | Frontend stays source of truth for averages/rounding |
-| Planner events | `frontend/src/lib/store/app-data.tsx` | `AppDataProvider` | `localStorage` | Full CRUD + recurrence | localStorage | **Yes** | No | Stage 3 optional | Recurrence expansion in `frontend/src/lib/date-utils.ts` stays local |
-| Timetable events | same as planner (`category: "School class"`, recurring) | `AppDataProvider` | `localStorage` | Recurring series | localStorage | Yes | No | No | Used to compute availability for study plans |
-| Materials (user-added) | `frontend/src/lib/store/app-data.tsx`, `MaterialsPanel` | `AppDataProvider` | `localStorage` | Full CRUD | localStorage | Yes | No | No | Merged with backend list, `origin: "local"` |
-| Materials (indexed corpus) | `backend/app/services/documents.py` | Python | Local SQLite chunks + cached embeddings | Persistent | **Python** | No | **Yes** | No | Text ingestion API is live; PDF/DOCX parser service is optional-dependency based |
-| School links | `frontend/src/lib/store/app-data.tsx`, `SchoolLinksSection` | `AppDataProvider` | `localStorage` | Full CRUD | localStorage | Yes | No | No | No backend need |
-| Student profile | `frontend/src/lib/store/app-data.tsx`, `EditProfileDialog` | `AppDataProvider` | `localStorage` | Editable | localStorage | Yes | No | Stage 3 optional | `grade_level` and language prefs are sent as request context |
-| Demo data | `frontend/src/lib/store/demo-data.ts`, `app/DemoMode.tsx` | `AppDataProvider` | `localStorage` | Toggleable, resettable | localStorage | **Yes** | No | No | Must keep working with the backend offline |
-| Academic year context | `frontend/src/lib/store/academic-year.tsx`, `frontend/src/lib/mock/academic.ts` | `AcademicYearProvider` | context + `localStorage` | Session-persistent | Frontend | Yes | No | No | Default 2026–27, Grade 11; sent on every AI request |
-| Feedback | `_authenticated/feedback.tsx` | local form | none (toast only) | Ephemeral | **Python** | Queue only on failure | **Yes** | No | Risk: feedback is currently lost |
-| AI quizzes | — | none | — | — | **Python** (history) + optional local cache | Cache only | **Yes** | No | Practice results may become local `Assessment` records |
-| AI mock exams | — | none | — | — | **Python** | Cache only | **Yes** | No | Same as quizzes |
-| Grading results | `grade-math.ts` computes locally today | Frontend | derived | Ephemeral | **Python** for evaluation, localStorage for kept records | Yes (as `Assessment`) | Yes (history) | No | Only saved to grades when the student confirms; `source: "AI practice assessment"` |
-| Study plans | planner `generated: true` events | `AppDataProvider` | `localStorage` | Editable | Python generates, localStorage stores | **Yes** | Generation only | No | Never auto-insert without review |
-| Source snippets | FastAPI chat response | Python | Compiled response + Supabase UI message parts | Per answer | **Python** | No | **Yes** | In message parts | Rendered by `SourceSnippetList` |
-| Model / backend health | — | none | — | — | **Python** | No | **Yes** | No | Polled, never persisted |
-| Web result cache | `backend/app/context/web.py` | Python | `app-data/context/alim-context.db` | 24-hour TTL by default | **Python** | No | Yes | No | Query, URL, provider, fetch time; internet disclosure is user/config controlled |
-| Qwen model weights | `models/Qwen3.8-27B/` | Local runtime | GGUF | Operator-managed | **llama.cpp** | No | No | No | Ignored by Git; validated before every managed startup |
+## Account switching and offline behavior
 
-## Staged migration path
+The provider clears private state before hydrating a new `auth.users.id`. Cache keys include that UUID
+(`asa.data.v3.{uuid}` and `asa.year.v2.{uuid}`), so data from account A cannot render for account B.
+Cloud mutations are optimistic; failures remain in that account's local cache and show a visible sync
+error. The cache is not authoritative.
 
-### Stage 1 — Route chat context to Python (implemented)
-- Keep the UI, design system, routes and the 15-subject model untouched.
-- Keep all prototype data (grades, planner, materials, links, profile, demo mode) in `localStorage`.
-- Keep Supabase auth and chat thread/message persistence exactly as-is.
-- `context-backend.server.ts` keeps the existing authenticated chat route and proxies to Python.
-- `SourceSnippetList` renders provenance returned with assistant data parts.
-- The authenticated frontend route always proxies AI requests to FastAPI and local Qwen; it returns 503 when that backend is unavailable.
-- Health polling/banner remains to be implemented.
+## Security boundaries
 
-### Stage 2 — Python owns additional AI artefacts (partly implemented)
-- Python stores context artifacts, source chunks, memories, events, and conversation summaries in
-  SQLite. Quiz history, mock exams, grading history, study plans, and feedback remain future work.
-- Wire learning goals, indexed materials and document import to Python.
-- Optionally mirror chat transcripts in Python for offline use, with Supabase still authoritative.
-- **Exit criteria:** every AI feature works without a cloud-generation service; sign-in and Supabase persistence remain separate network dependencies.
+- Every user-owned row has `user_id uuid` referencing `auth.users(id)` and explicit SELECT, INSERT,
+  UPDATE, and DELETE policies using `(select auth.uid())`.
+- Composite foreign keys enforce message/thread, chunk/document, summary/thread, working/thread,
+  quiz/attempt, and mock-exam/attempt ownership.
+- Normal frontend and FastAPI access uses a publishable key plus the user's JWT. Secret/service-role
+  keys are not used for end-user CRUD.
+- FastAPI rejects `X-Student-Id` when it disagrees with verified `sub`.
+- Storage is private and checks the first path segment with `storage.foldername(name)`.
 
-### Stage 3 — Storage cloud role decided
-- Keep Supabase for authentication, chat persistence, cross-device sync and multi-user storage; or
-- Optionally sync prototype data (grades, planner, materials, profile) to Supabase for backup and
-  device switching, with `localStorage` as the offline cache.
-
-## Risks to track
-
-| Risk | Mitigation |
-| --- | --- |
-| `localStorage` loss wipes all grades and planner data | Add export/import JSON in `/settings` before Stage 3 |
-| Double persistence of chat messages (Supabase + Python) | Single writer; the other side stores metadata keyed by `message_id` |
-| Grade math diverging between TS and Python | Python returns exact `swiss_grade` + `grade_formula`; the frontend owns rounding and colours |
-| Subject IDs drifting | IDs are frozen in `SUBJECT_MODEL_AND_LANGUAGE_RULES.md`; backend validates and 404s unknown IDs |
-| Backend offline degrading the whole app | All non-AI screens must work without the backend; enforced by the manual test checklist |
+The migration/runbook is in [SUPABASE_MIGRATION.md](SUPABASE_MIGRATION.md).

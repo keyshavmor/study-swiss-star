@@ -41,6 +41,13 @@ class FakeLocalModel:
         )
 
 
+class FakeTokenVerifier:
+    """Treat deterministic test tokens as verified Supabase subjects."""
+
+    def verify(self, token: str):
+        return {"sub": token.removeprefix("token-")}
+
+
 class ApiTests(unittest.IsolatedAsyncioTestCase):
     """Exercise health, chat, persistence, and standardized errors through ASGI."""
 
@@ -50,7 +57,7 @@ class ApiTests(unittest.IsolatedAsyncioTestCase):
         self.store = SQLiteContextStore()
         self.manager = ContextManager(ContextConfig(), store=self.store)
         self.model = FakeLocalModel()
-        app = create_app(self.manager, self.model)
+        app = create_app(self.manager, self.model, auth_verifier=FakeTokenVerifier())
         self.client = AsyncClient(
             transport=ASGITransport(app=app), base_url="http://test"
         )
@@ -86,7 +93,7 @@ class ApiTests(unittest.IsolatedAsyncioTestCase):
 
         response = await self.client.post(
             "/api/chat",
-            headers={"X-Student-Id": "student-1"},
+            headers={"Authorization": "Bearer token-student-1"},
             json={
                 "thread_id": "thread-1",
                 "question": "Why does oxidative phosphorylation make more ATP than glycolysis?",
@@ -110,11 +117,34 @@ class ApiTests(unittest.IsolatedAsyncioTestCase):
 
         response = await self.client.post(
             "/api/chat",
+            headers={"Authorization": "Bearer token-student-1"},
             json={"thread_id": "thread-1", "question": "Hello", "stream": True},
         )
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.json()["error"]["code"], "invalid_request")
         self.assertIn("X-Request-Id", response.headers)
+
+    async def test_private_endpoints_require_auth_and_reject_spoofed_student_header(
+        self,
+    ) -> None:
+        """A legacy header cannot replace or override the verified JWT subject."""
+
+        missing = await self.client.post(
+            "/api/context/events",
+            json={"event_type": "study_session", "content": "Reviewed meiosis"},
+        )
+        self.assertEqual(missing.status_code, 401)
+
+        spoofed = await self.client.post(
+            "/api/context/events",
+            headers={
+                "Authorization": "Bearer token-user-a",
+                "X-Student-Id": "user-b",
+            },
+            json={"event_type": "study_session", "content": "Reviewed meiosis"},
+        )
+        self.assertEqual(spoofed.status_code, 403)
+        self.assertEqual(spoofed.json()["error"]["code"], "student_id_mismatch")
 
 
 if __name__ == "__main__":

@@ -6,7 +6,7 @@ import math
 from collections import Counter
 
 from ..models import ContextItem
-from ..store import SQLiteContextStore
+from ..store_base import ContextStore
 from ..text import terms
 from .common import chunk_to_item
 
@@ -16,7 +16,7 @@ class SparseRetriever:
 
     def __init__(
         self,
-        store: SQLiteContextStore,
+        store: ContextStore,
         *,
         k1: float = 1.5,
         b: float = 0.75,
@@ -33,6 +33,7 @@ class SparseRetriever:
         self,
         query: str,
         *,
+        student_id: str,
         subject: str | None = None,
         document_types: set[str] | None = None,
         document_ids: set[str] | None = None,
@@ -41,6 +42,7 @@ class SparseRetriever:
         """Return the highest-scoring lexical matches."""
 
         chunks = self.store.list_chunks(
+            student_id=student_id,
             subject=subject,
             document_types=document_types,
             document_ids=document_ids,

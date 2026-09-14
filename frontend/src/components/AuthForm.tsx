@@ -2,11 +2,15 @@
 import { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
-import { lovable } from "@/integrations/lovable";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import {
+  signInWithEmail,
+  signInWithSocialProvider,
+  type SocialProvider,
+} from "@/lib/auth.supabase";
 
 export function AuthForm() {
   const [mode, setMode] = useState<"signin" | "signup">("signin");
@@ -20,20 +24,13 @@ export function AuthForm() {
     setIsLoading(true);
 
     try {
+      const redirectTo =
+        import.meta.env["VITE_AUTH_REDIRECT_URL"]?.trim() || window.location.origin;
+      const { error } = await signInWithEmail(supabase.auth, mode, email, password, redirectTo);
+      if (error) throw error;
       if (mode === "signup") {
-        const { error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: { emailRedirectTo: window.location.origin },
-        });
-        if (error) throw error;
         toast.success("Check your email to confirm your account.");
       } else {
-        const { error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
-        if (error) throw error;
         navigate({ to: "/chat" });
       }
     } catch (err) {
@@ -43,18 +40,13 @@ export function AuthForm() {
     }
   };
 
-  const handleGoogle = async () => {
+  const handleOAuth = async (provider: SocialProvider) => {
     setIsLoading(true);
-    const result = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: window.location.origin,
-    });
-    if (result.error) {
-      toast.error(result.error.message || "Google sign-in failed");
+    const redirectTo = import.meta.env["VITE_AUTH_REDIRECT_URL"]?.trim() || window.location.origin;
+    const { error } = await signInWithSocialProvider(supabase.auth, provider, redirectTo);
+    if (error) {
+      toast.error(error.message || "Social sign-in failed");
       setIsLoading(false);
-    } else if (result.redirected) {
-      // browser will redirect
-    } else {
-      navigate({ to: "/chat" });
     }
   };
 
@@ -103,9 +95,32 @@ export function AuthForm() {
         </div>
       </div>
 
-      <Button variant="outline" className="w-full" onClick={handleGoogle} disabled={isLoading}>
-        Continue with Google
-      </Button>
+      <div className="space-y-2">
+        <Button
+          variant="outline"
+          className="w-full"
+          onClick={() => handleOAuth("google")}
+          disabled={isLoading}
+        >
+          Continue with Google
+        </Button>
+        <Button
+          variant="outline"
+          className="w-full"
+          onClick={() => handleOAuth("apple")}
+          disabled={isLoading}
+        >
+          Continue with Apple
+        </Button>
+        <Button
+          variant="outline"
+          className="w-full"
+          onClick={() => handleOAuth("azure")}
+          disabled={isLoading}
+        >
+          Continue with Microsoft
+        </Button>
+      </div>
 
       <p className="text-center text-[14px] text-muted-foreground">
         {mode === "signin" ? "Don't have an account?" : "Already have an account?"}{" "}

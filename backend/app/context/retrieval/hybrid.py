@@ -96,6 +96,7 @@ class HybridRetriever:
         self,
         query: str,
         *,
+        student_id: str,
         subject: str | None = None,
         document_types: set[str] | None = None,
         document_ids: set[str] | None = None,
@@ -104,6 +105,7 @@ class HybridRetriever:
         """Retrieve, fuse, deduplicate, and retain debug candidate counts."""
 
         common = {
+            "student_id": student_id,
             "subject": subject,
             "document_types": document_types,
             "document_ids": document_ids,

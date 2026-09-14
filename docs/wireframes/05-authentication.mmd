@@ -2,7 +2,7 @@ sequenceDiagram
   actor Student
   participant Page as Protected page
   participant Gate as _authenticated route gate
-  participant Cloud as Lovable Cloud identity
+  participant Cloud as MY Supabase identity
   participant Auth as /auth and AuthForm
   Student->>Page: Open protected URL
   Page->>Gate: beforeLoad
@@ -10,7 +10,7 @@ sequenceDiagram
   alt No valid session
     Cloud-->>Gate: No user
     Gate-->>Student: Redirect to /auth
-    Student->>Auth: Email/password or Google sign-in
+    Student->>Auth: Email/password, Google, Apple, or Microsoft
     Auth->>Cloud: Authenticate
     Cloud-->>Auth: Session and access token
     Auth-->>Student: Navigate to /home
@@ -18,5 +18,7 @@ sequenceDiagram
     Cloud-->>Gate: User
     Gate-->>Page: Render protected screen
   end
+  Auth->>Gate: Bearer token forwarded to FastAPI
+  Gate->>Cloud: Validate token and derive verified sub
   Student->>Cloud: Sign out from account menu or chat
   Cloud-->>Student: Session cleared, navigate to /auth

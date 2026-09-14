@@ -16,6 +16,10 @@ dist-ssr
 .nitro
 *.local
 .local/
+.env
+.env.*
+!.env.example
+!**/.env.example
 __pycache__/
 *.py[cod]
 .pytest_cache/

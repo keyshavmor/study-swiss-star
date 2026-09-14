@@ -187,6 +187,10 @@ export interface Material {
   status: "Indexed" | "Processing" | "Needs review";
   added: string;
   archived?: boolean;
+  /** Private Supabase Storage path; never a public URL. */
+  storagePath?: string;
+  mimeType?: string;
+  byteSize?: number;
 }
 
 export const LINK_CATEGORIES = [

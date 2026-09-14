@@ -8,9 +8,9 @@ Classification of every significant component in the existing frontend.
 | --- | --- |
 | 🟦 UI | Pure presentational, no data access |
 | 🟪 LAYOUT | Layout / navigation shell |
-| 🟨 LOCAL | Reads/writes `AppDataProvider` (localStorage / mock data) |
+| 🟨 LOCAL | Reads/writes Supabase-backed `AppDataProvider`; demo state remains local |
 | 🟩 AUTH | Supabase auth / session |
-| 🟧 EDITOR | Lovable project/auth integration (not AI generation) |
+| 🟧 EDITOR | Lovable editor/preview/Git integration (not runtime auth or persistence) |
 | 🟥 PY | Python-backend-connected or planned |
 | 📊 GRADE | Grading / statistics |
 | 📄 DOC | Material / document handling |
@@ -83,11 +83,11 @@ components/ui/*                            🟦 UI      shadcn/Radix primitives,
 ## Major component detail
 
 ### `AuthForm.tsx` — 🟩 AUTH
-- **Purpose:** email/password sign-in and sign-up, Google OAuth, redirect after auth.
+- **Purpose:** email/password plus Google, Apple, and Microsoft/Azure sign-in through Supabase.
 - **Props:** none (route-level).
 - **Data source:** `supabase.auth` from `frontend/src/integrations/supabase/client.ts`.
 - **Future backend:** none. Python never sees credentials.
-- **Integration notes:** do not modify. If local demo without auth is required, add a separate
+- **Integration notes:** if local demo without auth is required, add a separate
   guest path — never weaken the `_authenticated` gate.
 
 ### `StudyChat.tsx` — 🟥 PY
@@ -106,7 +106,7 @@ components/ui/*                            🟦 UI      shadcn/Radix primitives,
 - **Purpose:** sidebar thread list with active highlight and delete.
 - **Props:** `{ threads: Thread[]; activeThreadId?: string; onDelete: (id) => void; isLoading: boolean }`.
 - **Data source:** threads passed down from `StudyChat` (Supabase).
-- **Future backend:** unchanged in Stage 1; only the fetcher changes if threads move to Python.
+- **Backend:** unchanged; Supabase permanently owns threads and messages.
 - **Integration notes:** `Thread` currently has `{id, title, subject, updated_at}` — map
   `subject → subject_id` in the client rather than changing this component.
 
@@ -155,7 +155,7 @@ components/ui/*                            🟦 UI      shadcn/Radix primitives,
 
 ### `app/StatsOverviewPanel.tsx` — 📊 GRADE
 - **Purpose:** yearly metrics, trend charts, subject ranking; SPF counted once.
-- **Data source:** `summariseYear` over local assessments.
+- **Data source:** `summariseYear` over Supabase-backed in-memory assessments.
 - **Future backend:** none.
 
 ### `app/Timetable.tsx` — 🟨 LOCAL

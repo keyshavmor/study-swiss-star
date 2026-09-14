@@ -64,8 +64,8 @@ The zero-configuration `auto` provider first searches operator-supplied `.md`, `
 `.html`, and `.htm` snapshots under `material/web/`, skips symbolic links and files larger than 4
 MiB, scans at most 512 entries per request, strips script/style content from HTML, and ranks matches
 deterministically. It records a title,
-`local://` path, provider, and source-file timestamp. Cached results live in the local SQLite
-context database and expire after 24 hours by default. Before lookup, the adapter removes request
+`local://` path, provider, and source-file timestamp. Cached results are ephemeral and local to the
+current backend process. Before lookup, the adapter removes request
 phrasing such as “browse”, “explain”, and “in one sentence”; the remaining topical terms drive
 relevance.
 

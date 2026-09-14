@@ -98,8 +98,48 @@ class ContextFlowTests(unittest.IsolatedAsyncioTestCase):
                     page=3,
                     token_count=self.counter.count(content),
                 )
-            ]
+            ],
+            student_id="student",
         )
+
+    async def test_private_rag_chunks_are_scoped_to_authenticated_student(self) -> None:
+        """Similarly named material owned by B never enters A's retrieval result."""
+
+        self.store.add_chunks(
+            [
+                DocumentChunk(
+                    id="a-private",
+                    document_id="a-document",
+                    title="Cell notes",
+                    content="ATP synthase uses student A's proton-gradient notes.",
+                    subject="biology",
+                    document_type="notes",
+                )
+            ],
+            student_id="student-a",
+        )
+        self.store.add_chunks(
+            [
+                DocumentChunk(
+                    id="b-private",
+                    document_id="b-document",
+                    title="Cell notes",
+                    content="ATP synthase secret material belonging only to student B.",
+                    subject="biology",
+                    document_type="notes",
+                )
+            ],
+            student_id="student-b",
+        )
+        compiled = await self.manager.build_context(
+            student_id="student-a",
+            conversation_id="thread-a",
+            user_message="Why does ATP synthase need a proton gradient?",
+            model_config=ModelConfig(model="test"),
+        )
+        ids = {item.id for item in compiled.retrieved_knowledge}
+        self.assertIn("a-private", ids)
+        self.assertNotIn("b-private", ids)
 
     async def test_biology_explanation_retrieves_source_and_misconception_only(
         self,

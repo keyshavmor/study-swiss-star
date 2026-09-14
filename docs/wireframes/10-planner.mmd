@@ -10,7 +10,7 @@ flowchart TD
   Scope -->|Yes one| Override[Store occurrence override or exception]
   Scope -->|Yes future| Split[End head and create tail series]
   Scope -->|Yes all| Series
-  Series --> Store[(Browser storage\nIMPLEMENTED LOCAL)]
+  Series --> Store[(Supabase-backed state\nUUID cache)]
   Override --> Store
   Split --> Store
   Generate[Generate study plan action\nPLANNED] -.-> Context[Send exams + free slots + limits]

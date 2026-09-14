@@ -11,7 +11,7 @@ route. It is the only context-selection and AI-generation path; backend outages 
 ```text
 StudyChat
   -> authenticated TanStack /api/chat (Supabase transcript writer)
-  -> local FastAPI /api/chat
+  -> local FastAPI /api/chat (verified Supabase bearer identity)
   -> ContextManager.build_context
        -> heuristic intent analysis
        -> selected memory/retrieval branches only
@@ -23,7 +23,7 @@ StudyChat
   -> configured local OpenAI-compatible model
   -> response + provenance -> Supabase transcript/UI
   -> ContextManager.process_response
-       -> local conversation mirror
+       -> Supabase memories/summaries linked to the canonical transcript
        -> controlled memory writer
        -> threshold-based rolling compaction
 ```
@@ -35,15 +35,15 @@ frontend transcript by default.
 
 ## Memory classes
 
-| Class | Stored in local SQLite | Selection policy |
+| Class | Durable storage | Selection policy |
 | --- | --- | --- |
 | Knowledge | `documents`, `document_chunks` | Hybrid retrieval only when intent needs course material |
 | Student | `student_memories` | Subject/topic/relevance/importance/confidence; controlled writes only |
 | Episodic | `learning_events` | Student + subject/topic/date/event relevance |
-| Conversation | `conversation_messages`, `conversation_summaries` | Recent messages + rolling summary + relevant older messages |
+| Conversation | Supabase `messages`, `conversation_summaries` | Recent messages + rolling summary + relevant older messages |
 | Working | `working_memory` | Conversation/task scoped, expiry-based; P0 only when explicitly critical |
-| Artifact | `context_artifacts` | Summary/location in prompt; full content remains in SQLite and searchable |
-| Reference | `web_cache` | Explicit current/web intent; local-first with web fallback, untrusted P2 context |
+| Artifact | Supabase `context_artifacts` | Summary/location in prompt; full content remains private and searchable |
+| Reference | Local ephemeral cache | Explicit current/web intent; local-first with web fallback, untrusted P2 context |
 
 Original conversation messages are not deleted when a summary is created. Student mastery,
 weakness, and misconception memories require repeated evidence by default. Casual chat and weak or
@@ -120,11 +120,12 @@ Unrelated Chemistry chunks and the rest of the Biology corpus are absent.
   relevant document/syllabus match. It first searches operator snapshots under `material/web/`. If no relevant
   match exists, the default `auto` provider uses Wikipedia. Use `ALIM_WEB_PROVIDER=local` to remain
   strictly offline.
-- PDF and DOCX file parsing require the `documents` optional dependency; the JSON text-ingestion
-  endpoint is the currently exposed ingestion route.
+- PDF and DOCX parsing require the `documents` optional dependency. Private Storage ingestion is
+  exposed at `/api/context/documents/storage`; files are downloaded with the user JWT and deleted
+  locally after parsing.
 - The FastAPI chat endpoint is non-streaming; the TanStack route converts the completed response to
   the AI SDK UI stream format.
-- Python keeps a local conversation mirror while Supabase remains authoritative for cross-device
-  chat display. The mirror is context state, not a second UI transcript owner.
+- Python reads the Supabase transcript and writes separate summaries/memories; it does not keep a
+  second durable conversation transcript.
 - Quiz, mock-exam, grading, study-plan, and multipart upload endpoints in `API_EXPECTATIONS.md`
   remain future integration contracts.

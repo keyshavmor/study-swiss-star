@@ -1,6 +1,6 @@
 flowchart TD
   Profile["/profile"] --> ProfileData[Edit student profile + academic year\nIMPLEMENTED LOCAL]
-  ProfileData --> Local[(Browser storage)]
+  ProfileData --> Local[(Supabase-backed state)]
   Settings["/settings"] --> Toggles[Exam reminders daily summary Apple sync sound\nPROTOTYPE UI ONLY]
   Settings -.-> Model[Backend mode and model status\nPLANNED]
   Demo[Demo Mode toggle] --> DemoData[Switch between user state and fresh demo state\nIMPLEMENTED LOCAL]

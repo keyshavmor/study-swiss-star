@@ -1,16 +1,17 @@
 flowchart LR
   Static[Static frontend\n15 subjects + languages + SPF mapping] --> UI[Rendered UI]
-  Local[(Browser storage\nassessments events materials links profile demo)] --> AppData[AppDataProvider]
+  Cloud[(MY Supabase\nall durable private state)] --> AppData[AppDataProvider]
+  Local[(UUID-scoped disposable cache + demo)] --> AppData
   AppData --> UI
   AppData --> Grade[grade-math.ts\nSwiss formula + summaries + SPF]
   Grade --> UI
-  Year[(Browser storage\nacademic year)] --> Academic[AcademicYearProvider]
+  Cloud --> Academic[AcademicYearProvider]
   Academic --> UI
-  Cloud[(Lovable Cloud\nusers threads messages)] --> ServerFns[Authenticated server functions]
+  Cloud --> ServerFns[Authenticated server functions]
   ServerFns --> UI
-  Python[(Python SQLite\nchunks memories artifacts)] --> FastAPI[FastAPI]
+  Python[(Local Python + Supabase RLS\nchunks memories artifacts)] --> FastAPI[FastAPI]
   FastAPI --> ChatAPI[TanStack /api/chat]
   ChatAPI --> UI
   Static -->|subject/language context| ChatAPI
   Academic -->|year/grade context| ChatAPI
-  Future[(Future Python records\nquiz exam grading plan feedback)] -. planned .-> FastAPI
+  Future[(Supabase durable models\nquiz exam grading plan feedback)] -. user scoped .-> FastAPI

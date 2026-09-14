@@ -41,6 +41,9 @@ def _json(value: Any) -> str:
 class SQLiteContextStore:
     """Local-first structured store. Original messages and artifact bodies are never discarded."""
 
+    canonical_transcript = False
+    location_scheme = "sqlite"
+
     def __init__(self, path: str | Path = ":memory:") -> None:
         """Open a thread-shareable SQLite database and apply its schema."""
 
@@ -269,6 +272,7 @@ class SQLiteContextStore:
     def list_chunks(
         self,
         *,
+        student_id: str,
         subject: str | None = None,
         document_types: set[str] | None = None,
         document_ids: set[str] | None = None,
@@ -276,22 +280,24 @@ class SQLiteContextStore:
     ) -> list[DocumentChunk]:
         """List recent chunks filtered by subject, document type, or document ID."""
 
-        clauses: list[str] = []
-        values: list[Any] = []
+        clauses: list[str] = ["(d.student_id = ? OR d.student_id IS NULL)"]
+        values: list[Any] = [student_id]
         if subject:
-            clauses.append("subject = ?")
+            clauses.append("c.subject = ?")
             values.append(subject)
         if document_types:
             marks = ",".join("?" for _ in document_types)
-            clauses.append(f"document_type IN ({marks})")
+            clauses.append(f"c.document_type IN ({marks})")
             values.extend(sorted(document_types))
         if document_ids:
             marks = ",".join("?" for _ in document_ids)
-            clauses.append(f"document_id IN ({marks})")
+            clauses.append(f"c.document_id IN ({marks})")
             values.extend(sorted(document_ids))
         where = f"WHERE {' AND '.join(clauses)}" if clauses else ""
         rows = self._connection.execute(
-            f"SELECT * FROM document_chunks {where} ORDER BY created_at DESC LIMIT ?",
+            f"""SELECT c.* FROM document_chunks c
+            JOIN documents d ON d.id = c.document_id
+            {where} ORDER BY c.created_at DESC LIMIT ?""",
             (*values, limit),
         ).fetchall()
         return [self._chunk(row) for row in rows]

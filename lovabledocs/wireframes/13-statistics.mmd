@@ -1,6 +1,6 @@
 flowchart TD
   Open[Open /stats] --> Year[Selected academic year]
-  Year --> Filter[Filter local assessments]
+  Year --> Filter[Filter Supabase-backed assessments]
   Filter --> Summary[summariseYear]
   Filter --> Monthly[monthlySeries]
   Filter --> Rows[Test table filtered by subject]
@@ -11,7 +11,7 @@ flowchart TD
   Monthly --> Trend[Average-over-time chart]
   Subjects --> Compare[Subject comparison]
   Rows --> CRUD[Edit duplicate move delete assessments]
-  CRUD --> Store[(Browser storage\nIMPLEMENTED LOCAL)]
+  CRUD --> Store[(Supabase-backed state\nUUID cache)]
   Store --> Filter
   YearAverage --> Failing{Grade below 4.0?}
   Failing -->|Yes| Orange[Warning styling]

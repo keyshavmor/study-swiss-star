@@ -31,6 +31,11 @@ Apple Silicon without Rosetta.
 `frontend/package-lock.json`. `frontend/bun.lock` remains available for Lovable/Bun workflows, but a
 dependency update should not regenerate both locks accidentally.
 
+Copy `frontend/.env.example` and `backend/.env.example` to ignored local env files and add the
+publishable key for Supabase project `ucacmeadsufiedxrgqit`. The same project URL/key must reach the
+TanStack server and FastAPI. Configure `http://localhost:8080` as an allowed Auth redirect. See
+`SUPABASE_MIGRATION.md`; never put a secret/service-role key in a `VITE_*` variable.
+
 ## Download the required model
 
 ```bash
@@ -70,7 +75,7 @@ normal study question has no relevant local document/syllabus match. Its
 default `auto` provider searches `.md`, `.txt`, `.html`, and `.htm` snapshots under
 `material/web/`, then automatically uses Wikipedia if no relevant local match exists. Set
 `allow_web:false` on an API request or
-`ALIM_WEB_ENABLED=false` globally to disable the branch. Selected text is cached under `app-data/`,
+`ALIM_WEB_ENABLED=false` globally to disable the branch. Selected text is cached only ephemerally,
 labelled untrusted, and limited by the web section and global context budgets. Set
 `ALIM_WEB_PROVIDER=local` for no network access or `wikipedia` to force live MediaWiki retrieval.
 

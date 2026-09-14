@@ -33,8 +33,10 @@ ALIM_MODEL_AUTOSTART=false uv run --project backend \
 ```
 
 The API exposes `/health`, `/api/model/status`, `/api/chat`, `/api/context/compile`,
-`/api/context/documents/text`, `/api/context/events`, and `/api/context/artifacts`. Local state
-defaults to `app-data/context/alim-context.db`. Reference retrieval searches `material/web/` first
+`/api/context/documents/text`, `/api/context/documents/storage`, `/api/context/events`, and
+`/api/context/artifacts`. Every private endpoint verifies a Supabase bearer token, derives the owner
+from its verified `sub`, and constructs a new user-scoped Supabase store for that request. Reference
+retrieval searches `material/web/` first
 and automatically uses Wikipedia only when no relevant local match exists. It is intent-gated,
 cached, provenance-labelled, and constrained by the same hard budget as local evidence. Use
 `ALIM_WEB_PROVIDER=local` to prohibit network retrieval.
@@ -44,4 +46,5 @@ and then starts the preloaded runtime. Set `ALIM_MODEL_AUTO_DOWNLOAD=false` to r
 checkpoint instead.
 
 Tests live in repository-level `tests/backend/` and `tests/e2e/`; they do not require Lovable or
-Supabase.
+Supabase. AI inference, parsing, embeddings, reranking, and context compilation remain local;
+SQLite is a test adapter rather than the production user database.

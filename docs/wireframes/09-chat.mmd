@@ -2,11 +2,11 @@ sequenceDiagram
   actor Student
   participant UI as StudyChat
   participant Fn as Authenticated server functions
-  participant Cloud as Lovable Cloud threads/messages
+  participant Cloud as MY Supabase threads/messages
   participant API as TanStack POST /api/chat
   participant PY as Python FastAPI /api/chat
   participant RAG as Context Manager + retrieval
-  participant LLM as Ollama or vLLM
+  participant LLM as local Qwen3.8-27B/llama.cpp
   Student->>UI: Open /chat
   UI->>Fn: listThreads or createThread
   Fn->>Cloud: User-scoped thread operation
@@ -19,7 +19,7 @@ sequenceDiagram
   UI-->>Student: Optimistic message + Thinking
   UI->>API: UI messages + thread + year + grade with bearer token
   API->>Cloud: Verify ownership, then save user message
-  API->>PY: Current question and study context with streaming disabled
+  API->>PY: Bearer token + current question and study context
   PY->>RAG: Build budgeted context and provenance
   RAG-->>PY: Relevant chunks and memory
   PY->>LLM: Compiled context + current question
@@ -28,7 +28,4 @@ sequenceDiagram
   API->>Cloud: Save completed assistant UI message
   API-->>UI: AI SDK text and context-metadata stream parts
   UI-->>Student: Markdown answer + exam tip + collapsible sources
-  opt Python unavailable and fallback enabled
-    API->>API: Use Lovable AI Gateway
-    API-->>UI: Stream answer without Python sources
-  end
+  note over API,PY: No cloud generation fallback; local outage returns 503

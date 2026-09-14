@@ -8,7 +8,7 @@ flowchart TD
   QAPI -.-> Retrieve[Python retrieves goals and materials]
   EAPI -.-> Retrieve
   GAPI -.-> Rubric[Python retrieves rubric and references]
-  Retrieve -.-> Model[Ollama or vLLM]
+  Retrieve -.-> Model[Local Qwen3.8-27B via llama.cpp]
   Rubric -.-> Model
   Model -.-> QuizUI[Quiz questions + sources]
   Model -.-> ExamUI[Exam questions + points + rubrics]
@@ -18,4 +18,4 @@ flowchart TD
   Result -.-> Formula[Exact grade = 1 + 5 times points / max\nclamped 1 to 6]
   Formula -.-> Display[Frontend rounds to 0.5 and marks below 4.0]
   Display -.-> Confirm{Save as practice assessment?}
-  Confirm -. yes .-> Local[(Browser storage via AppDataProvider)]
+  Confirm -. yes .-> Local[(Supabase via AppDataProvider)]

@@ -12,7 +12,7 @@ import type { Database, Json } from "@/integrations/supabase/types";
 type AlimUIMessage = UIMessage<never, { "context-metadata": ContextResponseMetadata }>;
 
 function isNewSupabaseApiKey(value: string): boolean {
-  return value.startsWith("sb_publishable_") || value.startsWith("sb_secret_");
+  return value.startsWith("sb_publishable_");
 }
 
 function createSupabaseFetch(supabaseKey: string): typeof fetch {
@@ -39,6 +39,9 @@ async function getUserClient(request: Request) {
   const SUPABASE_PUBLISHABLE_KEY = process.env["SUPABASE_PUBLISHABLE_KEY"];
   if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
     throw new Response("Supabase not configured", { status: 500 });
+  }
+  if (SUPABASE_PUBLISHABLE_KEY.startsWith("sb_secret_")) {
+    throw new Response("Supabase publishable key is misconfigured", { status: 500 });
   }
 
   const authHeader = request.headers.get("authorization");
@@ -67,14 +70,14 @@ async function getUserClient(request: Request) {
     throw new Response("Unauthorized", { status: 401 });
   }
 
-  return { supabase, userId: data.claims.sub };
+  return { supabase, userId: data.claims.sub, accessToken: token };
 }
 
 export const Route = createFileRoute("/api/chat")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const { supabase, userId } = await getUserClient(request);
+        const { supabase, userId, accessToken } = await getUserClient(request);
         const body = (await request.json()) as {
           messages?: UIMessage[];
           threadId?: string;
@@ -132,7 +135,7 @@ export const Route = createFileRoute("/api/chat")({
           const academicYear = body.academicYear ?? body.data?.academicYear;
           const gradeLevel = body.gradeLevel ?? body.data?.gradeLevel;
           contextResponse = await requestContextAnswer({
-            studentId: userId,
+            accessToken,
             threadId,
             userMessageId: lastMessage.id,
             question,

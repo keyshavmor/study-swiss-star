@@ -1,17 +1,15 @@
 flowchart TD
-  Start[App operation] --> Cloud{Lovable Cloud reachable?}
+  Start[App operation] --> Cloud{MY Supabase reachable?}
   Cloud -->|No before sign-in| AuthBlocked[Protected pages unavailable]
-  Cloud -->|Session already valid| LocalScreens[Local screens may remain usable]
-  Cloud -->|Yes| Gate[Authentication and chat history available]
+  Cloud -->|Session cache present| LocalScreens[Cached screens may remain readable]
+  Cloud -->|Yes| Gate[Authentication and durable history available]
   Gate --> Python{Python backend reachable?}
   Python -->|Yes| AI[Context-backed chat works]
-  Python -->|No| Fallback{Opt-in Lovable fallback enabled?}
-  Fallback -->|Yes| Gateway[Cloud AI answer\nIMPLEMENTED OPTIONAL]
-  Fallback -->|No| Error[Chat returns clear 503\nIMPLEMENTED]
+  Python -->|No| Error[Chat returns clear 503\nNO CLOUD MODEL FALLBACK]
   Python -. future health UI .-> Banner[Non-blocking offline banner + Retry\nPLANNED]
   Banner -.-> Disable[Disable AI-only actions\nPLANNED]
-  Error --> Continue[School grades stats planner profile links demo remain local]
+  Error --> Continue[Cached grades stats planner profile links and demo remain usable]
   Disable --> Continue
-  Continue --> Store[(Browser storage)]
+  Continue --> Store[(UUID-scoped disposable cache)]
   ModelDown{Model unavailable but FastAPI reachable} --> Degraded["/health returns degraded"]
   Degraded -. planned UI .-> Banner

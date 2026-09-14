@@ -1,5 +1,13 @@
 /** Local application-state types and persistence helpers. */
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import type { ReactNode } from "react";
 import { addDays, daysBetween, startOfWeek, weekdayIndex } from "@/lib/date-utils";
 import { createDemoState } from "@/lib/store/demo-data";
@@ -12,12 +20,21 @@ import type {
   StudentProfile,
 } from "@/lib/store/types";
 import { EMPTY_PROFILE, EMPTY_STATE } from "@/lib/store/types";
+import { supabase } from "@/integrations/supabase/client";
+import {
+  emptyAppData,
+  loadAppData,
+  saveAppData,
+  uploadMaterialObject,
+} from "@/lib/store/app-data.repository";
+import { toast } from "sonner";
+import { ingestMaterial } from "@/lib/material.functions";
+import { appDataCacheKey, readCachedAppData } from "@/lib/store/app-data.cache";
 
-const STORAGE_KEY = "asa.data.v2";
 const DEMO_KEY = "asa.demo.v1";
 
-function uid(prefix: string) {
-  return `${prefix}-${Math.random().toString(36).slice(2, 9)}`;
+function uid() {
+  return crypto.randomUUID();
 }
 
 interface DataContextValue extends DataState {
@@ -51,6 +68,7 @@ interface DataContextValue extends DataState {
   updateMaterial: (id: string, patch: Partial<Material>) => void;
   removeMaterial: (id: string) => void;
   restoreMaterial: (record: Material) => void;
+  uploadMaterial: (file: File, input: Omit<Material, "id">) => Promise<Material>;
 
   addLink: (input: Omit<SchoolLink, "id" | "order" | "opens">) => SchoolLink;
   updateLink: (id: string, patch: Partial<SchoolLink>) => void;
@@ -71,43 +89,72 @@ interface DataContextValue extends DataState {
 
 const DataContext = createContext<DataContextValue | null>(null);
 
-function readStored(): DataState {
+function readStored(userId: string): DataState {
   if (typeof window === "undefined") return EMPTY_STATE;
-  try {
-    const raw =
-      window.localStorage.getItem(STORAGE_KEY) ?? window.localStorage.getItem("asa.data.v1");
-    if (!raw) return EMPTY_STATE;
-    const parsed = JSON.parse(raw) as Partial<DataState>;
-    return {
-      assessments: parsed.assessments ?? [],
-      events: parsed.events ?? [],
-      materials: parsed.materials ?? [],
-      links: parsed.links ?? [],
-      profile: { ...EMPTY_PROFILE, ...(parsed.profile ?? {}) },
-      readNotifications: parsed.readNotifications ?? [],
-      dismissedNotifications: parsed.dismissedNotifications ?? [],
-    };
-  } catch {
-    return EMPTY_STATE;
-  }
+  return readCachedAppData(window.localStorage, userId);
 }
 
 export function AppDataProvider({ children }: { children: ReactNode }) {
   const [hydrated, setHydrated] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
   const [userState, setUserState] = useState<DataState>(EMPTY_STATE);
   const [demoState, setDemoState] = useState<DataState>(() => createDemoState());
   const [demoMode, setDemoModeState] = useState(false);
+  const loadGeneration = useRef(0);
+  const saveQueue = useRef<Promise<void>>(Promise.resolve());
 
   useEffect(() => {
-    setUserState(readStored());
     setDemoModeState(window.localStorage.getItem(DEMO_KEY) === "on");
-    setHydrated(true);
+    const switchUser = async (nextUserId: string | null) => {
+      const generation = ++loadGeneration.current;
+      setHydrated(false);
+      setUserId(nextUserId);
+      setUserState(emptyAppData());
+      if (!nextUserId) {
+        setHydrated(true);
+        return;
+      }
+      const cached = readStored(nextUserId);
+      try {
+        const remote = await loadAppData(nextUserId);
+        if (generation !== loadGeneration.current) return;
+        setUserState(remote);
+        window.localStorage.setItem(appDataCacheKey(nextUserId), JSON.stringify(remote));
+      } catch (error) {
+        if (generation !== loadGeneration.current) return;
+        setUserState(cached);
+        toast.error("Your cloud data could not be loaded", {
+          description: error instanceof Error ? error.message : "Using this account's local cache.",
+        });
+      } finally {
+        if (generation === loadGeneration.current) setHydrated(true);
+      }
+    };
+
+    void supabase.auth.getSession().then(({ data }) => switchUser(data.session?.user.id ?? null));
+    const { data } = supabase.auth.onAuthStateChange((_event, session) => {
+      void switchUser(session?.user.id ?? null);
+    });
+    return () => data.subscription.unsubscribe();
   }, []);
 
   useEffect(() => {
-    if (!hydrated) return;
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(userState));
-  }, [hydrated, userState]);
+    if (!hydrated || !userId || demoMode) return;
+    window.localStorage.setItem(appDataCacheKey(userId), JSON.stringify(userState));
+    const generation = loadGeneration.current;
+    const timeout = window.setTimeout(() => {
+      saveQueue.current = saveQueue.current
+        .catch(() => undefined)
+        .then(() => saveAppData(userId, userState))
+        .catch((error) => {
+          if (generation !== loadGeneration.current) return;
+          toast.error("Changes are saved on this device but not yet in Supabase", {
+            description: error instanceof Error ? error.message : "Cloud synchronization failed.",
+          });
+        });
+    }, 350);
+    return () => window.clearTimeout(timeout);
+  }, [demoMode, hydrated, userId, userState]);
 
   const setDemoMode = useCallback((on: boolean) => {
     setDemoModeState(on);
@@ -133,7 +180,7 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
         state.links.length > 0,
 
       addAssessment: (input) => {
-        const record: Assessment = { ...input, id: uid("a") };
+        const record: Assessment = { ...input, id: uid() };
         setState((s) => ({ ...s, assessments: [...s.assessments, record] }));
         return record;
       },
@@ -147,7 +194,7 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
             ...s,
             assessments: [
               ...s.assessments,
-              { ...found, id: uid("a"), title: `${found.title} (copy)` },
+              { ...found, id: uid(), title: `${found.title} (copy)` },
             ],
           };
         }),
@@ -158,7 +205,7 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
       getAssessment: (id) => state.assessments.find((x) => x.id === id),
 
       addEvent: (input) => {
-        const record: PlannerEvent = { ...input, id: uid("e") };
+        const record: PlannerEvent = { ...input, id: uid() };
         setState((s) => ({ ...s, events: [...s.events, record] }));
         return record;
       },
@@ -187,7 +234,7 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
           const tail: PlannerEvent = {
             ...found,
             ...patch,
-            id: uid("e"),
+            id: uid(),
             date: patch.date ?? isoDate,
             exceptions: [],
             overrides: {},
@@ -205,7 +252,7 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
           if (!found) return s;
           return {
             ...s,
-            events: [...s.events, { ...found, id: uid("e"), title: `${found.title} (copy)` }],
+            events: [...s.events, { ...found, id: uid(), title: `${found.title} (copy)` }],
           };
         }),
       removeEvent: (id) => setState((s) => ({ ...s, events: s.events.filter((x) => x.id !== id) })),
@@ -225,7 +272,7 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
       getEvent: (id) => state.events.find((x) => x.id === id),
 
       addMaterial: (input) => {
-        const record: Material = { ...input, id: uid("m") };
+        const record: Material = { ...input, id: uid() };
         setState((s) => ({ ...s, materials: [...s.materials, record] }));
         return record;
       },
@@ -234,11 +281,60 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
       removeMaterial: (id) =>
         setState((s) => ({ ...s, materials: s.materials.filter((x) => x.id !== id) })),
       restoreMaterial: (record) => setState((s) => ({ ...s, materials: [...s.materials, record] })),
+      uploadMaterial: async (file, input) => {
+        if (demoMode) {
+          const record: Material = { ...input, id: uid(), status: "Indexed" };
+          setDemoState((s) => ({ ...s, materials: [...s.materials, record] }));
+          return record;
+        }
+        if (!userId) throw new Error("Sign in before uploading a private material.");
+        const id = uid();
+        const storagePath = await uploadMaterialObject(userId, id, file);
+        const record: Material = {
+          ...input,
+          id,
+          storagePath,
+          ...(file.type ? { mimeType: file.type } : {}),
+          byteSize: file.size,
+          status: "Processing",
+        };
+        setUserState((s) => ({ ...s, materials: [...s.materials, record] }));
+        try {
+          await ingestMaterial({
+            data: {
+              documentId: id,
+              storagePath,
+              originalFilename: file.name,
+              title: record.name,
+              subject: record.subjectSlug,
+              documentType: record.type,
+              ...(record.section ? { section: record.section } : {}),
+              ...(record.notes ? { notes: record.notes } : {}),
+            },
+          });
+          const indexed = { ...record, status: "Indexed" as const };
+          setUserState((s) => ({
+            ...s,
+            materials: s.materials.map((item) => (item.id === id ? indexed : item)),
+          }));
+          return indexed;
+        } catch (error) {
+          const needsReview = { ...record, status: "Needs review" as const };
+          setUserState((s) => ({
+            ...s,
+            materials: s.materials.map((item) => (item.id === id ? needsReview : item)),
+          }));
+          toast.error("The file is private in Supabase but local indexing failed", {
+            description: error instanceof Error ? error.message : undefined,
+          });
+          return needsReview;
+        }
+      },
 
       addLink: (input) => {
         const record: SchoolLink = {
           ...input,
-          id: uid("l"),
+          id: uid(),
           order: state.links.length,
           opens: 0,
         };
@@ -254,7 +350,7 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
             ...s,
             links: [
               ...s.links,
-              { ...found, id: uid("l"), name: `${found.name} (copy)`, order: s.links.length },
+              { ...found, id: uid(), name: `${found.name} (copy)`, order: s.links.length },
             ],
           };
         }),
@@ -295,7 +391,7 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
 
       clearAll: () => setState(() => ({ ...EMPTY_STATE, profile: { ...EMPTY_PROFILE } })),
     };
-  }, [state, setState, demoMode, setDemoMode]);
+  }, [state, setState, demoMode, setDemoMode, userId]);
 
   return <DataContext.Provider value={value}>{children}</DataContext.Provider>;
 }

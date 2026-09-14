@@ -14,7 +14,7 @@ local Python FastAPI backend.
 | Styling | Tailwind CSS v4 | Tokens in `frontend/src/styles.css` via `@theme` |
 | Primitives | Radix UI / shadcn | `frontend/src/components/ui/*` |
 | Data fetching | TanStack Query | `QueryClientProvider` in `frontend/src/routes/__root.tsx` |
-| Auth + chat storage | Supabase (Lovable Cloud) | `frontend/src/integrations/supabase/*` |
+| Auth + durable storage | Developer-owned Supabase `ucacmeadsufiedxrgqit` | `frontend/src/integrations/supabase/*`, `frontend/src/lib/store/*` |
 | AI | Local Python context backend and preloaded Qwen runtime | `frontend/src/lib/context-backend.server.ts`, `frontend/src/routes/api/chat.ts` |
 
 ## 2. TanStack Start model
@@ -77,8 +77,8 @@ segment does not appear in the URL.
 | --- | --- | --- |
 | `QueryClientProvider` | `@tanstack/react-query` | Server-state cache for server functions and (future) Python API calls. Keys like `["threads"]`, `["messages", threadId]`. |
 | `ThemeProvider` | `frontend/src/hooks/use-theme.tsx` | Light/dark class toggle, persisted locally. |
-| `AppDataProvider` | `frontend/src/lib/store/app-data.tsx` | All prototype data: assessments, planner events, materials, school links, profile, demo mode. Context + `localStorage`. |
-| `AcademicYearProvider` | `frontend/src/lib/store/academic-year.tsx` | Global academic-year context (default 2026–27, Grade 11). |
+| `AppDataProvider` | `frontend/src/lib/store/app-data.tsx` | Optimistic state over Supabase-backed assessments, planner events, materials, links, profile, and notifications; demo data is isolated. |
+| `AcademicYearProvider` | `frontend/src/lib/store/academic-year.tsx` | Academic-year context synchronized to `user_preferences` with a UUID-scoped cache. |
 | `Toaster` | `frontend/src/components/ui/sonner` | Global toasts for success/error states. |
 
 ## 7. Component folders
@@ -92,11 +92,12 @@ segment does not appear in the URL.
 
 ## 8. Current data patterns
 
-### a. Supabase auth + chat persistence
+### a. Supabase auth and durable persistence
 `supabase.auth` in the browser (`frontend/src/integrations/supabase/client.ts`), bearer token attached to
 server functions via `frontend/src/integrations/supabase/auth-attacher.ts` and validated by
-`auth-middleware.ts`. Threads/messages live in Supabase tables typed by
-`frontend/src/integrations/supabase/types.ts` (auto-generated, never edited).
+`auth-middleware.ts`. Google, Apple, and Microsoft/Azure OAuth go directly through this client.
+Threads/messages and all durable user state live in the developer-owned Supabase project under RLS.
+Regenerate `types.ts` from the target after applying the migration.
 
 ### b. AI and context path
 `frontend/src/routes/api/chat.ts` authenticates the request, verifies thread ownership, and persists the
@@ -106,15 +107,15 @@ and persists the assistant message. `StudyChat.tsx` renders source metadata with
 `SourceSnippetList`. Backend failures return 503; study content is never sent to a cloud model as a
 generation fallback.
 
-### c. localStorage prototype data
-`AppDataProvider` hydrates from `localStorage`, seeded from `frontend/src/lib/store/demo-data.ts` only when
-demo mode is on. Grade math is computed client-side in `frontend/src/lib/grade-math.ts` from
-`Assessment[]`. Static subject metadata lives in `frontend/src/lib/mock/subjects.ts`.
+### c. Optimistic application state
+`AppDataProvider` clears on auth changes, hydrates by Supabase user UUID, and persists through
+`app-data.repository.ts`. Its UUID-scoped browser payload is a disposable cache, not the canonical
+store. Demo data is separate and never uploaded. Grade math and static subjects remain frontend-owned.
 
 ## 9. Python backend insertion points
 
-Chat currently uses a server-only client so the existing Supabase-authenticated route remains the
-single transcript writer. Other planned AI features can use a browser-side client later.
+The authenticated TanStack route remains the transcript writer. It forwards the current Supabase
+access token to FastAPI; FastAPI validates it and uses request-scoped RLS access.
 
 | Concern | Insertion point |
 | --- | --- |
@@ -134,22 +135,24 @@ context services are never exposed directly to browser code.
 graph LR
     Student([Student]) --> UI[Lovable UI<br/>React 19 + TanStack Router]
     UI --> SF[TanStack /api/chat route]
-    SF --> SB[(Supabase<br/>auth + chat threads)]
+    UI --> SB[(MY Supabase<br/>Auth + durable state + Storage)]
+    SF --> SB
     SF --> PY[Python FastAPI<br/>localhost:8001]
-    PY --> RAG[(SQLite chunks /<br/>hybrid retrieval)]
-    PY --> FILES[(Subject files<br/>PDF / DOCX / MD / TXT)]
+    PY --> RAG[Local RAG algorithms<br/>Supabase user-scoped chunks]
+    SB --> FILES[(Private user-materials<br/>PDF / DOCX / images)]
+    PY --> SB
     PY --> WEB[Local-first references<br/>automatic web fallback + budget]
     PY --> LLM[Preloaded Qwen3.8-27B via llama.cpp<br/>localhost:8000]
     RAG --> PY
     LLM --> PY
     PY --> SF
     SF --> UI
-    UI --> LS[(localStorage<br/>AppDataProvider)]
+    UI --> CACHE[(UUID-scoped disposable cache<br/>AppDataProvider)]
 ```
 
 ## 11. Invariants for the integration
 
-- Do not edit `frontend/src/routeTree.gen.ts` or `frontend/src/integrations/supabase/{client,client.server,types,auth-middleware,auth-attacher}.ts`.
+- Do not edit `frontend/src/routeTree.gen.ts`; regenerate Supabase types from the linked target.
 - Do not remove the `_authenticated` gate.
 - Do not break SPF combined-subject logic in `frontend/src/lib/grade-math.ts`.
 - Do not put secrets in `VITE_*`.

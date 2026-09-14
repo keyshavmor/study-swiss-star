@@ -8,7 +8,7 @@ from typing import Any
 
 from ..context.models import DocumentChunk
 from ..context.retrieval.dense import Embedder
-from ..context.store import SQLiteContextStore
+from ..context.store_base import ContextStore
 from ..context.tokenization import TokenCounter
 
 
@@ -21,7 +21,7 @@ class DocumentIngestor:
 
     def __init__(
         self,
-        store: SQLiteContextStore,
+        store: ContextStore,
         counter: TokenCounter,
         embedder: Embedder,
         *,
@@ -58,13 +58,13 @@ class DocumentIngestor:
 
         if not content.strip():
             raise ValueError("Document contains no extractable text")
-        document_id = document_id or f"doc_{uuid.uuid4().hex}"
+        document_id = document_id or str(uuid.uuid4())
         texts = self._split(content)
         chunks: list[DocumentChunk] = []
         for index, text in enumerate(texts):
             chunks.append(
                 DocumentChunk(
-                    id=f"{document_id}_p{page or 0:04d}_chunk_{index:05d}",
+                    id=str(uuid.uuid4()),
                     document_id=document_id,
                     content=text,
                     title=title,
@@ -90,9 +90,10 @@ class DocumentIngestor:
 
         file_path = Path(path)
         suffix = file_path.suffix.casefold()
+        source = metadata.pop("source", str(file_path))
         if suffix in {".txt", ".md", ".markdown"}:
             return await self.ingest_text(
-                file_path.read_text(encoding="utf-8"), source=str(file_path), **metadata
+                file_path.read_text(encoding="utf-8"), source=source, **metadata
             )
         if suffix == ".pdf":
             try:
@@ -102,7 +103,7 @@ class DocumentIngestor:
                     "Install the 'documents' extra to parse PDF files"
                 ) from error
             chunks: list[DocumentChunk] = []
-            document_id = metadata.pop("document_id", f"doc_{uuid.uuid4().hex}")
+            document_id = metadata.pop("document_id", str(uuid.uuid4()))
             for page_number, page in enumerate(PdfReader(str(file_path)).pages, start=1):
                 text = page.extract_text() or ""
                 if text.strip():
@@ -110,11 +111,13 @@ class DocumentIngestor:
                         await self.ingest_text(
                             text,
                             document_id=document_id,
-                            source=str(file_path),
+                            source=source,
                             page=page_number,
                             **metadata,
                         )
                     )
+            if not chunks:
+                raise ValueError("PDF contains no extractable text")
             return chunks
         if suffix == ".docx":
             try:
@@ -127,7 +130,7 @@ class DocumentIngestor:
             text = "\n\n".join(
                 paragraph.text for paragraph in document.paragraphs if paragraph.text.strip()
             )
-            return await self.ingest_text(text, source=str(file_path), **metadata)
+            return await self.ingest_text(text, source=source, **metadata)
         raise UnsupportedDocumentError(f"Unsupported document type: {suffix or '(none)'}")
 
     def _split(self, content: str) -> list[str]:

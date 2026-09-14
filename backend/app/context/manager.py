@@ -25,6 +25,7 @@ from .retrieval import (
     SparseRetriever,
 )
 from .store import SQLiteContextStore
+from .store_base import ContextStore
 from .text import normalize_text
 from .tokenization import ApproximateTokenCounter, TokenCounter
 from .web import CachedWebRetriever, WebRetrievalError
@@ -39,7 +40,7 @@ class ContextManager:
         self,
         config: ContextConfig | None = None,
         *,
-        store: SQLiteContextStore | None = None,
+        store: ContextStore | None = None,
         token_counter: TokenCounter | None = None,
         embedder: Embedder | None = None,
         retriever: HybridRetriever | None = None,
@@ -155,6 +156,7 @@ class ContextManager:
         if query.requires_documents:
             knowledge = await self.retriever.retrieve(
                 user_message,
+                student_id=student_id,
                 subject=query.subject,
                 document_types={
                     "textbook",
@@ -190,6 +192,7 @@ class ContextManager:
         if query.requires_syllabus:
             syllabus = await self.retriever.retrieve(
                 user_message,
+                student_id=student_id,
                 subject=query.subject,
                 document_types={"syllabus", "learning_goal", "learning goals"},
                 document_ids=selected_documents,
@@ -331,20 +334,25 @@ class ContextManager:
     ) -> dict[str, Any]:
         """Persist a completed turn, extract safe memory, and compact long conversations."""
 
-        self.conversations.append(
-            student_id=student_id,
-            conversation_id=conversation_id,
-            role="user",
-            content=user_message,
-            message_id=user_message_id,
-        )
-        self.conversations.append(
-            student_id=student_id,
-            conversation_id=conversation_id,
-            role="assistant",
-            content=assistant_response,
-            message_id=assistant_message_id,
-        )
+        # Supabase messages are the canonical UI transcript. The frontend has
+        # already inserted the user turn and inserts the assistant turn after
+        # streaming finishes, so writing either here would create a second
+        # transcript. SQLite retains the old append behavior for isolated tests.
+        if not self.store.canonical_transcript:
+            self.conversations.append(
+                student_id=student_id,
+                conversation_id=conversation_id,
+                role="user",
+                content=user_message,
+                message_id=user_message_id,
+            )
+            self.conversations.append(
+                student_id=student_id,
+                conversation_id=conversation_id,
+                role="assistant",
+                content=assistant_response,
+                message_id=assistant_message_id,
+            )
         memories = self.memory.process_interaction(
             student_id=student_id,
             user_message=user_message,
@@ -377,7 +385,7 @@ class ContextManager:
     ) -> str:
         """Add short-lived task state that can be marked mandatory for the next turn."""
 
-        item_id = f"work_{uuid.uuid4().hex}"
+        item_id = str(uuid.uuid4())
         now = datetime.now(UTC)
         self.store.add_working_memory(
             item_id=item_id,

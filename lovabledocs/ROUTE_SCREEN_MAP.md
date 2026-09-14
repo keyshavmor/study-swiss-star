@@ -36,17 +36,17 @@ Auth-gated routes live under `frontend/src/routes/_authenticated/` and are prote
 ### `/auth` — Sign in / sign up
 - **File:** `frontend/src/routes/auth.tsx` · **Auth:** no (redirects when signed in)
 - **Components:** `AuthForm.tsx`, `Input`, `Button`.
-- **Data source:** `supabase.auth.signInWithPassword` / `signUp` / Google OAuth.
+- **Data source:** `supabase.auth.signInWithPassword` / `signUp` / Google, Apple, Azure OAuth.
 - **Storage:** Supabase session in browser storage.
-- **Future backend:** none in Stage 1. Python backend trusts a locally-signed-in user; optional
-  `X-Student-Id` header. **Endpoints:** none. **Frontend-only: no.**
+- **Backend boundary:** TanStack forwards the access token; FastAPI validates it and derives the
+  user UUID from verified `sub`. **Endpoints:** none. **Frontend-only: no.**
 
 ### `/home` — Home dashboard
 - **File:** `_authenticated/home.tsx`
 - **Purpose:** greeting, live clock, next exam, study time today, school links, notifications.
 - **Components:** `AppShell`, `AppHeader`, `LiveClock`, `SchoolLinksSection`, `NotificationCenter`, `States`.
 - **Data source:** `AppDataProvider` (assessments, events, links, profile) + `AcademicYearProvider`.
-- **Storage:** `localStorage`.
+- **Storage:** Supabase tables through `AppDataProvider`; UUID-scoped cache for resilience.
 - **Future backend:** optional — `GET /health`, `GET /api/model/status` for the status banner.
 - **Endpoints:** `GET /health`, `GET /api/model/status`. **Frontend-only: yes** apart from the banner.
 
@@ -54,8 +54,7 @@ Auth-gated routes live under `frontend/src/routes/_authenticated/` and are prote
 - **File:** `_authenticated/chat.index.tsx`
 - **Purpose:** redirects to the newest thread, or creates "General study session".
 - **Data source:** `listThreads` / `createThread` server functions (Supabase).
-- **Future backend:** if thread persistence moves to Python, replace with
-  `GET /api/chat/threads` + `POST /api/chat/threads`. **Frontend-only: no.**
+- **Backend:** Supabase remains the permanent thread/message owner. **Frontend-only: no.**
 
 ### `/chat/$threadId` — Study chat
 - **File:** `_authenticated/chat.$threadId.tsx` → `frontend/src/components/StudyChat.tsx`
@@ -74,10 +73,10 @@ Auth-gated routes live under `frontend/src/routes/_authenticated/` and are prote
 - **Components:** `SubjectCard`, `StatsOverviewPanel`, `GradeDisplay`, `Badges`, `AcademicYearSelector`, `AssessmentDialog`, `TranscriptImportDialog`, `DemoMode`.
 - **Data source:** `SUBJECTS` in `frontend/src/lib/mock/subjects.ts` + assessments from `AppDataProvider`,
   aggregated by `frontend/src/lib/grade-math.ts` (`summariseSubjectView`, `summariseYear`).
-- **Storage:** static module + `localStorage`.
+- **Storage:** static subject module + Supabase `assessments`.
 - **Future backend:** optional `GET /api/subjects` to align subject metadata/materials counts with
-  what the RAG index actually contains. Grades stay local.
-- **Endpoints:** `GET /api/subjects`. **Frontend-only: yes** (recommended for Stage 1).
+  what the RAG index actually contains. Grades persist in Supabase; grade math stays frontend-local.
+- **Endpoints:** `GET /api/subjects`. **Frontend-only: yes** except persistent data hydration.
 
 ### `/school/$subject` — Subject dashboard
 - **File:** `_authenticated/school.$subject.tsx`
@@ -85,7 +84,7 @@ Auth-gated routes live under `frontend/src/routes/_authenticated/` and are prote
   grader / study-plan tools; SPF Bio ↔ Chem segmented switch.
 - **Components:** `GradeDisplay`, `MaterialsPanel`, `AssessmentDialog`, `AssessmentActions`, `Breadcrumbs`, `States`, `Badges`.
 - **Data source:** `SUBJECTS`, `AppDataProvider` assessments + materials.
-- **Storage:** `localStorage`.
+- **Storage:** private Supabase Storage plus `documents`, `document_chunks`, and `assessments`.
 - **Future backend:** heavy — subject detail, learning goals, indexed materials, quiz, mock exam,
   grading, subject-scoped chat.
 - **Endpoints:** `GET /api/subjects/{subject_id}`, `.../learning-goals`, `.../materials`,
@@ -95,20 +94,20 @@ Auth-gated routes live under `frontend/src/routes/_authenticated/` and are prote
 ### `/planner` — Weekly planner
 - **File:** `_authenticated/planner.tsx`
 - **Components:** `Timetable`, `EventDialog`, `EventDetailDialog`, `States`, conflict panel.
-- **Data source / storage:** `AppDataProvider` events + recurrence expansion in `frontend/src/lib/date-utils.ts`; `localStorage`.
+- **Data source / storage:** Supabase-backed `AppDataProvider` events; recurrence expansion remains in `date-utils.ts`.
 - **Future backend:** AI study-plan generation only.
 - **Endpoints:** `POST /api/study-plan/generate`. **Frontend-only: yes** except generation.
 
 ### `/stats` — Statistics
 - **File:** `_authenticated/stats.tsx`
 - **Components:** `StatsOverviewPanel`, `GradeDisplay`, SPF three-way toggle.
-- **Data source:** derived from assessments via `grade-math.ts`. **Storage:** `localStorage`.
+- **Data source:** derived from Supabase-backed assessments via `grade-math.ts`.
 - **Future backend:** none required. **Frontend-only: yes.**
 
 ### `/profile` — Profile
 - **File:** `_authenticated/profile.tsx` · **Components:** `EditProfileDialog`, `AcademicYearSelector`, `Badges`.
-- **Data source / storage:** `AppDataProvider.profile`; `localStorage`.
-- **Future backend:** optional profile sync; profile fields (grade level, languages) are sent as
+- **Data source / storage:** `AppDataProvider.profile`; canonical `profiles` row with UUID cache.
+- **Backend:** profile synchronization is implemented; profile fields (grade level, languages) are sent as
   chat/quiz request context. **Frontend-only: yes.**
 
 ### `/feedback` — Feedback

@@ -6,7 +6,7 @@ import uuid
 from typing import Any
 
 from ..models import ContextArtifact, ContextItem, ContextPriority, ContextType
-from ..store import SQLiteContextStore
+from ..store_base import ContextStore
 from ..text import lexical_overlap
 from ..tokenization import TokenCounter
 
@@ -14,7 +14,7 @@ from ..tokenization import TokenCounter
 class ArtifactManager:
     """Persist full artifacts while injecting only compact summaries into prompts."""
 
-    def __init__(self, store: SQLiteContextStore, counter: TokenCounter) -> None:
+    def __init__(self, store: ContextStore, counter: TokenCounter) -> None:
         """Configure artifact persistence and summary token counting."""
 
         self.store = store
@@ -34,13 +34,13 @@ class ArtifactManager:
     ) -> ContextArtifact:
         """Store an artifact and return its public metadata record."""
 
-        artifact_id = artifact_id or f"artifact_{uuid.uuid4().hex}"
+        artifact_id = artifact_id or str(uuid.uuid4())
         artifact = ContextArtifact(
             id=artifact_id,
             artifact_type=artifact_type,
             title=title,
             summary=summary,
-            content_location=f"sqlite://context_artifacts/{artifact_id}",
+            content_location=f"{self.store.location_scheme}://context_artifacts/{artifact_id}",
             token_count=self.counter.count(content),
             metadata=metadata or {},
             searchable=searchable,

@@ -11,7 +11,7 @@ flowchart TD
   Grades --> Stats[Statistics mode\nIMPLEMENTED]
   Modes --> Chat[Open /chat\nIMPLEMENTED but subject is entered on thread]
   Modes -.-> Future[Knowledge analysis quiz exam plan tools\nPLACEHOLDER UI / PLANNED]
-  Materials --> Local[(Browser storage\nIMPLEMENTED LOCAL)]
+  Materials --> Local[(Supabase-backed state\nUUID cache)]
   Materials -.-> Indexed[Python indexed materials\nPLANNED MERGE]
   Toggle --> Scope[Component subject ID for future retrieval]
   Scope -.-> Python[FastAPI subject APIs\nPLANNED]

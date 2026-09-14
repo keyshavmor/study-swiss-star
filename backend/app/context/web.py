@@ -17,7 +17,7 @@ from typing import Protocol
 
 from .config import WebConfig
 from .models import ContextItem, ContextPriority, ContextType
-from .store import SQLiteContextStore
+from .store_base import ContextStore
 from .text import terms
 from .tokenization import TokenCounter
 
@@ -335,7 +335,7 @@ class CachedWebRetriever:
 
     def __init__(
         self,
-        store: SQLiteContextStore,
+        store: ContextStore,
         counter: TokenCounter,
         config: WebConfig,
         client: WebSearchClient | None = None,

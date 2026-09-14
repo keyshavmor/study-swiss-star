@@ -18,6 +18,14 @@ from app.services.llm import LocalOpenAICompatibleClient
 from app.services.model_runtime import ModelRuntimeConfig, ModelRuntimeManager
 from httpx import ASGITransport, AsyncClient
 
+
+class FakeTokenVerifier:
+    """Provide a verified subject without external OAuth during local E2E tests."""
+
+    def verify(self, token: str):
+        return {"sub": token.removeprefix("token-")}
+
+
 REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
 
 
@@ -94,7 +102,7 @@ class QwenStartupAndWebTests(unittest.IsolatedAsyncioTestCase):
                 model=MODEL_NAME,
                 timeout_seconds=5,
             )
-            app = create_app(manager, llm, runtime)
+            app = create_app(manager, llm, runtime, auth_verifier=FakeTokenVerifier())
             try:
                 async with app.router.lifespan_context(app):
                     self.assertTrue(await runtime.is_ready())
@@ -103,7 +111,7 @@ class QwenStartupAndWebTests(unittest.IsolatedAsyncioTestCase):
                     )
                     response = await client.post(
                         "/api/chat",
-                        headers={"X-Student-Id": "student"},
+                        headers={"Authorization": "Bearer token-student"},
                         json={
                             "thread_id": "thread",
                             "question": "Browse the latest current research about ATP production",

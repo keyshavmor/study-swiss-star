@@ -15,7 +15,7 @@ export class ContextBackendError extends Error {
 }
 
 export async function requestContextAnswer(input: {
-  studentId: string;
+  accessToken: string;
   threadId: string;
   userMessageId?: string;
   question: string;
@@ -37,7 +37,7 @@ export async function requestContextAnswer(input: {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "X-Student-Id": input.studentId,
+        Authorization: `Bearer ${input.accessToken}`,
       },
       body: JSON.stringify({
         thread_id: input.threadId,

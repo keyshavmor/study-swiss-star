@@ -1,67 +1,45 @@
-# Python Backend Integration Plan
+# Python backend integration plan
 
-Current state and remaining work for the local Python backend. The UI, design system, routes,
-subject model, Swiss grade logic, and Supabase authentication remain unchanged.
+## Final ownership
 
-## Implemented
+The TanStack/React frontend remains Lovable-editable. Supabase project `ucacmeadsufiedxrgqit` is the
+canonical auth, Postgres, and Storage backend. FastAPI, llama.cpp, Qwen, embeddings, RAG, context
+compilation, memory extraction, grading, and generation remain local.
 
-- Local FastAPI application in `backend/app/main.py`.
-- Context models, intent analysis, explicit priority, whole-item token budgeting, and one compiler.
-- Knowledge, student, episodic, conversation, working, and artifact memory separation.
-- Local SQLite persistence with indexed lookup fields and cached document embeddings.
-- Dense/sparse retrieval, reciprocal-rank fusion, deduplication, and replaceable reranking.
-- Controlled memory writes and threshold-based rolling conversation summaries.
-- Text/Markdown ingestion plus optional PDF/DOCX parsers.
-- Local OpenAI-compatible model client with no cloud requirement.
-- Authenticated TanStack `/api/chat` proxy to Python in default context mode.
-- Source metadata transport and `SourceSnippetList` rendering.
-- Local `Qwen/Qwen3.8-27B` is the only generation path; Lovable remains only for project tooling and authentication integration.
-- Unit and integration coverage for the requested context scenarios.
+## Implemented request path
 
-The implementation and its limitations are documented in `CONTEXT_MANAGER.md`.
+1. The browser authenticates directly with Supabase and sends its access token to the TanStack route.
+2. The route validates the session, checks thread ownership through RLS, and persists the UI message.
+3. The route forwards `Authorization: Bearer …` to FastAPI on `127.0.0.1:8001`.
+4. FastAPI validates the token against the configured Supabase Auth endpoint and derives the UUID from
+   verified `sub`. A mismatched `X-Student-Id` is rejected.
+5. FastAPI creates a fresh `SupabaseContextStore` with the publishable key and that token. There is no
+   shared mutable session and no service-role bypass.
+6. Context algorithms retrieve only user-scoped rows, compile a bounded prompt, and call the local
+   Qwen server on `127.0.0.1:8000`.
+7. Supabase messages remain the one transcript. Python persists summaries, memories, events, chunks,
+   embeddings, and artifacts without maintaining a second SQLite transcript.
 
-## Configuration
+## Documents
 
-Server-side frontend variables:
+The browser uploads originals to `user-materials/{auth.uid()}/…`. The authenticated bridge asks
+FastAPI to fetch that object with the same user JWT, parse it in a temporary file, chunk/embed locally,
+and save document/chunk rows through RLS. The temporary copy is deleted. PDF/DOCX parsing uses the
+`documents` optional dependency; unsupported image extraction is marked for review rather than sent to
+a cloud model.
 
-| Variable | Default | Meaning |
-| --- | --- | --- |
-| `ALIM_CONTEXT_BACKEND_URL` | `http://127.0.0.1:8001` | FastAPI base URL |
-| `ALIM_CONTEXT_BACKEND_TIMEOUT_MS` | `90000` | Chat proxy timeout |
+## Storage abstraction
 
-Python variables are listed in `backend/.env.example`. They include model endpoint/name, SQLite
-path, context/output budgets, retrieval counts/weights, summary thresholds, and memory thresholds.
-They are deliberately not `VITE_*`, so model credentials never enter the browser bundle.
+`ContextStore` describes only operations used by the existing algorithms. `SupabaseContextStore` is
+the production adapter. `SQLiteContextStore` remains an in-memory/unit/E2E adapter and optional
+non-production fixture. It is not the long-lived user store.
 
-## Data ownership
+## Unchanged algorithms and UI invariants
 
-- Supabase remains the authoritative display transcript and authentication provider.
-- Python's SQLite message mirror exists only for context selection, compaction, and relevant-old-
-  message retrieval. It does not replace or write the Supabase transcript.
-- Python SQLite owns context-specific data: chunks, embeddings, learning memory, summaries,
-  working memory, and artifacts.
-- Grades, planner items, profile, school links, and local materials remain in `AppDataProvider` /
-  `localStorage`.
+- intent analysis, exact token budgets, compiler, BM25/dense fusion, RRF, reranking, and memory gates
+- Qwen/Qwen3.8-27B through local llama.cpp only
+- static 15-subject catalogue, SPF behavior, Swiss grade math, routes, UI component APIs and styling
+- Lovable Vite/TanStack tooling, preview support, Git integration, and error reporting
 
-## Remaining frontend/product work
-
-1. Add a backend health banner and model status to Diagnostics/Settings.
-2. Expose indexed materials and learning goals on subject pages.
-3. Add multipart upload UI/API; the backend currently exposes text ingestion and a file-ingestor
-   service rather than the prior proposed multipart endpoint.
-4. Implement quiz, mock-exam, grading, and study-plan endpoints and their review UIs.
-5. Add feedback persistence and retry queue.
-6. Add true token-by-token FastAPI streaming if local-model latency makes the current completed-
-   response-to-UI-stream bridge insufficient.
-7. Replace `HashingEmbedder` with the selected local embedding model adapter.
-
-## Files that remain protected
-
-- `frontend/src/routeTree.gen.ts` (generated)
-- generated Supabase integration files
-- existing Supabase migrations unless a deliberate cloud-storage change is made
-- `frontend/src/components/ui/*` and `frontend/src/components/ai-elements/*`
-- `frontend/src/lib/grade-math.ts`, subject definitions, and design tokens
-
-No Supabase migration was needed for the local context store. Its schema is created idempotently by
-`SQLiteContextStore`; `context_schema_version` records the current local schema version.
+Remote migration, OAuth configuration, type generation, and old-project transfer are documented in
+[SUPABASE_MIGRATION.md](SUPABASE_MIGRATION.md).

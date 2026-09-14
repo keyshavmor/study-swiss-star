@@ -8,7 +8,7 @@ camelCase only where existing components require it.
 ## Implementation status
 
 Implemented now: `GET /health`, `GET /api/model/status`, `POST /api/chat` (non-streaming),
-`POST /api/context/compile`, `POST /api/context/documents/text`,
+`POST /api/context/compile`, `POST /api/context/documents/text`, `POST /api/context/documents/storage`,
 `POST /api/context/events`, and `POST /api/context/artifacts`.
 
 The subject, learning-goal, material-list, multipart import, quiz, mock-exam, study-plan, grading,
@@ -40,11 +40,15 @@ Every non-2xx response uses this shape (`APIError`):
 | 422 | `validation_error` | Inline field errors |
 | 429 | `rate_limited` | Toast, disable submit for `retry_after_s` |
 | 500 | `internal_error` | Toast + "Try again" |
-| 503 | `model_unavailable`, `vector_store_unavailable` | `BackendStatusBanner` offline mode |
+| 503 | `model_unavailable`, `auth_not_configured`, `vector_store_unavailable` | `BackendStatusBanner` offline mode |
+
+Every user-data endpoint requires `Authorization: Bearer <Supabase access token>`. FastAPI verifies
+the token against the configured project and derives `user_id` only from verified `sub`. Missing or
+invalid tokens return 401. `X-Student-Id` is never authority and a mismatch returns 403.
 
 ### CORS
 Must allow origin `http://localhost:8080`, methods `GET, POST, OPTIONS`, headers
-`Content-Type, Authorization, X-Student-Id`, and expose `X-Request-Id`.
+`Content-Type, Authorization` (plus legacy test-only `X-Student-Id`), and expose `X-Request-Id`.
 
 ### Timeouts (frontend defaults)
 `GET /health` 3 s · `GET /api/model/status` 5 s · reads 10 s · `POST /api/chat` 90 s ·
@@ -64,7 +68,7 @@ quiz / mock exam / study plan 120 s · `POST /api/import/document` 300 s.
   "status": "ok",
   "version": "0.2.0",
   "uptime_s": 1284,
-  "context_store": { "type": "sqlite", "reachable": true },
+  "context_store": { "type": "supabase", "reachable": true },
   "model_server": { "reachable": true, "provider": "openai-compatible", "preloaded": true },
   "runtime": {
     "managed": true,
@@ -80,7 +84,7 @@ quiz / mock exam / study plan 120 s · `POST /api/import/document` 300 s.
 - `max_model_len` is hardware-adaptive (the example is an RTX 3090; the specified M4 Pro reports
   `65536` and `metal`).
 - **Required:** `status`, `checked_at`. The implemented `status` can be `degraded` while FastAPI and
-  SQLite are healthy but the local model is unreachable.
+  Supabase configuration is present but the local model is unreachable.
 - **Loading:** silent; no spinner. **Display:** green/amber chip in `/diagnostics`; banner only when unreachable or `status != "ok"`.
 
 ## 2. `GET /api/model/status`
@@ -512,7 +516,8 @@ Response:
 ```
 
 - **Required:** `category`. One of `message`/`rating` must be present.
-- **Error handling:** on failure the frontend queues the entry in `localStorage` and retries.
+- **Error handling:** on failure retain the entry in the UUID-scoped cache, show sync status, and
+  retry through authenticated Supabase access.
 
 ## 13. `POST /api/import/document`
 

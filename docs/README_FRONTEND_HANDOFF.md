@@ -34,7 +34,8 @@ This folder documents the current Lovable / TanStack Start frontend, the in-repo
 | `UI_BACKEND_MAPPING.md` | **API contract by user action** — the key integration file |
 | `API_EXPECTATIONS.md` | **HTTP contract** — endpoints with concrete JSON |
 | `FRONTEND_DATA_MODEL.md` | TypeScript types the Python side mirrors with Pydantic |
-| `STATE_AND_STORAGE.md` | State/storage ownership + staged migration path |
+| `STATE_AND_STORAGE.md` | Final state/storage ownership and isolation rules |
+| `SUPABASE_MIGRATION.md` | Target linkage, OAuth, generated types, verification, old-data runbook |
 | `USER_FLOWS.md` | Mermaid sequence diagrams for every major flow |
 | `COMPONENT_TREE.md` | Component hierarchy with integration classification |
 | `PYTHON_BACKEND_INTEGRATION_PLAN.md` | Files to add/edit, config, mock mode, fallback policy |
@@ -51,5 +52,6 @@ This folder documents the current Lovable / TanStack Start frontend, the in-repo
 ## Non-goals for this phase
 
 - No UI rewrite, no design-system change, no route restructuring.
-- Supabase auth/chat persistence stays in place; AI generation is local Qwen-only.
+- The developer-owned Supabase project owns all durable state; Lovable remains the editor and the UI
+  remains unchanged. AI generation is local Qwen-only.
 - No RAG/LLM orchestration in TypeScript; the TanStack chat route is only an authenticated proxy.

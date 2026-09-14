@@ -53,8 +53,8 @@ python3 backend/scripts/setup_environment.py
 ```
 
 The GGUF model file itself is portable and may be copied to
-`models/Qwen3.8-27B/Qwen3.8-27B-Q4_K_M.gguf` to avoid another 17.67 GiB download. The local SQLite
-database under `app-data/context/` is also portable when the app is stopped before copying it.
+`models/Qwen3.8-27B/Qwen3.8-27B-Q4_K_M.gguf` to avoid another 17.67 GiB download. Durable private
+state remains in Supabase and is restored after sign-in; it is not copied as a local database file.
 Reference snapshots under `material/web/` are ordinary portable text/Markdown/HTML files. They are
 searched before the automatic Wikipedia fallback; use `ALIM_WEB_PROVIDER=local` for strict offline
 operation.

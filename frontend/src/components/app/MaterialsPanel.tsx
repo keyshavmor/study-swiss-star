@@ -73,7 +73,9 @@ function MaterialDialog({
   subjectSlug: string;
   record?: Material;
 }) {
-  const { addMaterial, updateMaterial } = useAppData();
+  const { addMaterial, updateMaterial, uploadMaterial } = useAppData();
+  const [file, setFile] = useState<File | null>(null);
+  const [saving, setSaving] = useState(false);
   const [draft, setDraft] = useState<Draft>(() => ({
     name: record?.name ?? "",
     type: record?.type ?? "PDF",
@@ -85,32 +87,49 @@ function MaterialDialog({
 
   const set = <K extends keyof Draft>(k: K, v: Draft[K]) => setDraft((d) => ({ ...d, [k]: v }));
 
-  function save() {
-    if (record) {
-      updateMaterial(record.id, {
-        name: draft.name.trim(),
-        type: draft.type,
-        section: draft.section,
-        subjectSlug: draft.subjectSlug,
-        url: draft.url.trim(),
-        notes: draft.notes.trim(),
+  async function save() {
+    setSaving(true);
+    try {
+      if (record) {
+        updateMaterial(record.id, {
+          name: draft.name.trim(),
+          type: draft.type,
+          section: draft.section,
+          subjectSlug: draft.subjectSlug,
+          url: draft.url.trim(),
+          notes: draft.notes.trim(),
+        });
+        toast.success("Material updated");
+      } else {
+        const input = {
+          name: draft.name.trim(),
+          type: draft.type,
+          section: draft.section,
+          subjectSlug: draft.subjectSlug,
+          url: draft.url.trim(),
+          notes: draft.notes.trim(),
+          status: "Indexed" as const,
+          added: new Date().toISOString().slice(0, 10),
+        };
+        if (file) await uploadMaterial(file, input);
+        else addMaterial(input);
+        toast.success("Material added", {
+          description: file
+            ? "The private upload is ready for local indexing."
+            : "You can rename, move or delete it later.",
+        });
+      }
+      onOpenChange(false);
+    } catch (error) {
+      toast.error("Material could not be saved", {
+        description: error instanceof Error ? error.message : undefined,
       });
-      toast.success("Material updated");
-    } else {
-      addMaterial({
-        name: draft.name.trim(),
-        type: draft.type,
-        section: draft.section,
-        subjectSlug: draft.subjectSlug,
-        url: draft.url.trim(),
-        notes: draft.notes.trim(),
-        status: "Indexed",
-        added: new Date().toISOString().slice(0, 10),
-      });
-      toast.success("Material added", { description: "You can rename, move or delete it later." });
+    } finally {
+      setSaving(false);
     }
-    onOpenChange(false);
   }
+
+  const requiresFile = !record && draft.type !== "Web link" && draft.type !== "Note";
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -118,7 +137,7 @@ function MaterialDialog({
         <DialogHeader>
           <DialogTitle>{record ? "Edit material" : "Add material"}</DialogTitle>
           <DialogDescription>
-            Prototype only — no file is uploaded. Everything here stays editable.
+            Files are stored privately in your Supabase account. Links and notes remain editable.
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4">
@@ -192,6 +211,20 @@ function MaterialDialog({
               />
             </div>
           )}
+          {requiresFile && (
+            <div className="grid gap-2">
+              <Label htmlFor="mat-file">File</Label>
+              <Input
+                id="mat-file"
+                type="file"
+                accept=".pdf,.docx,.png,.jpg,.jpeg,.svg,.txt,.md"
+                onChange={(event) => setFile(event.target.files?.[0] ?? null)}
+              />
+              <p className="text-[12px] text-muted-foreground">
+                Stored in the private user-materials bucket; maximum 50 MB.
+              </p>
+            </div>
+          )}
           <div className="grid gap-2">
             <Label htmlFor="mat-notes">Notes (optional)</Label>
             <Textarea
@@ -205,8 +238,11 @@ function MaterialDialog({
           <Button variant="ghost" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
-          <Button disabled={draft.name.trim() === ""} onClick={save}>
-            {record ? "Save changes" : "Add material"}
+          <Button
+            disabled={saving || draft.name.trim() === "" || (requiresFile && !file)}
+            onClick={() => void save()}
+          >
+            {saving ? "Saving…" : record ? "Save changes" : "Add material"}
           </Button>
         </DialogFooter>
       </DialogContent>

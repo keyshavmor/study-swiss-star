@@ -61,7 +61,7 @@ render in warning orange `#C96A00`.
 | Concern | Owner | Rule |
 | --- | --- | --- |
 | Subject IDs | Shared contract | Lowercase frontend slugs (hyphenated where the source uses hyphens), exactly as above. |
-| Python backend | Backend | Uses `subject_id` / `component_subject_id` as SQLite retrieval keys. The chat proxy maps known display names to the existing frontend slugs. |
+| Python backend | Backend | Uses `subject_id` / `component_subject_id` as user-scoped Supabase retrieval keys. The chat proxy maps known display names to existing frontend slugs. |
 | Frontend display | Frontend | Renders the human label from `frontend/src/lib/mock/subjects.ts` (later `GET /api/subjects`). Never renders raw IDs. The backend may return a `display_name`, but the frontend label wins for UI consistency. |
 | Slugs in URLs | Frontend | `/school/$subject` uses the same stable ID as the slug, so URLs and API IDs match 1:1. |
 

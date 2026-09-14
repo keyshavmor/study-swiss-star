@@ -3,8 +3,8 @@
 The primary integration file. One row per user-facing action that needs AI, persistence or
 backend intelligence. "Now" = current implementation in the repo. "Later" = target owner.
 
-Legend for **Owner (later)**: `PY` = Python FastAPI, `SB` = Supabase, `LS` = localStorage /
-`AppDataProvider`, `FE` = pure frontend computation.
+Legend: `PY` = local Python FastAPI computation, `SB` = canonical Supabase persistence,
+`CACHE` = UUID-scoped disposable browser cache, `FE` = pure frontend computation.
 
 ---
 
@@ -16,7 +16,7 @@ Legend for **Owner (later)**: `PY` = Python FastAPI, `SB` = Supabase, `LS` = loc
 | Component | `frontend/src/components/StudyChat.tsx` (`PromptInput` → `chat.sendMessage`) |
 | Action | Student submits a question |
 | Now | `useChat` + `DefaultChatTransport` → authenticated TanStack `POST /api/chat` → local FastAPI Context Manager → preloaded Qwen runtime |
-| Data source now | Supabase display transcript + local SQLite context memory |
+| Data source now | Supabase transcript, chunks, memories, and summaries; local context algorithms |
 | Owner later | **PY** (already owns prompt construction) |
 | Endpoint | `POST /api/chat` (FastAPI) |
 | Request | `thread_id, subject_id, component_subject_id, language, academic_year, grade_level, question, learning_goal_id, material_ids, top_k, include_sources, stream` |
@@ -47,27 +47,27 @@ Legend for **Owner (later)**: `PY` = Python FastAPI, `SB` = Supabase, `LS` = loc
 | Component | `StudyChat.tsx` new-session dialog, `chat.index.tsx` auto-create |
 | Now | `createThread` server fn → Supabase `threads` |
 | Data source now | Supabase |
-| Owner later | **SB in Stage 1** (unchanged); optionally PY in Stage 2 |
+| Owner | **SB permanently** |
 | Endpoint (if moved) | `POST /api/chat/threads` `{subject_id, component_subject_id, title}` |
 | Response | `{thread_id, title, subject_id, created_at}` |
 | Loading | dialog button disabled + spinner | Error: toast | Empty: n/a |
-| Mock fallback | thread created in `localStorage` |
+| Mock fallback | isolated demo state only; never a signed-in transcript |
 
 | Field | Load chat thread / list threads |
 | --- | --- |
 | Component | `ThreadList.tsx`, `StudyChat.tsx` `useQuery(["threads"])`, `useQuery(["messages", id])` |
 | Now | `listThreads` / `listMessages` server fns → Supabase |
-| Owner later | **SB in Stage 1** |
+| Owner | **SB permanently** |
 | Endpoint (if moved) | `GET /api/chat/threads`, `GET /api/chat/threads/{thread_id}/messages` |
 | Loading | existing skeleton rows in `ThreadList` | Error: toast + retry | Empty: "No sessions yet." |
-| Mock fallback | demo threads from `localStorage` |
+| Mock fallback | isolated demo state only |
 
 | Field | Save chat message |
 | --- | --- |
 | Now | `frontend/src/routes/api/chat.ts` inserts the user message before streaming and the assistant message in `onFinish` |
 | Owner later | **SB (transcript) + PY (AI metadata)** — Python stores `sources`, `used_model`, `retrieval_summary` alongside `message_id` |
 | Endpoint | implicit in `POST /api/chat`; no separate call |
-| Risk | double-writes if both sides persist. Decide once — see `OPEN_QUESTIONS_FOR_BACKEND.md` Q1. |
+| Invariant | TanStack writes the transcript; Python reads it and writes linked context metadata only. |
 
 | Field | Show RAG source snippets |
 | --- | --- |
@@ -98,7 +98,7 @@ Legend for **Owner (later)**: `PY` = Python FastAPI, `SB` = Supabase, `LS` = loc
 | Field | Load subject details |
 | --- | --- |
 | Route | `/school/$subject` · Component `school.$subject.tsx` |
-| Now | static metadata + local assessments |
+| Now | static metadata + Supabase-backed assessments |
 | Owner later | **PY** for corpus/index info, **LS** for grades |
 | Endpoint | `GET /api/subjects/{subject_id}` |
 | Response | `subject_id, display_name, language, components[], materials_count, chunks_indexed, last_indexed_at` |
@@ -116,8 +116,8 @@ Legend for **Owner (later)**: `PY` = Python FastAPI, `SB` = Supabase, `LS` = loc
 | Field | Load materials |
 | --- | --- |
 | Component | `app/MaterialsPanel.tsx` |
-| Now | `AppDataProvider.materials` in `localStorage` (sections: Learning Material, Syllabus, Learning Goals, Grading Criteria, Online Sources, Archived) |
-| Owner later | **PY** (indexed files) merged with **LS** (user links/notes) |
+| Now | `AppDataProvider.materials` hydrates from Supabase `documents`; originals are private Storage objects |
+| Owner | **SB** persistence + **PY** local parsing/chunking/embedding |
 | Endpoint | `GET /api/subjects/{subject_id}/materials` |
 | Response | `[{material_id, name, type, section, status, pages, chunks, added_at, url}]` |
 | Loading | existing panel skeleton | Error: show local materials only + banner | Empty: existing empty state |
@@ -125,9 +125,9 @@ Legend for **Owner (later)**: `PY` = Python FastAPI, `SB` = Supabase, `LS` = loc
 | Field | Import / upload material |
 | --- | --- |
 | Component | `app/TranscriptImportDialog.tsx` (transcript OCR sim) and MaterialsPanel add dialog |
-| Now | simulated parse → local record |
-| Owner later | **PY** |
-| Endpoint | `POST /api/import/document` (multipart) |
+| Now | authenticated private Storage upload → `POST /api/context/documents/storage` → local parsing |
+| Owner | **SB** original/metadata/chunks + **PY** computation |
+| Endpoint | `POST /api/context/documents/storage` |
 | Request | `file`, `subject_id`, `component_subject_id`, `section`, `language` |
 | Response | `{material_id, name, type, pages, chunks_indexed, status, warnings[]}` |
 | Loading | progress states: Uploading → Parsing → Indexing | Error: keep the file listed as `Needs review` | Empty: n/a |
@@ -172,7 +172,7 @@ Legend for **Owner (later)**: `PY` = Python FastAPI, `SB` = Supabase, `LS` = loc
 | --- | --- |
 | Route | `/planner` (and subject dashboard) · Component: `EventDialog` / planner generation action |
 | Now | locally generated sessions flagged `generated: true` on `PlannerEvent` |
-| Owner later | **PY** proposes, **LS** stores |
+| Owner later | **PY** proposes, **SB** stores accepted plan/history |
 | Endpoint | `POST /api/study-plan/generate` |
 | Request | `subject_ids[], language, academic_year, grade_level, exam_dates[], available_slots[], daily_minutes_max, start_date, end_date` |
 | Response | `plan_id, items[] {date, start, end, subject_id, component_subject_id, topic, learning_goal_id, minutes, rationale}` |
@@ -192,7 +192,7 @@ Legend for **Owner (later)**: `PY` = Python FastAPI, `SB` = Supabase, `LS` = loc
 | Request | `category, rating, message, route, thread_id, message_id, subject_id, language, app_version` |
 | Response | `{feedback_id, created_at}` |
 | Loading | submit spinner | Error: keep the draft locally and retry later | Empty: submit disabled while empty |
-| Mock fallback | stored in `localStorage` queue |
+| Mock fallback | UUID-scoped cache only until Supabase reconnects |
 
 | Field | Load backend/model health |
 | --- | --- |
@@ -207,7 +207,7 @@ Legend for **Owner (later)**: `PY` = Python FastAPI, `SB` = Supabase, `LS` = loc
 | Field | Backend-unavailable banner |
 | --- | --- |
 | Component | new `frontend/src/components/app/BackendStatusBanner.tsx` in `AppShell` |
-| Behaviour | Non-blocking amber bar: "Study AI backend offline — grades, planner and materials still work." Includes Retry. Disables AI-only actions; never blocks localStorage features. |
+| Behaviour | Non-blocking amber bar: "Study AI backend offline — grades, planner and cached materials still work." Includes Retry and disables AI-only actions. |
 
 | Field | Local / remote model status |
 | --- | --- |
@@ -217,11 +217,11 @@ Legend for **Owner (later)**: `PY` = Python FastAPI, `SB` = Supabase, `LS` = loc
 
 ---
 
-## 5. Stays in Supabase for now
+## 5. Final ownership
 
-| Piece | Stage 1 decision |
+| Piece | Decision |
 | --- | --- |
-| Authentication and session | **Stays in Supabase.** Do not touch. |
-| Chat threads / messages | **Stays in Supabase**, unless it blocks fully-offline local use. |
-| Prototype data (grades, planner, materials, links, profile, demo mode) | **Stays in `localStorage`.** |
-| AI inference, RAG, sources, quizzes, exams, grading, study plans, feedback | **Moves to Python** in Stage 1/2. |
+| Authentication and session | **Developer-owned Supabase.** Lovable remains editor only. |
+| Chat threads / messages | **Supabase**, as the single transcript. |
+| Grades, planner, materials, links, profile, notifications, histories | **Supabase**; demo mode alone stays local. |
+| AI inference, RAG algorithms, quizzes, exams, grading, study-plan generation | **Local FastAPI/Qwen**; durable results return to Supabase. |

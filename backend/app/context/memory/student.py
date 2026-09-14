@@ -9,7 +9,7 @@ from typing import Any
 
 from ..config import MemoryConfig
 from ..models import ContextItem, ContextPriority, ContextType, StudentMemory
-from ..store import SQLiteContextStore
+from ..store_base import ContextStore
 from ..text import lexical_overlap, normalize_text
 from ..tokenization import TokenCounter
 
@@ -29,9 +29,7 @@ ALLOWED_MEMORY_TYPES = {
 class StudentMemoryManager:
     """Store only explicit or repeated learner facts and retrieve them selectively."""
 
-    def __init__(
-        self, store: SQLiteContextStore, counter: TokenCounter, config: MemoryConfig
-    ) -> None:
+    def __init__(self, store: ContextStore, counter: TokenCounter, config: MemoryConfig) -> None:
         """Configure durable learner-memory extraction thresholds."""
 
         self.store = store

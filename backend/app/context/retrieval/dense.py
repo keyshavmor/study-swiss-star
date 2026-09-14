@@ -12,7 +12,7 @@ from itertools import pairwise
 from typing import Protocol
 
 from ..models import ContextItem
-from ..store import SQLiteContextStore
+from ..store_base import ContextStore
 from ..text import terms
 from .common import chunk_to_item
 
@@ -124,9 +124,7 @@ def cosine(left: list[float], right: list[float]) -> float:
 class DenseRetriever:
     """Rank locally stored chunks by embedding similarity."""
 
-    def __init__(
-        self, store: SQLiteContextStore, embedder: Embedder, *, max_chunks: int = 500
-    ) -> None:
+    def __init__(self, store: ContextStore, embedder: Embedder, *, max_chunks: int = 500) -> None:
         """Configure the local corpus, embedder, and candidate ceiling."""
 
         self.store = store
@@ -137,6 +135,7 @@ class DenseRetriever:
         self,
         query: str,
         *,
+        student_id: str,
         subject: str | None = None,
         document_types: set[str] | None = None,
         document_ids: set[str] | None = None,
@@ -146,6 +145,7 @@ class DenseRetriever:
 
         query_embedding = await self.embedder.embed(query)
         chunks = self.store.list_chunks(
+            student_id=student_id,
             subject=subject,
             document_types=document_types,
             document_ids=document_ids,

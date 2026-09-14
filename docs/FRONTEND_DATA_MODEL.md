@@ -1,8 +1,8 @@
 # Frontend Data Model
 
 Stable TypeScript types for the frontend ↔ Python contract. Names are fixed so the backend can
-mirror them 1:1 with Pydantic models. Wire format is `snake_case`; existing local prototype types
-keep their current camelCase field names until a type is explicitly migrated.
+mirror them 1:1 with Pydantic models. Wire format is `snake_case`; existing UI-facing types retain
+their camelCase field names while the repository adapter maps normalized Supabase columns.
 
 The implemented chat/context response types live in `frontend/src/lib/context-backend.types.ts`. Types for
 the still-planned quiz/exam/planner endpoints should move to a shared API-types module when those
@@ -15,14 +15,14 @@ features are implemented.
 | `Subject` | `frontend/src/lib/mock/subjects.ts` | static module | FE (list) + PY (index meta) | `SubjectModel` |
 | `SubjectComponent` | implicit (`Subject.components`) | static module | FE + PY | `SubjectComponentModel` |
 | `LearningGoal` | — (new) | — | PY | `LearningGoalModel` |
-| `Material` | `frontend/src/lib/store/types.ts` | localStorage | LS + PY | `MaterialModel` |
+| `Material` | `frontend/src/lib/store/types.ts` | Supabase Postgres + private Storage | SB + local PY indexing | `MaterialModel` |
 | `MaterialSource` | — (new) | — | PY | `MaterialSourceModel` |
-| `Assessment` | `frontend/src/lib/store/types.ts` | localStorage | LS | `AssessmentModel` |
-| `PlannerEvent` | `frontend/src/lib/store/types.ts` | localStorage | LS | `PlannerEventModel` |
-| `SchoolLink` | `frontend/src/lib/store/types.ts` | localStorage | LS | `SchoolLinkModel` |
-| `StudentProfile` | `frontend/src/lib/store/types.ts` | localStorage | LS | `StudentProfileModel` |
+| `Assessment` | `frontend/src/lib/store/types.ts` | Supabase | SB | `AssessmentModel` |
+| `PlannerEvent` | `frontend/src/lib/store/types.ts` | Supabase | SB | `PlannerEventModel` |
+| `SchoolLink` | `frontend/src/lib/store/types.ts` | Supabase | SB | `SchoolLinkModel` |
+| `StudentProfile` | `frontend/src/lib/store/types.ts` | Supabase | SB | `StudentProfileModel` |
 | `AcademicYear` | `frontend/src/lib/mock/academic.ts` | static + context | FE | `AcademicYearModel` |
-| `ChatThread` | `frontend/src/lib/chat.functions.ts` | Supabase | SB (Stage 1) | `ChatThreadModel` |
+| `ChatThread` | `frontend/src/lib/chat.functions.ts` | Supabase | SB | `ChatThreadModel` |
 | `ChatMessage` | `frontend/src/lib/chat.functions.ts` | Supabase | SB + PY metadata | `ChatMessageModel` |
 | `ChatRequest` | — (new) | — | PY | `ChatRequest` |
 | `ChatResponse` | — (new) | — | PY | `ChatResponse` |
@@ -30,12 +30,12 @@ features are implemented.
 | `Quiz` / `QuizQuestion` | — (new) | — | PY | `Quiz` / `QuizQuestion` |
 | `MockExam` / `MockExamQuestion` | — (new) | — | PY | `MockExam` / `MockExamQuestion` |
 | `GradingRequest` / `GradingResult` | partly `frontend/src/lib/grade-math.ts` | FE math | PY eval + FE display | `GradingRequest` / `GradingResult` |
-| `StudyPlan` / `StudyPlanItem` | — (new) | — | PY → LS | `StudyPlan` / `StudyPlanItem` |
+| `StudyPlan` / `StudyPlanItem` | — (new) | Supabase schema | PY generation → SB history | `StudyPlan` / `StudyPlanItem` |
 | `FeedbackEntry` | — (new) | local form | PY | `FeedbackEntry` |
 | `ModelStatus` | — (new) | — | PY | `ModelStatus` |
 | `BackendHealth` | — (new) | — | PY | `BackendHealth` |
 | `APIError` | — (new) | — | PY | `APIError` |
-| `ContextItem` / `CompiledContext` | `backend/app/context/models.py` | local SQLite / request | PY | Python dataclasses (internal, not ordinary student UI data) |
+| `ContextItem` / `CompiledContext` | `backend/app/context/models.py` | Supabase rows / request | SB persistence + PY computation | Python dataclasses (internal) |
 
 ---
 
@@ -129,7 +129,7 @@ export interface MaterialSource {
 
 Existing local shape: `Material` in `frontend/src/lib/store/types.ts` (`id`, `subjectSlug`, `added`).
 
-## Grades & planner (localStorage-owned)
+## Grades and planner (Supabase-owned)
 
 ```ts
 export interface Assessment {
@@ -167,8 +167,8 @@ export interface Assessment {
 
 `PlannerEvent`, `SchoolLink`, `StudentProfile` remain exactly as defined in
 `frontend/src/lib/store/types.ts` (`PlannerEvent` includes `recurrence`, `weekdays`, `until`, `exceptions`,
-`overrides`, `generated`). They stay localStorage-owned; Pydantic mirrors are only needed if
-Stage 3 syncs them.
+`overrides`, `generated`). Their shapes remain stable while `AppDataProvider` maps them to normalized
+Supabase rows. The UUID-scoped browser copy is only an optimistic/disposable cache.
 
 ```ts
 export interface AcademicYear {

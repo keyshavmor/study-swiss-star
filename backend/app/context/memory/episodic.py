@@ -7,7 +7,7 @@ from datetime import UTC, datetime
 from typing import Any
 
 from ..models import ContextItem, ContextPriority, ContextType, LearningEvent
-from ..store import SQLiteContextStore
+from ..store_base import ContextStore
 from ..text import lexical_overlap
 from ..tokenization import TokenCounter
 
@@ -26,7 +26,7 @@ ALLOWED_EVENT_TYPES = {
 class EpisodicMemoryManager:
     """Manage assessments and activities used in progress-aware tutoring."""
 
-    def __init__(self, store: SQLiteContextStore, counter: TokenCounter) -> None:
+    def __init__(self, store: ContextStore, counter: TokenCounter) -> None:
         """Configure the event store and token counter."""
 
         self.store = store

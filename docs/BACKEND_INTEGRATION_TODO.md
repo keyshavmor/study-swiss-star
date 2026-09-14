@@ -4,10 +4,10 @@ This checklist reflects the repository after the Context Manager implementation.
 
 ## Completed audit and context core
 
-- [x] Audited every tracked source/config/documentation path and the Supabase schema.
+- [x] Audited tracked source/config/documentation paths and repository migrations.
 - [x] Confirmed the 15-card subject model, actual frontend slugs, SPF grouping, language map, and
   Swiss grade math.
-- [x] Added the local Python project and idempotent SQLite schema.
+- [x] Added a storage protocol, Supabase production adapter, and isolated SQLite test adapter.
 - [x] Added normalized context/document/memory/artifact models.
 - [x] Added configurable token counting, per-section budgets, global priority trimming, and a
   single compiler.
@@ -41,11 +41,14 @@ This checklist reflects the repository after the Context Manager implementation.
 - [ ] Add a backend health banner and health/model rows to Diagnostics and Settings.
 - [ ] Add subject-specific component context to chat launched from the SPF workspace.
 - [ ] Wire indexed materials and learning goals into subject pages.
-- [ ] Add multipart document upload; retain the user review path for parsed assessments.
+- [x] Add private Storage upload and authenticated local ingestion; retain review on failure.
 - [ ] Implement quiz, mock-exam, grading, and study-plan APIs and UIs.
 - [ ] Persist feedback with an offline retry queue.
 - [ ] Decide whether genuine FastAPI/model token streaming is worth the extra complexity.
-- [ ] Add export/import or backup for localStorage and local SQLite data.
+- [x] Added the canonical Supabase persistence implementation and a documented optional old-project
+  migration path.
+- [x] Applied `20260914131010_canonical_user_backend.sql` and the composite-FK index follow-up after
+  explicit owner approval, passed live RLS/Storage isolation tests, and regenerated target types.
 
 ## Verification checklist
 
@@ -61,7 +64,8 @@ This checklist reflects the repository after the Context Manager implementation.
 ## Hard constraints
 
 - Do not remove or weaken Supabase authentication.
-- Keep Lovable project metadata and authentication integration; these are independent of AI generation.
+- Keep Lovable metadata, Vite/editor tooling, preview support, and Git integration; runtime
+  authentication belongs directly to the developer-owned Supabase project.
 - Do not edit generated route/Supabase files or published Git history.
 - Do not change the 15-subject/SPF/Swiss-grade rules as part of backend work.
 - Do not put model credentials in `VITE_*` variables.

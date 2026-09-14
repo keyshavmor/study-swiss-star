@@ -1,7 +1,7 @@
 # Alim — Swiss Gymnasium study application
 
 Alim is a local-first tutoring application with a TanStack Start frontend, a Python context
-compiler, Supabase authentication/chat persistence, and the official open-weight
+compiler, developer-owned Supabase authentication/durable persistence, and the official open-weight
 `Qwen/Qwen3.8-27B` model served locally through the cross-platform `llama.cpp` runtime.
 
 ## Repository layout
@@ -131,8 +131,9 @@ relevant local learning-material match.
 Reference retrieval is enabled by default through an `auto` adapter that first searches UTF-8
 Markdown, text, and HTML snapshots under `material/web/`. If there is no relevant local match, it
 automatically fetches a current reference from Wikipedia. Results carry source provenance and
-timestamps, are treated as untrusted reference text, and are cached in
-`app-data/context/alim-context.db`. `allow_web=false` disables this branch per request and
+timestamps, are treated as untrusted reference text, and use only an ephemeral per-request cache
+in production. The SQLite test adapter may cache them in its isolated fixture. `allow_web=false`
+disables this branch per request and
 `ALIM_WEB_ENABLED=false` disables it globally. Conversational search instructions such as “browse
 online and explain … in one sentence” are removed before lookup so named topics—not presentation
 wording—drive result relevance.
@@ -166,7 +167,7 @@ checked before the request is sent to Qwen.
 | `ALIM_MODEL_PORT` | `8000` | Local model-server port |
 | `ALIM_LLM_BASE_URL` | `http://127.0.0.1:8000/v1` | OpenAI-compatible Qwen endpoint |
 | `ALIM_LLM_MODEL` | `Qwen/Qwen3.8-27B` | Required served model name |
-| `ALIM_CONTEXT_DB` | `app-data/context/alim-context.db` | Reusable local context state |
+| `ALIM_CONTEXT_DB` | test-only path | SQLite fixture location when an isolated test adapter is explicitly injected |
 | `ALIM_MAX_CONTEXT_TOKENS` | hardware-adaptive | Total model context budget |
 | `ALIM_RESERVED_OUTPUT_TOKENS` | one quarter, up to 16,384 | Guaranteed output allowance |
 | `ALIM_WEB_ENABLED` | `true` | Permit intent-gated reference retrieval |
@@ -199,9 +200,12 @@ process fixture, it loads the 17.67 GiB checkpoint and is run deliberately on an
 
 ## Data ownership and privacy
 
-- Supabase stores authenticated threads and messages.
-- Browser prototype state remains in `localStorage`.
-- `app-data/` stores reusable local RAG/memory/artifact/web-cache state.
+- Supabase project `ucacmeadsufiedxrgqit` stores authentication, all durable private application
+  state, private materials, transcripts, chunks, memories, and AI history under RLS.
+- Browser storage is an account-scoped disposable cache only. Demo records remain local and are
+  never uploaded into a signed-in account.
+- FastAPI performs parsing, chunking, embeddings, retrieval, memory extraction, context compilation,
+  and Qwen orchestration locally. SQLite remains only as a deterministic test adapter.
 - `material/` contains operator-supplied learning sources.
 - `models/` contains local open weights.
 - The default reference provider searches locally first. Only when no relevant local match exists
@@ -217,3 +221,4 @@ process fixture, it loads the 17.67 GiB checkpoint and is run deliberately on an
 - [API contracts](docs/API_EXPECTATIONS.md)
 - [Frontend architecture](docs/FRONTEND_ARCHITECTURE.md)
 - [State and storage](docs/STATE_AND_STORAGE.md)
+- [Supabase cutover and OAuth runbook](docs/SUPABASE_MIGRATION.md)

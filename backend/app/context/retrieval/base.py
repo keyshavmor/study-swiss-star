@@ -14,6 +14,7 @@ class Retriever(Protocol):
         self,
         query: str,
         *,
+        student_id: str,
         subject: str | None = None,
         document_types: set[str] | None = None,
         document_ids: set[str] | None = None,

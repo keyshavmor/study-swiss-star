@@ -5,7 +5,7 @@ import type { Database } from "./types";
 import { brokeredPreviewStorage } from "./previewAuthStorage";
 
 function isNewSupabaseApiKey(value: string): boolean {
-  return value.startsWith("sb_publishable_") || value.startsWith("sb_secret_");
+  return value.startsWith("sb_publishable_");
 }
 
 function createSupabaseFetch(supabaseKey: string): typeof fetch {
@@ -43,9 +43,12 @@ function createSupabaseClient() {
       ...(!SUPABASE_URL ? ["SUPABASE_URL"] : []),
       ...(!SUPABASE_PUBLISHABLE_KEY ? ["SUPABASE_PUBLISHABLE_KEY"] : []),
     ];
-    const message = `Missing Supabase environment variable(s): ${missing.join(", ")}. Connect Supabase in Lovable Cloud.`;
+    const message = `Missing Supabase environment variable(s): ${missing.join(", ")}. Configure the frontend environment from .env.example.`;
     console.error(`[Supabase] ${message}`);
     throw new Error(message);
+  }
+  if (SUPABASE_PUBLISHABLE_KEY.startsWith("sb_secret_")) {
+    throw new Error("SUPABASE_PUBLISHABLE_KEY must not contain a secret key");
   }
 
   return createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {

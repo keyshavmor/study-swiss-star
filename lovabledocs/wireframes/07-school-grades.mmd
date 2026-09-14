@@ -16,5 +16,5 @@ flowchart TD
   Cards --> Subject["/school/$subject"]
   Add[Add edit duplicate move delete assessment] --> AppData[AppDataProvider CRUD]
   Import[Transcript simulation: parse review confirm] --> AppData
-  AppData --> Store[(Browser storage\nIMPLEMENTED LOCAL)]
+  AppData --> Store[(Supabase-backed state\nUUID cache)]
   Store --> Data

@@ -6,7 +6,7 @@ This pack is a code-navigation aid for maintainers and coding agents. It maps th
 
 - **IMPLEMENTED** — executable in the current repository.
 - **IMPLEMENTED LOCAL** — runs in the frontend and persists in browser storage.
-- **IMPLEMENTED CLOUD** — uses Lovable Cloud for identity or chat persistence.
+- **IMPLEMENTED CLOUD** — uses MY Supabase for identity, durable state, private Storage, and AI metadata.
 - **PLANNED** — documented contract or placeholder UI, not currently wired end to end.
 - **OPTIONAL** — exists but is enabled only through explicit configuration.
 
@@ -17,8 +17,8 @@ Start with diagrams 1–4 for architecture, routing, composition, and state owne
 ## Non-negotiable boundaries
 
 1. The frontend owns the fixed 15-subject presentation model, subject languages, SPF display combination, Swiss grade rounding, and failing-grade styling.
-2. Lovable Cloud currently owns authentication and per-user chat threads/messages.
-3. Browser storage currently owns grades, planner events, local materials, school links, profile, academic year, notifications, and demo mode.
+2. MY Supabase owns authentication and every durable user-owned row/object; `auth.users.id` is the owner.
+3. Supabase owns grades, planner, materials, links, profile, preferences, and notification state; browser storage is a UUID-scoped disposable cache and holds isolated demo state.
 4. Python owns AI context compilation, retrieval, memories, source provenance, document indexing, and local/remote model calls.
 5. The TanStack `POST /api/chat` route is the authenticated bridge and the single current writer of chat transcript rows.
 6. Quiz, mock-exam, answer-grading, study-plan, feedback, subject metadata, material-list, and health UI integrations are planned unless a diagram explicitly marks a backend-only endpoint as implemented.
@@ -34,18 +34,18 @@ flowchart LR
   Student[Student] --> Browser[React UI in browser\nIMPLEMENTED]
   Browser --> Router[TanStack file routes\nIMPLEMENTED]
   Router --> Providers[Query + Theme + AppData + AcademicYear\nIMPLEMENTED]
-  Providers --> Local[(Browser storage\nGrades, planner, profile, links, demo\nIMPLEMENTED LOCAL)]
+  Providers --> Local[(UUID-scoped cache + demo\nDISPOSABLE LOCAL)]
+  Providers --> Cloud
   Router --> Auth[Authenticated route gate\nIMPLEMENTED]
-  Auth --> Cloud[(Lovable Cloud\nIdentity + threads + messages\nIMPLEMENTED CLOUD)]
+  Auth --> Cloud[(MY Supabase\nAuth + Postgres + Storage + RLS\nIMPLEMENTED CLOUD)]
   Browser --> ChatRoute[POST /api/chat\nTanStack server route\nIMPLEMENTED]
   ChatRoute --> Cloud
   ChatRoute --> Adapter[context-backend.server.ts\nIMPLEMENTED]
   Adapter --> Python[FastAPI localhost:8001\nIMPLEMENTED FOR CHAT]
   Python --> Context[Context Manager\nintent + budget + memory\nIMPLEMENTED]
-  Context --> Retrieval[(SQLite chunks + hybrid retrieval\nIMPLEMENTED)]
+  Context --> Retrieval[(Supabase private chunks + hybrid retrieval\nIMPLEMENTED)]
   Context --> Files[(PDF DOCX MD TXT corpus\nPARTIAL INGESTION)]
-  Python --> Model[Ollama or vLLM\nCONFIGURED EXTERNALLY]
-  ChatRoute -. opt-in fallback .-> Gateway[Lovable AI Gateway\nIMPLEMENTED OPTIONAL]
+  Python --> Model[Qwen3.8-27B via llama.cpp\nLOCALHOST 8000]
   Python -. future APIs .-> Future[Quiz, exam, grading, plan, feedback\nPLANNED]
 ```
 
@@ -127,15 +127,16 @@ Standalone: [`04-state-ownership.mmd`](wireframes/04-state-ownership.mmd)
 ```mermaid
 flowchart LR
   Static[Static frontend\n15 subjects + languages + SPF mapping] --> UI[Rendered UI]
-  Local[(Browser storage\nassessments events materials links profile demo)] --> AppData[AppDataProvider]
+  Cloud[(MY Supabase\nall durable private state)] --> AppData[AppDataProvider]
+  Local[(UUID-scoped cache + demo)] --> AppData
   AppData --> UI
   AppData --> Grade[grade-math.ts\nSwiss formula + summaries + SPF]
   Grade --> UI
-  Year[(Browser storage\nacademic year)] --> Academic[AcademicYearProvider]
+  Cloud --> Academic[AcademicYearProvider]
   Academic --> UI
-  Cloud[(Lovable Cloud\nusers threads messages)] --> ServerFns[Authenticated server functions]
+  Cloud --> ServerFns[Authenticated server functions]
   ServerFns --> UI
-  Python[(Python SQLite\nchunks memories artifacts)] --> FastAPI[FastAPI]
+  Python[(Local Python + Supabase RLS\nchunks memories artifacts)] --> FastAPI[FastAPI]
   FastAPI --> ChatAPI[TanStack /api/chat]
   ChatAPI --> UI
   Static -->|subject/language context| ChatAPI
@@ -154,7 +155,7 @@ sequenceDiagram
   actor Student
   participant Page as Protected page
   participant Gate as _authenticated route gate
-  participant Cloud as Lovable Cloud identity
+  participant Cloud as MY Supabase identity
   participant Auth as /auth and AuthForm
   Student->>Page: Open protected URL
   Page->>Gate: beforeLoad
@@ -200,7 +201,7 @@ flowchart TD
   LinkUI --> UI
   UI --> School["/school"]
   UI --> Planner["/planner"]
-  UI --> Local[(Browser storage\nIMPLEMENTED LOCAL)]
+  UI --> Local[(Supabase-backed state\nUUID cache)]
 ```
 
 ## 7. School and grades journey
@@ -228,7 +229,7 @@ flowchart TD
   Cards --> Subject["/school/$subject"]
   Add[Add edit duplicate move delete assessment] --> AppData[AppDataProvider CRUD]
   Import[Transcript simulation: parse review confirm] --> AppData
-  AppData --> Store[(Browser storage\nIMPLEMENTED LOCAL)]
+  AppData --> Store[(Supabase-backed state\nUUID cache)]
   Store --> Data
 ```
 
@@ -252,7 +253,7 @@ flowchart TD
   Grades --> Stats[Statistics mode\nIMPLEMENTED]
   Modes --> Chat[Open /chat\nIMPLEMENTED but subject is entered on thread]
   Modes -.-> Future[Knowledge analysis quiz exam plan tools\nPLACEHOLDER UI / PLANNED]
-  Materials --> Local[(Browser storage\nIMPLEMENTED LOCAL)]
+  Materials --> Local[(Supabase-backed state\nUUID cache)]
   Materials -.-> Indexed[Python indexed materials\nPLANNED MERGE]
   Toggle --> Scope[Component subject ID for future retrieval]
   Scope -.-> Python[FastAPI subject APIs\nPLANNED]
@@ -270,11 +271,11 @@ sequenceDiagram
   actor Student
   participant UI as StudyChat
   participant Fn as Authenticated server functions
-  participant Cloud as Lovable Cloud threads/messages
+  participant Cloud as MY Supabase threads/messages
   participant API as TanStack POST /api/chat
   participant PY as Python FastAPI /api/chat
   participant RAG as Context Manager + retrieval
-  participant LLM as Ollama or vLLM
+  participant LLM as local Qwen3.8-27B/llama.cpp
   Student->>UI: Open /chat
   UI->>Fn: listThreads or createThread
   Fn->>Cloud: User-scoped thread operation
@@ -296,10 +297,7 @@ sequenceDiagram
   API->>Cloud: Save completed assistant UI message
   API-->>UI: AI SDK text and context-metadata stream parts
   UI-->>Student: Markdown answer + exam tip + collapsible sources
-  opt Python unavailable and fallback enabled
-    API->>API: Use Lovable AI Gateway
-    API-->>UI: Stream answer without Python sources
-  end
+  note over API,PY: No cloud generation fallback; local outage returns 503
 ```
 
 ## 10. Planner journey
@@ -321,7 +319,7 @@ flowchart TD
   Scope -->|Yes one| Override[Store occurrence override or exception]
   Scope -->|Yes future| Split[End head and create tail series]
   Scope -->|Yes all| Series
-  Series --> Store[(Browser storage\nIMPLEMENTED LOCAL)]
+  Series --> Store[(Supabase-backed state\nUUID cache)]
   Override --> Store
   Split --> Store
   Generate[Generate study plan action\nPLANNED] -.-> Context[Send exams + free slots + limits]
@@ -339,15 +337,15 @@ Standalone: [`11-materials.mmd`](wireframes/11-materials.mmd)
 
 ```mermaid
 flowchart TD
-  Panel[MaterialsPanel on subject workspace] --> LocalList[Local user files links and notes]
+  Panel[MaterialsPanel on subject workspace] --> LocalList[User files links and notes]
   LocalList --> CRUD[Add edit archive delete restore]
-  CRUD --> Local[(Browser storage\nIMPLEMENTED LOCAL)]
+  CRUD --> Local[(Supabase-backed state\nUUID cache)]
   Panel -. planned merge .-> BackendList[Indexed corpus materials]
   BackendList -.-> GET["GET /api/subjects/{id}/materials\nPLANNED"]
   Upload[Choose PDF DOCX MD or TXT\nPLANNED UI WIRING] -.-> Import[POST /api/import/document multipart\nPLANNED]
   Import -.-> Parse[Python parse and normalize]
   Parse -.-> Chunk[Chunk + embed + index]
-  Chunk -.-> Store[(Python SQLite/vector index)]
+  Chunk -.-> Store[(Local Python + Supabase RLS/vector index)]
   Store -.-> BackendList
   Import -. success .-> Status[Indexed status pages chunks warnings]
   Import -. parse failure .-> Review[Keep item visible as Needs review]
@@ -372,7 +370,7 @@ flowchart TD
   QAPI -.-> Retrieve[Python retrieves goals and materials]
   EAPI -.-> Retrieve
   GAPI -.-> Rubric[Python retrieves rubric and references]
-  Retrieve -.-> Model[Ollama or vLLM]
+  Retrieve -.-> Model[local Qwen3.8-27B via llama.cpp]
   Rubric -.-> Model
   Model -.-> QuizUI[Quiz questions + sources]
   Model -.-> ExamUI[Exam questions + points + rubrics]
@@ -382,19 +380,19 @@ flowchart TD
   Result -.-> Formula[Exact grade = 1 + 5 times points / max\nclamped 1 to 6]
   Formula -.-> Display[Frontend rounds to 0.5 and marks below 4.0]
   Display -.-> Confirm{Save as practice assessment?}
-  Confirm -. yes .-> Local[(Browser storage via AppDataProvider)]
+  Confirm -. yes .-> Local[(Supabase via AppDataProvider)]
 ```
 
 ## 13. Statistics journey
 
-How local assessments become subject, yearly, and trend views.
+How Supabase-backed assessments become subject, yearly, and trend views.
 
 Standalone: [`13-statistics.mmd`](wireframes/13-statistics.mmd)
 
 ```mermaid
 flowchart TD
   Open[Open /stats] --> Year[Selected academic year]
-  Year --> Filter[Filter local assessments]
+  Year --> Filter[Filter Supabase-backed assessments]
   Filter --> Summary[summariseYear]
   Filter --> Monthly[monthlySeries]
   Filter --> Rows[Test table filtered by subject]
@@ -405,7 +403,7 @@ flowchart TD
   Monthly --> Trend[Average-over-time chart]
   Subjects --> Compare[Subject comparison]
   Rows --> CRUD[Edit duplicate move delete assessments]
-  CRUD --> Store[(Browser storage\nIMPLEMENTED LOCAL)]
+  CRUD --> Store[(Supabase-backed state\nUUID cache)]
   Store --> Filter
   YearAverage --> Failing{Grade below 4.0?}
   Failing -->|Yes| Orange[Warning styling]
@@ -421,7 +419,7 @@ Standalone: [`14-supporting-screens.mmd`](wireframes/14-supporting-screens.mmd)
 ```mermaid
 flowchart TD
   Profile["/profile"] --> ProfileData[Edit student profile + academic year\nIMPLEMENTED LOCAL]
-  ProfileData --> Local[(Browser storage)]
+  ProfileData --> Local[(Supabase-backed state)]
   Settings["/settings"] --> Toggles[Exam reminders daily summary Apple sync sound\nPROTOTYPE UI ONLY]
   Settings -.-> Model[Backend mode and model status\nPLANNED]
   Demo[Demo Mode toggle] --> DemoData[Switch between user state and fresh demo state\nIMPLEMENTED LOCAL]
@@ -443,7 +441,7 @@ Standalone: [`15-offline-fallback.mmd`](wireframes/15-offline-fallback.mmd)
 
 ```mermaid
 flowchart TD
-  Start[App operation] --> Cloud{Lovable Cloud reachable?}
+  Start[App operation] --> Cloud{MY Supabase reachable?}
   Cloud -->|No before sign-in| AuthBlocked[Protected pages unavailable]
   Cloud -->|Session already valid| LocalScreens[Local screens may remain usable]
   Cloud -->|Yes| Gate[Authentication and chat history available]
@@ -456,7 +454,7 @@ flowchart TD
   Banner -.-> Disable[Disable AI-only actions\nPLANNED]
   Error --> Continue[School grades stats planner profile links demo remain local]
   Disable --> Continue
-  Continue --> Store[(Browser storage)]
+  Continue --> Store[(Supabase-backed state)]
   ModelDown{Model unavailable but FastAPI reachable} --> Degraded["/health returns degraded"]
   Degraded -. planned UI .-> Banner
 ```
