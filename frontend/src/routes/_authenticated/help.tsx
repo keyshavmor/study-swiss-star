@@ -37,7 +37,11 @@ export const Route = createFileRoute("/_authenticated/help")({
             "Grade = 1.0 + 5.0 × (achieved points ÷ maximum points), from 1.0 to 6.0.",
           ],
           ["Study plans", "Plans combine exam dates, free time and your activity schedule."],
-          ["Apple Reminders", "Planner events can mirror into Reminders once connected."],
+          [
+            "Google Calendar",
+            "Connect Google Calendar in the Planner to see your appointments alongside your plan. They stay read-only.",
+          ],
+
         ].map(([title, body]) => (
           <article key={title} className="app-card p-5">
             <h2 className="text-[17px] font-semibold tracking-tight">{title}</h2>

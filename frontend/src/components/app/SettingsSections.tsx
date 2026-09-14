@@ -368,7 +368,7 @@ export function PreferencesSections() {
   const switches: { key: keyof UserPreferences; label: string; hint?: string }[] = [
     { key: "exam_reminders", label: "Exam reminders" },
     { key: "daily_study_summary", label: "Daily study summary" },
-    { key: "apple_reminders_sync", label: "Apple Reminders sync" },
+    { key: "sound_effects", label: "Sound effects" },
     { key: "sound_effects", label: "Sound effects" },
     {
       key: "auto_storage_cleanup",

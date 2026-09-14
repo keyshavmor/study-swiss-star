@@ -1,5 +1,6 @@
 /** Alim application component for study, planning, profile, or navigation workflows. */
-import { Link, useRouterState } from "@tanstack/react-router";
+import { Link, useNavigate, useRouter, useRouterState } from "@tanstack/react-router";
+
 import { GraduationCap, LogOut, Menu, Settings, User } from "lucide-react";
 import { useState } from "react";
 import { DemoModeButton } from "@/components/app/DemoMode";
@@ -18,7 +19,10 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { useAppData } from "@/lib/store/app-data";
+import { signOutCompletely } from "@/lib/sign-out";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
+
 
 const NAV = [
   { to: "/home", label: "Home" },
@@ -37,6 +41,21 @@ export function AppHeader() {
   const displayName = profile.preferredName || profile.fullName || "Your profile";
 
   const isActive = (to: string) => pathname === to || pathname.startsWith(`${to}/`);
+
+  const navigate = useNavigate();
+  const router = useRouter();
+
+  async function handleSignOut() {
+    try {
+      await signOutCompletely();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not sign out");
+      return;
+    }
+    await router.invalidate();
+    await navigate({ to: "/", replace: true });
+  }
+
 
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-surface/95 backdrop-blur-none">
@@ -148,12 +167,11 @@ export function AppHeader() {
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem asChild>
-                <Link to="/auth">
-                  <LogOut className="h-4 w-4" />
-                  Sign out
-                </Link>
+              <DropdownMenuItem onSelect={() => void handleSignOut()}>
+                <LogOut className="h-4 w-4" />
+                Sign out
               </DropdownMenuItem>
+
             </DropdownMenuContent>
           </DropdownMenu>
         </div>

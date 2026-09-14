@@ -1,7 +1,6 @@
 /** TanStack route module defining one Alim screen or local API boundary. */
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import {
-  Apple,
   Bell,
   CalendarDays,
   ChevronLeft,
@@ -19,10 +18,12 @@ import { PageNav } from "@/components/app/Breadcrumbs";
 import { DemoModeBanner } from "@/components/app/DemoMode";
 import { EventDetailDialog } from "@/components/app/EventDetailDialog";
 import { EventDialog } from "@/components/app/EventDialog";
+import { GoogleCalendarCard } from "@/components/app/GoogleCalendarCard";
+import { GoogleCalendarLogo } from "@/components/app/BrandLogos";
 import { EmptyState } from "@/components/app/States";
 import { Timetable } from "@/components/app/Timetable";
 import type { MoveRequest } from "@/components/app/Timetable";
-import { Badge } from "@/components/ui/badge";
+
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -59,8 +60,11 @@ import type { Occurrence } from "@/lib/store/app-data";
 import { occurrencesInRange, useAppData } from "@/lib/store/app-data";
 import type { EventCategory, PlannerEvent } from "@/lib/store/types";
 import { CATEGORY_COLOR, EVENT_CATEGORIES } from "@/lib/store/types";
+import { isGoogleOccurrence } from "@/lib/google-calendar";
+import { track } from "@/lib/telemetry";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+
 
 type PlannerView = "Timetable" | "Day" | "Month" | "List";
 type Scope = "only" | "future" | "series";
@@ -69,7 +73,9 @@ export const Route = createFileRoute("/_authenticated/planner")({
   validateSearch: (search: Record<string, unknown>) => ({
     date: typeof search["date"] === "string" ? search["date"] : undefined,
     event: typeof search["event"] === "string" ? search["event"] : undefined,
+    google: typeof search["google"] === "string" ? search["google"] : undefined,
   }),
+
   head: () => ({
     meta: [
       { title: "Planner — Alim's Study Assistant" },
@@ -116,7 +122,9 @@ function PlannerPage() {
   const [anchor, setAnchor] = useState<string>(() => search.date ?? todayIso());
   const [active, setActive] = useState<EventCategory[]>([...EVENT_CATEGORIES]);
   const [fullDay, setFullDay] = useState(false);
-  const [remindersOn, setRemindersOn] = useState(false);
+  const [googleOccurrences, setGoogleOccurrences] = useState<Occurrence[]>([]);
+  const [googleDetail, setGoogleDetail] = useState<Occurrence | null>(null);
+
   const [selected, setSelected] = useState<Occurrence | null>(null);
   const [editing, setEditing] = useState<{ event: PlannerEvent; date: string } | null>(null);
   const [pendingMove, setPendingMove] = useState<MoveRequest | null>(null);
@@ -141,6 +149,19 @@ function PlannerPage() {
       ),
     [events, range.from, range.to, active],
   );
+
+  /**
+   * Google Calendar items are merged for rendering only — they never enter the
+   * editable planner state.
+   */
+  const visibleOccurrences = useMemo(
+    () =>
+      [...occurrences, ...googleOccurrences.filter((o) => o.date >= range.from && o.date <= range.to)].sort(
+        (a, b) => (a.date === b.date ? a.start.localeCompare(b.start) : a.date.localeCompare(b.date)),
+      ),
+    [occurrences, googleOccurrences, range.from, range.to],
+  );
+
 
   const weekOccurrences = useMemo(
     () =>
@@ -202,6 +223,7 @@ function PlannerPage() {
 
   function applyMove(request: MoveRequest, scope: Scope) {
     const { occurrence, date, start, end } = request;
+    if (isGoogleOccurrence(occurrence)) return;
     if (occurrence.event.recurrence === "none" || scope === "series") {
       updateEvent(occurrence.event.id, { date, start, end });
     } else if (scope === "future") {
@@ -214,16 +236,28 @@ function PlannerPage() {
     } else {
       updateOccurrence(occurrence.event.id, occurrence.originalDate, { date, start, end });
     }
+    track({
+      event_name: "planner_event_moved",
+      feature: "planner",
+      properties: { scope, category: occurrence.event.category },
+    });
     toast.success(`Moved to ${formatDayMonth(date)} at ${start}`);
   }
 
   function handleMove(request: MoveRequest) {
+    if (isGoogleOccurrence(request.occurrence)) return;
     if (request.occurrence.event.recurrence === "none") {
       applyMove(request, "series");
     } else {
       setPendingMove(request);
     }
   }
+
+  function handleSelect(occurrence: Occurrence) {
+    if (isGoogleOccurrence(occurrence)) setGoogleDetail(occurrence);
+    else setSelected(occurrence);
+  }
+
 
   const rangeLabel =
     view === "Month"
@@ -329,108 +363,136 @@ function PlannerPage() {
         })}
       </div>
 
-      {events.length === 0 ? (
-        <EmptyState
-          heading="Your planner is empty"
-          description="Add your classes, exams, study sessions, homework and activities. Nothing is pre-filled — turn on Demo Mode if you want to see an example week."
-          action={
-            <EventDialog
-              defaults={{ date: weekStart }}
-              trigger={
-                <Button>
-                  <Plus className="h-4 w-4" />
-                  Add your first item
-                </Button>
+      <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_320px]">
+        <section className="min-w-0">
+          {events.length === 0 && visibleOccurrences.length === 0 ? (
+            <EmptyState
+              heading="Your planner is empty"
+              description="Add your classes, exams, study sessions, homework and activities. Nothing is pre-filled — turn on Demo Mode if you want to see an example week, or connect Google Calendar to see your appointments."
+              action={
+                <EventDialog
+                  defaults={{ date: weekStart }}
+                  trigger={
+                    <Button>
+                      <Plus className="h-4 w-4" />
+                      Add your first item
+                    </Button>
+                  }
+                />
               }
             />
-          }
-        />
-      ) : (
-        <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_320px]">
-          <section className="min-w-0">
-            {(view === "Timetable" || view === "Day") && (
-              <Timetable
-                weekStart={view === "Day" ? anchor : weekStart}
-                days={view === "Day" ? 1 : 7}
-                occurrences={occurrences}
-                fromHour={fullDay ? 0 : 6}
-                toHour={fullDay ? 24 : 22}
-                onSelect={setSelected}
-                onMove={handleMove}
-                highlightEventId={search.event}
-              />
-            )}
+          ) : (
+            <>
+              {(view === "Timetable" || view === "Day") && (
+                <Timetable
+                  weekStart={view === "Day" ? anchor : weekStart}
+                  days={view === "Day" ? 1 : 7}
+                  occurrences={visibleOccurrences}
+                  fromHour={fullDay ? 0 : 6}
+                  toHour={fullDay ? 24 : 22}
+                  onSelect={handleSelect}
+                  onMove={handleMove}
+                  highlightEventId={search.event}
+                />
+              )}
 
-            {view === "Month" && (
-              <MonthGrid
-                anchor={anchor}
-                occurrences={occurrences}
-                onSelect={setSelected}
-                onPickDay={(iso) => {
-                  setAnchor(iso);
-                  setView("Day");
-                }}
-              />
-            )}
+              {view === "Month" && (
+                <MonthGrid
+                  anchor={anchor}
+                  occurrences={visibleOccurrences}
+                  onSelect={handleSelect}
+                  onPickDay={(iso) => {
+                    setAnchor(iso);
+                    setView("Day");
+                  }}
+                />
+              )}
 
-            {view === "List" && (
-              <ul className="space-y-2.5">
-                {occurrences.length === 0 && (
-                  <li className="app-card p-6 text-center text-[14px] text-muted-foreground">
-                    Nothing planned in the next 30 days.
-                  </li>
-                )}
-                {occurrences.map((o) => {
-                  const subject = o.event.subjectSlug ? getSubject(o.event.subjectSlug) : undefined;
-                  return (
-                    <li
-                      key={`${o.event.id}-${o.originalDate}`}
-                      className="app-card grid grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-3 p-4"
-                    >
-                      <span
-                        className="mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full"
-                        style={{
-                          backgroundColor: o.event.color ?? CATEGORY_COLOR[o.event.category],
-                        }}
-                      />
-                      <button
-                        type="button"
-                        className="min-w-0 text-left"
-                        onClick={() => setSelected(o)}
+              {view === "List" && (
+                <ul className="space-y-2.5">
+                  {visibleOccurrences.length === 0 && (
+                    <li className="app-card p-6 text-center text-[14px] text-muted-foreground">
+                      Nothing planned in the next 30 days.
+                    </li>
+                  )}
+                  {visibleOccurrences.map((o) => {
+                    const subject = o.event.subjectSlug
+                      ? getSubject(o.event.subjectSlug)
+                      : undefined;
+                    const fromGoogle = isGoogleOccurrence(o);
+                    return (
+                      <li
+                        key={`${o.event.id}-${o.originalDate}`}
+                        className="app-card grid grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-3 p-4"
                       >
                         <span
-                          className={cn(
-                            "block truncate text-[15px] font-medium",
-                            o.event.done && "text-muted-foreground line-through",
-                          )}
+                          className="mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full"
+                          style={{
+                            backgroundColor: o.event.color ?? CATEGORY_COLOR[o.event.category],
+                          }}
+                        />
+                        <button
+                          type="button"
+                          className="min-w-0 text-left"
+                          onClick={() => handleSelect(o)}
                         >
-                          {o.title}
-                        </span>
-                        <span className="tabular block text-[13px] text-muted-foreground">
-                          {formatDayMonth(o.date)} · {o.start}–{o.end} ·{" "}
-                          {durationLabel(o.start, o.end)}
-                          {subject ? ` · ${subject.name}` : ""}
-                        </span>
-                        {o.event.location && (
-                          <span className="mt-0.5 inline-flex items-center gap-1.5 text-[12.5px] text-muted-foreground">
-                            <MapPin className="h-3.5 w-3.5" />
-                            {o.event.location}
+                          <span
+                            className={cn(
+                              "flex items-center gap-2 text-[15px] font-medium",
+                              o.event.done && "text-muted-foreground line-through",
+                            )}
+                          >
+                            <span className="truncate">{o.title}</span>
+                            {fromGoogle && (
+                              <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-surface-2 px-2 py-0.5 text-[11px] font-semibold text-muted-foreground">
+                                <GoogleCalendarLogo className="h-3 w-3" />
+                                Google
+                              </span>
+                            )}
                           </span>
+                          <span className="tabular block text-[13px] text-muted-foreground">
+                            {formatDayMonth(o.date)} · {o.start}–{o.end} ·{" "}
+                            {durationLabel(o.start, o.end)}
+                            {subject ? ` · ${subject.name}` : ""}
+                            {fromGoogle ? " · read-only" : ""}
+                          </span>
+                          {o.event.location && (
+                            <span className="mt-0.5 inline-flex items-center gap-1.5 text-[12.5px] text-muted-foreground">
+                              <MapPin className="h-3.5 w-3.5" />
+                              {o.event.location}
+                            </span>
+                          )}
+                        </button>
+                        {fromGoogle ? (
+                          <span className="sr-only">Read-only Google Calendar appointment</span>
+                        ) : (
+                          <OccurrenceMenu
+                            occurrence={o}
+                            onEdit={() => setEditing({ event: o.event, date: o.originalDate })}
+                            onToggleDone={() => {
+                              updateEvent(o.event.id, { done: !o.event.done });
+                              track({
+                                event_name: "planner_event_updated",
+                                feature: "planner",
+                                properties: { action: "toggle_done" },
+                              });
+                            }}
+                            onDuplicate={() => {
+                              duplicateEvent(o.event.id);
+                              track({ event_name: "planner_event_duplicated", feature: "planner" });
+                            }}
+                            onDelete={() => setPendingDelete(o)}
+                          />
                         )}
-                      </button>
-                      <OccurrenceMenu
-                        occurrence={o}
-                        onEdit={() => setEditing({ event: o.event, date: o.originalDate })}
-                        onToggleDone={() => updateEvent(o.event.id, { done: !o.event.done })}
-                        onDuplicate={() => duplicateEvent(o.event.id)}
-                        onDelete={() => setPendingDelete(o)}
-                      />
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
-          </section>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </>
+          )}
+        </section>
+
 
           <aside className="flex h-fit flex-col gap-5 xl:sticky xl:top-24">
             <div className="app-card p-5">
@@ -526,26 +588,45 @@ function PlannerPage() {
               />
             </div>
 
-            <div className="app-card p-5">
-              <div className="flex items-center gap-2.5">
-                <Apple className="h-5 w-5" />
-                <h2 className="text-[17px] font-semibold tracking-tight">Apple Reminders</h2>
-              </div>
-              <p className="mt-2 text-[14px] text-muted-foreground">
-                Mirror exams and study sessions into your Reminders list. Prototype only — nothing
-                is synced.
-              </p>
-              <div className="mt-4 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-[16px] bg-surface-2 p-3.5">
-                <span className="text-[14.5px] font-medium">Sync planner events</span>
-                <Switch checked={remindersOn} onCheckedChange={setRemindersOn} />
-              </div>
-              <Badge variant="secondary" className="mt-3">
-                {remindersOn ? "Connected (simulated)" : "Not connected"}
-              </Badge>
-            </div>
-          </aside>
-        </div>
-      )}
+          <GoogleCalendarCard range={range} onOccurrences={setGoogleOccurrences} />
+        </aside>
+      </div>
+
+      <Dialog
+        open={googleDetail !== null}
+        onOpenChange={(next) => {
+          if (!next) setGoogleDetail(null);
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <GoogleCalendarLogo className="h-4 w-4" />
+              {googleDetail?.title}
+            </DialogTitle>
+            <DialogDescription>
+              {googleDetail
+                ? `${formatDayMonth(googleDetail.date)} · ${googleDetail.start}–${googleDetail.end}`
+                : ""}
+            </DialogDescription>
+          </DialogHeader>
+          {googleDetail?.event.location && (
+            <p className="inline-flex items-center gap-1.5 text-[13.5px] text-muted-foreground">
+              <MapPin className="h-3.5 w-3.5" />
+              {googleDetail.event.location}
+            </p>
+          )}
+          <p className="text-[13.5px] text-muted-foreground">
+            From your Google Calendar. It is shown here read-only — change it in Google Calendar.
+          </p>
+          <DialogFooter>
+            <Button variant="secondary" onClick={() => setGoogleDetail(null)}>
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
 
       {selected && (
         <EventDetailDialog
