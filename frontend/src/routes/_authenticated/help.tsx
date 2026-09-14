@@ -27,11 +27,13 @@ export const Route = createFileRoute("/_authenticated/help")({
 
 /** Static A4 guides in `public/help-guides`, with their verified page counts. */
 const GUIDE_PAGES: Record<LanguageCode, number> = {
-  en: 13,
-  de: 14,
-  ru: 15,
-  es: 14,
-  fr: 14,
+  en: 7,
+  de: 8,
+  gsw: 8,
+  ru: 8,
+  es: 8,
+  fr: 8,
+  it: 8,
 };
 
 const TOPICS: ReadonlyArray<{ title: TranslationKey; body: TranslationKey }> = [
