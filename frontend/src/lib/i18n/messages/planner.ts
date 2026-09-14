@@ -65,7 +65,7 @@ export const planner = {
     "planner.pageTitle": "Planer",
     "planner.pageDescription":
       "Dein 24-Stunden-Stundenplan. Füg Lektionen, Prüfige, Lernblöck und Aktivitäte hinzu – zieh eis, zum's verschiebe.",
-    "planner.breadcrumbHome": "Home",
+    "planner.breadcrumbHome": "Start",
     "planner.breadcrumbPlanner": "Planer",
     "planner.addItem": "Ipunkt hinzuefüege",
     "planner.addFirstItem": "Dis erste Ipunkt hinzuefüege",
