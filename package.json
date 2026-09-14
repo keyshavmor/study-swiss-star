@@ -6,10 +6,11 @@
     "postgres": "^3.4.9"
   },
   "scripts": {
-    "dev": "cd frontend && bun run dev",
-    "build": "cd frontend && bun run build",
-    "build:dev": "cd frontend && bun run build:dev",
+    "frontend:install": "cd frontend && bun install",
+    "dev": "bun run frontend:install && cd frontend && bun run dev",
+    "build": "bun run frontend:install && cd frontend && bun run build",
+    "build:dev": "bun run frontend:install && cd frontend && bun run build:dev",
     "preview": "cd frontend && bun run preview",
-    "typecheck": "cd frontend && bun run typecheck"
+    "typecheck": "bun run frontend:install && cd frontend && bun run typecheck"
   }
 }
