@@ -1,9 +1,10 @@
 # Roadmap
 
 ## Current verification pass
-- Verify removals, translations, speech controls, and message-language metadata; correct remaining frontend gaps.
-- Verify guide assets and matching documentation; run formatting/lint and inspect automatic build checks.
-- Check public preview languages; authenticated checks require an available production session.
+- Corrected missing preference-row saves, English fallback for absent stored language, unavailable speech voices, and the mobile School label.
+- Retained study-chat language hints against user-message IDs without changing the request contract.
+- Verified removals, five A4 guide assets, byte-identical documentation mirrors, formatting, lint (0 errors; 26 warnings), and automatic build OK.
+- Verified the welcome screen in all five languages. Authenticated screen and audible playback checks remain blocked by the unavailable production session; preview telemetry reports CORS failures.
 
 ## Done
 - Sync `supabase/config.toml` to project ref `ucacmeadsufiedxrgqit`.
