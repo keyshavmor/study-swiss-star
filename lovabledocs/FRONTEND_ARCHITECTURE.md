@@ -157,8 +157,10 @@ graph LR
 
 ## Authentication and account data (current)
 
-Supabase Auth handles email/password plus GitHub, LinkedIn and Spotify OAuth;
-there is no Google/Apple/Microsoft path and no Lovable Cloud Auth. Account
+Supabase Auth handles email/password (with username sign-in via the
+`username-login` Edge Function) plus GitHub, LinkedIn and Spotify OAuth; there is
+no Apple or Microsoft path and no Lovable Cloud Auth. Google is used only for the
+read-only Google Calendar identity link in the planner. Account
 profile data lives in `profiles`, UI/model settings in
 `user_preferences.preferences`, and files in the private `profile-avatars`,
 `chat-attachments` and `user-materials` buckets. The general assistant

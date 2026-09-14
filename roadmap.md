@@ -6,7 +6,7 @@
 - Record the live user-isolation policies/indexes migration.
 - Fix preview start-up (installed frontend deps, added root `dev`/`build` scripts).
 - Point `frontend/.env` at the production Supabase project with the new publishable key.
-- Auth UI: removed Google/Apple/Microsoft entirely; email/password kept; added forgot-password
+- Auth UI: removed Apple/Microsoft sign-in entirely; email/password kept; added forgot-password
   (`resetPasswordForEmail`) plus `/auth/update-password`; OAuth limited to GitHub, LinkedIn, Spotify.
 - Rewrote `frontend/src/integrations/supabase/types.ts` for the live schema (profiles,
   user_preferences, documents, assistant_threads/messages/attachments, threads/messages,

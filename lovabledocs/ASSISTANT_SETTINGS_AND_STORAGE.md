@@ -11,10 +11,15 @@ attachment parsing are deliberately still future backend work.
 - Email + password sign-up and sign-in.
 - Password reset: `supabase.auth.resetPasswordForEmail(email, { redirectTo: <origin>/auth/update-password })`,
   then `/auth/update-password` calls `supabase.auth.updateUser({ password })`.
+- Username sign-in: the single "Email or username" field routes usernames to the
+  `username-login` Edge Function, then `supabase.auth.setSession`. Sign-up requires a
+  username (`^[a-z0-9._-]{3,30}$`) sent as `options.data.username`.
 - OAuth providers offered: **GitHub** (`github`), **LinkedIn** (`linkedin_oidc`),
-  **Spotify** (`spotify`). `redirectTo` is always `window.location.origin`.
-- No Google, Apple or Microsoft/Azure authentication exists anywhere in the UI
-  or code. (The unrelated *Apple Reminders* planner preference is not auth.)
+  **Spotify** (`spotify`), each with its real brand logo. `redirectTo` is
+  `${window.location.origin}/home`.
+- No Apple or Microsoft/Azure authentication exists anywhere in the UI or code.
+  Google appears only as a read-only Google Calendar identity link in the planner —
+  never as a sign-in method.
 
 Provider client IDs/secrets and the redirect allow-list are configured in the
 Supabase project itself; the callback is
@@ -39,7 +44,10 @@ further frontend changes. No replies are fabricated in the frontend.
   — `photo` holds an object path inside the private `profile-avatars` bucket.
 - `user_preferences(user_id, preferences jsonb)` — keys used by the UI:
   `selected_qwen_model`, `exam_reminders`, `daily_study_summary`,
-  `apple_reminders_sync`, `sound_effects`, `auto_storage_cleanup`.
+  `sound_effects`, `auto_storage_cleanup`.
+- `feedback(id, user_id, category, message, context jsonb, created_at)` and
+  `usage_events(id, user_id nullable, event_name, feature, subject, properties jsonb, created_at)`
+  — written through the `feedback-submit` and `activity-log` Edge Functions.
 - `assistant_threads(id, user_id, title, created_at, updated_at)`
 - `assistant_messages(id, thread_id, user_id, role, content, parts, metadata, created_at)`
 - `assistant_attachments(id, user_id, thread_id, message_id, storage_bucket, object_path, file_name, mime_type, byte_size, kind, parse_status, metadata, created_at, deleted_at)`
