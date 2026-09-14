@@ -10,7 +10,7 @@ entry documents entry point, preconditions, the user action, the resulting UI st
 frontend handler/component, the Supabase interaction, the backend interaction (explicitly
 labelled), persistence, success state, error state, and next navigation.
 
-Superseded document: `docs/USER_FLOWS.md` predates this catalogue; this file is the current
+Superseded document: `docs/archive/USER_FLOWS.md` predates this catalogue; this file is the current
 source of truth for user journeys.
 
 Status labels used below: **CURRENT — FRONTEND**, **CURRENT — SUPABASE**,
@@ -270,7 +270,7 @@ Status labels used below: **CURRENT — FRONTEND**, **CURRENT — SUPABASE**,
   `frontend/src/lib/grade-math.ts` (`gradeOf`, `summariseSubject`, `summariseYear`,
   `roundToHalf`).
 - **Supabase interaction:** none — assessments are a client-side prototype model in
-  `frontend/src/lib/store/app-data.ts` (see `docs/FRONTEND_DATA_MODEL.md`/`STATE_AND_STORAGE.md`
+  `frontend/src/lib/store/app-data.ts` (see `docs/frontend/FRONTEND_DATA_MODEL.md`/`STATE_AND_STORAGE.md`
   for full model; not re-derived here).
 - **Backend interaction:** none.
 - **Persistence:** in-memory/localStorage-backed `AppDataProvider` state only; not written to

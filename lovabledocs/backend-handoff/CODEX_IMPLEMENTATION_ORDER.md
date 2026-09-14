@@ -84,7 +84,7 @@ the ones in the shared facts: `CURRENT — FRONTEND`, `CURRENT — SUPABASE`,
   require the frontend to resend full history beyond what `/api/chat` already sends (`messages`
   array is available frontend-side but only the last user message's text is currently forwarded to
   the backend as `question`).
-- **Contract reference:** `docs/CONTEXT_MANAGER.md` (existing draft, verify against real backend).
+- **Contract reference:** `docs/archive/CONTEXT_MANAGER.md` (existing draft, verify against real backend).
 - **Verify:** Multi-turn conversation in one thread produces contextually consistent answers.
 
 ## 7. Document ingestion / RAG
@@ -106,7 +106,7 @@ the ones in the shared facts: `CURRENT — FRONTEND`, `CURRENT — SUPABASE`,
   including `subject_id`/`language` normalisation as sent today
   (`normalizeSubjectId`/`languageForSubject` in `lib/context-backend.server.ts`) — backend should
   not require the frontend to change these until Step 4's language contract is renegotiated.
-- **Contract reference:** CODEX_HANDOFF.md `/api/chat` contract; `docs/SUBJECT_MODEL_AND_LANGUAGE_RULES.md`.
+- **Contract reference:** CODEX_HANDOFF.md `/api/chat` contract; `docs/archive/SUBJECT_MODEL_AND_LANGUAGE_RULES.md`.
 - **Verify:** `BACKEND_ACCEPTANCE_CRITERIA.md` core success case.
 
 ## 9. General Assistant (non-subject)

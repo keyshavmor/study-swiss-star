@@ -5,7 +5,7 @@ Frontend commit: e0ef3464557d4786d214accb0d1bf44082ae3466
 
 # Route → Screen Map
 
-Superseded document: the older top-level `docs/ROUTE_SCREEN_MAP.md` is superseded by this file;
+Superseded document: the older top-level `docs/archive/ROUTE_SCREEN_MAP.md` is superseded by this file;
 treat this file (`docs/ux/ROUTE_SCREEN_MAP.md`) as the current source of truth for route/screen
 mapping. See `docs/ux/USER_JOURNEYS.md` for step-by-step user flows through the same routes.
 
@@ -53,6 +53,6 @@ only repeated in the "State providers used" column when a route also uses someth
   a screen draws its strings from; most screens also pull a few keys from
   `frontend/src/lib/i18n/messages/common.ts` and `frontend/src/lib/i18n/messages/nav.ts` (shared
   nav/breadcrumb copy), which are not repeated per row.
-- Superseded document: the older top-level `docs/ROUTE_SCREEN_MAP.md` predates the routes/props
+- Superseded document: the older top-level `docs/archive/ROUTE_SCREEN_MAP.md` predates the routes/props
   documented here (e.g. it does not reflect the current `_authenticated` layout, `/assistant`
   routes, or `/api/chat` contract) and must not be treated as current; this file supersedes it.

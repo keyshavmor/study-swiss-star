@@ -3,7 +3,7 @@ Generated from: current Lovable project · GitHub main (keyshavmor/study-swiss-s
 Last verified: 2026-09-14 (UTC)
 Frontend commit: e0ef3464557d4786d214accb0d1bf44082ae3466
 
-> Supersedes: `docs/FRONTEND_ARCHITECTURE.md` (top-level). The old file is archived centrally; this document is the current source of truth.
+> Supersedes: `docs/archive/FRONTEND_ARCHITECTURE.md` (top-level). The old file is archived centrally; this document is the current source of truth.
 
 # Frontend architecture
 
@@ -138,7 +138,7 @@ These three layers are independent: `UiError`/`ui-error.ts` governs what end use
 
 Source: `frontend/src/routes/api/chat.ts`, `frontend/src/lib/context-backend.server.ts`, `frontend/src/lib/context-backend.types.ts`.
 
-This is the single seam between the frontend and the local Python context backend for tutoring chat. Full request/response contract is documented in `docs/SUPABASE_SERVICES.md`/backend contract docs; the architecture-relevant facts are:
+This is the single seam between the frontend and the local Python context backend for tutoring chat. Full request/response contract is documented in `docs/archive/SUPABASE_SERVICES.md`/backend contract docs; the architecture-relevant facts are:
 
 - It is a TanStack Start **server route** (`server.handlers.POST`), so it runs on the Node/nitro server process that serves the frontend, not in the browser and not inside `_authenticated`'s client-side gate.
 - Auth is re-verified independently of the router gate: it requires `Authorization: Bearer <supabase access token>` and calls `supabase.auth.getClaims(token)` itself; 401 otherwise. It does not trust the browser-side session state.

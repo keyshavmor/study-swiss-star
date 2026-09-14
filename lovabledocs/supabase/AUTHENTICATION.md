@@ -41,7 +41,7 @@ supabase.functions.invoke("username-login", { body: { username, password } })
   calls `supabase.auth.setSession({ access_token, refresh_token })` (`AuthForm.tsx:103-107`) and
   navigates to `/home`.
 - **On failure:** a generic invalid-credentials error is shown — no account enumeration, no email
-  disclosed (`docs/SUPABASE_SERVICES.md`).
+  disclosed (`docs/archive/SUPABASE_SERVICES.md`).
 - **Implementation:** deployed externally as a Supabase Edge Function; not present in this repo
   (BACKEND IMPLEMENTATION UNKNOWN for internals, CURRENT — EXTERNAL INTEGRATION for the contract).
 
@@ -70,7 +70,7 @@ supabase.functions.invoke("username-availability", { body: { username } })
 Three OAuth providers are offered as buttons: **GitHub**, **LinkedIn** (`linkedin_oidc`), and
 **Spotify** (`AuthForm.tsx:22-31`), each via `supabase.auth.signInWithOAuth({ provider })`. All
 three require external configuration (client ID/secret, enabled provider, redirect allowlist) in
-the Supabase project — `docs/SUPABASE_SERVICES.md` "External configuration still required".
+the Supabase project — `docs/archive/SUPABASE_SERVICES.md` "External configuration still required".
 
 ## Google identity linking (Calendar read-only)
 
@@ -119,7 +119,7 @@ the Supabase session; a user's data is whatever rows/objects carry their `auth.u
 Cross-user reads of `public.feedback` and `public.usage_events` are granted only to accounts whose
 **immutable** Supabase `app_metadata.role` equals `"admin"`. `user_metadata` (user-editable) is
 never trusted, and a username of `admin` grants nothing by itself. Provisioning happens outside the
-app via the Supabase Admin API (`docs/SUPABASE_SERVICES.md`); no admin credential may ever be
+app via the Supabase Admin API (`docs/archive/SUPABASE_SERVICES.md`); no admin credential may ever be
 committed to the repository.
 
 ## `onAuthStateChange` wiring (`frontend/src/routes/__root.tsx`)

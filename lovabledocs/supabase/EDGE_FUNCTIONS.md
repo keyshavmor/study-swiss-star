@@ -7,7 +7,7 @@ Frontend commit: e0ef3464557d4786d214accb0d1bf44082ae3466
 
 All five functions below are **deployed externally to this repository** — there is no
 `supabase/functions/` implementation in this codebase. Contracts are declared from frontend call
-sites plus `docs/SUPABASE_SERVICES.md` (CURRENT — EXTERNAL INTEGRATION for behaviour; BACKEND
+sites plus `docs/archive/SUPABASE_SERVICES.md` (CURRENT — EXTERNAL INTEGRATION for behaviour; BACKEND
 IMPLEMENTATION UNKNOWN for internals).
 
 ## `username-login`
@@ -42,7 +42,7 @@ IMPLEMENTATION UNKNOWN for internals).
 - **Caller:** `frontend/src/lib/telemetry.ts:76` (`logActivity`), invoked from dozens of instrumented
   call sites app-wide.
 - **Auth assumption:** normally authenticated; anonymous calls are permitted **only** for
-  `auth_signin_failed` and `oauth_signin_failed` event names (`docs/SUPABASE_SERVICES.md`).
+  `auth_signin_failed` and `oauth_signin_failed` event names (`docs/archive/SUPABASE_SERVICES.md`).
 - **Input:** `{ event_name: string, feature?: string, subject?: string, properties?: Record<string,
   Primitive> }`, sanitised client-side (forbidden-key stripping, `MAX_STRING = 200`,
   `MAX_PROPERTIES = 12`, `route` auto-injected).

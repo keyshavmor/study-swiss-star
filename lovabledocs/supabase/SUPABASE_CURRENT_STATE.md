@@ -21,7 +21,7 @@ Frontend commit: e0ef3464557d4786d214accb0d1bf44082ae3466
 | --- | --- | --- |
 | Table shapes, columns, RPC signature | `frontend/src/integrations/supabase/types.ts` (hand-maintained to match the live schema) | CURRENT — SUPABASE (declared from frontend types and migration sources; not machine-verified this pass) |
 | `threads`/`messages` DDL, RLS, indexes, triggers | `supabase/migrations/*.sql` | CURRENT — SUPABASE (declared from frontend types and migration sources; not machine-verified this pass) |
-| Edge Function contracts, bucket list, admin model | `docs/SUPABASE_SERVICES.md` + frontend call sites | CURRENT — SUPABASE (declared from frontend types and migration sources; not machine-verified this pass) |
+| Edge Function contracts, bucket list, admin model | `docs/archive/SUPABASE_SERVICES.md` + frontend call sites | CURRENT — SUPABASE (declared from frontend types and migration sources; not machine-verified this pass) |
 | RLS policy text for `threads`, `messages`, `assistant_*`, `user_preferences`, `profiles`, and per-bucket `storage.objects` policies | Preview Supabase project (a different project than production) | PREVIEW-ONLY — observed on the preview project; production is expected but not confirmed to match |
 | Local Python backend behaviour | Not in this repo | BACKEND IMPLEMENTATION UNKNOWN / BACKEND TODO FOR CODEX |
 

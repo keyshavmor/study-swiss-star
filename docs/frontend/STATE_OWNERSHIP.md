@@ -3,7 +3,7 @@ Generated from: current Lovable project · GitHub main (keyshavmor/study-swiss-s
 Last verified: 2026-09-14 (UTC)
 Frontend commit: e0ef3464557d4786d214accb0d1bf44082ae3466
 
-> Supersedes: `docs/STATE_OWNERSHIP.md` (top-level, if present). Archived centrally.
+> Supersedes: `docs/frontend/STATE_OWNERSHIP.md` (top-level, if present). Archived centrally.
 
 # State ownership
 

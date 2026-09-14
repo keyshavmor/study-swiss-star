@@ -32,7 +32,7 @@ pass). All buckets are **private**; none issue public URLs. See
 - **Purpose:** private learning materials uploaded by the student for study/tutoring (feeds
   `documents`/`document_chunks`).
 - **Private:** yes.
-- **Path convention:** `<uid>/...` (`docs/SUPABASE_SERVICES.md`).
+- **Path convention:** `<uid>/...` (`docs/archive/SUPABASE_SERVICES.md`).
 - **Owner:** the uploading student.
 - **Uploader:** the owner, through the study-materials upload flow (exact UI route not enumerated
   here; ingestion into `documents` is EXPECTED BACKEND CONTRACT for the local Python backend).
@@ -53,7 +53,7 @@ pass). All buckets are **private**; none issue public URLs. See
 
 - **Purpose:** files attached to assistant/study chat messages.
 - **Private:** yes.
-- **Path convention:** `<uid>/<thread_id>/<file>` (`docs/SUPABASE_SERVICES.md`;
+- **Path convention:** `<uid>/<thread_id>/<file>` (`docs/archive/SUPABASE_SERVICES.md`;
   `CHAT_ATTACHMENT_BUCKET = "chat-attachments"` in `frontend/src/lib/storage-management.ts:11`).
 - **Owner:** the sending user.
 - **Uploader:** the owner, from the chat composer.
@@ -75,7 +75,7 @@ pass). All buckets are **private**; none issue public URLs. See
 
 - **Purpose:** textual mirror of submitted feedback, for audit outside the `feedback` table.
 - **Private:** yes.
-- **Path convention:** `<user_id>/<YYYY-MM-DD>/<uuid>.txt` (`docs/SUPABASE_SERVICES.md`).
+- **Path convention:** `<user_id>/<YYYY-MM-DD>/<uuid>.txt` (`docs/archive/SUPABASE_SERVICES.md`).
 - **Owner:** the submitting user (object path only; write is server-side).
 - **Uploader:** the `feedback-submit` Edge Function only — never a direct client upload.
 - **Downloader:** not exposed to end users; presumed admin/audit tooling outside the frontend.

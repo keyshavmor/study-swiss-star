@@ -175,7 +175,7 @@ See `docs/supabase/DATABASE_ERD.mmd` for the entity-relationship diagram.
   `feedback-submit` Edge Function (never a direct table write from the client — see
   `EDGE_FUNCTIONS.md`).
 - **Admin access:** cross-user `SELECT` is granted only to accounts with immutable
-  `app_metadata.role = "admin"` (`docs/SUPABASE_SERVICES.md`).
+  `app_metadata.role = "admin"` (`docs/archive/SUPABASE_SERVICES.md`).
 
 ## `public.usage_events`
 

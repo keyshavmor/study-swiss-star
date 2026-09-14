@@ -28,7 +28,7 @@ Tables reached by the frontend (see `integrations/supabase/types.ts`): `feedback
 `profiles`, `user_preferences`, `media_retention_queue`, `documents`, `document_chunks`,
 `assistant_threads`, `assistant_messages`, `assistant_attachments`, `threads`, `messages`. RPC:
 `get_storage_usage_status()`. All are protected by RLS (see RLS_AUTHORIZATION_MATRIX.md); production RLS
-claims are sourced from frontend code + `supabase/migrations` + `docs/SUPABASE_SERVICES.md`, not
+claims are sourced from frontend code + `supabase/migrations` + `docs/archive/SUPABASE_SERVICES.md`, not
 machine-verified against production in this pass.
 
 ## Storage (CURRENT — SUPABASE, declared)

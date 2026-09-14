@@ -3,7 +3,7 @@ Generated from: current Lovable project · GitHub main (keyshavmor/study-swiss-s
 Last verified: 2026-09-14 (UTC)
 Frontend commit: e0ef3464557d4786d214accb0d1bf44082ae3466
 
-> Supersedes: `docs/COMPONENT_TREE.md` (top-level, if present). Archived centrally.
+> Supersedes: `docs/archive/COMPONENT_TREE.md` (top-level, if present). Archived centrally.
 
 # Component tree — frontend → backend requirement map
 

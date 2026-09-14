@@ -52,7 +52,7 @@ flag the conflict in `OPEN_BACKEND_QUESTIONS.md` rather than silently picking on
    fixtures.
 5. Read the Supabase schema/RLS/storage docs: `docs/supabase/DATABASE_SCHEMA.md`,
    `docs/supabase/DATABASE_ERD.mmd`, `docs/supabase/SUPABASE_CURRENT_STATE.md`, and
-   `docs/SUPABASE_SERVICES.md` — then confirm against the **live** Supabase project per the
+   `docs/archive/SUPABASE_SERVICES.md` — then confirm against the **live** Supabase project per the
    authority rules above.
 6. Read the sequence diagrams referenced from `docs/architecture/CONTAINER_ARCHITECTURE.md` and
    any diagrams under `docs/architecture/` that show request flows (chat turn, upload, retention).
@@ -233,9 +233,9 @@ Related existing documentation referenced above (outside this package, read-only
 `docs/architecture/SYSTEM_CONTEXT.md`, `docs/architecture/CONTAINER_ARCHITECTURE.md`,
 `docs/architecture/FRONTEND_COMPONENT_ARCHITECTURE.md`, `docs/supabase/DATABASE_SCHEMA.md`,
 `docs/supabase/DATABASE_ERD.mmd`, `docs/supabase/SUPABASE_CURRENT_STATE.md`,
-`docs/SUPABASE_SERVICES.md`, `docs/API_EXPECTATIONS.md`, `docs/CONTEXT_MANAGER.md`,
-`docs/PYTHON_BACKEND_INTEGRATION_PLAN.md`, `docs/BACKEND_INTEGRATION_TODO.md`,
-`docs/OPEN_QUESTIONS_FOR_BACKEND.md`, `docs/QWEN_MODEL_RUNTIME_AND_WEB.md`,
-`docs/ASSISTANT_SETTINGS_AND_STORAGE.md`, `docs/SUBJECT_MODEL_AND_LANGUAGE_RULES.md`,
-`docs/UI_BACKEND_MAPPING.md`. Treat any of these as **NOT AUTHORITATIVE** where they conflict with
+`docs/archive/SUPABASE_SERVICES.md`, `docs/archive/API_EXPECTATIONS.md`, `docs/archive/CONTEXT_MANAGER.md`,
+`docs/archive/PYTHON_BACKEND_INTEGRATION_PLAN.md`, `docs/archive/BACKEND_INTEGRATION_TODO.md`,
+`docs/archive/OPEN_QUESTIONS_FOR_BACKEND.md`, `docs/archive/QWEN_MODEL_RUNTIME_AND_WEB.md`,
+`docs/archive/ASSISTANT_SETTINGS_AND_STORAGE.md`, `docs/archive/SUBJECT_MODEL_AND_LANGUAGE_RULES.md`,
+`docs/archive/UI_BACKEND_MAPPING.md`. Treat any of these as **NOT AUTHORITATIVE** where they conflict with
 the live frontend code, live Supabase state, or this package (see Authority rules above).
