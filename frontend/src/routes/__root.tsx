@@ -126,6 +126,15 @@ function RootShell({ children }: { children: ReactNode }) {
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const router = useRouter();
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+
+  useEffect(() => {
+    installGlobalErrorTelemetry();
+  }, []);
+
+  useEffect(() => {
+    track({ event_name: "page_viewed", properties: { route: pathname } });
+  }, [pathname]);
 
   useEffect(() => {
     const { data } = supabase.auth.onAuthStateChange((event) => {
@@ -137,6 +146,7 @@ function RootComponent() {
       data.subscription.unsubscribe();
     };
   }, [queryClient, router]);
+
 
   return (
     <QueryClientProvider client={queryClient}>
