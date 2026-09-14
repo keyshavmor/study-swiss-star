@@ -78,56 +78,60 @@ export type Database = {
       profiles: {
         Row: {
           user_id: string;
-          username: string | null;
-          full_name: string | null;
-          preferred_name: string | null;
-          photo: string | null;
-          nationality: string | null;
-          contact_phone: string | null;
-          contact_details: Json | null;
-          created_at: string | null;
-          updated_at: string | null;
+          username: string;
+          full_name: string;
+          preferred_name: string;
+          photo: string;
+          nationality: string;
+          contact_phone: string;
+          contact_details: Json;
+          date_of_birth: string | null;
+          created_at: string;
+          updated_at: string;
           [key: string]: Json | undefined;
         };
         Insert: {
           user_id: string;
-          username?: string | null;
-          full_name?: string | null;
-          preferred_name?: string | null;
-          photo?: string | null;
-          nationality?: string | null;
-          contact_phone?: string | null;
-          contact_details?: Json | null;
+          username?: string;
+          full_name?: string;
+          preferred_name?: string;
+          photo?: string;
+          nationality?: string;
+          contact_phone?: string;
+          contact_details?: Json;
+          date_of_birth?: string | null;
         };
         Update: {
-          username?: string | null;
-          full_name?: string | null;
-          preferred_name?: string | null;
-          photo?: string | null;
-          nationality?: string | null;
-          contact_phone?: string | null;
-          contact_details?: Json | null;
-          updated_at?: string | null;
+          username?: string;
+          full_name?: string;
+          preferred_name?: string;
+          photo?: string;
+          nationality?: string;
+          contact_phone?: string;
+          contact_details?: Json;
+          date_of_birth?: string | null;
+          updated_at?: string;
         };
         Relationships: [];
       };
 
       user_preferences: {
         Row: {
-          id: string;
           user_id: string;
-          preferences: Json | null;
-          created_at: string | null;
-          updated_at: string | null;
+          academic_year: string | null;
+          preferences: Json;
+          created_at: string;
+          updated_at: string;
         };
         Insert: {
-          id?: string;
           user_id: string;
-          preferences?: Json | null;
+          academic_year?: string | null;
+          preferences?: Json;
         };
         Update: {
-          preferences?: Json | null;
-          updated_at?: string | null;
+          academic_year?: string | null;
+          preferences?: Json;
+          updated_at?: string;
         };
         Relationships: [];
       };

@@ -112,10 +112,10 @@ export function AccountSection() {
         contactPhone: profile.contactPhone,
         contactDetails: profile.contactDetails,
       });
-      track({ event_name: "profile_saved", feature: "settings" });
+      track({ event_name: "settings_profile_saved", feature: "settings" });
       toast.success("Profile saved");
     } catch (err) {
-      trackFailure("profile_save_failed", err, { feature: "settings" });
+      trackFailure("settings_profile_save_failed", err, { feature: "settings" });
       toast.error(err instanceof Error ? err.message : "Could not save your profile");
     } finally {
       setSaving(false);
@@ -128,10 +128,10 @@ export function AccountSection() {
       const path = await uploadAvatar(file);
       patch({ photoPath: path });
       setAvatarUrl(await avatarSignedUrl(path));
-      track({ event_name: "avatar_updated", feature: "settings" });
+      track({ event_name: "settings_avatar_updated", feature: "settings" });
       toast.success("Profile picture updated");
     } catch (err) {
-      trackFailure("avatar_update_failed", err, { feature: "settings" });
+      trackFailure("settings_avatar_update_failed", err, { feature: "settings" });
       toast.error(err instanceof Error ? err.message : "Could not upload the picture");
     }
     if (fileRef.current) fileRef.current.value = "";
@@ -142,10 +142,10 @@ export function AccountSection() {
       await removeAvatar();
       patch({ photoPath: "" });
       setAvatarUrl("");
-      track({ event_name: "avatar_removed", feature: "settings" });
+      track({ event_name: "settings_avatar_removed", feature: "settings" });
       toast.success("Profile picture removed");
     } catch (err) {
-      trackFailure("avatar_remove_failed", err, { feature: "settings" });
+      trackFailure("settings_avatar_remove_failed", err, { feature: "settings" });
       toast.error(err instanceof Error ? err.message : "Could not remove the picture");
     }
   };
@@ -154,11 +154,11 @@ export function AccountSection() {
     if (!newEmail.trim()) return;
     const { error } = await supabase.auth.updateUser({ email: newEmail.trim() });
     if (error) {
-      trackFailure("account_email_change_failed", error, { feature: "settings" });
+      trackFailure("settings_email_change_failed", error, { feature: "settings" });
       toast.error(error.message);
       return;
     }
-    track({ event_name: "account_email_change_requested", feature: "settings" });
+    track({ event_name: "settings_email_change_requested", feature: "settings" });
     setNewEmail("");
     toast.success("Confirmation email sent. The change applies once you verify it.");
   };
@@ -170,11 +170,11 @@ export function AccountSection() {
     }
     const { error } = await supabase.auth.updateUser({ password });
     if (error) {
-      trackFailure("account_password_change_failed", error, { feature: "settings" });
+      trackFailure("settings_password_change_failed", error, { feature: "settings" });
       toast.error(error.message);
       return;
     }
-    track({ event_name: "account_password_changed", feature: "settings" });
+    track({ event_name: "settings_password_changed", feature: "settings" });
     setPassword("");
     setConfirmPassword("");
     toast.success("Password updated");
@@ -372,15 +372,15 @@ export function PreferencesSections() {
       setPrefs(saved);
       // Only the preference key is logged — never the stored value.
       track({
-        event_name: "preference_saved",
+        event_name: "settings_preference_saved",
         feature: "settings",
-        properties: { preference_keys: Object.keys(next).join(",") },
+        properties: { preference: Object.keys(next)[0] ?? "" },
       });
     } catch (err) {
       setPrefs(previous);
-      trackFailure("preference_save_failed", err, {
+      trackFailure("settings_preference_save_failed", err, {
         feature: "settings",
-        properties: { preference_keys: Object.keys(next).join(",") },
+        properties: { preference: Object.keys(next)[0] ?? "" },
       });
       toast.error(err instanceof Error ? err.message : "Could not save your preference");
     }
@@ -390,7 +390,6 @@ export function PreferencesSections() {
     { key: "exam_reminders", label: "Exam reminders" },
     { key: "daily_study_summary", label: "Daily study summary" },
     { key: "sound_effects", label: "Sound effects" },
-
     {
       key: "auto_storage_cleanup",
       label: "Automatic cleanup when storage is nearly full",
