@@ -18,7 +18,6 @@ import { UiError, localizedMessage } from "@/lib/ui-error";
 import { localizedAuthError } from "@/lib/auth-errors";
 import {
   classifyUsernameLogin,
-  isDuplicateUsernameAfterSignupError,
   type UsernameLoginPayload,
 } from "@/lib/username-login";
 import { useI18n } from "@/lib/i18n/provider";
