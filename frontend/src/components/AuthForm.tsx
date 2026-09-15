@@ -520,7 +520,9 @@ export function AuthForm() {
           </div>
         )}
 
-        {(mode === "signup" || mode === "reset" || (mode === "signin" && identifier.includes("@"))) && (
+        {(mode === "signup" ||
+          mode === "reset" ||
+          (mode === "signin" && identifier.includes("@"))) && (
           <AuthCaptcha onToken={handleCaptchaToken} resetNonce={captchaResetNonce} />
         )}
 
