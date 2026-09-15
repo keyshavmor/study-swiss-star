@@ -16,7 +16,11 @@ import { track, trackFailure } from "@/lib/telemetry";
 import { toast } from "sonner";
 import { UiError, localizedMessage } from "@/lib/ui-error";
 import { localizedAuthError } from "@/lib/auth-errors";
-import { classifyUsernameLogin, type UsernameLoginPayload } from "@/lib/username-login";
+import {
+  classifyUsernameLogin,
+  usernameLoginRequest,
+  type UsernameLoginPayload,
+} from "@/lib/username-login";
 import { useI18n } from "@/lib/i18n/provider";
 import type { TranslationKey } from "@/lib/i18n/messages";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -59,9 +63,10 @@ export function validateUsername(raw: string, t: (key: TranslationKey) => string
 }
 
 /**
- * CURRENT SUPABASE (`username-login` v2, verified 2026-09-15): expected bad
+ * CURRENT SUPABASE (`username-login` v3, verified 2026-09-15): expected bad
  * credentials come back as an HTTP 200 payload with `ok:false` and a stable
- * `error_code`, never as an HTTP 401 Edge Function runtime error.
+ * `error_code`, never as an HTTP 401 Edge Function runtime error. v3 also
+ * requires `captcha_token` because its password grant is CAPTCHA-protected.
  */
 type UsernameLoginResult = UsernameLoginPayload;
 
@@ -91,6 +96,13 @@ export function AuthForm() {
   const [captchaResetNonce, setCaptchaResetNonce] = useState(0);
   const navigate = useNavigate();
   const handleCaptchaToken = useCallback((token: string | null) => setCaptchaToken(token), []);
+
+  // One-time challenge token: held in component state only, never persisted or logged.
+  const verifiedCaptchaTokenValue = () => {
+    if (!getAuthCaptchaConfig()) throw new UiError(t("auth.captchaUnavailable"));
+    if (!captchaToken) throw new UiError(t("auth.captchaRequired"));
+    return captchaToken;
+  };
 
   const verifiedCaptchaToken = () => {
     if (!getAuthCaptchaConfig()) throw new UiError(t("auth.captchaUnavailable"));
@@ -132,12 +144,14 @@ export function AuthForm() {
     if (invalid) throw new UiError(invalid);
 
     const { data, error } = await supabase.functions.invoke<UsernameLoginResult>("username-login", {
-      body: { username: normalised, password },
+      body: usernameLoginRequest(normalised, password, verifiedCaptchaTokenValue()),
     });
     // A transport/runtime failure or an unavailable auth service is NOT a wrong
     // password: show a generic service error instead of blaming the credentials.
     const outcome = classifyUsernameLogin(data, error);
     if (outcome.kind === "unavailable") throw new UiError(t("auth.errorGeneric"));
+    if (outcome.kind === "captcha_required") throw new UiError(t("auth.captchaRequired"));
+    if (outcome.kind === "captcha_failed") throw new UiError(t("auth.captchaFailed"));
     if (outcome.kind === "invalid_credentials") {
       // Deliberately generic: never reveal whether the username exists, and
       // never surface the account email behind it.
@@ -520,11 +534,9 @@ export function AuthForm() {
           </div>
         )}
 
-        {(mode === "signup" ||
-          mode === "reset" ||
-          (mode === "signin" && identifier.includes("@"))) && (
-          <AuthCaptcha onToken={handleCaptchaToken} resetNonce={captchaResetNonce} />
-        )}
+        {/* Every password path (email sign in, username sign in, signup, reset)
+            is CAPTCHA-protected in production. */}
+        <AuthCaptcha onToken={handleCaptchaToken} resetNonce={captchaResetNonce} />
 
         <Button type="submit" className="w-full" disabled={isLoading}>
           {isLoading ? t("auth.pleaseWait") : submitLabel}
