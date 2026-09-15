@@ -18,6 +18,8 @@ import {
   GoogleCalendarAuthError,
   GoogleCalendarError,
   hasGoogleAccess,
+  isGoogleCallbackUrl,
+  isGoogleConnectPending,
   refreshProviderTokenFromSession,
 } from "@/lib/google-calendar";
 import type { GoogleCalendarErrorCode } from "@/lib/google-calendar";
@@ -95,14 +97,19 @@ export function GoogleCalendarCard({
     }
   }, []);
 
-  // Pick up a provider token that arrived with the OAuth redirect.
+  // Pick up a provider token that arrived with the Google linking redirect only.
+  // A token from another provider (GitHub / LinkedIn / Spotify) or a plain
+  // session refresh is ignored — see `google-calendar.ts`.
   useEffect(() => {
     let cancelled = false;
-    void refreshProviderTokenFromSession().then((captured) => {
+    void refreshProviderTokenFromSession({
+      googleCallback: isGoogleCallbackUrl(),
+    }).then((captured) => {
       if (cancelled) return;
       setConnected(captured || hasGoogleAccess());
     });
     const { data } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!isGoogleConnectPending() && !isGoogleCallbackUrl()) return;
       if (captureProviderToken(session)) setConnected(true);
     });
     return () => {

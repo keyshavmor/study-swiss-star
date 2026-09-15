@@ -48,10 +48,11 @@ export interface PeerMessageRow {
 }
 
 /**
- * CURRENT SUPABASE (verified 2026-09-15): production RLS only exposes
- * `peer_messages` rows whose `moderation_status = 'approved'`, so an approved
- * message (and its attachments) is the visible, openable state. Any other value
- * is treated as still-pending rather than invented as a new production state.
+ * CURRENT SUPABASE (verified 2026-09-15): `peer_messages.moderation_status` is
+ * constrained to exactly `approved | blocked`, and readable-message RLS exposes
+ * only `approved` rows. An attachment is therefore usable ONLY for `approved`;
+ * `blocked` or any unexpected value fails closed and stays unavailable (no
+ * signed URL is ever requested for it).
  */
 export function isAttachmentPending(moderationStatus: string): boolean {
   return moderationStatus !== "approved";

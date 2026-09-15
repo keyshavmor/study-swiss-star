@@ -16,6 +16,13 @@ export const GOOGLE_CALENDAR_SCOPE = "https://www.googleapis.com/auth/calendar.r
 export const GOOGLE_EVENT_COLOR = "#4285F4";
 
 const TOKEN_KEY = "alim.google-calendar.provider-token";
+/**
+ * Set immediately before Google identity linking starts. Other providers
+ * (GitHub / LinkedIn / Spotify) also put a `provider_token` on the session, so a
+ * token is only ever accepted as a Google Calendar token while this marker is
+ * present or the callback URL explicitly says `google=connected`.
+ */
+const PENDING_KEY = "alim.google-calendar.connect-pending";
 
 export type GoogleCalendarErrorCode =
   | "not-connected"
@@ -72,6 +79,36 @@ export function hasGoogleAccess(): boolean {
   return readStored() !== null;
 }
 
+/** Mark a Google-linking attempt as in flight (called just before linkIdentity). */
+export function markGoogleConnectPending(): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.sessionStorage.setItem(PENDING_KEY, "1");
+  } catch {
+    // Ignore storage failures.
+  }
+}
+
+/** True while a Google Calendar linking attempt is in flight. */
+export function isGoogleConnectPending(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    return window.sessionStorage.getItem(PENDING_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+/** Forget the in-flight marker (successful capture, disconnect, terminal error). */
+export function clearGoogleConnectPending(): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.sessionStorage.removeItem(PENDING_KEY);
+  } catch {
+    // Ignore storage failures.
+  }
+}
+
 /** Forget the provider token (sign-out, disconnect, or expiry). */
 export function clearGoogleAccess(): void {
   if (typeof window === "undefined") return;
@@ -80,30 +117,52 @@ export function clearGoogleAccess(): void {
   } catch {
     // Ignore storage failures.
   }
+  clearGoogleConnectPending();
+}
+
+/** True when the current URL is the Google Calendar linking callback. */
+export function isGoogleCallbackUrl(search?: string): boolean {
+  const query = search ?? (typeof window === "undefined" ? "" : window.location.search);
+  return /(^|[?&])google=connected(&|$)/.test(query);
 }
 
 /**
- * Store the Google provider token from a Supabase session, if it carries one.
+ * Store the Google provider token from a Supabase session, but ONLY when this
+ * session really came from a Google Calendar linking attempt. GitHub, LinkedIn
+ * and Spotify sign-ins also carry a `provider_token`, and a plain token refresh
+ * can replay one, so an unattributed token is always ignored.
  * Returns true when a token was captured.
  */
-export function captureProviderToken(session: Session | null): boolean {
+export function captureProviderToken(
+  session: Session | null,
+  options?: { googleCallback?: boolean },
+): boolean {
   if (typeof window === "undefined") return false;
   const token = session?.provider_token;
   if (!token) return false;
+  if (!options?.googleCallback && !isGoogleConnectPending()) return false;
   // Google access tokens live for roughly an hour; stay conservative.
   const expiresAt = Math.floor(Date.now() / 1000) + 55 * 60;
   try {
     window.sessionStorage.setItem(TOKEN_KEY, JSON.stringify({ token, expiresAt }));
+    clearGoogleConnectPending();
     return true;
   } catch {
     return false;
   }
 }
 
-/** Try to pick up a provider token from the current session. */
-export async function refreshProviderTokenFromSession(): Promise<boolean> {
+/**
+ * Try to pick up a provider token from the current session, attributing it to
+ * Google only via the pending marker or an explicit `google=connected` callback.
+ */
+export async function refreshProviderTokenFromSession(options?: {
+  googleCallback?: boolean;
+}): Promise<boolean> {
+  const googleCallback = options?.googleCallback ?? isGoogleCallbackUrl();
+  if (!googleCallback && !isGoogleConnectPending()) return false;
   const { data } = await supabase.auth.getSession();
-  return captureProviderToken(data.session ?? null);
+  return captureProviderToken(data.session ?? null, { googleCallback });
 }
 
 /**
@@ -112,6 +171,9 @@ export async function refreshProviderTokenFromSession(): Promise<boolean> {
  * the provider or manual linking is not enabled in the Supabase project.
  */
 export async function connectGoogleCalendar(redirectTo: string): Promise<void> {
+  // Marked BEFORE the redirect so the returning session's provider_token can be
+  // attributed to Google and nothing else.
+  markGoogleConnectPending();
   const { error } = await supabase.auth.linkIdentity({
     provider: "google",
     options: {
@@ -122,6 +184,8 @@ export async function connectGoogleCalendar(redirectTo: string): Promise<void> {
   });
   if (!error) return;
 
+  // Terminal connect failure: no Google token can arrive for this attempt.
+  clearGoogleConnectPending();
   const message = error.message || "";
   if (/manual linking/i.test(message)) {
     throw new GoogleCalendarError(

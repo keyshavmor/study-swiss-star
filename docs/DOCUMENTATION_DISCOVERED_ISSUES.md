@@ -300,6 +300,12 @@ project state only; no GitHub-branch claim, no backend/Python change.
 | 18 | Any signup `unexpected_failure`/HTTP 500 mapped to `auth.usernameTaken` | Blanket mapping removed: a 500 can be an outage. The exact username is re-checked via `username-availability` and only `available:false` shows "username taken"; otherwise a generic localized error. Raw `error.message` is never inspected. |
 | 19 | Every HTTP 400/403/422 mapped to invalid credentials / account-in-use | Only stable codes decide copy. `identity_already_exists` → account-in-use; `validation_failed` / `unexpected_failure` → generic; 401 → invalid credentials; 429 → rate limited; 400/403/422 without a recognised code → generic. |
 
+| 20 | Any `session.provider_token` captured as the Google Calendar token | GitHub / LinkedIn / Spotify sessions also carry a `provider_token`. Capture now requires the `alim.google-calendar.connect-pending` marker (set just before `linkIdentity`) or a `google=connected` callback; unattributed tokens and plain session refreshes are ignored. The marker is cleared on capture, disconnect and terminal connect failure. |
+| 21 | Feedback success decided by `fnError` alone | `feedback-submit` reports `ok`, `database_recorded`, `storage_recorded`. The form is only cleared on all-true; a partial 2xx (e.g. 207) keeps the text and shows `feedback.error.partial`. |
+| 22 | `user_legal_consents.consent_source` typed nullable | The live column is NOT NULL with a default → `string`. |
+| 23 | Signup `unexpected_failure`/500 special case | Removed entirely; the availability preflight owns the duplicate case and everything else uses the generic safe mapper. |
+| 24 | External Auth-console configuration undocumented | `docs/supabase/AUTHENTICATION.md` now lists the manual, unverifiable items: Site URL and redirect allow-list, email-confirmation setting, SMTP, password policy / leaked-password protection, rate limits, and OAuth client credentials / provider enablement. |
+
 ### Production security state (2026-09-15)
 
 In addition to `harden_auth_peer_rpcs_and_signup_defaults`, these migrations are live:

@@ -126,8 +126,8 @@ All five are invoked via `supabase.functions.invoke("<name>", { body })`, which 
   ```json
   { "message": "string (10-4000 chars, trimmed)", "category": "idea|bug|general", "context": { "route": "string", "user_agent": "string (<=200)", "submitted_at": "ISO-8601" } }
   ```
-- **Response**: `{ error }` shape checked by the SDK wrapper; success clears the form and shows `feedback.success.toast`.
-- **Errors**: On any `fnError`, the raw (English, provider) message is logged to `console.error` and never rendered; the UI shows the localized `feedback.error.submitFailedGeneric`. Client-side validation (`trimmed.length < 10`) shows `feedback.error.tooShort` before any network call.
+- **Response**: `{ ok: boolean, database_recorded: boolean, storage_recorded: boolean }`. The returned data is inspected, not only `fnError`: the form is cleared and `feedback.success.toast` shown ONLY when all three are true (`classifyFeedbackResult` in `frontend/src/lib/feedback-submit.ts`).
+- **Errors**: A partial result (one leg recorded, e.g. HTTP 207) keeps the text in the form and shows `feedback.error.partial`; a failed result or thrown function error shows `feedback.error.submitFailedGeneric`. Raw (English, provider) messages are never rendered. Client-side validation (`trimmed.length < 10`) shows `feedback.error.tooShort` before any network call.
 - **Backend responsibility**: Edge Function persists the `feedback` row and `feedback-messages` object.
 - **Frontend responsibility**: length validation, category selection, non-PII context payload (route, truncated user agent, timestamp only).
 

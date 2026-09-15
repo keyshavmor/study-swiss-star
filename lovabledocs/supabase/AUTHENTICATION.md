@@ -48,15 +48,31 @@ supabase.functions.invoke("username-login", { body: { username, password } })
 - **On failure:** `invalid_credentials` shows a generic invalid username/password message — no
   account enumeration, no email disclosed. `authentication_unavailable` (and any transport
   failure) shows a generic service error instead of blaming the credentials.
-- **Signup 500 handling:** an `unexpected_failure` / HTTP 500 from `auth.signUp` is NOT assumed to
-  mean "username taken" (it can be a service outage). The exact username is re-checked via
-  `username-availability`; only `available: false` shows `auth.usernameTaken`, otherwise a generic
-  localized auth error is shown. Raw `error.message` is never inspected or displayed.
+- **Signup 500 handling:** there is NO special case at all for `unexpected_failure` / HTTP 500 from
+  `auth.signUp`. The `username-availability` preflight before `signUp` already handles the normal
+  duplicate case (`auth.usernameTaken`), and stable duplicate/user-exists codes are mapped by the
+  shared safe mapper; every other failure — including 500 / `unexpected_failure` — uses the generic
+  localized auth error. Raw `error.message` is never inspected or displayed.
 - **Auth error mapping:** `frontend/src/lib/auth-errors.ts` keys off stable codes only.
   `identity_already_exists` → account-in-use copy; `validation_failed` / `unexpected_failure` →
   generic. HTTP 401 falls back to invalid credentials and 429 to rate-limited; 400/403/422 without
   a recognised stable code fall back to the generic message, because they also occur in signup,
   reset and recovery contexts.
+### External Auth configuration (MANUAL, NOT VERIFIABLE FROM THE PROJECT)
+
+The following live in the Supabase Auth configuration console and CANNOT be verified or changed from
+the Lovable-managed project. They remain manual operator tasks:
+
+- Site URL and the redirect allow-list (must include the app origin and `/auth/update-password`,
+  plus `/planner?google=connected` for Google Calendar linking).
+- Whether email confirmation is required on signup (this decides whether `signUp` returns a session
+  immediately or the confirm-email state is shown).
+- SMTP / mail sender configuration.
+- Password policy: minimum length and leaked-password protection.
+- Auth rate limits.
+- OAuth provider enablement and client credentials (Google linking, GitHub, LinkedIn, Spotify), and
+  whether manual identity linking is allowed.
+
 - **Implementation:** deployed externally as a Supabase Edge Function; not present in this repo
   (BACKEND IMPLEMENTATION UNKNOWN for internals, CURRENT — EXTERNAL INTEGRATION for the contract).
 
