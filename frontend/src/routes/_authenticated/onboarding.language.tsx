@@ -42,6 +42,21 @@ function LanguageOnboardingPage() {
   const [selected, setSelected] = useState<LanguageCode | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(false);
+  const [loadFailed, setLoadFailed] = useState(false);
+
+  // A failed preference read must not silently skip this screen: show a
+  // localized retry state instead, and move on only once the persisted flag is
+  // actually read as completed.
+  const refreshStatus = useCallback(async () => {
+    invalidateStartupCache();
+    const status = await languageOnboardingStatus();
+    setLoadFailed(status === "unknown");
+    if (status === "completed") await navigate({ to: MODEL_ONBOARDING_PATH, replace: true });
+  }, [navigate]);
+
+  useEffect(() => {
+    void refreshStatus();
+  }, [refreshStatus]);
 
   const choose = (code: LanguageCode) => {
     setSelected(code);
@@ -49,6 +64,7 @@ function LanguageOnboardingPage() {
     // Switches the whole onboarding UI immediately and persists app_language.
     setLanguage(code);
   };
+
 
   const handleContinue = async () => {
     if (!selected) return;
