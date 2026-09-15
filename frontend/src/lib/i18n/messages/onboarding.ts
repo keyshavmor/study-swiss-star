@@ -17,7 +17,6 @@ export const onboarding = {
       "We could not load your saved settings. Check your connection and try again.",
     "onboarding.language.retry": "Try again",
 
-
     /* ------------------------------------------------- model onboarding --- */
     "onboarding.model.title": "Prepare your study AI",
     "onboarding.model.subtitle":
@@ -132,7 +131,6 @@ export const onboarding = {
       "Wir konnten deine gespeicherten Einstellungen nicht laden. Prüfe deine Verbindung und versuche es erneut.",
     "onboarding.language.retry": "Erneut versuchen",
 
-
     "onboarding.model.title": "Bereite deine Lern-KI vor",
     "onboarding.model.subtitle":
       "Wähle das lokale Modell für diese Sitzung. Wir prüfen mit dem lokalen Backend, bevor die KI aktiviert wird.",
@@ -243,7 +241,6 @@ export const onboarding = {
       "Mir hei dini gspeicherete Iistellige nid chöne lade. Prüef dini Verbindig und versuech s nomal.",
     "onboarding.language.retry": "Nomal versueche",
 
-
     "onboarding.model.title": "Bereit dini Lern-KI vor",
     "onboarding.model.subtitle":
       "Wähl s lokale Modell für die Sitzig. Mir überprüefed's mit em lokale Backend, bevor d KI aktiviert wird.",
@@ -351,7 +348,6 @@ export const onboarding = {
       "Не удалось загрузить сохранённые настройки. Проверьте подключение и попробуйте снова.",
     "onboarding.language.retry": "Попробовать снова",
 
-
     "onboarding.model.title": "Подготовьте свой учебный ИИ",
     "onboarding.model.subtitle":
       "Выберите локальную модель для этой сессии. Мы проверяем это через локальный бэкенд перед включением ИИ.",
@@ -458,7 +454,6 @@ export const onboarding = {
     "onboarding.language.loadError":
       "No pudimos cargar tus ajustes guardados. Comprueba tu conexión e inténtalo de nuevo.",
     "onboarding.language.retry": "Intentar de nuevo",
-
 
     "onboarding.model.title": "Prepara tu IA de estudio",
     "onboarding.model.subtitle":
@@ -572,7 +567,6 @@ export const onboarding = {
       "Nous n'avons pas pu charger vos réglages enregistrés. Vérifiez votre connexion et réessayez.",
     "onboarding.language.retry": "Réessayer",
 
-
     "onboarding.model.title": "Préparez votre IA d'étude",
     "onboarding.model.subtitle":
       "Choisissez le modèle local pour cette session. Nous vérifions auprès du backend local avant d'activer l'IA.",
@@ -682,7 +676,6 @@ export const onboarding = {
     "onboarding.language.loadError":
       "Non è stato possibile caricare le tue impostazioni salvate. Controlla la connessione e riprova.",
     "onboarding.language.retry": "Riprova",
-
 
     "onboarding.model.title": "Prepara la tua IA di studio",
     "onboarding.model.subtitle":

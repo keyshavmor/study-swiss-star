@@ -15,7 +15,6 @@ import {
 } from "@/lib/startup-flow";
 import { track, trackFailure } from "@/lib/telemetry";
 
-
 export const Route = createFileRoute("/_authenticated/onboarding/language")({
   head: () => ({
     meta: [
@@ -64,7 +63,6 @@ function LanguageOnboardingPage() {
     // Switches the whole onboarding UI immediately and persists app_language.
     setLanguage(code);
   };
-
 
   const handleContinue = async () => {
     if (!selected) return;
@@ -163,7 +161,6 @@ function LanguageOnboardingPage() {
             </Button>
           </div>
         )}
-
 
         <div className="mt-6 flex justify-center">
           <Button

@@ -85,4 +85,3 @@ export async function startupRedirectFor(pathname: string): Promise<StartupDesti
   const destination = await resolveStartupDestination();
   return destination === HOME_PATH ? null : destination;
 }
-
