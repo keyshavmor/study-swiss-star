@@ -271,7 +271,7 @@ export function AuthForm() {
         feature: "auth",
         properties: { provider },
       });
-      console.error("oauth sign-in failed", error);
+      // Never log the raw provider error: payloads can carry sensitive request data.
       toast.error(t("auth.oauthSignInFailed", { provider: label }));
       setIsLoading(false);
     }
