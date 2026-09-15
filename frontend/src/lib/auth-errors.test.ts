@@ -37,6 +37,21 @@ describe("localizedAuthError", () => {
     );
   });
 
+  it("maps an already-linked identity to the safe account-in-use copy", () => {
+    expect(localizedAuthError(t, { code: "identity_already_exists" })).toBe(
+      dictionaries.en["auth.errorEmailInUse"],
+    );
+  });
+
+  it("never turns a validation failure or a 500 into wrong credentials", () => {
+    expect(localizedAuthError(t, { code: "validation_failed", status: 400 })).toBe(
+      dictionaries.en["auth.errorGeneric"],
+    );
+    expect(localizedAuthError(t, { code: "unexpected_failure", status: 500 })).toBe(
+      dictionaries.en["auth.errorGeneric"],
+    );
+  });
+
   it("maps expired recovery links", () => {
     expect(localizedAuthError(t, { code: "otp_expired" })).toBe(
       dictionaries.en["auth.recoveryLinkInvalid"],
@@ -48,6 +63,11 @@ describe("localizedAuthError", () => {
     expect(localizedAuthError(t, { status: 401 })).toBe(
       dictionaries.en["auth.errorInvalidCredentials"],
     );
+    // 400/403/422 also occur in signup, reset and recovery: they must not
+    // falsely claim wrong credentials or an existing account.
+    for (const status of [400, 403, 422]) {
+      expect(localizedAuthError(t, { status })).toBe(dictionaries.en["auth.errorGeneric"]);
+    }
     expect(localizedAuthError(t, { message: RAW })).toBe(dictionaries.en["auth.errorGeneric"]);
     expect(localizedAuthError(t, "boom")).toBe(dictionaries.en["auth.errorGeneric"]);
   });

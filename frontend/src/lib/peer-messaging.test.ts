@@ -80,6 +80,7 @@ vi.mock("@/integrations/supabase/client", () => ({
 
 const {
   fetchConversations,
+  isAttachmentPending,
   fetchMessages,
   getOrCreateDirectConversation,
   markConversationRead,
@@ -127,7 +128,8 @@ describe("conversation list", () => {
       {
         id: "conv-1",
         conversation_type: "direct",
-        created_by: "me",
+        // CURRENT SUPABASE: `created_by` is nullable.
+        created_by: null,
         direct_key: "me:peer-1",
         title: null,
         created_at: "2026-09-01T10:00:00Z",
@@ -161,7 +163,7 @@ describe("messages", () => {
         conversation_id: "conv-1",
         sender_user_id: "peer-1",
         body: "hi",
-        moderation_status: "allowed",
+        moderation_status: "approved",
         moderation_event_id: null,
         created_at: "2026-09-14T10:00:00Z",
         edited_at: null,
@@ -186,7 +188,7 @@ describe("messages", () => {
     const messages = await fetchMessages("conv-1");
     expect(messages[0]).toMatchObject({
       senderUserId: "peer-1",
-      moderationStatus: "allowed",
+      moderationStatus: "approved",
     });
     expect(messages[0]).not.toHaveProperty("senderId");
     expect(messages[0]!.attachments[0]).not.toHaveProperty("scanStatus");
@@ -194,5 +196,17 @@ describe("messages", () => {
       fileName: "note.png",
       byteSize: 1234,
     });
+  });
+});
+
+describe("attachment availability", () => {
+  it("treats the RLS-visible `approved` status as openable, not pending", () => {
+    expect(isAttachmentPending("approved")).toBe(false);
+  });
+
+  it("treats any other status as still pending", () => {
+    for (const status of ["pending", "blocked", "scanning"]) {
+      expect(isAttachmentPending(status)).toBe(true);
+    }
   });
 });

@@ -17,12 +17,20 @@ IMPLEMENTATION UNKNOWN for internals).
   authenticate the username/password pair.
 - **Input:** `{ username: string, password: string }` (username pre-normalised/validated
   client-side).
-- **Output:** `{ access_token, refresh_token }` on success; a generic error otherwise.
+- **Output (v2, verified 2026-09-15):** HTTP 200 in every expected case.
+  - success → `{ ok: true, access_token, refresh_token, expires_in, token_type }`
+  - wrong username/password → `{ ok: false, error_code: "invalid_credentials" }`
+  - service/config unavailable → `{ ok: false, error_code: "authentication_unavailable" }`
+  Expected bad credentials are deliberately **no longer** an HTTP 401 Edge Function runtime error,
+  which is what previously surfaced as a 401/blank-screen failure for an ordinary typo.
 - **Side effects:** none on Supabase tables from the frontend's perspective; presumed to verify
   credentials against `auth.users`/`profiles` internally.
 - **Tables/buckets touched:** none directly observable from the frontend; internals unknown.
-- **Failure semantics:** any error or missing tokens → frontend throws a generic
-  "auth.usernamePasswordError" — no account enumeration, no email disclosed.
+- **Failure semantics:** `error_code: "invalid_credentials"` → generic
+  `auth.usernamePasswordError` (no account enumeration, no email disclosed).
+  `error_code: "authentication_unavailable"`, a transport failure or a missing body →
+  generic `auth.errorGeneric` service error, never "wrong credentials". Classification lives in
+  `frontend/src/lib/username-login.ts` (`classifyUsernameLogin`) and is unit-tested.
 
 ## `username-availability`
 

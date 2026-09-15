@@ -2,13 +2,13 @@
 import { useEffect, useState } from "react";
 import { FileText, Loader2 } from "lucide-react";
 import { useI18n } from "@/lib/i18n/provider";
-import { attachmentUrl, type PeerMessageRow } from "@/lib/peer-messaging";
+import { attachmentUrl, isAttachmentPending, type PeerMessageRow } from "@/lib/peer-messaging";
 import { cn } from "@/lib/utils";
 
 /**
  * CURRENT SUPABASE (verified 2026-09-15): `peer_message_attachments` has NO
  * scan-status column. Whether an attachment may be opened follows the parent
- * message's `moderation_status`.
+ * message's `moderation_status`, whose only RLS-visible value is `approved`.
  */
 function AttachmentView({
   attachment,
@@ -20,7 +20,7 @@ function AttachmentView({
   const { t } = useI18n();
   const [url, setUrl] = useState<string | null>(null);
   const isImage = attachment.mimeType.startsWith("image/");
-  const isPending = moderationStatus !== "allowed" && moderationStatus !== "clean";
+  const isPending = isAttachmentPending(moderationStatus);
 
   useEffect(() => {
     let cancelled = false;

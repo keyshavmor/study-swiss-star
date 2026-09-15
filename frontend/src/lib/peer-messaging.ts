@@ -47,6 +47,16 @@ export interface PeerMessageRow {
   }[];
 }
 
+/**
+ * CURRENT SUPABASE (verified 2026-09-15): production RLS only exposes
+ * `peer_messages` rows whose `moderation_status = 'approved'`, so an approved
+ * message (and its attachments) is the visible, openable state. Any other value
+ * is treated as still-pending rather than invented as a new production state.
+ */
+export function isAttachmentPending(moderationStatus: string): boolean {
+  return moderationStatus !== "approved";
+}
+
 export async function currentUserId(): Promise<string | null> {
   const { data } = await supabase.auth.getUser();
   return data.user?.id ?? null;

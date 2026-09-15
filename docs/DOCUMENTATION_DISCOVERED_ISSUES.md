@@ -285,3 +285,32 @@ are never auto-accepted).
 on/off, redirect/site URL allow-list, password minimum length and leaked-password protection,
 rate-limit values, SMTP sender, and OAuth provider client credentials. These must be confirmed by a
 human with project console access.
+
+## 2026-09-15 — final targeted corrective audit (Lovable-managed frontend only)
+
+Verified again against production Supabase project `ucacmeadsufiedxrgqit` on 2026-09-15. Lovable
+project state only; no GitHub-branch claim, no backend/Python change.
+
+| # | Stale assumption (before) | Live truth (now consumed) |
+| - | - | - |
+| 14 | `LegalDocumentType` included `child_safety` | `user_legal_consents_document_type_check` allows EXACTLY `terms`, `privacy`, `acceptable_use`, `safety_notice`, and the live RPC inserts `safety_notice`. `LEGAL_VERSIONS.safety_notice` now carries the version; the user-facing `/legal/child-safety` page keeps its title. |
+| 15 | Attachment pending unless `moderation_status` was `allowed`/`clean` | Peer RLS exposes rows only when `moderation_status = 'approved'`, so every visible production message was wrongly stuck pending. `isAttachmentPending()` now treats `approved` as the openable state and invents no further states. |
+| 16 | `peer_conversations.created_by` typed `string` | The live column is NULLABLE → `string \| null`. |
+| 17 | `username-login` failure assumed HTTP 401 | v2 returns HTTP 200 payloads: `{ok:true, access_token, refresh_token, expires_in, token_type}`, `{ok:false, error_code:"invalid_credentials"}`, `{ok:false, error_code:"authentication_unavailable"}`. Invalid credentials show the generic username/password message; unavailability shows a generic service error. This removes the 401/blank-screen failure for an ordinary typo. |
+| 18 | Any signup `unexpected_failure`/HTTP 500 mapped to `auth.usernameTaken` | Blanket mapping removed: a 500 can be an outage. The exact username is re-checked via `username-availability` and only `available:false` shows "username taken"; otherwise a generic localized error. Raw `error.message` is never inspected. |
+| 19 | Every HTTP 400/403/422 mapped to invalid credentials / account-in-use | Only stable codes decide copy. `identity_already_exists` → account-in-use; `validation_failed` / `unexpected_failure` → generic; 401 → invalid credentials; 429 → rate limited; 400/403/422 without a recognised code → generic. |
+
+### Production security state (2026-09-15)
+
+In addition to `harden_auth_peer_rpcs_and_signup_defaults`, these migrations are live:
+
+- `move_peer_authorization_helpers_private` — public peer authorization helper RPCs moved to a
+  private schema; peer RLS/storage policies and peer RPCs now call the private helpers, and the
+  public helper functions were dropped.
+- `optimize_compliance_admin_rls` — own/admin SELECT policies combined and `(select auth.jwt())`
+  used; the previous `auth_rls_initplan` and multiple-permissive-policy performance warnings are
+  gone.
+
+**Security Advisor is NOT claimed to be at zero warnings.** It still reports the intentionally
+callable signed-in `SECURITY DEFINER` application RPCs. There is NO anon `SECURITY DEFINER` warning
+any more.
