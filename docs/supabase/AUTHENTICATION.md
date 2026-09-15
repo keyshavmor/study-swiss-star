@@ -94,10 +94,11 @@ the Lovable-managed project. They remain manual operator tasks:
 - SMTP / mail sender configuration.
 - Password policy: minimum length and leaked-password protection.
 - Auth rate limits.
-- hCaptcha is confirmed by the operator. Its secret configuration and allowed hostnames remain
-  external checks. Supply the separate PUBLIC sitekey for both environment contexts; then solve
-  the challenge in the preview to test production signup, confirmation, email/username login,
-  sessions and sign-out. No new live auth PASS is claimed while the sitekey is missing.
+- **Bot and Abuse Protection (CAPTCHA) must be DISABLED** for password signup, sign-in and
+  recovery to work without tokens. This is a manual runtime prerequisite and is NOT independently
+  verified from Lovable. While it is enabled, password Auth returns `captcha_failed` and live auth
+  cannot be declared PASS. No hCaptcha provider or sitekey is configured in the frontend any more.
+
 - OAuth provider enablement and client credentials (Google linking, GitHub, LinkedIn, Spotify), and
   whether manual identity linking is allowed.
 
