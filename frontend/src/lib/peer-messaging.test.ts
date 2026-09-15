@@ -5,6 +5,22 @@
  * treats `get_or_create_direct_peer_conversation` as returning a bare string.
  */
 import { beforeEach, describe, expect, it, vi } from "vitest";
+// The suite runs in the "node" environment; provide the minimal browser surface
+// the module touches (no jsdom dependency).
+const store = new Map<string, string>();
+Object.defineProperty(globalThis, "window", {
+  configurable: true,
+  value: {
+    location: { pathname: "/auth" },
+    localStorage: {
+      getItem: (key: string) => store.get(key) ?? null,
+      setItem: (key: string, value: string) => void store.set(key, value),
+      removeItem: (key: string) => void store.delete(key),
+      clear: () => store.clear(),
+    },
+  },
+});
+
 
 const rpcCalls: { name: string; args: unknown }[] = [];
 const selects: { table: string; columns: string }[] = [];

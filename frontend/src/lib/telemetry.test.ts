@@ -4,6 +4,22 @@
  * identifier, credential or raw form value.
  */
 import { beforeEach, describe, expect, it, vi } from "vitest";
+// The suite runs in the "node" environment; provide the minimal browser surface
+// the module touches (no jsdom dependency).
+const store = new Map<string, string>();
+Object.defineProperty(globalThis, "window", {
+  configurable: true,
+  value: {
+    location: { pathname: "/auth" },
+    localStorage: {
+      getItem: (key: string) => store.get(key) ?? null,
+      setItem: (key: string, value: string) => void store.set(key, value),
+      removeItem: (key: string) => void store.delete(key),
+      clear: () => store.clear(),
+    },
+  },
+});
+
 
 const invoked: { name: string; body: Record<string, unknown> }[] = [];
 let session: unknown = null;
