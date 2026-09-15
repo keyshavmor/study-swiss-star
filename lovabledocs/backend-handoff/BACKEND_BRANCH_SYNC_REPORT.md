@@ -169,7 +169,7 @@ Read-only inspection confirmed the project is healthy on Postgres 17.6.1.166; al
 
 The copied repository virtual environment contained an editable path to the other clone. Verification
 therefore used clean temporary locked environments at `/tmp/alim-backend-venv` and
-`/tmp/alim-bun`; neither path is part of the repository.
+`/tmp/alim-bun`; both paths and all other reconciliation test artifacts were deleted after the gates.
 
 ## Readiness
 
