@@ -21,7 +21,8 @@ export interface PeerMember {
 
 export interface PeerConversationSummary {
   id: string;
-  lastMessageAt: string | null;
+  conversationType: string;
+  title: string | null;
   updatedAt: string;
   members: PeerMember[];
   unreadCount: number;
@@ -31,8 +32,10 @@ export interface PeerConversationSummary {
 export interface PeerMessageRow {
   id: string;
   conversationId: string;
-  senderId: string;
+  senderUserId: string;
   body: string;
+  /** CURRENT SUPABASE: `peer_messages.moderation_status`. */
+  moderationStatus: string;
   createdAt: string;
   attachments: {
     id: string;
@@ -41,7 +44,6 @@ export interface PeerMessageRow {
     byteSize: number;
     bucket: string;
     objectPath: string;
-    scanStatus: string;
   }[];
 }
 
@@ -101,14 +103,32 @@ export async function findPeerByExactUsername(username: string): Promise<PeerMem
   return member;
 }
 
-/** Creates (or returns) the direct conversation with an exact username. */
+/**
+ * Creates (or returns) the direct conversation with an exact username.
+ *
+ * CURRENT SUPABASE (verified 2026-09-15): the RPC returns a ROW SET with
+ * `conversation_id, peer_user_id, peer_username, peer_preferred_name` — not a
+ * bare id string. The peer label is cached so the list can show a name without
+ * any directory-style query.
+ */
 export async function getOrCreateDirectConversation(username: string): Promise<string> {
   const { data, error } = await supabase.rpc("get_or_create_direct_peer_conversation", {
     p_username: username.trim(),
   });
   if (error) throw new Error(error.message);
-  if (typeof data !== "string" || !data) throw new Error("conversation_not_created");
-  return data;
+  const row = Array.isArray(data) ? data[0] : (data ?? null);
+  const conversationId = row?.conversation_id;
+  if (typeof conversationId !== "string" || !conversationId) {
+    throw new Error("conversation_not_created");
+  }
+  if (row && typeof row.peer_user_id === "string" && typeof row.peer_username === "string") {
+    rememberPeerLabel({
+      userId: row.peer_user_id,
+      username: row.peer_username,
+      preferredName: row.peer_preferred_name ?? null,
+    });
+  }
+  return conversationId;
 }
 
 export async function markConversationRead(conversationId: string): Promise<void> {
@@ -125,7 +145,8 @@ export async function fetchConversations(): Promise<PeerConversationSummary[]> {
 
   const { data: memberships, error: membershipError } = await supabase
     .from("peer_conversation_members")
-    .select("conversation_id, last_read_at");
+    .select("conversation_id, last_read_at, left_at")
+    .is("left_at", null);
   if (membershipError) throw new Error(membershipError.message);
   const conversationIds = (memberships ?? []).map((row) => row.conversation_id);
   if (conversationIds.length === 0) return [];
@@ -139,7 +160,7 @@ export async function fetchConversations(): Promise<PeerConversationSummary[]> {
       .from("peer_conversations")
       .select("*")
       .in("id", conversationIds)
-      .order("last_message_at", { ascending: false, nullsFirst: false }),
+      .order("updated_at", { ascending: false }),
     supabase
       .from("peer_conversation_members")
       .select("conversation_id, user_id")
@@ -167,7 +188,8 @@ export async function fetchConversations(): Promise<PeerConversationSummary[]> {
 
   return (conversations ?? []).map((conversation) => ({
     id: conversation.id,
-    lastMessageAt: conversation.last_message_at,
+    conversationType: conversation.conversation_type,
+    title: conversation.title,
     updatedAt: conversation.updated_at,
     members: (allMembers ?? [])
       .filter((member) => member.conversation_id === conversation.id && member.user_id !== userId)
@@ -204,8 +226,9 @@ export async function fetchMessages(conversationId: string): Promise<PeerMessage
   return messages.map((message) => ({
     id: message.id,
     conversationId: message.conversation_id,
-    senderId: message.sender_id,
+    senderUserId: message.sender_user_id,
     body: message.body,
+    moderationStatus: message.moderation_status,
     createdAt: message.created_at,
     attachments: (attachments ?? [])
       .filter((attachment) => attachment.message_id === message.id)
@@ -216,7 +239,6 @@ export async function fetchMessages(conversationId: string): Promise<PeerMessage
         byteSize: attachment.byte_size,
         bucket: attachment.storage_bucket,
         objectPath: attachment.object_path,
-        scanStatus: attachment.scan_status,
       })),
   }));
 }

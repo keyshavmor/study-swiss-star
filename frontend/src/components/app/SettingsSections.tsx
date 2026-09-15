@@ -950,7 +950,12 @@ export function ComplianceSection() {
   >(null);
   const [strikeCount, setStrikeCount] = useState(0);
   const [consents, setConsents] = useState<
-    { document_kind: string; document_version: string; accepted_at: string }[]
+    {
+      document_type: string;
+      document_version: string;
+      accepted_at: string;
+      withdrawn_at: string | null;
+    }[]
   >([]);
   const [loading, setLoading] = useState(true);
 
@@ -997,11 +1002,11 @@ export function ComplianceSection() {
         <ul className="divide-y divide-border rounded-xl border border-border">
           {consents.map((consent) => (
             <li
-              key={`${consent.document_kind}-${consent.document_version}`}
+              key={`${consent.document_type}-${consent.document_version}`}
               className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 p-3.5 text-[14px]"
             >
               <span className="font-medium capitalize">
-                {consent.document_kind.replace(/_/g, " ")}
+                {consent.document_type.replace(/_/g, " ")}
               </span>
               <span className="text-muted-foreground">
                 {t("settings.compliance.accepted", {

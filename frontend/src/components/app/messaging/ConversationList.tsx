@@ -145,11 +145,9 @@ export function ConversationList({
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center justify-between gap-2">
                       <p className="truncate text-[14.5px] font-medium">{name}</p>
-                      {conversation.lastMessageAt && (
-                        <span className="shrink-0 text-xs text-muted-foreground">
-                          {formatDateCompact(conversation.lastMessageAt)}
-                        </span>
-                      )}
+                      <span className="shrink-0 text-xs text-muted-foreground">
+                        {formatDateCompact(conversation.updatedAt)}
+                      </span>
                     </div>
                   </div>
                   {conversation.unreadCount > 0 && (

@@ -21,7 +21,7 @@ sequenceDiagram
         Assistant-->>User: reject file
     end
     Assistant->>Lib: sendAssistantMessage({ threadId, content, files })
-    Lib->>DB: insert assistant_messages (role: "user", content, parts, metadata.attachment_count)
+    Lib->>DB: insert assistant_messages (role: "user", content, parts, metadata.assistant_attachments)
     loop for each accepted file
         Lib->>Storage: upload to chat-attachments/<uid>/...
         Lib->>DB: insert assistant_attachments (message_id, file_name, mime_type, byte_size,<br/>kind, object_path, parse_status: "unparsed")

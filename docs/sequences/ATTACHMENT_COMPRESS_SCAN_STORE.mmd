@@ -27,7 +27,7 @@ sequenceDiagram
     Backend->>Backend: safety scan attachment (BACKEND TODO FOR CODEX)
     alt scan allow
         Backend->>Bucket: store object (<=250000 bytes, allow-listed MIME)
-        Backend-->>UI: message + attachment persisted, scan_status recorded
+        Backend-->>UI: message + attachment persisted, moderation_status of parent message recorded
     else scan block
         Backend-->>UI: not stored, safety verdict returned
     end

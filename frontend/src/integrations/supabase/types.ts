@@ -40,8 +40,22 @@ export type AccountType = "unknown" | "student" | "teacher";
 /** CURRENT SUPABASE: `public.account_compliance.account_status`. */
 export type AccountStatus = "active" | "suspended_pending_review" | "deletion_pending";
 
-/** CURRENT SUPABASE: consent document kinds recorded in `user_legal_consents`. */
-export type LegalDocumentKind = "terms" | "privacy" | "acceptable_use" | "child_safety";
+/**
+ * CURRENT SUPABASE (verified 2026-09-15): `user_legal_consents.document_type`.
+ * The column is `document_type` — there is no `document_kind`.
+ */
+export type LegalDocumentType = "terms" | "privacy" | "acceptable_use" | "child_safety";
+
+/**
+ * CURRENT SUPABASE (verified 2026-09-15): one row returned by
+ * `public.get_or_create_direct_peer_conversation(p_username)`.
+ */
+export type DirectPeerConversationRow = {
+  conversation_id: string;
+  peer_user_id: string;
+  peer_username: string;
+  peer_preferred_name: string | null;
+};
 
 /**
  * CURRENT SUPABASE: return shape of `public.get_system_admission_policy()`.
@@ -63,35 +77,63 @@ export type SystemAdmissionPolicyRow = {
 };
 
 /**
- * CURRENT SUPABASE: return shape of `public.get_user_visible_supabase_health()`.
- * Metrics that SQL cannot authoritatively expose are null with
- * `*_status: "not_exposed_by_sql"` — never fabricate them.
+ * CURRENT SUPABASE (verified 2026-09-15): `public.get_user_visible_supabase_health()`
+ * returns ONE JSON object with nested groups. A group or key that production
+ * does not expose is absent/null — it must be rendered as "Not exposed" and
+ * never silently coerced to 0.
  */
-export type SupabaseHealthRow = {
-  object_storage_used_bytes: number | null;
-  object_storage_quota_bytes: number | null;
-  object_storage_remaining_bytes: number | null;
-  object_storage_used_percent: number | null;
-  object_storage_cleanup_trigger_percent: number | null;
-  object_storage_cleanup_target_percent: number | null;
-  database_used_bytes: number | null;
-  database_quota_bytes: number | null;
-  database_used_percent: number | null;
-  bandwidth_status: string | null;
-  realtime_status: string | null;
-  edge_functions_status: string | null;
+export type SupabaseHealthStorageGroup = {
+  used_bytes?: number | null;
+  quota_bytes?: number | null;
+  remaining_bytes?: number | null;
+  used_percent?: number | null;
+  cleanup_trigger_used_percent?: number | null;
+  cleanup_target_used_percent?: number | null;
 };
 
-/** CURRENT SUPABASE: return shape of `public.get_my_data_summary()`. */
-export type MyDataSummaryRow = {
-  ai_thread_count: number | null;
-  ai_message_count: number | null;
-  peer_conversation_count: number | null;
-  peer_message_count: number | null;
-  attachment_count: number | null;
-  attachment_bytes: number | null;
-  document_count: number | null;
-  document_bytes: number | null;
+export type SupabaseHealthDatabaseGroup = {
+  used_bytes?: number | null;
+  quota_bytes?: number | null;
+  used_percent?: number | null;
+};
+
+export type SupabaseHealthBandwidthGroup = {
+  used_bytes?: number | null;
+  quota_bytes?: number | null;
+  used_percent?: number | null;
+  status?: string | null;
+};
+
+export type SupabaseHealthUsageGroup = {
+  usage?: number | null;
+  quota?: number | null;
+  status?: string | null;
+};
+
+export type SupabaseHealthJson = {
+  object_storage?: SupabaseHealthStorageGroup | null;
+  database?: SupabaseHealthDatabaseGroup | null;
+  bandwidth?: SupabaseHealthBandwidthGroup | null;
+  realtime?: SupabaseHealthUsageGroup | null;
+  edge_functions?: SupabaseHealthUsageGroup | null;
+};
+
+/**
+ * CURRENT SUPABASE (verified 2026-09-15): `public.get_my_data_summary()` returns
+ * ONE JSON object with these exact count/byte keys for the caller only.
+ */
+export type MyDataSummaryJson = {
+  peer_messages?: number | null;
+  peer_attachments?: number | null;
+  peer_attachment_bytes?: number | null;
+  assistant_messages?: number | null;
+  assistant_attachments?: number | null;
+  assistant_attachment_bytes?: number | null;
+  study_chat_messages?: number | null;
+  documents?: number | null;
+  document_bytes?: number | null;
+  planner_events?: number | null;
+  feedback_items?: number | null;
 };
 
 /**
@@ -512,9 +554,12 @@ export type Database = {
         Row: {
           id: string;
           user_id: string;
-          document_kind: LegalDocumentKind;
+          document_type: LegalDocumentType;
           document_version: string;
           accepted_at: string;
+          withdrawn_at: string | null;
+          consent_source: string | null;
+          created_at: string;
         };
         Insert: never;
         Update: never;
@@ -556,14 +601,19 @@ export type Database = {
         Update: never;
         Relationships: [];
       };
+      /**
+       * CURRENT SUPABASE (verified 2026-09-15): there is no `kind` and no
+       * `last_message_at`; ordering uses `updated_at`.
+       */
       peer_conversations: {
         Row: {
           id: string;
-          kind: string;
+          conversation_type: string;
           created_by: string;
+          direct_key: string | null;
+          title: string | null;
           created_at: string;
           updated_at: string;
-          last_message_at: string | null;
         };
         Insert: never;
         Update: never;
@@ -573,8 +623,11 @@ export type Database = {
         Row: {
           conversation_id: string;
           user_id: string;
+          member_role: string;
           joined_at: string;
           last_read_at: string | null;
+          muted: boolean;
+          left_at: string | null;
         };
         Insert: never;
         Update: never;
@@ -597,9 +650,10 @@ export type Database = {
         Row: {
           id: string;
           conversation_id: string;
-          sender_id: string;
+          sender_user_id: string;
           body: string;
-          safety_verdict: string | null;
+          moderation_status: string;
+          moderation_event_id: string | null;
           created_at: string;
           edited_at: string | null;
           deleted_at: string | null;
@@ -621,13 +675,12 @@ export type Database = {
           id: string;
           message_id: string;
           conversation_id: string;
-          owner_id: string;
+          owner_user_id: string;
           storage_bucket: string;
           object_path: string;
           file_name: string;
           mime_type: string;
           byte_size: number;
-          scan_status: string;
           created_at: string;
         };
         Insert: never;
@@ -680,14 +733,17 @@ export type Database = {
         Args: Record<string, never>;
         Returns: SystemAdmissionPolicyRow[];
       };
+      /** Returns ONE JSON object (nested groups), not a flat row set. */
       get_user_visible_supabase_health: {
         Args: Record<string, never>;
-        Returns: SupabaseHealthRow[];
+        Returns: SupabaseHealthJson;
       };
+      /** Returns ONE JSON object scoped to the caller. */
       get_my_data_summary: {
         Args: Record<string, never>;
-        Returns: MyDataSummaryRow[];
+        Returns: MyDataSummaryJson;
       };
+      /** Returns JSONB describing the recorded compliance state. */
       complete_account_compliance_onboarding: {
         Args: {
           p_account_type: string;
@@ -698,19 +754,20 @@ export type Database = {
           p_acceptable_use_version: string;
           p_safety_version: string;
         };
-        Returns: boolean;
+        Returns: Json;
       };
       find_peer_by_exact_username: {
         Args: { p_username: string };
         Returns: PeerDirectoryRow[];
       };
+      /** Returns a ROW SET; read `conversation_id` from the first row. */
       get_or_create_direct_peer_conversation: {
         Args: { p_username: string };
-        Returns: string;
+        Returns: DirectPeerConversationRow[];
       };
       mark_peer_conversation_read: {
         Args: { p_conversation_id: string };
-        Returns: boolean;
+        Returns: undefined;
       };
     };
 

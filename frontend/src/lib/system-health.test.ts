@@ -6,27 +6,41 @@ vi.mock("@/integrations/supabase/client", () => ({
   supabase: {
     rpc: (name: string) => {
       if (name === "get_user_visible_supabase_health") {
+        // CURRENT SUPABASE (verified 2026-09-15): ONE nested JSON object.
         return Promise.resolve({
-          data: [
-            {
-              object_storage_used_bytes: 900_000_000,
-              object_storage_quota_bytes: 1_073_741_824,
-              object_storage_remaining_bytes: 173_741_824,
-              object_storage_used_percent: 83.8,
-              object_storage_cleanup_trigger_percent: 90,
-              object_storage_cleanup_target_percent: 80,
-              database_used_bytes: 45_000_000,
-              database_quota_bytes: null,
-              database_used_percent: null,
-              bandwidth_status: "not_exposed_by_sql",
-              realtime_status: "not_exposed_by_sql",
-              edge_functions_status: "not_exposed_by_sql",
+          data: {
+            object_storage: {
+              used_bytes: 900_000_000,
+              quota_bytes: 1_073_741_824,
+              remaining_bytes: 173_741_824,
+              used_percent: 83.8,
+              cleanup_trigger_used_percent: 90,
+              cleanup_target_used_percent: 80,
             },
-          ],
+            database: { used_bytes: 45_000_000 },
+            bandwidth: { status: "not_exposed_by_sql" },
+            realtime: { status: "not_exposed_by_sql" },
+            edge_functions: { status: "not_exposed_by_sql" },
+          },
           error: null,
         });
       }
-      return Promise.resolve({ data: [{ ai_thread_count: 3 }], error: null });
+      return Promise.resolve({
+        data: {
+          peer_messages: 12,
+          peer_attachments: 2,
+          peer_attachment_bytes: 40_000,
+          assistant_messages: 31,
+          assistant_attachments: 0,
+          assistant_attachment_bytes: 0,
+          study_chat_messages: 7,
+          documents: 3,
+          document_bytes: 900_000,
+          planner_events: 5,
+          feedback_items: 1,
+        },
+        error: null,
+      });
     },
     functions: {
       invoke: (name: string, options: { body: Record<string, unknown> }) => {
@@ -37,26 +51,54 @@ vi.mock("@/integrations/supabase/client", () => ({
   },
 }));
 
-const { fetchSupabaseHealth, fetchMyDataSummary, isNotExposed, requestMyDataDeletion } =
-  await import("./system-health");
+const {
+  fetchSupabaseHealth,
+  fetchMyDataSummary,
+  isNotExposed,
+  metricValue,
+  requestMyDataDeletion,
+} = await import("./system-health");
 
 describe("supabase health", () => {
-  it("marks metrics SQL cannot expose instead of fabricating them", async () => {
+  it("reads the live nested JSON groups", async () => {
     const health = await fetchSupabaseHealth();
     expect(health).not.toBeNull();
-    expect(isNotExposed(health!.database_quota_bytes)).toBe(true);
-    expect(isNotExposed(health!.database_used_percent)).toBe(true);
-    expect(isNotExposed(0, health!.bandwidth_status)).toBe(true);
-    expect(isNotExposed(0, health!.realtime_status)).toBe(true);
-    expect(isNotExposed(0, health!.edge_functions_status)).toBe(true);
-    // Real values stay real.
-    expect(isNotExposed(health!.object_storage_used_percent)).toBe(false);
-    expect(health!.object_storage_cleanup_trigger_percent).toBe(90);
-    expect(health!.object_storage_cleanup_target_percent).toBe(80);
+    expect(health!.object_storage?.used_bytes).toBe(900_000_000);
+    expect(health!.object_storage?.used_percent).toBe(83.8);
+    expect(health!.object_storage?.cleanup_trigger_used_percent).toBe(90);
+    expect(health!.object_storage?.cleanup_target_used_percent).toBe(80);
+    expect(health!.database?.used_bytes).toBe(45_000_000);
   });
 
-  it("reads only the caller's own data summary", async () => {
-    await expect(fetchMyDataSummary()).resolves.toMatchObject({ ai_thread_count: 3 });
+  it("never turns a missing key into zero", async () => {
+    const health = await fetchSupabaseHealth();
+    // `database.quota_bytes` / `used_percent` are absent from the live payload.
+    expect(metricValue(health!.database?.quota_bytes)).toBeNull();
+    expect(metricValue(health!.database?.used_percent)).toBeNull();
+    expect(isNotExposed(metricValue(health!.database?.quota_bytes))).toBe(true);
+    expect(isNotExposed(0, health!.bandwidth?.status)).toBe(true);
+    expect(isNotExposed(0, health!.realtime?.status)).toBe(true);
+    expect(isNotExposed(0, health!.edge_functions?.status)).toBe(true);
+    // A real zero stays a real zero, not "not exposed".
+    expect(metricValue(0)).toBe(0);
+  });
+
+  it("reads the caller's own data summary with the live key names", async () => {
+    const summary = await fetchMyDataSummary();
+    expect(summary).toMatchObject({
+      peer_messages: 12,
+      peer_attachments: 2,
+      peer_attachment_bytes: 40_000,
+      assistant_messages: 31,
+      study_chat_messages: 7,
+      documents: 3,
+      document_bytes: 900_000,
+      planner_events: 5,
+      feedback_items: 1,
+    });
+    // Legacy names must be gone.
+    expect(summary).not.toHaveProperty("ai_thread_count");
+    expect(summary).not.toHaveProperty("attachment_count");
   });
 });
 

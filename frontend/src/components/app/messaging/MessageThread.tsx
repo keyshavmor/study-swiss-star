@@ -5,11 +5,22 @@ import { useI18n } from "@/lib/i18n/provider";
 import { attachmentUrl, type PeerMessageRow } from "@/lib/peer-messaging";
 import { cn } from "@/lib/utils";
 
-function AttachmentView({ attachment }: { attachment: PeerMessageRow["attachments"][number] }) {
+/**
+ * CURRENT SUPABASE (verified 2026-09-15): `peer_message_attachments` has NO
+ * scan-status column. Whether an attachment may be opened follows the parent
+ * message's `moderation_status`.
+ */
+function AttachmentView({
+  attachment,
+  moderationStatus,
+}: {
+  attachment: PeerMessageRow["attachments"][number];
+  moderationStatus: string;
+}) {
   const { t } = useI18n();
   const [url, setUrl] = useState<string | null>(null);
   const isImage = attachment.mimeType.startsWith("image/");
-  const isPending = attachment.scanStatus !== "clean" && attachment.scanStatus !== "approved";
+  const isPending = moderationStatus !== "allowed" && moderationStatus !== "clean";
 
   useEffect(() => {
     let cancelled = false;
@@ -90,7 +101,7 @@ export function MessageThread({
   return (
     <div className="flex flex-1 flex-col gap-3 overflow-y-auto px-4 py-4">
       {messages.map((message) => {
-        const isMine = message.senderId === currentUserId;
+        const isMine = message.senderUserId === currentUserId;
         return (
           <div
             key={message.id}
@@ -104,7 +115,11 @@ export function MessageThread({
             >
               {message.body && <p className="whitespace-pre-wrap break-words">{message.body}</p>}
               {message.attachments.map((attachment) => (
-                <AttachmentView key={attachment.id} attachment={attachment} />
+                <AttachmentView
+                  key={attachment.id}
+                  attachment={attachment}
+                  moderationStatus={message.moderationStatus}
+                />
               ))}
             </div>
             <span className="mt-1 text-[11px] text-muted-foreground">
