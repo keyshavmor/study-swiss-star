@@ -33,6 +33,8 @@ const SCRIPT_URLS: Record<AuthCaptchaProvider, string> = {
   hcaptcha: "https://js.hcaptcha.com/1/api.js?render=explicit",
 };
 
+const AUTH_CAPTCHA_CONFIG = getAuthCaptchaConfig();
+
 function providerApi(provider: AuthCaptchaProvider): CaptchaApi | undefined {
   return provider === "turnstile" ? window.turnstile : window.hcaptcha;
 }
@@ -47,7 +49,7 @@ export function AuthCaptcha({
   const { t } = useI18n();
   const containerRef = useRef<HTMLDivElement>(null);
   const onTokenRef = useRef(onToken);
-  const config = getAuthCaptchaConfig();
+  const config = AUTH_CAPTCHA_CONFIG;
 
   onTokenRef.current = onToken;
 
