@@ -172,3 +172,24 @@ preference is REMOVED; storage cleanup is now the platform-wide 5-minute cron jo
 `LANGUAGE_ONBOARDING.mmd`, `MODEL_SELECTION_READINESS.mmd`, `MODEL_CACHED_SHARED_DOWNLOAD.mmd`,
 `RESOURCE_BLOCKED_NON_AI.mmd`, `SETTINGS_MODEL_RETRY.mmd`, `MODEL_DOWNLOAD_DEDUPLICATION.mmd`,
 `AI_SESSION_STATE_MACHINE.mmd`, `STORAGE_CAPACITY_CLEANUP.mmd`.
+
+
+## Hardening addendum — model-readiness auth + strict language gate
+
+STATUS: CURRENT FRONTEND / EXPECTED LOCAL BACKEND CONTRACT.
+
+- **Authorization boundary (model endpoints)**: `frontend/src/lib/model-backend.server.ts` now sends
+  `Authorization: Bearer <caller Supabase access token>` on every `/api/model/prepare`,
+  `/api/model/operation` and legacy `/api/model/status` call. The token is read server-side by
+  `model-readiness.functions.ts` (`callerAccessToken()`) from the request that
+  `requireSupabaseAuth` already verified. **BACKEND TODO FOR CODEX**: validate this bearer JWT
+  against Supabase's JWKS/issuer and use its `sub` as identity.
+- **`X-Student-Id` is context / cross-check ONLY** — never authentication, on any endpoint.
+- The token is never logged, persisted, returned to the browser or sent to telemetry. No
+  service-role key is used in the browser or in this server adapter.
+- Unreachable, 404, timeout or unparsable backend responses still map to `backend_unavailable`;
+  readiness is never fabricated.
+- **Strict language-first gate**: `startup-flow.ts` `languageOnboardingStatus()` returns
+  `completed | required | unknown`. A failed `user_preferences` read yields `unknown`, is never
+  cached, and keeps the user on `/onboarding/language` with a localized retry state — product
+  routes including `/home` stay unreachable until completion is actually known.

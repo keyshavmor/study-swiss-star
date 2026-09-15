@@ -9,6 +9,15 @@ sequenceDiagram
     participant DB as user_preferences (Supabase)
     participant Flow as lib/startup-flow.ts
 
+    Page->>Flow: languageOnboardingStatus() on mount
+    Flow->>DB: read user_preferences
+    alt preference read fails (status "unknown")
+        Flow-->>Page: "unknown" (never cached, never treated as completed)
+        Page-->>User: localized load error + "Try again" (stays on the language screen)
+    else read succeeds
+        Flow-->>Page: "required" or "completed"
+    end
+
     User->>Page: pick a language tile
     Page->>I18n: setLanguage(code) (immediate UI switch, app_language cached locally too)
     User->>Page: click "Continue"
