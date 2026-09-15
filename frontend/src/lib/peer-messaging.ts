@@ -50,6 +50,41 @@ export async function currentUserId(): Promise<string | null> {
   return data.user?.id ?? null;
 }
 
+/**
+ * Locally cached peer labels.
+ *
+ * Data minimisation: only the username / preferred name the signed-in user
+ * already looked up by EXACT username is remembered, so conversation lists can
+ * show a name without any directory-style query. No email, date of birth or
+ * guardian address is ever stored or fetched.
+ */
+const PEER_LABEL_STORAGE_KEY = "alim.peer_labels.v1";
+
+type PeerLabel = { username: string; preferredName: string | null };
+
+export function peerLabelCache(): Map<string, PeerLabel> {
+  try {
+    const raw = window.localStorage.getItem(PEER_LABEL_STORAGE_KEY);
+    if (!raw) return new Map();
+    return new Map(Object.entries(JSON.parse(raw) as Record<string, PeerLabel>));
+  } catch {
+    return new Map();
+  }
+}
+
+export function rememberPeerLabel(member: PeerMember): void {
+  try {
+    const cache = peerLabelCache();
+    cache.set(member.userId, { username: member.username, preferredName: member.preferredName });
+    window.localStorage.setItem(
+      PEER_LABEL_STORAGE_KEY,
+      JSON.stringify(Object.fromEntries(cache)),
+    );
+  } catch {
+    /* a label cache is a convenience only */
+  }
+}
+
 /** Exact-username lookup. Returns null when no such user exists. */
 export async function findPeerByExactUsername(username: string): Promise<PeerMember | null> {
   const trimmed = username.trim();
@@ -60,12 +95,15 @@ export async function findPeerByExactUsername(username: string): Promise<PeerMem
   if (error) throw new Error(error.message);
   const row = Array.isArray(data) ? data[0] : null;
   if (!row) return null;
-  return {
+  const member: PeerMember = {
     userId: row.user_id,
     username: row.username,
     preferredName: row.preferred_name,
   };
+  rememberPeerLabel(member);
+  return member;
 }
+
 
 /** Creates (or returns) the direct conversation with an exact username. */
 export async function getOrCreateDirectConversation(username: string): Promise<string> {
