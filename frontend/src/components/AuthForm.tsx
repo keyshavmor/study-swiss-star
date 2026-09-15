@@ -88,6 +88,9 @@ export function AuthForm() {
   const [signupAcceptedChildSafety, setSignupAcceptedChildSafety] = useState(false);
   const [complianceErrors, setComplianceErrors] = useState<ComplianceValidationError[]>([]);
   const [resetEmail, setResetEmail] = useState("");
+  // Email of a just-created account that still needs confirmation. Drives the
+  // persistent sign-in notice; cleared as soon as the identifier changes.
+  const [pendingConfirmationEmail, setPendingConfirmationEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
@@ -216,7 +219,13 @@ export function AuthForm() {
     }
     toast.success(t("auth.checkEmailToConfirm"));
     setMode("signin");
-    setIdentifier(normalised);
+    // Prefill the EMAIL, not the username: an immediate retry must go through
+    // normal email auth so Supabase can answer `email_not_confirmed`. Username
+    // login deliberately returns generic invalid credentials for an unconfirmed
+    // account, which makes a successful signup look broken.
+    const pendingEmail = signupEmail.trim();
+    setIdentifier(pendingEmail);
+    setPendingConfirmationEmail(pendingEmail);
     setPassword("");
   };
 
@@ -298,10 +307,27 @@ export function AuthForm() {
               autoComplete="username"
               placeholder={t("auth.identifierPlaceholder")}
               value={identifier}
-              onChange={(e) => setIdentifier(e.target.value)}
+              onChange={(e) => {
+                setIdentifier(e.target.value);
+                if (
+                  pendingConfirmationEmail &&
+                  e.target.value.trim() !== pendingConfirmationEmail
+                ) {
+                  setPendingConfirmationEmail("");
+                }
+              }}
               required
               autoFocus
             />
+            {pendingConfirmationEmail !== "" && (
+              <p
+                role="status"
+                data-testid="confirmation-pending-notice"
+                className="rounded-lg bg-muted px-3 py-2 text-[13px] text-muted-foreground"
+              >
+                {t("auth.confirmationPending", { email: pendingConfirmationEmail })}
+              </p>
+            )}
           </div>
         )}
 

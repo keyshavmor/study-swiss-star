@@ -32,6 +32,8 @@ export const auth = {
     "auth.usernamePasswordError": "That username and password combination did not work.",
     "auth.usernameTaken": "That username is already taken. Please pick another one.",
     "auth.checkEmailToConfirm": "Check your email to confirm your account.",
+    "auth.confirmationPending":
+      "Confirmation pending: open the link we emailed to {email}, then sign in.",
     "auth.resetLinkSent": "Password reset link sent. Check your email.",
     "auth.authenticationFailed": "Authentication failed",
     "auth.oauthSignInFailed": "{provider} sign-in failed",
@@ -90,6 +92,8 @@ export const auth = {
       "Diese Kombination aus Benutzername und Passwort hat nicht funktioniert.",
     "auth.usernameTaken": "Dieser Benutzername ist bereits vergeben. Bitte wähle einen anderen.",
     "auth.checkEmailToConfirm": "Prüf dein E-Mail, um dein Konto zu bestätigen.",
+    "auth.confirmationPending":
+      "Bestätigung offen: öffne den Link, den wir an {email} geschickt haben, und melde dich dann an.",
     "auth.resetLinkSent": "Link zum Zurücksetzen wurde gesendet. Prüf dein E-Mail.",
     "auth.authenticationFailed": "Anmeldung fehlgeschlagen",
     "auth.oauthSignInFailed": "Anmeldung mit {provider} fehlgeschlagen",
@@ -149,6 +153,8 @@ export const auth = {
       "Die Kombination us Benutzername und Passwort het nöd funktioniert.",
     "auth.usernameTaken": "Das Benutzername isch scho vergäh. Wähl bitte es anders.",
     "auth.checkEmailToConfirm": "Lueg i dim E-Mail, zum dis Konto bestätige.",
+    "auth.confirmationPending":
+      "Bestätigung offe: mach de Link uf, wo mir a {email} gschickt hei, und mäld di dänn a.",
     "auth.resetLinkSent": "Link zum Zrucksetze isch gschickt worde. Lueg i dim E-Mail.",
     "auth.authenticationFailed": "Aamäldig fehlgschlage",
     "auth.oauthSignInFailed": "Aamäldig mit {provider} fehlgschlage",
@@ -205,6 +211,8 @@ export const auth = {
     "auth.usernamePasswordError": "Такая комбинация имени пользователя и пароля не подошла.",
     "auth.usernameTaken": "Это имя пользователя уже занято. Пожалуйста, выберите другое.",
     "auth.checkEmailToConfirm": "Проверьте почту, чтобы подтвердить аккаунт.",
+    "auth.confirmationPending":
+      "Ожидается подтверждение: откройте ссылку, отправленную на {email}, затем войдите.",
     "auth.resetLinkSent": "Ссылка для сброса пароля отправлена. Проверьте почту.",
     "auth.authenticationFailed": "Не удалось войти",
     "auth.oauthSignInFailed": "Не удалось войти через {provider}",
@@ -259,6 +267,8 @@ export const auth = {
     "auth.usernamePasswordError": "Esa combinación de nombre de usuario y contraseña no funcionó.",
     "auth.usernameTaken": "Ese nombre de usuario ya está en uso. Elige otro.",
     "auth.checkEmailToConfirm": "Revisa tu correo para confirmar tu cuenta.",
+    "auth.confirmationPending":
+      "Confirmación pendiente: abre el enlace que enviamos a {email} y luego inicia sesión.",
     "auth.resetLinkSent": "Enlace de restablecimiento enviado. Revisa tu correo.",
     "auth.authenticationFailed": "Error de autenticación",
     "auth.oauthSignInFailed": "No se pudo iniciar sesión con {provider}",
@@ -316,6 +326,8 @@ export const auth = {
       "Cette combinaison de nom d'utilisateur et de mot de passe n'a pas fonctionné.",
     "auth.usernameTaken": "Ce nom d'utilisateur est déjà pris. Veuillez en choisir un autre.",
     "auth.checkEmailToConfirm": "Consultez votre e-mail pour confirmer votre compte.",
+    "auth.confirmationPending":
+      "Confirmation en attente : ouvrez le lien envoyé à {email}, puis connectez-vous.",
     "auth.resetLinkSent": "Lien de réinitialisation envoyé. Consultez votre e-mail.",
     "auth.authenticationFailed": "Échec de l'authentification",
     "auth.oauthSignInFailed": "Échec de la connexion avec {provider}",
@@ -371,6 +383,7 @@ export const auth = {
       "Quella combinazione di nome utente e password non ha funzionato.",
     "auth.usernameTaken": "Quel nome utente è già in uso. Scegline un altro.",
     "auth.checkEmailToConfirm": "Controlla la tua email per confermare l'account.",
+    "auth.confirmationPending": "Conferma in sospeso: apri il link inviato a {email}, poi accedi.",
     "auth.resetLinkSent": "Link di ripristino inviato. Controlla la tua email.",
     "auth.authenticationFailed": "Autenticazione non riuscita",
     "auth.oauthSignInFailed": "Accesso con {provider} non riuscito",
