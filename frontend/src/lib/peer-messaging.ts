@@ -115,23 +115,11 @@ export async function fetchConversations(): Promise<PeerConversationSummary[]> {
     ]);
   if (conversationError) throw new Error(conversationError.message);
 
-  const peerIds = new Set<string>();
-  for (const member of allMembers ?? []) {
-    if (member.user_id !== userId) peerIds.add(member.user_id);
-  }
-  const profileMap = new Map<string, { username: string; preferredName: string | null }>();
-  if (peerIds.size > 0) {
-    const { data: profiles } = await supabase
-      .from("profiles")
-      .select("user_id, username, preferred_name")
-      .in("user_id", [...peerIds]);
-    for (const profile of profiles ?? []) {
-      profileMap.set(profile.user_id, {
-        username: profile.username ?? "",
-        preferredName: profile.preferred_name ?? null,
-      });
-    }
-  }
+  // Peer display names come ONLY from the exact-username RPC (cached locally
+  // when a chat is opened). `profiles` is RLS-scoped to the owner, and peers
+  // must never be resolvable through a browsable directory lookup.
+  const profileMap = peerLabelCache();
+
 
   const unreadByConversation = new Map<string, number>();
   for (const notification of notifications ?? []) {

@@ -4,6 +4,7 @@
  * user_preferences, Storage) under the signed-in user's own session.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { AlertTriangle, Loader2, Trash2, Upload, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -383,8 +384,10 @@ export function PreferencesSections() {
       .finally(() => setLoading(false));
   }, [t]);
 
+  const fetchHealth = useServerFn(fetchLocalBackendHealth);
+
   useEffect(() => {
-    fetchLocalBackendHealth({ data: undefined })
+    fetchHealth()
       .then((health) =>
         setModelHealth({
           available: health.available,
@@ -393,7 +396,7 @@ export function PreferencesSections() {
         }),
       )
       .catch(() => setModelHealth(null));
-  }, []);
+  }, [fetchHealth]);
 
   const update = async (next: Partial<UserPreferences>) => {
     const previous = prefs;
