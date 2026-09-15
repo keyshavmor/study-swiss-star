@@ -92,6 +92,13 @@ export function AuthForm() {
   const navigate = useNavigate();
   const handleCaptchaToken = useCallback((token: string | null) => setCaptchaToken(token), []);
 
+  // One-time challenge token: held in component state only, never persisted or logged.
+  const verifiedCaptchaTokenValue = () => {
+    if (!getAuthCaptchaConfig()) throw new UiError(t("auth.captchaUnavailable"));
+    if (!captchaToken) throw new UiError(t("auth.captchaRequired"));
+    return captchaToken;
+  };
+
   const verifiedCaptchaToken = () => {
     if (!getAuthCaptchaConfig()) throw new UiError(t("auth.captchaUnavailable"));
     try {
