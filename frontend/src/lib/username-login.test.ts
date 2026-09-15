@@ -1,10 +1,14 @@
 /**
- * `username-login` v2 payload contract: expected bad credentials are an HTTP 200
+ * `username-login` v3 payload contract: expected bad credentials are an HTTP 200
  * body, never an Edge Function 401, and an unavailable auth service must not be
  * reported as wrong credentials.
  */
 import { describe, expect, it } from "vitest";
-import { classifyUsernameLogin, isDuplicateUsernameAfterSignupError } from "./username-login";
+import {
+  classifyUsernameLogin,
+  isDuplicateUsernameAfterSignupError,
+  usernameLoginRequest,
+} from "./username-login";
 
 describe("classifyUsernameLogin", () => {
   it("returns a session for ok:true with both tokens", () => {
@@ -34,6 +38,18 @@ describe("classifyUsernameLogin", () => {
     ).toEqual({ kind: "unavailable" });
   });
 
+  it("reports a missing challenge separately from wrong credentials (v3)", () => {
+    expect(classifyUsernameLogin({ ok: false, error_code: "captcha_required" }, null)).toEqual({
+      kind: "captcha_required",
+    });
+  });
+
+  it("reports a rejected challenge separately from wrong credentials (v3)", () => {
+    expect(classifyUsernameLogin({ ok: false, error_code: "captcha_failed" }, null)).toEqual({
+      kind: "captcha_failed",
+    });
+  });
+
   it("treats a transport/runtime failure or missing body as unavailable", () => {
     expect(classifyUsernameLogin(null, new Error("boom"))).toEqual({ kind: "unavailable" });
     expect(classifyUsernameLogin(undefined, null)).toEqual({ kind: "unavailable" });
@@ -51,5 +67,20 @@ describe("isDuplicateUsernameAfterSignupError", () => {
       false,
     );
     expect(isDuplicateUsernameAfterSignupError({ data: null })).toBe(false);
+  });
+});
+
+describe("usernameLoginRequest", () => {
+  it("sends username, password and the one-time captcha_token expected by v3", () => {
+    expect(usernameLoginRequest("student", "secret", "challenge-token")).toEqual({
+      username: "student",
+      password: "secret",
+      captcha_token: "challenge-token",
+    });
+    expect(Object.keys(usernameLoginRequest("a", "b", "c")).sort()).toEqual([
+      "captcha_token",
+      "password",
+      "username",
+    ]);
   });
 });

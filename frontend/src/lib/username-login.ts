@@ -48,7 +48,6 @@ export type UsernameLoginOutcome =
   | { kind: "captcha_failed" }
   | { kind: "unavailable" };
 
-
 export function classifyUsernameLogin(
   data: UsernameLoginPayload | null | undefined,
   transportError: unknown,
