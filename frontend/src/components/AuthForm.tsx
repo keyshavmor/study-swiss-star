@@ -5,7 +5,7 @@
  * Spotify OAuth. Successful sign-in enters the authenticated startup flow
  * (language onboarding, then the per-session model readiness gate).
  */
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -22,6 +22,8 @@ import type { TranslationKey } from "@/lib/i18n/messages";
 import { Checkbox } from "@/components/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { validateComplianceInput, type ComplianceValidationError } from "@/lib/compliance";
+import { AuthCaptcha } from "@/components/auth/AuthCaptcha";
+import { getAuthCaptchaConfig, requireAuthCaptchaToken } from "@/lib/auth-captcha";
 
 type Mode = "signin" | "signup" | "reset";
 type OAuthProvider = "github" | "linkedin_oidc" | "spotify";
@@ -85,7 +87,19 @@ export function AuthForm() {
   const [complianceErrors, setComplianceErrors] = useState<ComplianceValidationError[]>([]);
   const [resetEmail, setResetEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const [captchaResetNonce, setCaptchaResetNonce] = useState(0);
   const navigate = useNavigate();
+  const handleCaptchaToken = useCallback((token: string | null) => setCaptchaToken(token), []);
+
+  const verifiedCaptchaToken = () => {
+    if (!getAuthCaptchaConfig()) throw new UiError(t("auth.captchaUnavailable"));
+    try {
+      return requireAuthCaptchaToken(captchaToken);
+    } catch {
+      throw new UiError(t("auth.captchaRequired"));
+    }
+  };
 
   // Enter the startup flow rather than jumping straight to Home.
   const goHome = async () => {
@@ -98,7 +112,11 @@ export function AuthForm() {
   const handleSignIn = async () => {
     const value = identifier.trim();
     if (value.includes("@")) {
-      const { error } = await supabase.auth.signInWithPassword({ email: value, password });
+      const { error } = await supabase.auth.signInWithPassword({
+        email: value,
+        password,
+        options: { captchaToken: verifiedCaptchaToken() },
+      });
       if (error) throw new UiError(localizedAuthError(t, error));
       track({
         event_name: "auth_signin_succeeded",
@@ -181,6 +199,7 @@ export function AuthForm() {
       password,
       options: {
         emailRedirectTo: `${window.location.origin}/`,
+        captchaToken: verifiedCaptchaToken(),
         data: {
           username: normalised,
           account_type_prefill: signupAccountType,
@@ -216,6 +235,7 @@ export function AuthForm() {
     const email = resetEmail.trim();
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: `${window.location.origin}/auth/update-password`,
+      captchaToken: verifiedCaptchaToken(),
     });
     if (error) throw new UiError(localizedAuthError(t, error));
     track({ event_name: "auth_password_reset_requested", feature: "auth" });
@@ -248,6 +268,8 @@ export function AuthForm() {
       toast.error(localizedMessage(err) ?? t("auth.authenticationFailed"));
     } finally {
       setIsLoading(false);
+      setCaptchaToken(null);
+      setCaptchaResetNonce((value) => value + 1);
     }
   };
 
@@ -496,6 +518,10 @@ export function AuthForm() {
               minLength={6}
             />
           </div>
+        )}
+
+        {(mode === "signup" || mode === "reset" || (mode === "signin" && identifier.includes("@"))) && (
+          <AuthCaptcha onToken={handleCaptchaToken} resetNonce={captchaResetNonce} />
         )}
 
         <Button type="submit" className="w-full" disabled={isLoading}>
