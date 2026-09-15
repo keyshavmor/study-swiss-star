@@ -67,9 +67,9 @@ describe("question contract", () => {
 
   it("keeps the answer key in a separate server-only shape", () => {
     const key: AnswerKey = { questionId: "q1", correctOptionIds: ["a"] };
-    // The public question schema strips anything that resembles an answer key.
-    const parsed = publicQuestionSchema.parse({ ...mcq, ...key }) as Record<string, unknown>;
-    expect(parsed).not.toHaveProperty("correctOptionIds");
+    // A payload carrying answer-key fields is rejected outright, so a leaked
+    // key can never reach the runner as part of a visible question.
+    expect(publicQuestionSchema.safeParse({ ...mcq, ...key }).success).toBe(false);
   });
 
   it("treats empty answers as unanswered", () => {
