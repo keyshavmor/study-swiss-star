@@ -35,3 +35,9 @@ flowchart TB
   STORAGE --> RLS
   EF5 --> RETENTION
   RETENTION --> TBLS
+
+%% Added this pass: see docs/sequences/POST_LOGIN_STARTUP.mmd and related new sequence
+%% diagrams for the authenticated startup flow (language onboarding once, per-session model
+%% gate, EXPECTED LOCAL BACKEND CONTRACT for model prepare/poll, CURRENT SUPABASE ai_model_catalog
+%% and get_ai_runtime_policy 50/50/50 admission + 30/25/30 runtime floors). auto_storage_cleanup
+%% user preference removed; storage cleanup is now a platform-wide cron (STORAGE_CAPACITY_CLEANUP.mmd).

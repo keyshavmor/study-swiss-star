@@ -1,0 +1,52 @@
+%% Status: CURRENT FRONTEND (panel + adapter) / EXPECTED LOCAL BACKEND CONTRACT (endpoints)
+%% Source: frontend/src/components/app/ModelReadinessPanel.tsx,
+%% frontend/src/lib/model-readiness.functions.ts, frontend/src/lib/model-backend.server.ts,
+%% frontend/src/lib/ai-model-catalog.ts
+sequenceDiagram
+    participant User
+    participant Panel as ModelReadinessPanel.tsx
+    participant Catalog as ai-model-catalog.ts
+    participant Cat as ai_model_catalog (Supabase)
+    participant Fn as model-readiness.functions.ts (server fn)
+    participant Policy as get_ai_runtime_policy() (Supabase RPC)
+    participant Adapter as model-backend.server.ts
+    participant Backend as EXPECTED LOCAL BACKEND CONTRACT<br/>/api/model/prepare, /api/model/operation
+
+    Panel->>Catalog: fetchModelCatalog()
+    Catalog->>Cat: select enabled model_id/display_name order by sort_order
+    alt table empty/unreachable
+        Cat-->>Catalog: error or empty
+        Catalog-->>Panel: FALLBACK_MODEL_CHOICES (hard-coded QWEN_MODELS)
+    else rows returned
+        Cat-->>Catalog: rows
+        Catalog-->>Panel: choices, usedFallback=false
+    end
+
+    User->>Panel: (autoStart, or click "Check & prepare")
+    Panel->>Fn: prepareModel({ modelId })
+    Fn->>Policy: rpc get_ai_runtime_policy()
+    Policy-->>Fn: preflight 50/50/50, ready floors 30/25/30, flags
+    Fn->>Adapter: prepareModelOnBackend({ studentId, modelId, policy })
+    Adapter->>Backend: POST /api/model/prepare { model_id, admission_policy, runtime_floors, ... }
+    alt backend unreachable / 404 / timeout / unparsable
+        Backend-->>Adapter: (none)
+        Adapter-->>Fn: unavailableStatus (state=backend_unavailable)
+    else backend responds
+        Backend-->>Adapter: ModelPreparationStatus payload
+        Adapter-->>Fn: normaliseStatus(payload)
+    end
+    Fn-->>Panel: ModelPreparationStatus
+    loop while not terminal and operation_id present
+        Panel->>Fn: pollModelOperation({ modelId, operationId })
+        Fn->>Adapter: pollModelOperationOnBackend(...)
+        Adapter->>Backend: GET /api/model/operation/{operationId}
+        Backend-->>Adapter: status payload (or none)
+        Adapter-->>Fn: normalised status
+        Fn-->>Panel: status
+    end
+    alt state === ready AND can_continue_with_ai
+        Panel->>Panel: isAiReady(status) === true
+        Panel-->>User: onReady(modelId) → session marked ai-ready
+    else
+        Panel-->>User: onUnavailable(status) → red/amber state, reasons shown
+    end

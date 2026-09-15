@@ -32,7 +32,7 @@ shallow-merges `next` on top, then `upsert`s the **entire merged object** back i
 | `exam_reminders` | `boolean` | `true` | `true`, `false` | non-boolean → default | `account-data.ts:216`; settings screen |
 | `daily_study_summary` | `boolean` | `true` | `true`, `false` | non-boolean → default | `account-data.ts:217`; settings screen |
 | `sound_effects` | `boolean` | `false` | `true`, `false` | non-boolean → default | `account-data.ts:218`; settings screen |
-| `auto_storage_cleanup` | `boolean` | `true` | `true`, `false` | non-boolean → default | `account-data.ts:219`; gates automatic invocation intent for `storage-emergency-cleanup` (enforcement point BACKEND IMPLEMENTATION UNKNOWN) |
+| `language_onboarding_completed` | `boolean` | `false` | `true`, `false` | non-boolean → default | `account-data.ts:224`; set by `/onboarding/language`; gates the language-onboarding step of `resolveStartupDestination()` — CURRENT FRONTEND / CURRENT SUPABASE |
 
 ## Reader/writer modules
 
@@ -58,8 +58,13 @@ particular:
   include it per current contract knowledge).
 - `assistant_audio_enabled` / `assistant_audio_autoplay` — frontend-only (Web Speech API), never
   backend-relevant.
-- `auto_storage_cleanup` — no confirmed backend read; the frontend's own trigger
-  (`invokeEmergencyCleanup`) is the only observed call path.
+- **REMOVED:** the per-user `auto_storage_cleanup` preference key no longer exists in
+  `user_preferences.preferences` (CURRENT SUPABASE). Storage cleanup is now a platform-wide,
+  non-user-disableable scheduled job — see `docs/supabase/STORAGE_LIFECYCLES.md` and
+  `docs/supabase/EDGE_FUNCTIONS.md`.
+- `selected_qwen_model` is now also read against `public.ai_model_catalog` (CURRENT SUPABASE,
+  read-only authenticated table) for the list of selectable models; the stored preference value
+  itself is unchanged in shape.
 
 All of the above are BACKEND TODO FOR CODEX: reading and honouring these preference keys server-side
 is not yet implemented anywhere in this repository.

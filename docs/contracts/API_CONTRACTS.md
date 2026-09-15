@@ -156,3 +156,19 @@ All five are invoked via `supabase.functions.invoke("<name>", { body })`, which 
 - **Backend responsibility**: none — this call is made directly from the browser to Google; the local Python backend is never involved (per FACTS.md, "NOT called by the frontend" applies to the model runtime, and no backend code proxies Calendar).
 - **Supabase responsibility**: hosting the OAuth identity link (`auth.linkIdentity`) and issuing sessions that carry `provider_token`; Supabase does not store or refresh the Google access token beyond the initial OAuth exchange.
 - **Frontend responsibility**: token capture/expiry bookkeeping (55-minute conservative TTL), read-only merge of Google events into planner `Occurrence[]` (`googleOccurrences`), never writing back to Google, never persisting calendar content (titles/locations) to telemetry.
+
+
+## Added this pass — authenticated startup flow
+
+Signed out → `/` → `/onboarding/language` (once, CURRENT SUPABASE flag
+`language_onboarding_completed`) → `/onboarding/model` (every new browser session, CURRENT
+FRONTEND sessionStorage gate `alim.ai_session.v1`) → `/home`. Guard: `_authenticated/route.tsx`.
+Model preparation backend (`/api/model/prepare`, `/api/model/operation`) is EXPECTED LOCAL BACKEND
+CONTRACT / BACKEND TODO FOR CODEX. Resource policy: 50/50/50 admission, 30/25/30 runtime floors —
+CURRENT SUPABASE `get_ai_runtime_policy()`. Model catalog: CURRENT SUPABASE `ai_model_catalog`
+(10 Qwen entries), hard-coded list is fallback only. The per-user `auto_storage_cleanup`
+preference is REMOVED; storage cleanup is now the platform-wide 5-minute cron job described in
+`docs/supabase/STORAGE_LIFECYCLES.md`. See `docs/sequences/POST_LOGIN_STARTUP.mmd`,
+`LANGUAGE_ONBOARDING.mmd`, `MODEL_SELECTION_READINESS.mmd`, `MODEL_CACHED_SHARED_DOWNLOAD.mmd`,
+`RESOURCE_BLOCKED_NON_AI.mmd`, `SETTINGS_MODEL_RETRY.mmd`, `MODEL_DOWNLOAD_DEDUPLICATION.mmd`,
+`AI_SESSION_STATE_MACHINE.mmd`, `STORAGE_CAPACITY_CLEANUP.mmd`.

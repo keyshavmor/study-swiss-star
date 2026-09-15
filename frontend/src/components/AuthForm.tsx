@@ -2,7 +2,8 @@
  * The single authentication surface for the app, rendered at `/` (and by the
  * `/auth` alias). Supports email/password, username/password (via the
  * `username-login` Edge Function), password reset, and GitHub / LinkedIn /
- * Spotify OAuth. Successful sign-in always lands on `/home`.
+ * Spotify OAuth. Successful sign-in enters the authenticated startup flow
+ * (language onboarding, then the per-session model readiness gate).
  */
 import { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
@@ -71,7 +72,13 @@ export function AuthForm() {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
-  const goHome = () => navigate({ to: "/home", replace: true });
+  // Enter the startup flow rather than jumping straight to Home.
+  const goHome = async () => {
+    const { resolveStartupDestination, invalidateStartupCache } =
+      await import("@/lib/startup-flow");
+    invalidateStartupCache();
+    await navigate({ to: await resolveStartupDestination(), replace: true });
+  };
 
   const handleSignIn = async () => {
     const value = identifier.trim();
@@ -135,7 +142,7 @@ export function AuthForm() {
       email: signupEmail.trim(),
       password,
       options: {
-        emailRedirectTo: `${window.location.origin}/home`,
+        emailRedirectTo: `${window.location.origin}/`,
         data: { username: normalised },
       },
     });
@@ -196,7 +203,7 @@ export function AuthForm() {
     track({ event_name: "oauth_signin_started", feature: "auth", properties: { provider } });
     const { error } = await supabase.auth.signInWithOAuth({
       provider,
-      options: { redirectTo: `${window.location.origin}/home` },
+      options: { redirectTo: `${window.location.origin}/` },
     });
     if (error) {
       trackFailure("oauth_signin_failed", error, {

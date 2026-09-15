@@ -1,0 +1,19 @@
+%% Status: EXPECTED LOCAL BACKEND CONTRACT (BACKEND TODO FOR CODEX) — not implemented yet
+%% Source: frontend/src/lib/model-readiness.types.ts (AiRuntimePolicy.deduplicate_model_downloads,
+%% active_user_count, shared_download), CURRENT SUPABASE get_ai_runtime_policy()
+sequenceDiagram
+    participant UserA as User A (browser session)
+    participant UserB as User B (browser session)
+    participant Backend as EXPECTED LOCAL BACKEND CONTRACT
+    participant Disk as Local model storage (backend-owned, single machine)
+
+    Note over Backend: BACKEND TODO FOR CODEX — deduplication is a policy flag<br/>(deduplicate_model_downloads=true) the frontend expects but the local<br/>backend does not implement yet.
+    UserA->>Backend: POST /api/model/prepare { model_id: "Qwen/Qwen3-8B" }
+    Backend->>Disk: no artifact yet, no download in progress → start ONE download
+    Backend-->>UserA: state=downloading, shared_download=false, active_user_count=1
+    UserB->>Backend: POST /api/model/prepare { model_id: "Qwen/Qwen3-8B" }
+    Backend->>Disk: download already in progress for this model_id
+    Backend-->>UserB: state=downloading, shared_download=true,<br/>model_download_in_progress=true, active_user_count=2
+    Note over Backend: Exactly one artifact is written to disk;<br/>both sessions observe/poll the same underlying operation instead of<br/>each starting a redundant download that would double GPU/RAM/storage pressure.
+    Backend-->>UserA: state=ready (artifact complete)
+    Backend-->>UserB: state=ready (same artifact, no second download)

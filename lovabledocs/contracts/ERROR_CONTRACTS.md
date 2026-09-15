@@ -46,3 +46,19 @@ Every row below follows this rule unless noted otherwise.
 - `classifyError` (`frontend/src/lib/telemetry.ts`) intentionally strips messages/stack/cause from every `trackFailure` call — see `docs/contracts/EVENT_AND_TELEMETRY_CONTRACT.md` for the exact fields kept (`error_name`, `error_status`, `error_code`).
 - No frontend code was found implementing exponential backoff or automatic retry for any of the above; all "retry" behaviour listed is a manual user action (resend, reconnect, resubmit).
 - Where a message is described as "raw provider text is logged, never rendered," the evidence is the presence of `console.error(...)` immediately before a localized `setError`/`toast.error` call using an i18n key, per the `UiError` rule in `frontend/src/lib/ui-error.ts`.
+
+
+## Added this pass — authenticated startup flow
+
+Signed out → `/` → `/onboarding/language` (once, CURRENT SUPABASE flag
+`language_onboarding_completed`) → `/onboarding/model` (every new browser session, CURRENT
+FRONTEND sessionStorage gate `alim.ai_session.v1`) → `/home`. Guard: `_authenticated/route.tsx`.
+Model preparation backend (`/api/model/prepare`, `/api/model/operation`) is EXPECTED LOCAL BACKEND
+CONTRACT / BACKEND TODO FOR CODEX. Resource policy: 50/50/50 admission, 30/25/30 runtime floors —
+CURRENT SUPABASE `get_ai_runtime_policy()`. Model catalog: CURRENT SUPABASE `ai_model_catalog`
+(10 Qwen entries), hard-coded list is fallback only. The per-user `auto_storage_cleanup`
+preference is REMOVED; storage cleanup is now the platform-wide 5-minute cron job described in
+`docs/supabase/STORAGE_LIFECYCLES.md`. See `docs/sequences/POST_LOGIN_STARTUP.mmd`,
+`LANGUAGE_ONBOARDING.mmd`, `MODEL_SELECTION_READINESS.mmd`, `MODEL_CACHED_SHARED_DOWNLOAD.mmd`,
+`RESOURCE_BLOCKED_NON_AI.mmd`, `SETTINGS_MODEL_RETRY.mmd`, `MODEL_DOWNLOAD_DEDUPLICATION.mmd`,
+`AI_SESSION_STATE_MACHINE.mmd`, `STORAGE_CAPACITY_CLEANUP.mmd`.

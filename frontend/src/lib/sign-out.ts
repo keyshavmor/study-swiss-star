@@ -1,6 +1,8 @@
 /** Shared sign-out: end the Supabase session and clear transient app state. */
 import { supabase } from "@/integrations/supabase/client";
 import { clearGoogleAccess } from "@/lib/google-calendar";
+import { clearAiSession } from "@/lib/ai-session";
+import { invalidateStartupCache } from "@/lib/startup-flow";
 import { logActivity, trackFailure } from "@/lib/telemetry";
 
 /**
@@ -17,5 +19,9 @@ export async function signOutCompletely(): Promise<void> {
     throw err;
   } finally {
     clearGoogleAccess();
+    // The per-session AI gate decision and the cached onboarding flag must not
+    // survive a real sign-out.
+    clearAiSession();
+    invalidateStartupCache();
   }
 }

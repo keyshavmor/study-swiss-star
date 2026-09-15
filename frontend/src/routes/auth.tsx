@@ -6,6 +6,8 @@ export const Route = createFileRoute("/auth")({
   beforeLoad: async () => {
     const { supabase } = await import("@/integrations/supabase/client");
     const { data } = await supabase.auth.getUser();
-    throw redirect({ to: data.user ? "/home" : "/", replace: true });
+    if (!data.user) throw redirect({ to: "/", replace: true });
+    const { resolveStartupDestination } = await import("@/lib/startup-flow");
+    throw redirect({ to: await resolveStartupDestination(), replace: true });
   },
 });

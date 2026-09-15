@@ -17,9 +17,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
+import { ModelReadinessPanel } from "@/components/app/ModelReadinessPanel";
+import { useAiAvailability } from "@/lib/ai-availability";
 import {
   DEFAULT_PREFERENCES,
-  QWEN_MODELS,
   avatarSignedUrl,
   fetchAccountProfile,
   fetchPreferences,
@@ -357,6 +358,7 @@ export function AccountSection() {
 
 export function PreferencesSections() {
   const { t } = useI18n();
+  const ai = useAiAvailability();
   const [prefs, setPrefs] = useState<UserPreferences>(DEFAULT_PREFERENCES);
   const [loading, setLoading] = useState(true);
   const audioSupported = useMemo(() => speechSupported(), []);
@@ -394,11 +396,6 @@ export function PreferencesSections() {
     { key: "exam_reminders", label: t("settings.preferences.examReminders") },
     { key: "daily_study_summary", label: t("settings.preferences.dailyStudySummary") },
     { key: "sound_effects", label: t("settings.preferences.soundEffects") },
-    {
-      key: "auto_storage_cleanup",
-      label: t("settings.preferences.autoCleanup.label"),
-      hint: t("settings.preferences.autoCleanup.hint"),
-    },
   ];
 
   return (
@@ -407,26 +404,17 @@ export function PreferencesSections() {
         title={t("settings.localModel.title")}
         description={t("settings.localModel.description")}
       >
-        <div className="max-w-md space-y-2">
-          <Label htmlFor="qwenModel">{t("settings.localModel.label")}</Label>
-          <Select
-            value={prefs.selected_qwen_model}
-            onValueChange={(value) => void update({ selected_qwen_model: value })}
-            disabled={loading}
-          >
-            <SelectTrigger id="qwenModel">
-              <SelectValue placeholder={t("settings.localModel.placeholder")} />
-            </SelectTrigger>
-            <SelectContent>
-              {QWEN_MODELS.map((model) => (
-                <SelectItem key={model} value={model}>
-                  {model}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <p className="text-[13px] text-muted-foreground">{t("settings.localModel.hint")}</p>
-        </div>
+        {!loading && (
+          <ModelReadinessPanel
+            initialModelId={prefs.selected_qwen_model}
+            onPreparing={ai.setPreparing}
+            onReady={(modelId) => {
+              ai.setReady(modelId);
+              setPrefs((current) => ({ ...current, selected_qwen_model: modelId }));
+            }}
+            onUnavailable={() => ai.setUnavailable()}
+          />
+        )}
       </SectionCard>
 
       <SectionCard
@@ -509,7 +497,6 @@ export function StorageSection() {
   const [kind, setKind] = useState<StorageItemKind | "all">("all");
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
-  const cleanupAttempted = useRef(false);
 
   const KIND_FILTERS: { value: StorageItemKind | "all"; label: string }[] = [
     { value: "all", label: t("settings.storage.filter.all") },
@@ -534,21 +521,24 @@ export function StorageSection() {
     }
   }, [t]);
 
+  // Capacity cleanup is platform-wide and runs on a schedule. Opening Settings
+  // must never trigger a global cleanup.
   useEffect(() => {
-    void (async () => {
-      const status = await load();
-      if (status?.emergency_cleanup_needed && !cleanupAttempted.current) {
-        cleanupAttempted.current = true;
-        try {
-          await invokeEmergencyCleanup();
-          toast.success(t("settings.storage.cleanupDone"));
-          await load();
-        } catch (err) {
-          toast.error(t("settings.storage.cleanupError"));
-        }
-      }
-    })();
-  }, [load, t]);
+    void load();
+  }, [load]);
+
+  const handleManualCleanup = async () => {
+    setBusy(true);
+    try {
+      await invokeEmergencyCleanup();
+      toast.success(t("settings.storage.cleanupDone"));
+      await load();
+    } catch (err) {
+      toast.error(t("settings.storage.cleanupError"));
+    } finally {
+      setBusy(false);
+    }
+  };
 
   const filtered = useMemo(
     () =>
@@ -629,13 +619,29 @@ export function StorageSection() {
             <div className="flex items-start gap-3 rounded-xl border border-warning/40 bg-warning/10 p-4">
               <AlertTriangle className="mt-0.5 h-[18px] w-[18px] shrink-0 text-warning" />
               <div className="text-[14px]">
-                <p className="font-semibold text-warning">{t("settings.storage.lowTitle")}</p>
+                <p className="font-semibold text-warning">
+                  {t("settings.storage.capacity.warning", { percent: usedPercent.toFixed(1) })}
+                </p>
                 <p className="mt-1 text-muted-foreground">
-                  {t("settings.storage.lowBody", { percent: remainingPercent.toFixed(1) })}
+                  {t("settings.storage.capacity.warningBody")}
                 </p>
               </div>
             </div>
           )}
+
+          <div className="rounded-xl border border-border bg-surface-2 p-4 text-[14px]">
+            <p className="font-semibold">{t("settings.storage.capacity.title")}</p>
+            <p className="mt-1 text-muted-foreground">{t("settings.storage.capacity.body")}</p>
+            <p className="mt-1 text-muted-foreground">{t("settings.storage.capacity.excluded")}</p>
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              <Button variant="outline" disabled={busy} onClick={() => void handleManualCleanup()}>
+                {t("settings.storage.capacity.manual")}
+              </Button>
+              <span className="text-[12px] text-muted-foreground">
+                {t("settings.storage.capacity.manualHint")}
+              </span>
+            </div>
+          </div>
 
           <div className="grid gap-3 sm:grid-cols-[minmax(0,180px)_minmax(0,1fr)_minmax(0,1fr)]">
             <div className="space-y-2">

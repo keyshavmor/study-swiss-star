@@ -249,7 +249,7 @@ export interface UserPreferences {
   exam_reminders: boolean;
   daily_study_summary: boolean;
   sound_effects: boolean;
-  auto_storage_cleanup: boolean;
+  language_onboarding_completed: boolean;
 }
 
 export const DEFAULT_PREFERENCES: UserPreferences = {
@@ -261,7 +261,7 @@ export const DEFAULT_PREFERENCES: UserPreferences = {
   exam_reminders: true,
   daily_study_summary: true,
   sound_effects: false,
-  auto_storage_cleanup: true,
+  language_onboarding_completed: false,
 };
 
 export const AVATAR_BUCKET = "profile-avatars";

@@ -10,12 +10,15 @@ flowchart TD
     A -->|auth.updateUser email| AU[Supabase Auth]
     A -->|auth.updateUser password| AU
     M -->|preferences.selected_qwen_model| DBU[(user_preferences)]
-    P -->|exam_reminders, daily_study_summary,<br/>sound_effects, auto_storage_cleanup| DBU
+    P -->|exam_reminders, daily_study_summary,<br/>sound_effects| DBU
+    S --> ON[Model onboarding gate reused here<br/>ModelReadinessPanel, no autoStart]
+    ON -->|preferences.selected_qwen_model, ai_model_catalog| DBU
     AU2 -->|assistant_audio_enabled default true,<br/>assistant_audio_autoplay default false| DBU
     NoteLang["Language menu lives in AppHeader.tsx, not Settings"] -.-> S
     G -->|rpc get_storage_usage_status| RPC[(usage status: quota/used/remaining/percent)]
     RPC -->|remaining <= 10%| W[Prominent warning]
     RPC -->|remaining <= 1%| EC[invoke storage-emergency-cleanup, once per session]
+    GLOB[Global storage cron<br/>every 5 minutes, platform-wide] -->|used >= 90%| CLEAN[Delete oldest objects in<br/>user-materials / chat-attachments<br/>down to ~80% used]
     G -->|list| L[assistant_attachments + documents with storage paths]
     L -->|select + confirm| D1[Storage bucket remove first]
     D1 --> D2[assistant_attachments.deleted_at set;<br/>documents storage pointer cleared]
