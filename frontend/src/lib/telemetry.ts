@@ -73,6 +73,11 @@ export async function logActivity(event: ActivityEvent): Promise<void> {
     });
     if (properties) payload["properties"] = properties;
 
+    // The Edge Function requires a verified session; skip while signed out so
+    // telemetry never produces a 401 the user can see.
+    const { data } = await supabase.auth.getSession();
+    if (!data.session) return;
+
     await supabase.functions.invoke("activity-log", { body: payload });
   } catch {
     // Telemetry is best-effort only.
