@@ -60,8 +60,10 @@ Status labels used below: **CURRENT — FRONTEND**, **CURRENT — SUPABASE**,
   event via `track()` (`frontend/src/lib/telemetry.ts`).
 - **Error state:** `validateUsername` failure → `UiError` with localized length/char message.
   `availability.data.valid === false` → `auth.usernameCharsError`. `availability.data.available
-  === false` → `auth.usernameTaken`. `signUp` error matching `/username/i` +
-  `/(exists|duplicate|unique)/i` → `auth.usernameTaken`; otherwise raw error rethrown and shown via
+  === false` → `auth.usernameTaken`. A `signUp` failure NEVER matches on the raw message: an
+  `unexpected_failure`/HTTP 500 triggers a re-check of the exact username via
+  `username-availability` and only `available: false` shows `auth.usernameTaken`, otherwise the
+  generic localized error from `auth-errors.ts`; other errors map by stable code and are shown via
   `toast.error(localizedMessage(err) ?? t("auth.authenticationFailed"))`; `trackFailure` logs
   `auth_signup_failed`.
 - **Next navigation:** stays on `/`, now in sign-in mode awaiting email confirmation, or user
