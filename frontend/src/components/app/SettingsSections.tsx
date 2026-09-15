@@ -370,6 +370,11 @@ export function PreferencesSections() {
   const [prefs, setPrefs] = useState<UserPreferences>(DEFAULT_PREFERENCES);
   const [loading, setLoading] = useState(true);
   const audioSupported = useMemo(() => speechSupported(), []);
+  const [modelHealth, setModelHealth] = useState<{
+    available: boolean;
+    assignedModelId: string | null;
+    recommendedModelId: string | null;
+  } | null>(null);
 
   useEffect(() => {
     fetchPreferences()
@@ -377,6 +382,18 @@ export function PreferencesSections() {
       .catch((err: unknown) => toast.error(t("settings.preferences.loadError")))
       .finally(() => setLoading(false));
   }, [t]);
+
+  useEffect(() => {
+    fetchLocalBackendHealth({ data: undefined })
+      .then((health) =>
+        setModelHealth({
+          available: health.available,
+          assignedModelId: health.my_assigned_model_id,
+          recommendedModelId: health.recommended_model_id,
+        }),
+      )
+      .catch(() => setModelHealth(null));
+  }, []);
 
   const update = async (next: Partial<UserPreferences>) => {
     const previous = prefs;
@@ -422,6 +439,29 @@ export function PreferencesSections() {
             }}
             onUnavailable={() => ai.setUnavailable()}
           />
+        )}
+        {!loading && modelHealth?.available && (
+          <div className="space-y-1.5 rounded-xl border border-border bg-surface-2 p-4 text-[14px]">
+            <p>
+              <span className="font-medium">{t("settings.model.preferred")}:</span>{" "}
+              {prefs.selected_qwen_model}
+            </p>
+            {modelHealth.assignedModelId && (
+              <p>
+                <span className="font-medium">{t("settings.model.assigned")}:</span>{" "}
+                {modelHealth.assignedModelId}
+              </p>
+            )}
+            {modelHealth.recommendedModelId && (
+              <p className="text-muted-foreground">
+                {t("settings.model.recommendation", { model: modelHealth.recommendedModelId })}
+              </p>
+            )}
+            {modelHealth.assignedModelId &&
+              modelHealth.assignedModelId !== prefs.selected_qwen_model && (
+                <p className="text-muted-foreground">{t("settings.model.assignedDiffers")}</p>
+              )}
+          </div>
         )}
       </SectionCard>
 
