@@ -59,13 +59,13 @@ describe("AI readiness can never be faked by the frontend", () => {
     expect(status.can_continue_with_ai).toBe(false);
     expect(status.can_continue_without_ai).toBe(true);
     expect(status.blocking_reasons).toContain("backend_unavailable");
-    expect(toneForStatus(status)).toBe("blocked");
+    expect(toneForStatus(status)).toBe("danger");
     expect(isAiReady(status)).toBe(false);
   });
 
   it("uses semantic tones for progress and success", () => {
-    expect(toneForStatus(base({ state: "ready", can_continue_with_ai: true }))).toBe("ready");
+    expect(toneForStatus(base({ state: "ready", can_continue_with_ai: true }))).toBe("success");
     expect(toneForStatus(base({ state: "queued" }))).toBe("warning");
-    expect(toneForStatus(base({ state: "failed" }))).toBe("blocked");
+    expect(toneForStatus(base({ state: "failed" }))).toBe("danger");
   });
 });
