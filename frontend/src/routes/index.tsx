@@ -1,4 +1,7 @@
-/** Public entry point: welcome + sign-in / sign-up. Signed-in users go to /home. */
+/**
+ * Public entry point: welcome + sign-in / sign-up. Signed-in users are sent to
+ * the correct startup destination (language onboarding, model gate or Home).
+ */
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { GraduationCap } from "lucide-react";
 import { AuthForm } from "@/components/AuthForm";
@@ -28,7 +31,12 @@ export const Route = createFileRoute("/")({
   beforeLoad: async () => {
     const { supabase } = await import("@/integrations/supabase/client");
     const { data } = await supabase.auth.getUser();
-    if (data.user) throw redirect({ to: "/home" });
+    if (data.user) {
+      // Resolve the correct authenticated startup destination instead of
+      // blindly landing on Home.
+      const { resolveStartupDestination } = await import("@/lib/startup-flow");
+      throw redirect({ to: await resolveStartupDestination(), replace: true });
+    }
   },
   component: WelcomeAuthPage,
 });
