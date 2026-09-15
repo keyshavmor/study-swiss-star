@@ -46,10 +46,13 @@ export function AuthCaptcha({
 }) {
   const { t } = useI18n();
   const containerRef = useRef<HTMLDivElement>(null);
+  const onTokenRef = useRef(onToken);
   const config = getAuthCaptchaConfig();
 
+  onTokenRef.current = onToken;
+
   useEffect(() => {
-    onToken(null);
+    onTokenRef.current(null);
     if (!config || !containerRef.current) return;
 
     let disposed = false;
@@ -61,9 +64,9 @@ export function AuthCaptcha({
       container.replaceChildren();
       widgetId = api.render(container, {
         sitekey: config.siteKey,
-        callback: (token) => onToken(token),
-        "expired-callback": () => onToken(null),
-        "error-callback": () => onToken(null),
+        callback: (token) => onTokenRef.current(token),
+        "expired-callback": () => onTokenRef.current(null),
+        "error-callback": () => onTokenRef.current(null),
         theme: "auto",
       });
     };
@@ -88,7 +91,7 @@ export function AuthCaptcha({
       if (widgetId !== undefined) api?.remove?.(widgetId);
       existing?.removeEventListener("load", render);
     };
-  }, [config?.provider, config?.siteKey, onToken, resetNonce]);
+  }, [config?.provider, config?.siteKey, resetNonce]);
 
   if (!config) {
     return (
