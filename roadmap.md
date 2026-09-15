@@ -32,3 +32,10 @@
   safety moderation, peer send, attachment scanning, GPU/RAM/disk measurement, load balancing,
   lease TTL sweeper.
 - Legal/organisational: counsel/DPO review of the legal baseline before production.
+
+## Current hCaptcha repair
+
+- [ ] Configure hCaptcha and audit public sitekey availability without exposing secrets.
+- [ ] Align widget lifecycle and preserve all password-flow token contracts; add regressions.
+- [ ] Synchronize docs and run available validation.
+- [ ] Real production auth smoke test (blocked until public sitekey and solved challenge are available).
