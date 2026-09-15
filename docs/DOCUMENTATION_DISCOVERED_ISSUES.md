@@ -333,3 +333,29 @@ resolved the last of them. It still emits `unused_index` INFO findings, includin
 FK-covering indexes above, purely because they have not yet accumulated query usage. These fresh,
 required foreign-key-covering indexes must NOT be dropped on the basis of a current `unused_index`
 finding; the absence of `unindexed_foreign_keys` warnings depends on them remaining in place.
+
+## 2026-09-15 — urgent production authentication smoke test
+
+- The frontend build remains pinned to the canonical production project URL and matching public
+  key. A direct `@supabase/supabase-js` probe reached that project successfully.
+- `username-availability` returned HTTP 200 with `valid:true, available:true` for a fresh random
+  username. The v2 `username-login` function returned HTTP 200 with the expected
+  `invalid_credentials` payload for the not-created account.
+- Both direct `auth.signUp(...)` and `auth.signInWithPassword(...)` returned HTTP 400 with stable
+  code `captcha_failed`. This is the reproduced blocker: production Auth requires CAPTCHA, while
+  the prior frontend sent no challenge token. The rejected signup did not return a user or session.
+- CURRENT FRONTEND repair: email signup, email sign-in and password-reset request now render the
+  configured Turnstile/hCaptcha widget, require its one-time token, pass `options.captchaToken`,
+  clear it after each attempt and never persist or log it. Missing public widget configuration
+  fails closed with localized copy instead of sending a guaranteed-to-fail request.
+- MANUAL BLOCKER: add `VITE_AUTH_CAPTCHA_PROVIDER` (`turnstile` or `hcaptcha`) and the matching
+  public `VITE_AUTH_CAPTCHA_SITE_KEY` to the frontend deployment configuration. Confirm the same
+  provider's private secret and allowed app hostnames in the production Auth dashboard. The site
+  key is public; the secret must never enter source or a `VITE_*` variable.
+- Email confirmation is enabled (`mailer_autoconfirm=false`) in the public production settings, so
+  a corrected successful signup intentionally returns no session until the email link is opened.
+  Site/redirect allow-list, SMTP, password policy/leaked-password protection, exact rate limits and
+  OAuth credentials remain manual dashboard checks.
+- Because no production CAPTCHA site key/token is available in this environment, a real account
+  could not be created after the repair; therefore email signup/login, username login/setSession,
+  trigger-created profile/preferences/compliance rows and final sign-out are **NOT marked PASS**.
