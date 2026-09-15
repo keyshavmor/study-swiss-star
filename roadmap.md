@@ -1,6 +1,6 @@
 # Roadmap — compliance / messaging / admission pass
 
-## Done (this pass, core contracts)
+## Done (this pass)
 
 - [x] Production Supabase types: `account_compliance`, `user_legal_consents`, `moderation_events`,
       `guardian_notification_queue`, peer messaging tables, new RPCs and row types.
@@ -17,24 +17,18 @@
 - [x] `lib/system-health.ts` — Supabase health, own-data summary, `delete-my-data`.
 - [x] `lib/startup-flow.ts` — compliance → language → admission → model → home, suspension first.
 - [x] `lib/sign-out.ts` + `messaging-session.ts` — best-effort runtime release and state teardown.
-- [x] English strings for compliance, messaging and system areas.
-
-## In progress (delegated)
-
-- [ ] Compliance/legal/suspended routes + signup fields.
-- [ ] Messaging area (routes, composer, attachments, safety notices).
-- [ ] Admission gate, System Health, data-rights panel, navigation and settings.
-- [ ] Translations for de, gsw, ru, es, fr, it.
-- [ ] Documentation + 20 Mermaid diagrams, `lovabledocs/` mirror.
-
-## Final steps
-
-- [ ] Tests for compliance validation, startup order, admission fail-closed, effective caps,
-      attachment rules, deletion request shape, sign-out teardown.
-- [ ] format, typecheck, lint, check:i18n, test, build.
+- [x] Compliance/legal/suspended routes + extended signup fields.
+- [x] Messaging area (routes, conversation list, thread, composer, attachments, safety notices).
+- [x] Admission gate route, System Health page, data-rights panel, navigation and settings.
+- [x] All strings in en, de, gsw, ru, es, fr, it (1170 keys each, gsw ß-free).
+- [x] Documentation + 20 Mermaid diagrams, `lovabledocs/` byte-identical mirror.
+- [x] Tests: compliance validation, startup order, admission fail-closed, effective caps,
+      attachment rules, deletion request shape, safety verdicts, health "Not exposed".
+- [x] format, typecheck, lint, check:i18n, tests (66/66), build — all green.
 
 ## Blocked (not this pass)
 
-- Local Python backend: system admission/health/heartbeat/release, safety moderation, peer send,
-  attachment scanning, GPU/RAM/disk measurement, load balancing, lease TTL sweeper.
+- Local Python backend: system admission/health/heartbeat/release, model prepare/status,
+  safety moderation, peer send, attachment scanning, GPU/RAM/disk measurement, load balancing,
+  lease TTL sweeper.
 - Legal/organisational: counsel/DPO review of the legal baseline before production.
