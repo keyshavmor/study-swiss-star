@@ -36,8 +36,31 @@ flowchart TB
   EF5 --> RETENTION
   RETENTION --> TBLS
 
+
+  subgraph PG2S["PostgreSQL (compliance/safety/messaging, this pass)"]
+    TBLS2["account_compliance, user_legal_consents,<br/>moderation_events, guardian_notification_queue,<br/>peer_conversations, peer_conversation_members,<br/>peer_messages, peer_message_attachments, peer_message_notifications"]
+    RPC2["RPC: complete_account_compliance_onboarding<br/>RPC: find_peer_by_exact_username<br/>RPC: get_or_create_direct_peer_conversation<br/>RPC: mark_peer_conversation_read<br/>RPC: get_user_visible_supabase_health<br/>RPC: get_my_data_summary<br/>RPC: get_system_admission_policy"]
+  end
+  subgraph STORAGE2S["Storage (this pass)"]
+    BUCKET2["peer-message-attachments (private)"]
+  end
+  subgraph EDGE2S["Edge Functions (this pass)"]
+    EF6["delete-my-data (range | all_content | delete_account)"]
+  end
+
+  BROWSERCLIENT --> TBLS2
+  BROWSERCLIENT --> RPC2
+  BROWSERCLIENT --> BUCKET2
+  BROWSERCLIENT --> EF6
+  TBLS2 --> RLS
+  BUCKET2 --> RLS
+  EF6 --> TBLS2
+  EF6 --> BUCKET2
+
 %% Added this pass: see docs/sequences/POST_LOGIN_STARTUP.mmd and related new sequence
 %% diagrams for the authenticated startup flow (language onboarding once, per-session model
 %% gate, EXPECTED LOCAL BACKEND CONTRACT for model prepare/poll, CURRENT SUPABASE ai_model_catalog
 %% and get_ai_runtime_policy 50/50/50 admission + 30/25/30 runtime floors). auto_storage_cleanup
 %% user preference removed; storage cleanup is now a platform-wide cron (STORAGE_CAPACITY_CLEANUP.mmd).
+
+%% Added this pass: compliance onboarding, system admission gate, suspension, legal document routes, peer messaging surfaces and system health panel. See docs/sequences/STARTUP_COMPLIANCE_LANGUAGE_ADMISSION_MODEL_HOME.mmd, docs/sequences/PEER_CHAT_CREATION_BY_USERNAME.mmd, docs/sequences/SYSTEM_HEALTH_AGGREGATION.mmd and docs/contracts/BACKEND_GAP_MATRIX.md.

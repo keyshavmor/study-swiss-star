@@ -59,8 +59,42 @@ flowchart LR
   CTXBACKEND --> LOCALBACKEND["Local Python backend :8001<br/>EXPECTED BACKEND CONTRACT"]
   APICHAT --> SUPACLIENT
 
+
+  GATE --> ONBCOMPLIANCE2["onboarding.compliance.tsx"]
+  ONBCOMPLIANCE2 --> COMPLIANCECOMP["ComplianceOnboarding.tsx"]
+  GATE --> ONBADMISSION2["onboarding.system-admission.tsx"]
+  ONBADMISSION2 --> ADMISSIONGATECOMP["SystemAdmissionGate.tsx"]
+  GATE --> SUSPENDEDR["account.suspended.tsx"]
+  ROOT --> LEGALR["legal.$doc.tsx"]
+  LEGALR --> LEGALCOMP["LegalDocumentPage.tsx"]
+
+  GATE --> MSGIDX["messages.index.tsx / messages.$conversationId.tsx"]
+  MSGIDX --> CONVLIST["messaging/ConversationList.tsx"]
+  MSGIDX --> MSGTHREADCOMP["messaging/MessageThread.tsx"]
+  MSGTHREADCOMP --> MSGCOMPOSER["messaging/MessageComposer.tsx"]
+  MSGTHREADCOMP --> ATTACHPICK["messaging/AttachmentPicker.tsx"]
+  CONVLIST --> NEWCONVDIALOG["messaging/NewConversationDialog.tsx"]
+  MSGCOMPOSER --> LOCALPEERSEND2["local-backend-endpoints.ts: /api/peer-messaging/send"]
+  ATTACHPICK --> LOCALATTACHSCAN2["local-backend-endpoints.ts: /api/safety/attachment-scan"]
+  CONVLIST --> SUPACLIENT
+  MSGTHREADCOMP --> SUPACLIENT
+
+  GATE --> SYSHEALTHR["system-health.tsx"]
+  SYSHEALTHR --> SYSHEALTHCOMP["SystemHealthPanel.tsx"]
+  SYSHEALTHCOMP --> LOCALHEALTH2["local-backend-endpoints.ts: /api/system/health"]
+
+  SETTINGS --> DATARIGHTSCOMP["DataRightsPanel.tsx"]
+  DATARIGHTSCOMP --> SUPACLIENT
+
+  APICHAT --> LOCALMODERATE2["local-backend-endpoints.ts: /api/safety/moderate"]
+
+  classDef backendUnknown2 fill:#fdf1d0,stroke:#a67c00,color:#333;
+  class LOCALPEERSEND2,LOCALATTACHSCAN2,LOCALHEALTH2,LOCALMODERATE2 backendUnknown2
+
 %% Added this pass: see docs/sequences/POST_LOGIN_STARTUP.mmd and related new sequence
 %% diagrams for the authenticated startup flow (language onboarding once, per-session model
 %% gate, EXPECTED LOCAL BACKEND CONTRACT for model prepare/poll, CURRENT SUPABASE ai_model_catalog
 %% and get_ai_runtime_policy 50/50/50 admission + 30/25/30 runtime floors). auto_storage_cleanup
 %% user preference removed; storage cleanup is now a platform-wide cron (STORAGE_CAPACITY_CLEANUP.mmd).
+
+%% Added this pass: compliance onboarding, system admission gate, suspension, legal document routes, peer messaging surfaces and system health panel. See docs/sequences/STARTUP_COMPLIANCE_LANGUAGE_ADMISSION_MODEL_HOME.mmd, docs/sequences/PEER_CHAT_CREATION_BY_USERNAME.mmd, docs/sequences/SYSTEM_HEALTH_AGGREGATION.mmd and docs/contracts/BACKEND_GAP_MATRIX.md.

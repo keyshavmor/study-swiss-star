@@ -1,0 +1,20 @@
+%% Status: EXPECTED LOCAL BACKEND CONTRACT + CURRENT FRONTEND (fail-closed adapter)
+%% Source: frontend/src/lib/system-health.ts, system-admission.types.ts, system.functions.ts
+sequenceDiagram
+    participant UI as /system-health
+    participant Fn as fetchLocalBackendHealth (server fn)
+    participant Adapter as system-backend.server.ts
+    participant Backend as EXPECTED /api/system/health
+
+    UI->>Fn: fetchLocalBackendHealth()
+    Fn->>Adapter: fetchLocalHealthOnBackend(verified JWT)
+    Adapter->>Backend: GET /api/system/health
+    alt unavailable/timeout/malformed
+        Backend-->>Adapter: no usable response
+        Adapter-->>UI: unavailableLocalHealth() (available:false, message_code:backend_unavailable)
+    else responds
+        Backend-->>Adapter: active_user_count, gpus[], ram, disk, rebalance_state, recommended_model_id
+        Adapter->>Adapter: normalise; only owned_by_me instances flagged, never another user's identity
+        Adapter-->>UI: LocalBackendHealth
+    end
+    Note over Backend: BACKEND TODO FOR CODEX: real aggregation. Health endpoint never exposes user identities.

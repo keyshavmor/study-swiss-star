@@ -61,8 +61,37 @@ flowchart LR
   G4 --> H2
   G1 --> H1
 
+
+  subgraph SS2["sessionStorage (this pass)"]
+    E2["alim.admission_session.v1 (admission lease)"]
+    E3["alim.messaging_session.v1 (transient composer/attachment state)"]
+  end
+  subgraph CTX2["Context / provider state (this pass)"]
+    C5["SafetyAvailabilityProvider (safety backend up/down)"]
+  end
+  subgraph PG2["Supabase PostgreSQL (this pass)"]
+    G9["account_compliance"]
+    G10["user_legal_consents"]
+    G11["moderation_events"]
+    G12["guardian_notification_queue"]
+    G13["peer_conversations / peer_conversation_members / peer_messages / peer_message_attachments / peer_message_notifications"]
+  end
+  subgraph ST2["Supabase Storage (this pass)"]
+    H7["peer-message-attachments (private)"]
+  end
+  subgraph BE2["Local backend / admission-safety state (EXPECTED LOCAL BACKEND CONTRACT)"]
+    J3["Admission session lease reconciliation"]
+    J4["Safety moderation verdicts"]
+  end
+
+  E2 -.->|"reconciled against"| J3
+  C5 -.->|"polls"| J4
+  G13 --> H7
+
 %% Added this pass: see docs/sequences/POST_LOGIN_STARTUP.mmd and related new sequence
 %% diagrams for the authenticated startup flow (language onboarding once, per-session model
 %% gate, EXPECTED LOCAL BACKEND CONTRACT for model prepare/poll, CURRENT SUPABASE ai_model_catalog
 %% and get_ai_runtime_policy 50/50/50 admission + 30/25/30 runtime floors). auto_storage_cleanup
 %% user preference removed; storage cleanup is now a platform-wide cron (STORAGE_CAPACITY_CLEANUP.mmd).
+
+%% Added this pass: compliance onboarding, system admission gate, suspension, legal document routes, peer messaging surfaces and system health panel. See docs/sequences/STARTUP_COMPLIANCE_LANGUAGE_ADMISSION_MODEL_HOME.mmd, docs/sequences/PEER_CHAT_CREATION_BY_USERNAME.mmd, docs/sequences/SYSTEM_HEALTH_AGGREGATION.mmd and docs/contracts/BACKEND_GAP_MATRIX.md.

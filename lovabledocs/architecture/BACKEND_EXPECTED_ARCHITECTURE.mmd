@@ -29,8 +29,31 @@ flowchart TB
   CTXMGR --> WEBRET
   ENDPOINT -->|"ContextChatResponse or error envelope"| CTXCLIENT
 
+
+  subgraph LOCALBACKEND2["Local machine :8001 - admission/safety/messaging contract surfaces (this pass)"]
+    ADMISSIONCHECK["POST /api/system/admission/check<br/>EXPECTED BACKEND CONTRACT"]
+    HEALTHEP["GET /api/system/health<br/>EXPECTED BACKEND CONTRACT"]
+    HEARTBEATEP["POST /api/system/session/heartbeat<br/>EXPECTED BACKEND CONTRACT"]
+    RELEASEEP["POST /api/system/runtime/release<br/>EXPECTED BACKEND CONTRACT"]
+    RECOMMENDEP["GET /api/system/model/recommendation<br/>EXPECTED BACKEND CONTRACT"]
+    MODERATEEP["POST /api/safety/moderate<br/>surfaces: ai_prompt, peer_message<br/>EXPECTED BACKEND CONTRACT"]
+    PEERSENDEP2["POST /api/peer-messaging/send<br/>EXPECTED BACKEND CONTRACT"]
+    ATTACHSCANEP["POST /api/safety/attachment-scan<br/>EXPECTED BACKEND CONTRACT"]
+  end
+
+  CTXCLIENT -->|"admission lease check, fail-closed"| ADMISSIONCHECK
+  CTXCLIENT -->|"unavailable -> SystemHealthPanel shows unavailable"| HEALTHEP
+  CTXCLIENT --> HEARTBEATEP
+  CTXCLIENT --> RELEASEEP
+  CTXCLIENT --> RECOMMENDEP
+  APICHAT -->|"moderate ai_prompt before store/answer, 503 safety_unavailable when missing"| MODERATEEP
+  CTXCLIENT -->|"fail-closed send when missing"| PEERSENDEP2
+  CTXCLIENT -->|"no attachment scan available when missing"| ATTACHSCANEP
+
 %% Added this pass: see docs/sequences/POST_LOGIN_STARTUP.mmd and related new sequence
 %% diagrams for the authenticated startup flow (language onboarding once, per-session model
 %% gate, EXPECTED LOCAL BACKEND CONTRACT for model prepare/poll, CURRENT SUPABASE ai_model_catalog
 %% and get_ai_runtime_policy 50/50/50 admission + 30/25/30 runtime floors). auto_storage_cleanup
 %% user preference removed; storage cleanup is now a platform-wide cron (STORAGE_CAPACITY_CLEANUP.mmd).
+
+%% Added this pass: compliance onboarding, system admission gate, suspension, legal document routes, peer messaging surfaces and system health panel. See docs/sequences/STARTUP_COMPLIANCE_LANGUAGE_ADMISSION_MODEL_HOME.mmd, docs/sequences/PEER_CHAT_CREATION_BY_USERNAME.mmd, docs/sequences/SYSTEM_HEALTH_AGGREGATION.mmd and docs/contracts/BACKEND_GAP_MATRIX.md.

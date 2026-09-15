@@ -11,7 +11,7 @@ import type { MyDataSummaryRow, SupabaseHealthRow } from "@/integrations/supabas
 
 export const NOT_EXPOSED_STATUS = "not_exposed_by_sql";
 
-export interface SupabaseHealth extends SupabaseHealthRow {}
+export type SupabaseHealth = SupabaseHealthRow;
 
 export async function fetchSupabaseHealth(): Promise<SupabaseHealth | null> {
   const { data, error } = await supabase.rpc("get_user_visible_supabase_health");

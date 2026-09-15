@@ -1,0 +1,21 @@
+%% Status: CURRENT FRONTEND + BACKEND TODO FOR CODEX
+%% Source: frontend/src/lib/sign-out.ts
+sequenceDiagram
+    participant User
+    participant SignOut as lib/sign-out.ts (signOutCompletely)
+    participant Release as releaseMyRuntime (server fn, best-effort)
+    participant Supa as Supabase Auth
+    participant Local as sessionStorage (ai-session, admission-session, messaging-session)
+    participant Sweeper as EXPECTED backend heartbeat/lease TTL sweeper (NOT IMPLEMENTED)
+
+    User->>SignOut: sign out
+    SignOut->>Release: releaseMyRuntime({leaseId}) while token still valid
+    alt release fails
+        Release-->>SignOut: swallowed, best-effort only
+    else release succeeds
+        Release-->>SignOut: released
+    end
+    SignOut->>Supa: auth.signOut()
+    SignOut->>Local: clearAiSession(), clearAdmissionSession(), clearMessagingSessionState(), clearGoogleAccess()
+    Note over Sweeper: If the browser closed before release ran (crash, network loss),<br/>nothing frees the model process/VRAM, session CPU/context RAM or temp artifacts.
+    Sweeper-->>Sweeper: BACKEND TODO FOR CODEX — heartbeat/lease-TTL expiry cleanup does not exist yet.
