@@ -128,7 +128,6 @@ export const Route = createFileRoute("/api/chat")({
         }
 
         if (lastMessage && lastMessage.role === "user") {
-
           const { error: insertError } = await supabase.from("messages").insert({
             thread_id: threadId,
             user_id: userId,

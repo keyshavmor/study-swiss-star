@@ -89,9 +89,15 @@ export function AttachmentPicker({
       )}
       {error && <p className="text-xs text-destructive">{error}</p>}
       {attachment && (
-        <div className={cn("flex items-center gap-3 rounded-md border border-border bg-muted/40 p-2")}>
+        <div
+          className={cn("flex items-center gap-3 rounded-md border border-border bg-muted/40 p-2")}
+        >
           {previewUrl ? (
-            <img src={previewUrl} alt={attachment.fileName} className="h-12 w-12 rounded object-cover" />
+            <img
+              src={previewUrl}
+              alt={attachment.fileName}
+              className="h-12 w-12 rounded object-cover"
+            />
           ) : (
             <Paperclip className="h-8 w-8 shrink-0 text-muted-foreground" />
           )}

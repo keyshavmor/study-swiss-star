@@ -92,7 +92,10 @@ export function MessageThread({
       {messages.map((message) => {
         const isMine = message.senderId === currentUserId;
         return (
-          <div key={message.id} className={cn("flex flex-col", isMine ? "items-end" : "items-start")}>
+          <div
+            key={message.id}
+            className={cn("flex flex-col", isMine ? "items-end" : "items-start")}
+          >
             <div
               className={cn(
                 "max-w-[80%] space-y-2 rounded-2xl px-3.5 py-2.5 text-[14.5px]",

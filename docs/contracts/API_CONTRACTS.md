@@ -269,6 +269,18 @@ before DB rows, caller-only, no target-user-id parameter accepted). See
 `sequences/DELETE_MY_DATA_RANGE.mmd`, `sequences/DELETE_MY_DATA_ALL_CONTENT_KEEP_ACCOUNT.mmd`,
 `sequences/DELETE_ACCOUNT.mmd`, `sequences/GDPR_PRIVACY_DATA_MAP_RIGHTS_WORKFLOW.mmd`.
 
+## Chat safety moderation gate (this pass)
+
+**CURRENT FRONTEND:** `POST /api/chat` (`frontend/src/routes/api/chat.ts`) now calls
+`/api/safety/moderate` (surface `ai_prompt`) on the caller's prompt before storing the user
+message or requesting an answer from the context backend. While the safety backend is missing or
+unreachable, the route returns `HTTP 503` with header `X-Safety-Verdict: safety_unavailable` and
+body `safety:safety_unavailable` — it never falls back to answering unmoderated. When the safety
+backend returns a blocking verdict, the route returns `HTTP 403` with the bounded verdict code
+(e.g. `block_warning`, `block_suspend_pending_review`) and never echoes the offending prompt text
+back in the response. See `docs/contracts/ERROR_CONTRACTS.md` for the corresponding UI-facing
+failure catalogue entry and `docs/sequences/FIRST_SAFETY_STRIKE.mmd`.
+
 **LEGAL REVIEW REQUIRED BEFORE PRODUCTION:** see `legal/LEGAL_REVIEW_REQUIRED.md`. This pass makes
 no claim of GDPR or any other regulatory certification; lawful basis, DPAs, records of processing,
 breach procedures, jurisdictional guardian-consent rules and cookie/ePrivacy analysis are

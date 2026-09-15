@@ -67,7 +67,10 @@ export function effectiveUtilisationCaps(
   return {
     gpu_used_percent: Math.min(policy.max_gpu_used_percent, 100 - floors.gpu_free_percent),
     ram_used_percent: Math.min(policy.max_ram_used_percent, 100 - floors.ram_free_percent),
-    storage_used_percent: Math.min(policy.max_storage_used_percent, 100 - floors.storage_free_percent),
+    storage_used_percent: Math.min(
+      policy.max_storage_used_percent,
+      100 - floors.storage_free_percent,
+    ),
   };
 }
 

@@ -43,10 +43,7 @@ export function safeFileName(name: string): string {
 }
 
 export type AttachmentRejection =
-  | "mime_not_allowed"
-  | "document_too_large"
-  | "image_compression_failed"
-  | "processing_failed";
+  "mime_not_allowed" | "document_too_large" | "image_compression_failed" | "processing_failed";
 
 export interface PreparedAttachment {
   ok: true;
@@ -73,7 +70,13 @@ export type AttachmentResult = PreparedAttachment | RejectedAttachment;
 const QUALITY_STEPS = [0.85, 0.7, 0.55, 0.45, 0.35, 0.25];
 const SCALE_STEPS = [1, 0.8, 0.65, 0.5, 0.4, 0.3, 0.2];
 
-async function decodeImage(file: Blob): Promise<{ width: number; height: number; draw: (ctx: CanvasRenderingContext2D, w: number, h: number) => void }> {
+async function decodeImage(
+  file: Blob,
+): Promise<{
+  width: number;
+  height: number;
+  draw: (ctx: CanvasRenderingContext2D, w: number, h: number) => void;
+}> {
   if (typeof createImageBitmap === "function") {
     const bitmap = await createImageBitmap(file);
     return {
@@ -123,7 +126,13 @@ export async function prepareAttachment(
 
   if (!isImageMime(mimeType)) {
     if (originalBytes > maxBytes) {
-      return { ok: false, reason: "document_too_large", fileName, originalBytes, finalBytes: originalBytes };
+      return {
+        ok: false,
+        reason: "document_too_large",
+        fileName,
+        originalBytes,
+        finalBytes: originalBytes,
+      };
     }
     return {
       ok: true,

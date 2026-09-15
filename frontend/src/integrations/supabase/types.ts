@@ -104,7 +104,6 @@ export type PeerDirectoryRow = {
   preferred_name: string | null;
 };
 
-
 export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "14.5";
@@ -714,7 +713,6 @@ export type Database = {
         Returns: boolean;
       };
     };
-
 
     Enums: {
       [_ in never]: never;

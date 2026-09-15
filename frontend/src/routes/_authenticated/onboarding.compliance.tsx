@@ -208,7 +208,10 @@ function ComplianceOnboardingPage() {
             <p className="text-[12.5px] text-muted-foreground">{t("signup.accountType.hint")}</p>
 
             <div className="space-y-2">
-              <Label htmlFor="compliance-dob" className="text-[13px] font-semibold text-muted-foreground">
+              <Label
+                htmlFor="compliance-dob"
+                className="text-[13px] font-semibold text-muted-foreground"
+              >
                 {t("signup.dob.label")}
               </Label>
               <Input
@@ -337,11 +340,7 @@ function ConsentRow({
   return (
     <div className="flex items-center justify-between gap-3 rounded-xl border border-border bg-surface-2 px-4 py-3">
       <div className="flex items-center gap-3">
-        <Checkbox
-          id={id}
-          checked={checked}
-          onCheckedChange={(value) => onChange(value === true)}
-        />
+        <Checkbox id={id} checked={checked} onCheckedChange={(value) => onChange(value === true)} />
         <Label htmlFor={id} className="cursor-pointer text-[14px] font-normal text-foreground">
           {label}
         </Label>

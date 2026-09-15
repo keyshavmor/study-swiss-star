@@ -78,7 +78,8 @@ function normaliseDecision(raw: unknown): SafetyDecision {
       typeof r["account_suspended_pending_review"] === "boolean"
         ? r["account_suspended_pending_review"]
         : null,
-    retryable: typeof r["retryable"] === "boolean" ? r["retryable"] : verdict === "safety_unavailable",
+    retryable:
+      typeof r["retryable"] === "boolean" ? r["retryable"] : verdict === "safety_unavailable",
     message_code: typeof r["message_code"] === "string" ? r["message_code"].slice(0, 80) : verdict,
   };
 }
@@ -131,7 +132,12 @@ export async function sendPeerMessageOnBackend(input: {
     },
   });
   if (payload === null) {
-    return { sent: false, message_id: null, conversation_id: input.conversationId, safety: safetyUnavailable() };
+    return {
+      sent: false,
+      message_id: null,
+      conversation_id: input.conversationId,
+      safety: safetyUnavailable(),
+    };
   }
   const r = row(payload);
   const safety = normaliseDecision(r["safety"]);

@@ -92,9 +92,11 @@ export const messaging = {
     "nav.messagesUnread": "{count} ungelesene Nachrichten",
 
     "messages.title": "Nachrichten",
-    "messages.subtitle": "Schreibe Mitschüler:innen und Lehrpersonen, die du per Benutzername kennst.",
+    "messages.subtitle":
+      "Schreibe Mitschüler:innen und Lehrpersonen, die du per Benutzername kennst.",
     "messages.empty.title": "Noch keine Unterhaltungen",
-    "messages.empty.body": "Starte einen Chat, indem du den genauen Benutzernamen der Person eingibst.",
+    "messages.empty.body":
+      "Starte einen Chat, indem du den genauen Benutzernamen der Person eingibst.",
     "messages.new": "Neue Unterhaltung",
     "messages.usernameLabel": "Genauer Benutzername",
     "messages.usernamePlaceholder": "z. B. lea.muster",
@@ -104,7 +106,8 @@ export const messaging = {
     "messages.starting": "Wird geöffnet…",
     "messages.notFound": "Keine Person mit diesem genauen Benutzernamen.",
     "messages.selfNotAllowed": "Du kannst keine Unterhaltung mit dir selbst starten.",
-    "messages.startFailed": "Die Unterhaltung konnte nicht geöffnet werden. Bitte versuche es erneut.",
+    "messages.startFailed":
+      "Die Unterhaltung konnte nicht geöffnet werden. Bitte versuche es erneut.",
     "messages.selectConversation": "Wähle eine Unterhaltung",
     "messages.backToList": "Alle Unterhaltungen",
     "messages.unreadBadge": "{count} neu",
@@ -118,7 +121,8 @@ export const messaging = {
       "Nachrichten werden in deinem Konto gespeichert. Bist du abgemeldet, erscheinen neue Nachrichten beim nächsten Anmelden einfach als ungelesen — die App sendet keine Handy-Benachrichtigungen.",
 
     "messages.attach": "Datei hinzufügen",
-    "messages.attach.allowed": "PDF, DOC, DOCX, JPEG, PNG oder WEBP, bis 250 KB nach der Verarbeitung.",
+    "messages.attach.allowed":
+      "PDF, DOC, DOCX, JPEG, PNG oder WEBP, bis 250 KB nach der Verarbeitung.",
     "messages.attach.processing": "Datei wird vorbereitet…",
     "messages.attach.compressed": "Komprimiert von {from} auf {to}.",
     "messages.attach.remove": "Datei entfernen",
@@ -176,7 +180,8 @@ export const messaging = {
     "nav.messagesUnread": "{count} ungläseni Nachrichte",
 
     "messages.title": "Nachrichte",
-    "messages.subtitle": "Schriib Mitschüeler:innen und Lehrperson, wo du per Benutzername kennsch.",
+    "messages.subtitle":
+      "Schriib Mitschüeler:innen und Lehrperson, wo du per Benutzername kennsch.",
     "messages.empty.title": "No kei Unterhaltige",
     "messages.empty.body": "Start en Chat, indäm du dr genau Benutzername vo dr Person iigisch.",
     "messages.new": "Nöii Unterhaltig",
@@ -202,7 +207,8 @@ export const messaging = {
       "Nachrichte werded i dim Konto gspeicheret. Bisch abgmäldet, erschiined nöii Nachrichte bim nächschte Aamälde eifach als ungläse — d App schickt kei Handy-Benachrichtigunge.",
 
     "messages.attach": "Datei dezuefüege",
-    "messages.attach.allowed": "PDF, DOC, DOCX, JPEG, PNG oder WEBP, bis 250 KB nach dr Verarbeitig.",
+    "messages.attach.allowed":
+      "PDF, DOC, DOCX, JPEG, PNG oder WEBP, bis 250 KB nach dr Verarbeitig.",
     "messages.attach.processing": "Datei wird vorbereitet…",
     "messages.attach.compressed": "Komprimiert vo {from} uf {to}.",
     "messages.attach.remove": "Datei entferne",
@@ -262,7 +268,8 @@ export const messaging = {
     "messages.title": "Сообщения",
     "messages.subtitle": "Пишите одноклассникам и учителям, чьё имя пользователя вы знаете.",
     "messages.empty.title": "Пока нет бесед",
-    "messages.empty.body": "Начните чат, введя точное имя пользователя человека, которого вы знаете.",
+    "messages.empty.body":
+      "Начните чат, введя точное имя пользователя человека, которого вы знаете.",
     "messages.new": "Новая беседа",
     "messages.usernameLabel": "Точное имя пользователя",
     "messages.usernamePlaceholder": "например, lea.muster",
@@ -295,7 +302,8 @@ export const messaging = {
       "Этот документ больше 250 КБ. Прикрепите файл меньшего размера — мы не обрезаем документы.",
     "messages.attach.error.image_compression_failed":
       "Не удалось сжать это изображение до размера менее 250 КБ. Прикрепите изображение меньшего размера.",
-    "messages.attach.error.processing_failed": "Не удалось подготовить этот файл. Попробуйте снова.",
+    "messages.attach.error.processing_failed":
+      "Не удалось подготовить этот файл. Попробуйте снова.",
     "messages.attach.scanPending": "Ожидание проверки безопасности",
     "messages.attach.download": "Открыть файл",
 
@@ -345,7 +353,8 @@ export const messaging = {
     "messages.title": "Mensajes",
     "messages.subtitle": "Escribe a compañeros y docentes que conozcas por su nombre de usuario.",
     "messages.empty.title": "Aún no hay conversaciones",
-    "messages.empty.body": "Inicia un chat introduciendo el nombre de usuario exacto de la persona.",
+    "messages.empty.body":
+      "Inicia un chat introduciendo el nombre de usuario exacto de la persona.",
     "messages.new": "Nueva conversación",
     "messages.usernameLabel": "Nombre de usuario exacto",
     "messages.usernamePlaceholder": "p. ej. lea.muster",
@@ -369,7 +378,8 @@ export const messaging = {
       "Los mensajes se guardan en tu cuenta. Si has cerrado sesión, los nuevos mensajes simplemente aparecerán como no leídos la próxima vez que inicies sesión; la app no envía notificaciones al teléfono.",
 
     "messages.attach": "Añadir archivo",
-    "messages.attach.allowed": "PDF, DOC, DOCX, JPEG, PNG o WEBP, hasta 250 KB tras el procesamiento.",
+    "messages.attach.allowed":
+      "PDF, DOC, DOCX, JPEG, PNG o WEBP, hasta 250 KB tras el procesamiento.",
     "messages.attach.processing": "Preparando archivo…",
     "messages.attach.compressed": "Comprimido de {from} a {to}.",
     "messages.attach.remove": "Quitar archivo",
@@ -378,7 +388,8 @@ export const messaging = {
       "Este documento pesa más de 250 KB. Adjunta un archivo más pequeño; no recortamos documentos.",
     "messages.attach.error.image_compression_failed":
       "No pudimos comprimir esta imagen por debajo de 250 KB. Adjunta una imagen más pequeña.",
-    "messages.attach.error.processing_failed": "No se pudo preparar este archivo. Inténtalo de nuevo.",
+    "messages.attach.error.processing_failed":
+      "No se pudo preparar este archivo. Inténtalo de nuevo.",
     "messages.attach.scanPending": "Esperando la comprobación de seguridad",
     "messages.attach.download": "Abrir archivo",
 
@@ -426,9 +437,11 @@ export const messaging = {
     "nav.messagesUnread": "{count} messages non lus",
 
     "messages.title": "Messages",
-    "messages.subtitle": "Écrivez à des camarades et enseignant·e·s que vous connaissez par leur nom d'utilisateur.",
+    "messages.subtitle":
+      "Écrivez à des camarades et enseignant·e·s que vous connaissez par leur nom d'utilisateur.",
     "messages.empty.title": "Pas encore de conversations",
-    "messages.empty.body": "Démarrez une discussion en saisissant le nom d'utilisateur exact de la personne.",
+    "messages.empty.body":
+      "Démarrez une discussion en saisissant le nom d'utilisateur exact de la personne.",
     "messages.new": "Nouvelle conversation",
     "messages.usernameLabel": "Nom d'utilisateur exact",
     "messages.usernamePlaceholder": "p. ex. lea.muster",
@@ -452,7 +465,8 @@ export const messaging = {
       "Les messages sont stockés dans votre compte. Si vous êtes déconnecté·e, les nouveaux messages apparaîtront simplement comme non lus à votre prochaine connexion — l'application n'envoie pas de notifications sur téléphone.",
 
     "messages.attach": "Ajouter un fichier",
-    "messages.attach.allowed": "PDF, DOC, DOCX, JPEG, PNG ou WEBP, jusqu'à 250 Ko après traitement.",
+    "messages.attach.allowed":
+      "PDF, DOC, DOCX, JPEG, PNG ou WEBP, jusqu'à 250 Ko après traitement.",
     "messages.attach.processing": "Préparation du fichier…",
     "messages.attach.compressed": "Compressé de {from} à {to}.",
     "messages.attach.remove": "Retirer le fichier",
@@ -536,7 +550,8 @@ export const messaging = {
       "I messaggi sono memorizzati nel tuo account. Se hai effettuato il logout, i nuovi messaggi appariranno semplicemente come non letti al prossimo accesso: l'app non invia notifiche push al telefono.",
 
     "messages.attach": "Aggiungi file",
-    "messages.attach.allowed": "PDF, DOC, DOCX, JPEG, PNG o WEBP, fino a 250 KB dopo l'elaborazione.",
+    "messages.attach.allowed":
+      "PDF, DOC, DOCX, JPEG, PNG o WEBP, fino a 250 KB dopo l'elaborazione.",
     "messages.attach.processing": "Preparazione del file…",
     "messages.attach.compressed": "Compresso da {from} a {to}.",
     "messages.attach.remove": "Rimuovi file",
@@ -545,7 +560,8 @@ export const messaging = {
       "Questo documento supera i 250 KB. Allega un file più piccolo: non accorciamo i documenti.",
     "messages.attach.error.image_compression_failed":
       "Non siamo riusciti a comprimere questa immagine sotto i 250 KB. Allega un'immagine più piccola.",
-    "messages.attach.error.processing_failed": "Non è stato possibile preparare questo file. Riprova.",
+    "messages.attach.error.processing_failed":
+      "Non è stato possibile preparare questo file. Riprova.",
     "messages.attach.scanPending": "In attesa del controllo di sicurezza",
     "messages.attach.download": "Apri file",
 

@@ -79,7 +79,9 @@ describe("peer attachment rules", () => {
   it("rejects an oversized image when compression cannot reach the budget", async () => {
     // No canvas in this environment, so compression cannot succeed: the result
     // must be a rejection, never an oversized "ok".
-    const result = await prepareAttachment(file("big.png", "image/png", PEER_ATTACHMENT_MAX_BYTES * 4));
+    const result = await prepareAttachment(
+      file("big.png", "image/png", PEER_ATTACHMENT_MAX_BYTES * 4),
+    );
     expect(result.ok).toBe(false);
     if (!result.ok) {
       expect(["image_compression_failed", "processing_failed"]).toContain(result.reason);

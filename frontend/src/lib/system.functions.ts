@@ -32,7 +32,9 @@ async function readAdmissionPolicy(supabase: SupabaseLike): Promise<SystemAdmiss
     const row = (Array.isArray(data) ? data[0] : data) as Record<string, unknown> | null;
     if (!row) return DEFAULT_SYSTEM_ADMISSION_POLICY;
     const merged: SystemAdmissionPolicyRow = { ...DEFAULT_SYSTEM_ADMISSION_POLICY };
-    for (const key of Object.keys(DEFAULT_SYSTEM_ADMISSION_POLICY) as (keyof SystemAdmissionPolicyRow)[]) {
+    for (const key of Object.keys(
+      DEFAULT_SYSTEM_ADMISSION_POLICY,
+    ) as (keyof SystemAdmissionPolicyRow)[]) {
       const value = row[key];
       const fallback = DEFAULT_SYSTEM_ADMISSION_POLICY[key];
       if (typeof value === typeof fallback) {

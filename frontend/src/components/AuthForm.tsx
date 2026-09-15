@@ -340,7 +340,10 @@ export function AuthForm() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="signupDob" className="text-[13px] font-semibold text-muted-foreground">
+              <Label
+                htmlFor="signupDob"
+                className="text-[13px] font-semibold text-muted-foreground"
+              >
                 {t("signup.dob.label")}
               </Label>
               <Input

@@ -105,11 +105,7 @@ function ConversationContent() {
               </Link>
             </Button>
           </div>
-          <MessageThread
-            messages={messages ?? []}
-            currentUserId={userId}
-            loadFailed={isError}
-          />
+          <MessageThread messages={messages ?? []} currentUserId={userId} loadFailed={isError} />
           <MessageComposer
             conversationId={conversationId}
             onSent={() => {

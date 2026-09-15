@@ -48,7 +48,9 @@ export function SafetyAvailabilityProvider({ children }: { children: ReactNode }
   );
 
   return (
-    <SafetyAvailabilityContext.Provider value={value}>{children}</SafetyAvailabilityContext.Provider>
+    <SafetyAvailabilityContext.Provider value={value}>
+      {children}
+    </SafetyAvailabilityContext.Provider>
   );
 }
 

@@ -97,10 +97,7 @@ function LocalBackendSection() {
           label={t("systemHealth.local.activeUsers")}
           value={`${health.active_user_count ?? "—"} / ${health.max_active_users}`}
         />
-        <Stat
-          label={t("systemHealth.local.queue")}
-          value={`${health.queue_size ?? 0}`}
-        />
+        <Stat label={t("systemHealth.local.queue")} value={`${health.queue_size ?? 0}`} />
         {health.my_queue_position !== null && (
           <Stat
             label={t("systemHealth.local.queuePosition")}
@@ -306,8 +303,14 @@ function CloudHealthSection() {
             health.database_used_percent,
           )}
         />
-        <Stat label={t("systemHealth.cloud.bandwidth")} value={statusLabel(health.bandwidth_status)} />
-        <Stat label={t("systemHealth.cloud.realtime")} value={statusLabel(health.realtime_status)} />
+        <Stat
+          label={t("systemHealth.cloud.bandwidth")}
+          value={statusLabel(health.bandwidth_status)}
+        />
+        <Stat
+          label={t("systemHealth.cloud.realtime")}
+          value={statusLabel(health.realtime_status)}
+        />
         <Stat
           label={t("systemHealth.cloud.edgeFunctions")}
           value={statusLabel(health.edge_functions_status)}
@@ -347,12 +350,18 @@ function MyDataSection() {
   return (
     <div className="grid gap-3 sm:grid-cols-3">
       <Stat label={t("systemHealth.myData.aiThreads")} value={`${summary.ai_thread_count ?? 0}`} />
-      <Stat label={t("systemHealth.myData.aiMessages")} value={`${summary.ai_message_count ?? 0}`} />
+      <Stat
+        label={t("systemHealth.myData.aiMessages")}
+        value={`${summary.ai_message_count ?? 0}`}
+      />
       <Stat
         label={t("systemHealth.myData.peerConversations")}
         value={`${summary.peer_conversation_count ?? 0}`}
       />
-      <Stat label={t("systemHealth.myData.peerMessages")} value={`${summary.peer_message_count ?? 0}`} />
+      <Stat
+        label={t("systemHealth.myData.peerMessages")}
+        value={`${summary.peer_message_count ?? 0}`}
+      />
       <Stat
         label={t("systemHealth.myData.attachments")}
         value={`${summary.attachment_count ?? 0} (${formatBytes(summary.attachment_bytes)})`}

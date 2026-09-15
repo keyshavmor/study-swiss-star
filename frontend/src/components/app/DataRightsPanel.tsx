@@ -17,10 +17,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useI18n } from "@/lib/i18n/provider";
-import {
-  requestMyDataDeletion,
-  type DeleteMyDataMode,
-} from "@/lib/system-health";
+import { requestMyDataDeletion, type DeleteMyDataMode } from "@/lib/system-health";
 import { clearAdmissionSession } from "@/lib/admission-session";
 import { clearAiSession } from "@/lib/ai-session";
 import { clearMessagingSessionState } from "@/lib/messaging-session";
@@ -129,7 +126,9 @@ export function DataRightsPanel() {
             </label>
           </div>
           {!rangeValid && (
-            <p className="text-[13px] text-muted-foreground">{t("dataRights.range.needsSelection")}</p>
+            <p className="text-[13px] text-muted-foreground">
+              {t("dataRights.range.needsSelection")}
+            </p>
           )}
           <Button variant="outline" disabled={!rangeValid} onClick={() => openConfirm("range")}>
             {t("dataRights.range.action")}
@@ -145,7 +144,9 @@ export function DataRightsPanel() {
         </div>
 
         <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-4 space-y-2">
-          <p className="text-[15px] font-medium text-destructive">{t("dataRights.account.title")}</p>
+          <p className="text-[15px] font-medium text-destructive">
+            {t("dataRights.account.title")}
+          </p>
           <p className="text-[13px] text-muted-foreground">{t("dataRights.account.body")}</p>
           <Button variant="destructive" onClick={() => openConfirm("delete_account")}>
             {t("dataRights.account.action")}
@@ -153,7 +154,9 @@ export function DataRightsPanel() {
         </div>
 
         {result === "done" && <p className="text-[13px] text-success">{t("dataRights.done")}</p>}
-        {result === "failed" && <p className="text-[13px] text-destructive">{t("dataRights.failed")}</p>}
+        {result === "failed" && (
+          <p className="text-[13px] text-destructive">{t("dataRights.failed")}</p>
+        )}
 
         <p className="text-[12px] text-muted-foreground">{t("dataRights.retentionNote")}</p>
         <div className="flex flex-wrap gap-3 text-[13px]">
@@ -163,7 +166,10 @@ export function DataRightsPanel() {
         </div>
       </section>
 
-      <AlertDialog open={pendingMode !== null} onOpenChange={(open) => !open && setPendingMode(null)}>
+      <AlertDialog
+        open={pendingMode !== null}
+        onOpenChange={(open) => !open && setPendingMode(null)}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>{t("dataRights.confirm.title")}</AlertDialogTitle>

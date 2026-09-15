@@ -138,6 +138,17 @@ before DB rows, caller-only, no target-user-id parameter accepted). See
 `sequences/DELETE_MY_DATA_RANGE.mmd`, `sequences/DELETE_MY_DATA_ALL_CONTENT_KEEP_ACCOUNT.mmd`,
 `sequences/DELETE_ACCOUNT.mmd`, `sequences/GDPR_PRIVACY_DATA_MAP_RIGHTS_WORKFLOW.mmd`.
 
+## `/api/chat` safety-unavailable / blocked verdict (this pass)
+
+**CURRENT FRONTEND:** because `/api/chat` now calls `/api/safety/moderate` (surface `ai_prompt`)
+before storing or answering a prompt, two additional failure modes exist at that route: (1) safety
+backend missing/unreachable → `HTTP 503`, header `X-Safety-Verdict: safety_unavailable`, body
+`safety:safety_unavailable` — the prompt is not stored and no answer is generated; (2) safety
+backend returns a blocking verdict → `HTTP 403` with the bounded verdict code only (e.g.
+`block_warning`, `block_suspend_pending_review`) — the response never contains the offending
+prompt or answer text. Both cases are new UiError-shaped failures the caller must render generically
+(never rendering raw backend text), consistent with the UiError rule above.
+
 **LEGAL REVIEW REQUIRED BEFORE PRODUCTION:** see `legal/LEGAL_REVIEW_REQUIRED.md`. This pass makes
 no claim of GDPR or any other regulatory certification; lawful basis, DPAs, records of processing,
 breach procedures, jurisdictional guardian-consent rules and cookie/ePrivacy analysis are

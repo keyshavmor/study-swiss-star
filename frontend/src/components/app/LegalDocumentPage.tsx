@@ -26,10 +26,7 @@ export function LegalDocumentPage({ title, intro, sections, version }: LegalDocu
       </div>
       <div className="w-full max-w-[720px]">
         <div className="mb-6">
-          <Link
-            to="/"
-            className="text-[13px] font-semibold text-primary hover:text-primary-hover"
-          >
+          <Link to="/" className="text-[13px] font-semibold text-primary hover:text-primary-hover">
             {t("legal.backHome")}
           </Link>
         </div>
@@ -53,7 +50,9 @@ export function LegalDocumentPage({ title, intro, sections, version }: LegalDocu
             {sections.map((section) => (
               <section key={section.title}>
                 <h2 className="mb-2 text-[16px] font-semibold text-foreground">{section.title}</h2>
-                <p className="text-[14.5px] leading-relaxed text-muted-foreground">{section.body}</p>
+                <p className="text-[14.5px] leading-relaxed text-muted-foreground">
+                  {section.body}
+                </p>
               </section>
             ))}
           </div>

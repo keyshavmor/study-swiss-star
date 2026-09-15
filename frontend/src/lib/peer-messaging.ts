@@ -76,10 +76,7 @@ export function rememberPeerLabel(member: PeerMember): void {
   try {
     const cache = peerLabelCache();
     cache.set(member.userId, { username: member.username, preferredName: member.preferredName });
-    window.localStorage.setItem(
-      PEER_LABEL_STORAGE_KEY,
-      JSON.stringify(Object.fromEntries(cache)),
-    );
+    window.localStorage.setItem(PEER_LABEL_STORAGE_KEY, JSON.stringify(Object.fromEntries(cache)));
   } catch {
     /* a label cache is a convenience only */
   }
@@ -103,7 +100,6 @@ export async function findPeerByExactUsername(username: string): Promise<PeerMem
   rememberPeerLabel(member);
   return member;
 }
-
 
 /** Creates (or returns) the direct conversation with an exact username. */
 export async function getOrCreateDirectConversation(username: string): Promise<string> {
@@ -134,30 +130,32 @@ export async function fetchConversations(): Promise<PeerConversationSummary[]> {
   const conversationIds = (memberships ?? []).map((row) => row.conversation_id);
   if (conversationIds.length === 0) return [];
 
-  const [{ data: conversations, error: conversationError }, { data: allMembers }, { data: notifications }] =
-    await Promise.all([
-      supabase
-        .from("peer_conversations")
-        .select("*")
-        .in("id", conversationIds)
-        .order("last_message_at", { ascending: false, nullsFirst: false }),
-      supabase
-        .from("peer_conversation_members")
-        .select("conversation_id, user_id")
-        .in("conversation_id", conversationIds),
-      supabase
-        .from("peer_message_notifications")
-        .select("conversation_id, read_at")
-        .in("conversation_id", conversationIds)
-        .is("read_at", null),
-    ]);
+  const [
+    { data: conversations, error: conversationError },
+    { data: allMembers },
+    { data: notifications },
+  ] = await Promise.all([
+    supabase
+      .from("peer_conversations")
+      .select("*")
+      .in("id", conversationIds)
+      .order("last_message_at", { ascending: false, nullsFirst: false }),
+    supabase
+      .from("peer_conversation_members")
+      .select("conversation_id, user_id")
+      .in("conversation_id", conversationIds),
+    supabase
+      .from("peer_message_notifications")
+      .select("conversation_id, read_at")
+      .in("conversation_id", conversationIds)
+      .is("read_at", null),
+  ]);
   if (conversationError) throw new Error(conversationError.message);
 
   // Peer display names come ONLY from the exact-username RPC (cached locally
   // when a chat is opened). `profiles` is RLS-scoped to the owner, and peers
   // must never be resolvable through a browsable directory lookup.
   const profileMap = peerLabelCache();
-
 
   const unreadByConversation = new Map<string, number>();
   for (const notification of notifications ?? []) {
@@ -251,7 +249,12 @@ export function subscribeToPeerMessaging(userId: string, onChange: () => void): 
     .channel(`peer-messaging-${userId}`)
     .on(
       "postgres_changes",
-      { event: "INSERT", schema: "public", table: "peer_message_notifications", filter: `user_id=eq.${userId}` },
+      {
+        event: "INSERT",
+        schema: "public",
+        table: "peer_message_notifications",
+        filter: `user_id=eq.${userId}`,
+      },
       () => onChange(),
     )
     .on("postgres_changes", { event: "INSERT", schema: "public", table: "peer_messages" }, () =>

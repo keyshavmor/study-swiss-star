@@ -30,8 +30,7 @@ export const compliance = {
     "compliance.error.dob_invalid": "Please enter a valid date of birth.",
     "compliance.error.student_must_be_under_18":
       "Student accounts are for pupils under 18. If you are 18 or older, choose the teacher account type.",
-    "compliance.error.teacher_must_be_adult":
-      "Teacher accounts require you to be 18 or older.",
+    "compliance.error.teacher_must_be_adult": "Teacher accounts require you to be 18 or older.",
     "compliance.error.guardian_email_required":
       "Students must provide a parent or guardian email address.",
     "compliance.error.guardian_email_invalid": "Please enter a valid guardian email address.",
@@ -120,7 +119,8 @@ export const compliance = {
       "For privacy questions, contact the person responsible at your school or the operator of this installation.",
 
     "legal.acceptableUse.title": "Acceptable Use and Behaviour Policy",
-    "legal.acceptableUse.intro": "These rules apply to study chats and to messages with other users.",
+    "legal.acceptableUse.intro":
+      "These rules apply to study chats and to messages with other users.",
     "legal.acceptableUse.allowed.title": "Encouraged",
     "legal.acceptableUse.allowed.body":
       "Ask questions, share notes, discuss school subjects — including difficult topics such as history, war, health, medicine or sexual health — in an age-appropriate school context.",
@@ -158,10 +158,12 @@ export const compliance = {
     "signup.consent.title": "Bitte lesen und akzeptieren",
     "signup.consent.terms": "Ich akzeptiere die Nutzungsbedingungen",
     "signup.consent.privacy": "Ich habe die Datenschutzerklärung gelesen",
-    "signup.consent.acceptableUse": "Ich akzeptiere die Richtlinie für zulässige Nutzung und Verhalten",
+    "signup.consent.acceptableUse":
+      "Ich akzeptiere die Richtlinie für zulässige Nutzung und Verhalten",
     "signup.consent.childSafety": "Ich habe den Kinderschutzhinweis gelesen",
     "signup.consent.openLink": "Lesen",
-    "signup.consent.required": "Alle vier Dokumente müssen akzeptiert werden, bevor du fortfahren kannst.",
+    "signup.consent.required":
+      "Alle vier Dokumente müssen akzeptiert werden, bevor du fortfahren kannst.",
 
     "compliance.error.account_type_required": "Bitte wähle Schüler:in oder Lehrperson.",
     "compliance.error.dob_required": "Bitte gib dein Geburtsdatum ein.",
@@ -256,7 +258,8 @@ export const compliance = {
       "Bei Fragen zum Datenschutz wende dich an die verantwortliche Person an deiner Schule oder den Betreiber dieser Installation.",
 
     "legal.acceptableUse.title": "Richtlinie für zulässige Nutzung und Verhalten",
-    "legal.acceptableUse.intro": "Diese Regeln gelten für Lernchats und für Nachrichten mit anderen Nutzer:innen.",
+    "legal.acceptableUse.intro":
+      "Diese Regeln gelten für Lernchats und für Nachrichten mit anderen Nutzer:innen.",
     "legal.acceptableUse.allowed.title": "Erwünscht",
     "legal.acceptableUse.allowed.body":
       "Stelle Fragen, teile Notizen, diskutiere Schulfächer — auch schwierige Themen wie Geschichte, Krieg, Gesundheit, Medizin oder sexuelle Gesundheit — im altersgerechten Schulkontext.",
@@ -297,7 +300,8 @@ export const compliance = {
     "signup.consent.acceptableUse": "Ich akzeptier d Richtlinie für zuegässeni Nutzig und Verhalte",
     "signup.consent.childSafety": "Ich han dr Chinderschutz-Hiwiis gläse",
     "signup.consent.openLink": "Läse",
-    "signup.consent.required": "Alli vier Dokumänt müend akzeptiert werde, bevor du wiitermache chasch.",
+    "signup.consent.required":
+      "Alli vier Dokumänt müend akzeptiert werde, bevor du wiitermache chasch.",
 
     "compliance.error.account_type_required": "Bitte wähl Schüeler:in oder Lehrperson.",
     "compliance.error.dob_required": "Bitte gib dis Geburtsdatum ii.",
@@ -392,7 +396,8 @@ export const compliance = {
       "Bi Frage zum Datenschutz wend di a die verantwortlichi Person a dinere Schuel oder dr Betriiber vo dere Installation.",
 
     "legal.acceptableUse.title": "Richtlinie für zuegässeni Nutzig und Verhalte",
-    "legal.acceptableUse.intro": "Die Regle gälted für Lernchats und für Nachrichte mit andere Nutzer:innen.",
+    "legal.acceptableUse.intro":
+      "Die Regle gälted für Lernchats und für Nachrichte mit andere Nutzer:innen.",
     "legal.acceptableUse.allowed.title": "Erwünscht",
     "legal.acceptableUse.allowed.body":
       "Stell Frage, teil Notize, diskutier Schuelfächer — au schwirigi Theme wie Gschicht, Chrieg, Gsundheit, Medizin oder sexuelli Gsundheit — im altersgrächte Schuelkontext.",
@@ -528,7 +533,8 @@ export const compliance = {
       "По вопросам конфиденциальности обращайтесь к ответственному лицу в вашей школе или к оператору данной установки.",
 
     "legal.acceptableUse.title": "Политика допустимого использования и поведения",
-    "legal.acceptableUse.intro": "Эти правила применяются к учебным чатам и к сообщениям с другими пользователями.",
+    "legal.acceptableUse.intro":
+      "Эти правила применяются к учебным чатам и к сообщениям с другими пользователями.",
     "legal.acceptableUse.allowed.title": "Приветствуется",
     "legal.acceptableUse.allowed.body":
       "Задавайте вопросы, делитесь заметками, обсуждайте школьные предметы — включая сложные темы, такие как история, война, здоровье, медицина или половое здоровье — в возрастно-уместном школьном контексте.",
@@ -663,7 +669,8 @@ export const compliance = {
       "Para preguntas sobre privacidad, contacta a la persona responsable en tu escuela o al operador de esta instalación.",
 
     "legal.acceptableUse.title": "Política de Uso Aceptable y Comportamiento",
-    "legal.acceptableUse.intro": "Estas reglas se aplican a los chats de estudio y a los mensajes con otros usuarios.",
+    "legal.acceptableUse.intro":
+      "Estas reglas se aplican a los chats de estudio y a los mensajes con otros usuarios.",
     "legal.acceptableUse.allowed.title": "Se anima a",
     "legal.acceptableUse.allowed.body":
       "Hacer preguntas, compartir apuntes, hablar de asignaturas escolares —incluidos temas difíciles como historia, guerra, salud, medicina o salud sexual— en un contexto escolar apropiado para la edad.",
@@ -701,7 +708,8 @@ export const compliance = {
     "signup.consent.title": "Veuillez lire et accepter",
     "signup.consent.terms": "J'accepte les Conditions d'utilisation",
     "signup.consent.privacy": "J'ai lu la Politique de confidentialité",
-    "signup.consent.acceptableUse": "J'accepte la Politique d'utilisation acceptable et de comportement",
+    "signup.consent.acceptableUse":
+      "J'accepte la Politique d'utilisation acceptable et de comportement",
     "signup.consent.childSafety": "J'ai lu l'Avis sur la sécurité des mineurs",
     "signup.consent.openLink": "Lire",
     "signup.consent.required": "Les quatre documents doivent être acceptés avant de continuer.",
@@ -799,7 +807,8 @@ export const compliance = {
       "Pour toute question sur la confidentialité, contactez la personne responsable de votre établissement ou l'exploitant de cette installation.",
 
     "legal.acceptableUse.title": "Politique d'utilisation acceptable et de comportement",
-    "legal.acceptableUse.intro": "Ces règles s'appliquent aux discussions d'étude et aux messages avec d'autres utilisateurs.",
+    "legal.acceptableUse.intro":
+      "Ces règles s'appliquent aux discussions d'étude et aux messages avec d'autres utilisateurs.",
     "legal.acceptableUse.allowed.title": "Encouragé",
     "legal.acceptableUse.allowed.body":
       "Poser des questions, partager des notes, discuter de matières scolaires — y compris de sujets difficiles comme l'histoire, la guerre, la santé, la médecine ou la santé sexuelle — dans un contexte scolaire adapté à l'âge.",
@@ -934,7 +943,8 @@ export const compliance = {
       "Per domande sulla privacy, contatta il responsabile della tua scuola o il gestore di questa installazione.",
 
     "legal.acceptableUse.title": "Politica di uso accettabile e comportamento",
-    "legal.acceptableUse.intro": "Queste regole valgono per le chat di studio e per i messaggi con altri utenti.",
+    "legal.acceptableUse.intro":
+      "Queste regole valgono per le chat di studio e per i messaggi con altri utenti.",
     "legal.acceptableUse.allowed.title": "Incoraggiato",
     "legal.acceptableUse.allowed.body":
       "Fai domande, condividi appunti, discuti materie scolastiche — inclusi argomenti difficili come storia, guerra, salute, medicina o salute sessuale — in un contesto scolastico adeguato all'età.",

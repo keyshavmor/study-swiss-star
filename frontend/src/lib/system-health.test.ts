@@ -84,7 +84,11 @@ describe("data deletion requests", () => {
       expect(keys).not.toContain("target_user_id");
       expect(keys).not.toContain("userId");
     }
-    expect(invoked[0]!.body).toMatchObject({ mode: "range", include_peer: true, include_ai: false });
+    expect(invoked[0]!.body).toMatchObject({
+      mode: "range",
+      include_peer: true,
+      include_ai: false,
+    });
     expect(Object.keys(invoked[1]!.body)).toEqual(["mode"]);
     expect(invoked[2]!.body).toEqual({ mode: "delete_account" });
   });

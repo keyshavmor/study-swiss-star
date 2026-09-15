@@ -860,10 +860,7 @@ export function MessagingSection() {
   };
 
   return (
-    <SectionCard
-      title={t("messages.notifications.title")}
-      description={t("messages.subtitle")}
-    >
+    <SectionCard title={t("messages.notifications.title")} description={t("messages.subtitle")}>
       {loading || !prefs ? (
         <p className="text-[14px] text-muted-foreground">{t("settings.preferences.loadError")}</p>
       ) : (
@@ -929,7 +926,10 @@ export function PrivacySection() {
         <ul className="flex flex-wrap gap-x-4 gap-y-1.5">
           {legalLinks.map((link) => (
             <li key={link.to}>
-              <Link to={link.to} className="text-[14px] text-primary underline-offset-4 hover:underline">
+              <Link
+                to={link.to}
+                className="text-[14px] text-primary underline-offset-4 hover:underline"
+              >
                 {link.label}
               </Link>
             </li>

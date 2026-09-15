@@ -68,7 +68,10 @@ function NotificationSettings() {
         <p className="text-sm font-semibold">{t("messages.notifications.title")}</p>
         <div className="flex items-center justify-between gap-3">
           <span className="text-sm">{t("nav.messages")}</span>
-          <Switch checked={prefs.peerMessageNotifications} onCheckedChange={(v) => void togglePeer(v)} />
+          <Switch
+            checked={prefs.peerMessageNotifications}
+            onCheckedChange={(v) => void togglePeer(v)}
+          />
         </div>
         <div className="flex items-center justify-between gap-3">
           <span className="text-sm">{t("messages.notifications.enable")}</span>

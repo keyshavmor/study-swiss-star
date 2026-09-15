@@ -10,7 +10,8 @@ export const Route = createFileRoute("/legal/terms")({
       { title: "Terms of Use — Alim's Study Assistant" },
       {
         name: "description",
-        content: "The Terms of Use governing student and teacher accounts on Alim's Study Assistant.",
+        content:
+          "The Terms of Use governing student and teacher accounts on Alim's Study Assistant.",
       },
       { property: "og:title", content: "Terms of Use — Alim's Study Assistant" },
       {
