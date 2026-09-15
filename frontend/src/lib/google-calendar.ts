@@ -171,6 +171,9 @@ export async function refreshProviderTokenFromSession(options?: {
  * the provider or manual linking is not enabled in the Supabase project.
  */
 export async function connectGoogleCalendar(redirectTo: string): Promise<void> {
+  // Marked BEFORE the redirect so the returning session's provider_token can be
+  // attributed to Google and nothing else.
+  markGoogleConnectPending();
   const { error } = await supabase.auth.linkIdentity({
     provider: "google",
     options: {
@@ -181,6 +184,8 @@ export async function connectGoogleCalendar(redirectTo: string): Promise<void> {
   });
   if (!error) return;
 
+  // Terminal connect failure: no Google token can arrive for this attempt.
+  clearGoogleConnectPending();
   const message = error.message || "";
   if (/manual linking/i.test(message)) {
     throw new GoogleCalendarError(
