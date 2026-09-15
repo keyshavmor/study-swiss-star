@@ -20,32 +20,58 @@ export function isStartupExempt(pathname: string): boolean {
   );
 }
 
-// One read per browser session is enough; the flag only flips through the
-// onboarding screen, which invalidates the cache itself.
+// One successful read per browser session is enough; the flag only flips
+// through the onboarding screen, which invalidates the cache itself.
+// A FAILED read is never cached and never treated as "completed".
 let languageFlagCache: boolean | null = null;
+let preferencesReadFailed = false;
 
 export function invalidateStartupCache(): void {
   languageFlagCache = null;
+  preferencesReadFailed = false;
 }
 
-export async function languageOnboardingCompleted(): Promise<boolean> {
-  if (languageFlagCache !== null) return languageFlagCache;
+/** True when the last startup preference read failed and is worth retrying. */
+export function startupPreferencesUnavailable(): boolean {
+  return preferencesReadFailed;
+}
+
+export type LanguageOnboardingStatus = "completed" | "required" | "unknown";
+
+/**
+ * Resolves the persisted language-onboarding flag.
+ *
+ * A transient Supabase read failure yields `"unknown"` — it must NEVER be
+ * treated as completed, otherwise a first-time user could skip the required
+ * language screen.
+ */
+export async function languageOnboardingStatus(): Promise<LanguageOnboardingStatus> {
+  if (languageFlagCache !== null) return languageFlagCache ? "completed" : "required";
   try {
     const prefs = await fetchPreferences();
     languageFlagCache = prefs.language_onboarding_completed === true;
+    preferencesReadFailed = false;
+    return languageFlagCache ? "completed" : "required";
   } catch {
-    // Never trap the user in onboarding because of a transient read failure.
-    languageFlagCache = true;
+    preferencesReadFailed = true;
+    return "unknown";
   }
-  return languageFlagCache;
+}
+
+export async function languageOnboardingCompleted(): Promise<boolean> {
+  return (await languageOnboardingStatus()) === "completed";
 }
 
 export type StartupDestination =
   typeof LANGUAGE_ONBOARDING_PATH | typeof MODEL_ONBOARDING_PATH | typeof HOME_PATH;
 
-/** Where an authenticated user belongs right now. */
+/**
+ * Where an authenticated user belongs right now. While language completion is
+ * unknown the user stays on the language onboarding screen, which renders a
+ * localized retry state — product routes stay unreachable.
+ */
 export async function resolveStartupDestination(): Promise<StartupDestination> {
-  if (!(await languageOnboardingCompleted())) return LANGUAGE_ONBOARDING_PATH;
+  if ((await languageOnboardingStatus()) !== "completed") return LANGUAGE_ONBOARDING_PATH;
   if (modelGateRequired()) return MODEL_ONBOARDING_PATH;
   return HOME_PATH;
 }
@@ -59,3 +85,4 @@ export async function startupRedirectFor(pathname: string): Promise<StartupDesti
   const destination = await resolveStartupDestination();
   return destination === HOME_PATH ? null : destination;
 }
+
