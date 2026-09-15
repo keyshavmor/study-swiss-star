@@ -55,7 +55,12 @@ export interface UserPreferences {
   exam_reminders: boolean;
   daily_study_summary: boolean;
   sound_effects: boolean;
-  auto_storage_cleanup: boolean;
+  /**
+   * CURRENT SUPABASE: set to true by the language onboarding screen. A missing
+   * or false flag means the user has never confirmed a default language, even
+   * when `app_language` already holds the "en" default.
+   */
+  language_onboarding_completed: boolean;
 }
 
 export const DEFAULT_PREFERENCES: UserPreferences = {
@@ -67,7 +72,7 @@ export const DEFAULT_PREFERENCES: UserPreferences = {
   exam_reminders: true,
   daily_study_summary: true,
   sound_effects: false,
-  auto_storage_cleanup: true,
+  language_onboarding_completed: false,
 };
 
 function asRecord(value: Json | null | undefined): Record<string, unknown> {
@@ -198,11 +203,11 @@ export async function fetchPreferences(): Promise<UserPreferences> {
   const bool = (key: keyof UserPreferences) =>
     typeof stored[key] === "boolean" ? (stored[key] as boolean) : DEFAULT_PREFERENCES[key];
 
-  const model = asString(stored["selected_qwen_model"]);
+  // The selectable set now comes from `public.ai_model_catalog`, so any stored
+  // non-empty model id is preserved; only an empty value falls back.
+  const model = asString(stored["selected_qwen_model"]).trim();
   return {
-    selected_qwen_model: (QWEN_MODELS as readonly string[]).includes(model)
-      ? model
-      : DEFAULT_PREFERENCES.selected_qwen_model,
+    selected_qwen_model: model || DEFAULT_PREFERENCES.selected_qwen_model,
     assistant_reply_language_policy:
       stored["assistant_reply_language_policy"] === "app_only"
         ? "app_only"
@@ -216,7 +221,7 @@ export async function fetchPreferences(): Promise<UserPreferences> {
     exam_reminders: bool("exam_reminders") as boolean,
     daily_study_summary: bool("daily_study_summary") as boolean,
     sound_effects: bool("sound_effects") as boolean,
-    auto_storage_cleanup: bool("auto_storage_cleanup") as boolean,
+    language_onboarding_completed: bool("language_onboarding_completed") as boolean,
   };
 }
 
