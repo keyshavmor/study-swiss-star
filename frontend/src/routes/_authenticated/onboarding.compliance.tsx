@@ -72,6 +72,23 @@ function ComplianceOnboardingPage() {
       const { data: auth } = await supabase.auth.getUser();
       setAccountEmail(auth.user?.email ?? "");
 
+      // Signup stores role/DOB/guardian only as auth metadata prefill hints.
+      // They are offered here for confirmation; the legal acknowledgements are
+      // NEVER pre-accepted — each box must be ticked deliberately.
+      const meta = (auth.user?.user_metadata ?? {}) as Record<string, unknown>;
+      const typePrefill = meta["account_type_prefill"];
+      if (typePrefill === "student" || typePrefill === "teacher") {
+        setAccountType((current) => (current === "" ? typePrefill : current));
+      }
+      const dobPrefill = meta["date_of_birth_prefill"];
+      if (typeof dobPrefill === "string" && dobPrefill) {
+        setDateOfBirth((current) => (current === "" ? dobPrefill : current));
+      }
+      const guardianPrefill = meta["guardian_email_prefill"];
+      if (typeof guardianPrefill === "string" && guardianPrefill) {
+        setGuardianEmail((current) => (current === "" ? guardianPrefill : current));
+      }
+
       const compliance = await fetchAccountCompliance();
       if (compliance?.complianceOnboardingCompleted) {
         await navigate({ to: LANGUAGE_ONBOARDING_PATH, replace: true });

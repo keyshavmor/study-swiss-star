@@ -15,6 +15,7 @@ import { GitHubLogo, LinkedInLogo, SpotifyLogo } from "@/components/app/BrandLog
 import { track, trackFailure } from "@/lib/telemetry";
 import { toast } from "sonner";
 import { UiError, localizedMessage } from "@/lib/ui-error";
+import { localizedAuthError } from "@/lib/auth-errors";
 import { useI18n } from "@/lib/i18n/provider";
 import type { TranslationKey } from "@/lib/i18n/messages";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -95,7 +96,7 @@ export function AuthForm() {
     const value = identifier.trim();
     if (value.includes("@")) {
       const { error } = await supabase.auth.signInWithPassword({ email: value, password });
-      if (error) throw error;
+      if (error) throw new UiError(localizedAuthError(t, error));
       track({
         event_name: "auth_signin_succeeded",
         feature: "auth",
@@ -112,14 +113,16 @@ export function AuthForm() {
     const { data, error } = await supabase.functions.invoke<UsernameLoginResult>("username-login", {
       body: { username: normalised, password },
     });
+    // Deliberately generic: never reveal whether the username exists, and
+    // never surface the account email behind it.
     if (error || !data?.access_token || !data?.refresh_token) {
-      throw new Error(t("auth.usernamePasswordError"));
+      throw new UiError(t("auth.usernamePasswordError"));
     }
     const { error: sessionError } = await supabase.auth.setSession({
       access_token: data.access_token,
       refresh_token: data.refresh_token,
     });
-    if (sessionError) throw sessionError;
+    if (sessionError) throw new UiError(localizedAuthError(t, sessionError));
     track({
       event_name: "auth_signin_succeeded",
       feature: "auth",
@@ -166,7 +169,7 @@ export function AuthForm() {
 
     // DOB/guardian email are only a prefill hint here — the compliance RPC on
     // /onboarding/compliance is the sole authority that persists them.
-    const { error } = await supabase.auth.signUp({
+    const { data: signUpData, error } = await supabase.auth.signUp({
       email: signupEmail.trim(),
       password,
       options: {
@@ -180,17 +183,25 @@ export function AuthForm() {
       },
     });
     if (error) {
-      if (/username/i.test(error.message) && /(exists|duplicate|unique)/i.test(error.message)) {
+      // The raw message is never shown; only a stable code/status decides copy.
+      if (error.code === "unexpected_failure" || error.status === 500) {
         throw new UiError(t("auth.usernameTaken"));
       }
-      throw error;
+      throw new UiError(localizedAuthError(t, error));
     }
     track({ event_name: "auth_signup_succeeded", feature: "auth" });
+    setComplianceErrors([]);
+    // When email confirmation is disabled, signUp already returns a session:
+    // continue straight into the startup gates instead of asking for an email
+    // that will never arrive.
+    if (signUpData.session) {
+      await goHome();
+      return;
+    }
     toast.success(t("auth.checkEmailToConfirm"));
     setMode("signin");
     setIdentifier(normalised);
     setPassword("");
-    setComplianceErrors([]);
   };
 
   const handleReset = async () => {
@@ -198,7 +209,7 @@ export function AuthForm() {
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: `${window.location.origin}/auth/update-password`,
     });
-    if (error) throw error;
+    if (error) throw new UiError(localizedAuthError(t, error));
     track({ event_name: "auth_password_reset_requested", feature: "auth" });
     toast.success(t("auth.resetLinkSent"));
     setMode("signin");

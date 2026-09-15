@@ -7,29 +7,45 @@
  * Function `delete-my-data`.
  */
 import { supabase } from "@/integrations/supabase/client";
-import type { MyDataSummaryRow, SupabaseHealthRow } from "@/integrations/supabase/types";
+import type { MyDataSummaryJson, SupabaseHealthJson } from "@/integrations/supabase/types";
 
 export const NOT_EXPOSED_STATUS = "not_exposed_by_sql";
 
-export type SupabaseHealth = SupabaseHealthRow;
+/**
+ * CURRENT SUPABASE (verified 2026-09-15): both RPCs return ONE JSON object.
+ * Missing keys stay missing (`undefined`/`null`) — they are rendered as
+ * "Not exposed" and never coerced to 0.
+ */
+export type SupabaseHealth = SupabaseHealthJson;
+export type MyDataSummary = MyDataSummaryJson;
 
 export async function fetchSupabaseHealth(): Promise<SupabaseHealth | null> {
   const { data, error } = await supabase.rpc("get_user_visible_supabase_health");
   if (error) throw new Error(error.message);
-  const row = (Array.isArray(data) ? data[0] : data) as SupabaseHealthRow | null;
-  return row ?? null;
+  const json = (Array.isArray(data) ? data[0] : data) as SupabaseHealthJson | null;
+  if (!json || typeof json !== "object") return null;
+  return json;
 }
 
-export async function fetchMyDataSummary(): Promise<MyDataSummaryRow | null> {
+export async function fetchMyDataSummary(): Promise<MyDataSummary | null> {
   const { data, error } = await supabase.rpc("get_my_data_summary");
   if (error) throw new Error(error.message);
-  const row = (Array.isArray(data) ? data[0] : data) as MyDataSummaryRow | null;
-  return row ?? null;
+  const json = (Array.isArray(data) ? data[0] : data) as MyDataSummaryJson | null;
+  if (!json || typeof json !== "object") return null;
+  return json;
 }
 
 /** A metric SQL cannot authoritatively expose. Render as "Not exposed". */
 export function isNotExposed(value: number | null | undefined, status?: string | null): boolean {
   return value === null || value === undefined || status === NOT_EXPOSED_STATUS;
+}
+
+/**
+ * A live count/byte value, or `null` when the production JSON does not contain
+ * the key. NEVER substitutes 0 for a missing key.
+ */
+export function metricValue(value: number | null | undefined): number | null {
+  return typeof value === "number" && Number.isFinite(value) ? value : null;
 }
 
 export type DeleteMyDataMode = "range" | "all_content" | "delete_account";

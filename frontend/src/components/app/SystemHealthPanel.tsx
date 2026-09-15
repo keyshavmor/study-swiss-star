@@ -18,9 +18,11 @@ import {
   fetchMyDataSummary,
   fetchSupabaseHealth,
   isNotExposed,
+  metricValue,
+  NOT_EXPOSED_STATUS,
+  type MyDataSummary,
   type SupabaseHealth,
 } from "@/lib/system-health";
-import type { MyDataSummaryRow } from "@/integrations/supabase/types";
 import { track, trackFailure } from "@/lib/telemetry";
 
 function Stat({ label, value }: { label: string; value: string }) {
@@ -279,8 +281,24 @@ function CloudHealthSection() {
     return <p className="text-[14px] text-destructive">{t("systemHealth.myData.loadFailed")}</p>;
   }
 
-  const statusLabel = (status: string | null) =>
-    isNotExposed(null, status) ? t("systemHealth.cloud.notExposed") : (status ?? "—");
+  // CURRENT SUPABASE (verified 2026-09-15): nested JSON groups. An absent group
+  // or key renders as "Not exposed" — never as 0.
+  const storage = health.object_storage ?? null;
+  const database = health.database ?? null;
+  const bandwidth = health.bandwidth ?? null;
+  const realtime = health.realtime ?? null;
+  const edge = health.edge_functions ?? null;
+
+  const usageLabel = (usage: number | null | undefined, quota: number | null | undefined, status?: string | null) => {
+    const used = metricValue(usage);
+    if (used === null || status === NOT_EXPOSED_STATUS) return t("systemHealth.cloud.notExposed");
+    const cap = metricValue(quota);
+    if (cap === null) return `${used}`;
+    return `${used} / ${cap}`;
+  };
+
+  const trigger = metricValue(storage?.cleanup_trigger_used_percent);
+  const target = metricValue(storage?.cleanup_target_used_percent);
 
   return (
     <div className="space-y-3">
@@ -289,49 +307,51 @@ function CloudHealthSection() {
           label={t("systemHealth.cloud.objectStorage")}
           value={metricLabel(
             t,
-            health.object_storage_used_bytes,
-            health.object_storage_quota_bytes,
-            health.object_storage_used_percent,
+            metricValue(storage?.used_bytes),
+            metricValue(storage?.quota_bytes),
+            metricValue(storage?.used_percent),
           )}
         />
         <Stat
           label={t("systemHealth.cloud.database")}
           value={metricLabel(
             t,
-            health.database_used_bytes,
-            health.database_quota_bytes,
-            health.database_used_percent,
+            metricValue(database?.used_bytes),
+            metricValue(database?.quota_bytes),
+            metricValue(database?.used_percent),
           )}
         />
         <Stat
           label={t("systemHealth.cloud.bandwidth")}
-          value={statusLabel(health.bandwidth_status)}
+          value={metricLabel(
+            t,
+            metricValue(bandwidth?.used_bytes),
+            metricValue(bandwidth?.quota_bytes),
+            metricValue(bandwidth?.used_percent),
+            bandwidth?.status ?? null,
+          )}
         />
         <Stat
           label={t("systemHealth.cloud.realtime")}
-          value={statusLabel(health.realtime_status)}
+          value={usageLabel(realtime?.usage, realtime?.quota, realtime?.status)}
         />
         <Stat
           label={t("systemHealth.cloud.edgeFunctions")}
-          value={statusLabel(health.edge_functions_status)}
+          value={usageLabel(edge?.usage, edge?.quota, edge?.status)}
         />
       </div>
-      {health.object_storage_cleanup_trigger_percent !== null &&
-        health.object_storage_cleanup_target_percent !== null && (
-          <p className="text-[13px] text-muted-foreground">
-            {t("systemHealth.cloud.cleanupNote", {
-              trigger: health.object_storage_cleanup_trigger_percent,
-              target: health.object_storage_cleanup_target_percent,
-            })}
-          </p>
-        )}
+      {trigger !== null && target !== null && (
+        <p className="text-[13px] text-muted-foreground">
+          {t("systemHealth.cloud.cleanupNote", { trigger, target })}
+        </p>
+      )}
     </div>
   );
 }
 
 function MyDataSection() {
   const { t } = useI18n();
-  const [summary, setSummary] = useState<MyDataSummaryRow | null>(null);
+  const [summary, setSummary] = useState<MyDataSummary | null>(null);
   const [failed, setFailed] = useState(false);
   const [loading, setLoading] = useState(true);
 
@@ -347,28 +367,53 @@ function MyDataSection() {
     return <p className="text-[14px] text-destructive">{t("systemHealth.myData.loadFailed")}</p>;
   }
 
+  // CURRENT SUPABASE (verified 2026-09-15): exact keys of get_my_data_summary().
+  // A key production does not return is shown as "Not exposed", not as 0.
+  const notExposed = t("systemHealth.cloud.notExposed");
+  const count = (value: number | null | undefined) => {
+    const parsed = metricValue(value);
+    return parsed === null ? notExposed : `${parsed}`;
+  };
+  const countWithBytes = (value: number | null | undefined, bytes: number | null | undefined) => {
+    const parsed = metricValue(value);
+    if (parsed === null) return notExposed;
+    const parsedBytes = metricValue(bytes);
+    return parsedBytes === null ? `${parsed}` : `${parsed} (${formatBytes(parsedBytes)})`;
+  };
+
   return (
     <div className="grid gap-3 sm:grid-cols-3">
-      <Stat label={t("systemHealth.myData.aiThreads")} value={`${summary.ai_thread_count ?? 0}`} />
-      <Stat
-        label={t("systemHealth.myData.aiMessages")}
-        value={`${summary.ai_message_count ?? 0}`}
-      />
-      <Stat
-        label={t("systemHealth.myData.peerConversations")}
-        value={`${summary.peer_conversation_count ?? 0}`}
-      />
       <Stat
         label={t("systemHealth.myData.peerMessages")}
-        value={`${summary.peer_message_count ?? 0}`}
+        value={count(summary.peer_messages)}
       />
       <Stat
-        label={t("systemHealth.myData.attachments")}
-        value={`${summary.attachment_count ?? 0} (${formatBytes(summary.attachment_bytes)})`}
+        label={t("systemHealth.myData.peerAttachments")}
+        value={countWithBytes(summary.peer_attachments, summary.peer_attachment_bytes)}
+      />
+      <Stat
+        label={t("systemHealth.myData.assistantMessages")}
+        value={count(summary.assistant_messages)}
+      />
+      <Stat
+        label={t("systemHealth.myData.assistantAttachments")}
+        value={countWithBytes(summary.assistant_attachments, summary.assistant_attachment_bytes)}
+      />
+      <Stat
+        label={t("systemHealth.myData.studyChatMessages")}
+        value={count(summary.study_chat_messages)}
       />
       <Stat
         label={t("systemHealth.myData.documents")}
-        value={`${summary.document_count ?? 0} (${formatBytes(summary.document_bytes)})`}
+        value={countWithBytes(summary.documents, summary.document_bytes)}
+      />
+      <Stat
+        label={t("systemHealth.myData.plannerEvents")}
+        value={count(summary.planner_events)}
+      />
+      <Stat
+        label={t("systemHealth.myData.feedbackItems")}
+        value={count(summary.feedback_items)}
       />
     </div>
   );
