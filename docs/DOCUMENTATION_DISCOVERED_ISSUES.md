@@ -306,7 +306,7 @@ project state only; no GitHub-branch claim, no backend/Python change.
 | 23 | Signup `unexpected_failure`/500 special case | Removed entirely; the availability preflight owns the duplicate case and everything else uses the generic safe mapper. |
 | 24 | External Auth-console configuration undocumented | `docs/supabase/AUTHENTICATION.md` now lists the manual, unverifiable items: Site URL and redirect allow-list, email-confirmation setting, SMTP, password policy / leaked-password protection, rate limits, and OAuth client credentials / provider enablement. |
 
-### Production security state (2026-09-15)
+### Production security and performance state (2026-09-15)
 
 In addition to `harden_auth_peer_rpcs_and_signup_defaults`, these migrations are live:
 
@@ -316,7 +316,20 @@ In addition to `harden_auth_peer_rpcs_and_signup_defaults`, these migrations are
 - `optimize_compliance_admin_rls` — own/admin SELECT policies combined and `(select auth.jwt())`
   used; the previous `auth_rls_initplan` and multiple-permissive-policy performance warnings are
   gone.
+- `cover_peer_and_guardian_foreign_keys` — added covering indexes for seven previously-unindexed
+  foreign keys:
+  `guardian_notification_queue(student_user_id)`, `peer_conversations(created_by)`,
+  `peer_message_attachments(conversation_id)`, `peer_message_attachments(message_id)`,
+  `peer_message_notifications(conversation_id)`, `peer_message_notifications(message_id)`,
+  `peer_messages(moderation_event_id)`.
 
 **Security Advisor is NOT claimed to be at zero warnings.** It still reports the intentionally
 callable signed-in `SECURITY DEFINER` application RPCs. There is NO anon `SECURITY DEFINER` warning
 any more.
+
+**Performance Advisor state.** The Supabase Performance Advisor now reports **ZERO
+`unindexed_foreign_keys` findings** — the `cover_peer_and_guardian_foreign_keys` migration above
+resolved the last of them. It still emits `unused_index` INFO findings, including the brand-new
+FK-covering indexes above, purely because they have not yet accumulated query usage. These fresh,
+required foreign-key-covering indexes must NOT be dropped on the basis of a current `unused_index`
+finding; the absence of `unindexed_foreign_keys` warnings depends on them remaining in place.

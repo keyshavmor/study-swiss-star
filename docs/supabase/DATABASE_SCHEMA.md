@@ -339,6 +339,20 @@ before DB rows, caller-only, no target-user-id parameter accepted). See
 `sequences/DELETE_MY_DATA_RANGE.mmd`, `sequences/DELETE_MY_DATA_ALL_CONTENT_KEEP_ACCOUNT.mmd`,
 `sequences/DELETE_ACCOUNT.mmd`, `sequences/GDPR_PRIVACY_DATA_MAP_RIGHTS_WORKFLOW.mmd`.
 
+**Production performance state (verified 2026-09-15):** migration `cover_peer_and_guardian_foreign_keys`
+is live and added covering indexes for seven previously-unindexed foreign keys:
+`guardian_notification_queue(student_user_id)`, `peer_conversations(created_by)`,
+`peer_message_attachments(conversation_id)`, `peer_message_attachments(message_id)`,
+`peer_message_notifications(conversation_id)`, `peer_message_notifications(message_id)`, and
+`peer_messages(moderation_event_id)`. The Supabase Performance Advisor now reports **ZERO
+`unindexed_foreign_keys` findings**. It still emits `unused_index` INFO findings, including these
+new FK-covering indexes (no query usage yet); they are required and must not be dropped for being
+currently unused. Together with `move_peer_authorization_helpers_private` and
+`optimize_compliance_admin_rls`, the previously reported `auth_rls_initplan`, multiple-permissive-
+policy and unindexed-FK performance warnings are resolved. The Security Advisor is NOT at zero —
+it still reports the intentionally callable signed-in `SECURITY DEFINER` application RPCs — but it
+no longer raises any anon `SECURITY DEFINER` warning.
+
 **LEGAL REVIEW REQUIRED BEFORE PRODUCTION:** see `legal/LEGAL_REVIEW_REQUIRED.md`. This pass makes
 no claim of GDPR or any other regulatory certification; lawful basis, DPAs, records of processing,
 breach procedures, jurisdictional guardian-consent rules and cookie/ePrivacy analysis are
