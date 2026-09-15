@@ -1,4 +1,10 @@
-/** Feedback screen. Submits through the `feedback-submit` Edge Function. */
+/**
+ * Feedback screen. Submits through the `feedback-submit` Edge Function.
+ *
+ * All-or-nothing contract: the form is only cleared when the function reports
+ * that BOTH the database and storage legs recorded the feedback. A partial 2xx
+ * keeps the text in the textarea so nothing the student wrote is lost.
+ */
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { AppShell, PageHeading } from "@/components/app/AppShell";
@@ -14,6 +20,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
+import { classifyFeedbackResult, type FeedbackSubmitResponse } from "@/lib/feedback-submit";
 import { useI18n } from "@/lib/i18n/provider";
 import { track, trackFailure } from "@/lib/telemetry";
 import { toast } from "sonner";
@@ -61,18 +68,36 @@ function FeedbackPage() {
     }
     setSending(true);
     try {
-      const { error: fnError } = await supabase.functions.invoke("feedback-submit", {
-        body: {
-          message: trimmed,
-          category,
-          context: {
-            route: window.location.pathname,
-            user_agent: navigator.userAgent.slice(0, 200),
-            submitted_at: new Date().toISOString(),
+      const { data, error: fnError } = await supabase.functions.invoke<FeedbackSubmitResponse>(
+        "feedback-submit",
+        {
+          body: {
+            message: trimmed,
+            category,
+            context: {
+              route: window.location.pathname,
+              user_agent: navigator.userAgent.slice(0, 200),
+              submitted_at: new Date().toISOString(),
+            },
           },
         },
-      });
-      if (fnError) throw fnError;
+      );
+
+      // Never trust the HTTP status alone: inspect the reported legs.
+      const outcome = classifyFeedbackResult(data ?? null, fnError);
+      if (outcome.kind !== "full") {
+        trackFailure("feedback_submit_failed", new Error(outcome.kind), {
+          feature: "feedback",
+          properties: { category, outcome: outcome.kind },
+        });
+        setSent(false);
+        setError(
+          outcome.kind === "partial"
+            ? t("feedback.error.partial")
+            : t("feedback.error.submitFailedGeneric"),
+        );
+        return;
+      }
 
       setMessage("");
       setSent(true);
