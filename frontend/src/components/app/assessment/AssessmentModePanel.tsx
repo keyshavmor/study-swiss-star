@@ -16,7 +16,10 @@ import {
   createSession,
   isEphemeral,
 } from "@/lib/assessment/lifecycle";
-import { isPreviewAdapterEnabled } from "@/lib/assessment/preview-adapter";
+import {
+  installPreviewAdapterInDevelopment,
+  isPreviewAdapterEnabled,
+} from "@/lib/assessment/preview-adapter";
 import {
   isAnswered,
   publicQuestionListSchema,
@@ -32,6 +35,9 @@ import {
   GenerationWaitingRoom,
   GradingPending,
 } from "./GenerationWaitingRoom";
+
+// Development preview only; production builds keep the unavailable adapter.
+installPreviewAdapterInDevelopment();
 
 const KIND_TITLE_KEY = {
   quick_check: "assessment.mode.quickCheck",
