@@ -64,8 +64,11 @@ export function localizedAuthError(t: TranslateFn, error: unknown): string {
     case "validation_failed":
     case "unexpected_failure":
       return t("auth.errorGeneric");
+    // The frontend has no CAPTCHA dependency: a challenge-shaped provider error
+    // means the dashboard protection is still on, which is not a user mistake.
     case "captcha_failed":
-      return t("auth.captchaFailed");
+      return t("auth.errorGeneric");
+
     default:
       break;
   }
