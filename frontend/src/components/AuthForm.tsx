@@ -307,10 +307,24 @@ export function AuthForm() {
               autoComplete="username"
               placeholder={t("auth.identifierPlaceholder")}
               value={identifier}
-              onChange={(e) => setIdentifier(e.target.value)}
+              onChange={(e) => {
+                setIdentifier(e.target.value);
+                if (pendingConfirmationEmail && e.target.value.trim() !== pendingConfirmationEmail) {
+                  setPendingConfirmationEmail("");
+                }
+              }}
               required
               autoFocus
             />
+            {pendingConfirmationEmail !== "" && (
+              <p
+                role="status"
+                data-testid="confirmation-pending-notice"
+                className="rounded-lg bg-muted px-3 py-2 text-[13px] text-muted-foreground"
+              >
+                {t("auth.confirmationPending", { email: pendingConfirmationEmail })}
+              </p>
+            )}
           </div>
         )}
 
