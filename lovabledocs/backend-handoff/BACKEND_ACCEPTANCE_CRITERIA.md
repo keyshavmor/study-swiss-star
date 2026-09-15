@@ -159,3 +159,38 @@ regress it if it starts writing directly to `assistant_messages`/`messages`)
 - **When** the error is rendered,
 - **Then** it is shown through the app's approved language set and `lib/ui-error.ts`-style handling
   — never a raw stack trace, raw backend error `code`, or hardcoded English string bypassing i18n.
+
+## Authenticated startup flow — acceptance cases (added this pass)
+
+Status labels: CURRENT FRONTEND / CURRENT SUPABASE where already true today; everything about the
+local backend below is **BACKEND TODO FOR CODEX** (EXPECTED LOCAL BACKEND CONTRACT), not yet
+implemented in this repository.
+
+1. **First login** → `/onboarding/language` (flag false/missing) → confirm language → `/onboarding/model`
+   → backend reports `ready` → `/home` in AI-ready mode. CURRENT FRONTEND routing + CURRENT SUPABASE
+   preference write already work; the `ready` response itself is BACKEND TODO FOR CODEX.
+2. **Existing user, new browser session** → language step skipped (`language_onboarding_completed`
+   already true) → model gate still required every new session → `ready` → `/home` AI-ready.
+3. **Backend unavailable** (404/timeout/network error) → `state=backend_unavailable` → user can
+   "Continue without AI" → `/home` renders fully, AI-dependent UI shows `AiUnavailableNotice`.
+4. **Model absent, resources ≥ 50/50/50** → backend starts a single global download (no per-user
+   duplicate) — BACKEND TODO FOR CODEX, see `sequences/MODEL_DOWNLOAD_DEDUPLICATION.mmd`.
+5. **Two users request the same absent model concurrently** → exactly one artifact is written; the
+   second caller observes `shared_download=true` / `queued` against the same operation, not a second
+   download — BACKEND TODO FOR CODEX.
+6. **Resources < 50/50/50 admission threshold** → no NEW heavy download or process allocation is
+   started; already-downloaded models/reusable processes may still be used if the 30/25/30 runtime
+   floors are met — BACKEND TODO FOR CODEX.
+7. **Resources drop below 30/25/30 after load** → the session must never be marked AI-ready
+   (`can_continue_with_ai=false`) even if the model finished loading — BACKEND TODO FOR CODEX; the
+   frontend enforces this by only trusting `isAiReady()` (state `ready` AND `can_continue_with_ai`).
+8. **Preparation failure** → red/danger state with machine-readable `blocking_reasons`, and the user
+   can retry, pick another model, continue without AI, or log out — all four exits already exist in
+   `/onboarding/model` (CURRENT FRONTEND).
+9. **Settings → Local model → switch model / retry** → reuses the exact same `ModelReadinessPanel` +
+   `ai-session.ts` flow as onboarding (CURRENT FRONTEND); no separate readiness logic exists.
+10. **Global storage usage reaches ≥ 90%** → the platform-wide 5-minute cron cleanup (CURRENT
+    SUPABASE, not user-disableable) deletes the globally oldest eligible objects in
+    `user-materials`/`chat-attachments` down to ~80% used, cascading `documents` /
+    `assistant_attachments` / `document_chunks`; auth, profiles, preferences and avatars are never
+    touched. See `sequences/STORAGE_CAPACITY_CLEANUP.mmd`.

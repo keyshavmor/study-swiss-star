@@ -1,0 +1,27 @@
+%% Status: CURRENT FRONTEND / EXPECTED LOCAL BACKEND CONTRACT
+%% Source: frontend/src/components/app/SettingsSections.tsx,
+%% frontend/src/components/app/ModelReadinessPanel.tsx, frontend/src/lib/ai-availability.tsx
+sequenceDiagram
+    participant User
+    participant Settings as SettingsSections.tsx (local model section)
+    participant Panel as ModelReadinessPanel.tsx (autoStart=false here)
+    participant Ai as ai-availability.tsx context
+    participant Backend as EXPECTED LOCAL BACKEND CONTRACT
+
+    User->>Settings: open Settings → Local model section
+    Settings->>Panel: render ModelReadinessPanel(initialModelId, autoStart=false)
+    Note over Panel: Unlike onboarding, Settings does NOT auto-run a check on mount.
+    User->>Panel: choose a different model (Select)
+    Panel->>Panel: savePreferences({ selected_qwen_model })
+    User->>Panel: click "Check & prepare" / "Retry"
+    Panel->>Backend: prepareModel → poll (same flow as MODEL_SELECTION_READINESS.mmd)
+    alt backend confirms ready
+        Backend-->>Panel: state=ready, can_continue_with_ai=true
+        Panel->>Ai: onReady(modelId) → ai.setReady(modelId) → markAiReady() (sessionStorage)
+        Panel-->>User: green "ready" card; rest of app now sees aiEnabled=true
+    else still blocked/failed
+        Backend-->>Panel: state=blocked/failed
+        Panel->>Ai: onUnavailable(status) → ai.setUnavailable()
+        Panel-->>User: red card with blocking reasons; Retry button remains available
+    end
+    Note over Ai: This is the exact same ModelReadinessPanel + ai-session flow used by<br/>/onboarding/model — Settings does not duplicate readiness logic.

@@ -776,3 +776,21 @@ type, points, and yields a grade). See **Grades** above for the full journey; th
 - **Error state:** a missing file would produce a browser-level 404 for that tab; not handled in
   application code.
 - **Next navigation:** none (separate tab); original `/help` tab remains open.
+
+## Appendix — authenticated startup flow (added this pass)
+
+See `docs/sequences/POST_LOGIN_STARTUP.mmd`, `LANGUAGE_ONBOARDING.mmd`,
+`MODEL_SELECTION_READINESS.mmd`, `RESOURCE_BLOCKED_NON_AI.mmd`, `SETTINGS_MODEL_RETRY.mmd`,
+`AI_SESSION_STATE_MACHINE.mmd` for the full, source-grounded journey:
+
+- **First authenticated load** — `frontend/src/routes/index.tsx` / `auth.tsx` resolve
+  `resolveStartupDestination()` (`lib/startup-flow.ts`) instead of assuming `/home` — CURRENT FRONTEND.
+- **Language onboarding** (`/onboarding/language`) — one-time, gated by
+  `user_preferences.preferences.language_onboarding_completed` — CURRENT SUPABASE — CURRENT FRONTEND.
+- **Model readiness gate** (`/onboarding/model`) — required every NEW browser session (sessionStorage
+  key `alim.ai_session.v1`, never Supabase, never localStorage) — CURRENT FRONTEND. Backend
+  preparation itself (`/api/model/prepare`, `/api/model/operation`) is BACKEND TODO FOR CODEX; until
+  implemented every check ends in `backend_unavailable` and "Continue without AI".
+- **Guard** — `frontend/src/routes/_authenticated/route.tsx` re-checks on every protected navigation;
+  `/onboarding/*` and `/auth` are exempt; direct `/home` access cannot bypass the gate.
+- **Sign-out** — `lib/sign-out.ts` clears both the cached language flag and the AI session.

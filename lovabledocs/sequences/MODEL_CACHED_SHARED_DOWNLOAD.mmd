@@ -1,0 +1,26 @@
+%% Status: EXPECTED LOCAL BACKEND CONTRACT (BACKEND TODO FOR CODEX) — not implemented yet
+%% Source: frontend/src/lib/model-readiness.types.ts (model_present_on_disk, shared_download,
+%% model_download_in_progress), frontend/src/components/app/ModelReadinessPanel.tsx
+sequenceDiagram
+    participant Panel as ModelReadinessPanel.tsx
+    participant Backend as EXPECTED LOCAL BACKEND CONTRACT
+    participant Disk as Local model storage (backend-owned)
+
+    Note over Backend: BACKEND TODO FOR CODEX below — none of this exists in this repo yet.
+    Panel->>Backend: POST /api/model/prepare { model_id }
+    Backend->>Disk: check if model_id already present on disk
+    alt already downloaded
+        Disk-->>Backend: present
+        Backend-->>Panel: model_present_on_disk=true, state=checking_model → loading/ready<br/>(no new heavy download needed)
+    else not present, another request already downloading it
+        Backend-->>Panel: state=downloading, shared_download=true,<br/>model_download_in_progress=true, progress_percent shared with the owning download
+        Note over Backend: deduplicate_model_downloads=true (policy) means one artifact,<br/>N callers observe the same operation/progress instead of starting N downloads
+    else not present, no download in progress
+        Backend->>Backend: evaluate admission (50/50/50 preflight) before starting
+        alt admission passes
+            Backend-->>Panel: state=downloading, shared_download=false
+        else admission fails
+            Backend-->>Panel: state=blocked, blocking_reasons=[insufficient_*]
+        end
+    end
+    Note over Panel: Even when a model is already downloaded or a process is reusable,<br/>the runtime floors (30/25/30) must still be met before state=ready.

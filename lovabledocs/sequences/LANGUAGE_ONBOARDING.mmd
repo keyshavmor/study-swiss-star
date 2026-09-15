@@ -1,0 +1,26 @@
+%% Status: CURRENT FRONTEND + CURRENT SUPABASE
+%% Source: frontend/src/routes/_authenticated/onboarding.language.tsx,
+%% frontend/src/lib/account-data.ts, frontend/src/lib/startup-flow.ts
+sequenceDiagram
+    participant User
+    participant Page as onboarding.language.tsx
+    participant I18n as I18nProvider (setLanguage)
+    participant Save as lib/account-data.ts savePreferences
+    participant DB as user_preferences (Supabase)
+    participant Flow as lib/startup-flow.ts
+
+    User->>Page: pick a language tile
+    Page->>I18n: setLanguage(code) (immediate UI switch, app_language cached locally too)
+    User->>Page: click "Continue"
+    Page->>Save: savePreferences({ app_language, language_onboarding_completed: true })
+    Save->>DB: upsert merged preferences JSON (onConflict user_id)
+    alt save fails
+        DB-->>Save: error
+        Save-->>Page: throws
+        Page-->>User: inline save error, stays on page
+    else save succeeds
+        DB-->>Save: ok
+        Save-->>Page: merged preferences
+        Page->>Flow: invalidateStartupCache()
+        Page-->>User: navigate to /onboarding/model (replace)
+    end
