@@ -11,7 +11,8 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "format": "prettier --write .",
-    "check:i18n": "bun run ./scripts/check-translations.ts"
+    "check:i18n": "bun run ./scripts/check-translations.ts",
+    "test": "vitest run"
   },
   "dependencies": {
     "@ai-sdk/react": "^4.0.45",
