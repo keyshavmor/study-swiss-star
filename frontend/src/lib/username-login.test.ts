@@ -44,8 +44,6 @@ describe("classifyUsernameLogin", () => {
     });
   });
 
-
-
   it("treats a transport/runtime failure or missing body as unavailable", () => {
     expect(classifyUsernameLogin(null, new Error("boom"))).toEqual({ kind: "unavailable" });
     expect(classifyUsernameLogin(undefined, null)).toEqual({ kind: "unavailable" });

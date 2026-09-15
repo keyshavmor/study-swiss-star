@@ -27,7 +27,6 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { validateComplianceInput, type ComplianceValidationError } from "@/lib/compliance";
 
-
 type Mode = "signin" | "signup" | "reset";
 type OAuthProvider = "github" | "linkedin_oidc" | "spotify";
 
@@ -68,7 +67,6 @@ export function validateUsername(raw: string, t: (key: TranslationKey) => string
  */
 type UsernameLoginResult = UsernameLoginPayload;
 
-
 interface UsernameAvailabilityResult {
   available?: boolean;
   valid?: boolean;
@@ -92,7 +90,6 @@ export function AuthForm() {
   const [resetEmail, setResetEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
-
 
   // Enter the startup flow rather than jumping straight to Home.
   const goHome = async () => {
@@ -193,7 +190,6 @@ export function AuthForm() {
       options: {
         emailRedirectTo: `${window.location.origin}/`,
         data: {
-
           username: normalised,
           account_type_prefill: signupAccountType,
           date_of_birth_prefill: signupDob,
@@ -262,7 +258,6 @@ export function AuthForm() {
       setIsLoading(false);
     }
   };
-
 
   const handleOAuth = async (provider: OAuthProvider, label: string) => {
     setIsLoading(true);
@@ -510,9 +505,6 @@ export function AuthForm() {
             />
           </div>
         )}
-
-
-
 
         <Button type="submit" className="w-full" disabled={isLoading}>
           {isLoading ? t("auth.pleaseWait") : submitLabel}

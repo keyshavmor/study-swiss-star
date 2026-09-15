@@ -62,7 +62,6 @@ export function classifyUsernameLogin(
   return { kind: "invalid_credentials" };
 }
 
-
 /**
  * Signup failure classification for a `unexpected_failure` / HTTP 500 reply.
  *
