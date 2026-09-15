@@ -68,12 +68,15 @@ IMPLEMENTATION UNKNOWN for internals).
   `frontend/src/routes/_authenticated/feedback.tsx:64`.
 - **Auth assumption:** authenticated (route is under `_authenticated/`).
 - **Input:** `{ message: string, category: string, context?: Json }`.
-- **Output:** success/failure surfaced as a toast in the feedback form; exact payload shape not
-  otherwise consumed.
+- **Output:** `{ ok, database_recorded, storage_recorded }`. The client is all-or-nothing: the form
+  is cleared and full success shown ONLY when `ok === true && database_recorded === true &&
+  storage_recorded === true`. Any partial 2xx (e.g. HTTP 207) keeps the typed text in the form and
+  shows `feedback.error.partial`.
 - **Side effects:** inserts a row into `public.feedback` and a text mirror into the private
   `feedback-messages` bucket at `<user_id>/<YYYY-MM-DD>/<uuid>.txt`.
 - **Tables/buckets touched:** `public.feedback`, `feedback-messages` bucket.
-- **Failure semantics:** surfaced to the user as an error toast; no direct client-side fallback
+- **Failure semantics:** partial and failed results both keep the user's text; raw Edge Function
+  messages are never rendered. No direct client-side fallback
   write to `public.feedback` exists (the function is the only writer).
 
 ## `storage-emergency-cleanup`

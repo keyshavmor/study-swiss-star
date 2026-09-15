@@ -14,13 +14,15 @@ sequenceDiagram
     Note over User,Session: Connect
     User->>Card: click "Connect Google Calendar"
     Card->>Lib: connectGoogleCalendar(redirectTo)
+    Lib->>Session: markGoogleConnectPending() ("alim.google-calendar.connect-pending")
     Lib->>Supa: auth.linkIdentity({ provider: "google",<br/>scopes: "calendar.readonly", queryParams: { access_type: "online", prompt: "consent" } })
     Supa->>Google: OAuth consent redirect
     User->>Google: approve read-only Calendar access
     Google-->>Supa: identity linked, session carries provider_token
     Supa-->>Lib: session with provider_token
-    Lib->>Lib: captureProviderToken(session)
-    Lib->>Session: store { token, expiresAt: now + 55min } (session-only, never localStorage/DB)
+    Lib->>Lib: captureProviderToken(session) — only if pending marker set<br/>or callback URL contains google=connected
+    Lib->>Session: store { token, expiresAt: now + 55min } (session-only, never localStorage/DB)<br/>and clear the pending marker
+    Note over Lib,Session: A provider_token from GitHub / LinkedIn / Spotify or from a plain<br/>session refresh is IGNORED (no Google attempt pending).
     end
 
     rect rgb(245,245,245)

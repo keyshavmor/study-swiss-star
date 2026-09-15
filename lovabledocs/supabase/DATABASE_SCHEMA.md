@@ -327,7 +327,8 @@ planner_events, feedback_items`. `user_legal_consents.document_type` is constrai
 `safety_notice` (the live `complete_account_compliance_onboarding` RPC inserts `safety_notice`;
 there is NO `child_safety` DB value — the user-facing page is still titled Child Safety).
 `user_legal_consents` uses `document_type, document_version,
-accepted_at, withdrawn_at, consent_source, created_at` (there is NO `document_kind`), and
+accepted_at, withdrawn_at, consent_source (NOT NULL, defaulted), created_at` (there is NO
+`document_kind`), and
 `complete_account_compliance_onboarding(...)` returns JSONB. The migration
 `harden_auth_peer_rpcs_and_signup_defaults` is live: the auth trigger creates the username,
 default preferences and an empty `account_compliance` row, while signup role/DOB/guardian values
