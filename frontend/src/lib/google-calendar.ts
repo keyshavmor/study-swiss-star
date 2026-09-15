@@ -16,6 +16,13 @@ export const GOOGLE_CALENDAR_SCOPE = "https://www.googleapis.com/auth/calendar.r
 export const GOOGLE_EVENT_COLOR = "#4285F4";
 
 const TOKEN_KEY = "alim.google-calendar.provider-token";
+/**
+ * Set immediately before Google identity linking starts. Other providers
+ * (GitHub / LinkedIn / Spotify) also put a `provider_token` on the session, so a
+ * token is only ever accepted as a Google Calendar token while this marker is
+ * present or the callback URL explicitly says `google=connected`.
+ */
+const PENDING_KEY = "alim.google-calendar.connect-pending";
 
 export type GoogleCalendarErrorCode =
   | "not-connected"
