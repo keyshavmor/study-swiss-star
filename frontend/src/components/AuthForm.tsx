@@ -63,9 +63,10 @@ export function validateUsername(raw: string, t: (key: TranslationKey) => string
 }
 
 /**
- * CURRENT SUPABASE (`username-login` v2, verified 2026-09-15): expected bad
+ * CURRENT SUPABASE (`username-login` v3, verified 2026-09-15): expected bad
  * credentials come back as an HTTP 200 payload with `ok:false` and a stable
- * `error_code`, never as an HTTP 401 Edge Function runtime error.
+ * `error_code`, never as an HTTP 401 Edge Function runtime error. v3 also
+ * requires `captcha_token` because its password grant is CAPTCHA-protected.
  */
 type UsernameLoginResult = UsernameLoginPayload;
 
