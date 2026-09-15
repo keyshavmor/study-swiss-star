@@ -66,7 +66,7 @@ function Block({
   renderMedia,
 }: {
   block: ContentBlock;
-  renderMedia?: (mediaId: string | undefined, description?: string) => React.ReactNode | undefined;
+  renderMedia?: MediaRenderer | undefined;
 }) {
   switch (block.kind) {
     case "prose":
@@ -166,6 +166,11 @@ function Block({
   }
 }
 
+export type MediaRenderer = (
+  mediaId: string,
+  description?: string | undefined,
+) => React.ReactNode;
+
 export function ScientificContentRenderer({
   content,
   className,
@@ -175,7 +180,7 @@ export function ScientificContentRenderer({
   content: RichContent;
   className?: string | undefined;
   inline?: boolean | undefined;
-  renderMedia?: (mediaId: string | undefined, description?: string) => React.ReactNode | undefined;
+  renderMedia?: MediaRenderer | undefined;
 }) {
   return (
     <div className={cn(inline ? "flex flex-wrap items-baseline gap-1" : "space-y-1.5", className)}>
