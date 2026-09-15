@@ -18,29 +18,31 @@ reset.
 
 ## Email/password
 
-- **Live result, 2026-09-15:** production email/password requests without a CAPTCHA token return
-  HTTP 400 / stable code `captcha_failed`. This was reproduced directly with the same
-  `@supabase/supabase-js` calls as the app. The rejected signup created no user.
-- **Frontend repair:** all four password flows (email sign-in, username sign-in v3, signup,
-  and password reset) require a one-time hCaptcha token. Email Auth uses `captchaToken`;
-  username-login sends `captcha_token`. Tokens remain in React state only and are cleared
-  after every attempt; `@hcaptcha/react-hcaptcha` receives the public sitekey, sets the token
-  through `onVerify`, and calls `resetCaptcha()` after each request. Expiry and errors clear it.
-- **Confirmed provider:** `VITE_AUTH_CAPTCHA_PROVIDER=hcaptcha` in root and frontend environment
-  configuration. **SITEKEY_MISSING:** no real public `VITE_AUTH_CAPTCHA_SITE_KEY` was found in
-  accessible environment/public configuration. Missing configuration fails closed.
-- **Official guidance:** https://supabase.com/docs/guides/auth/auth-captcha — the hCaptcha secret
-  belongs only in production Supabase Auth > Bot and Abuse Protection. The separate public
-  sitekey belongs in both frontend environment contexts. Never substitute the secret for it;
-  never put the secret in source, environment files, documentation, logs, tests, or telemetry.
-- **Sign-up:** `auth.signUp` sends the normalized username plus `account_type_prefill`,
-  `date_of_birth_prefill`, and `guardian_email_prefill`; these are metadata hints only. The four
-  legal checkboxes remain explicit and are never pre-accepted. The redirect is the public app
-  origin. A returned session enters `resolveStartupDestination()` immediately; no session shows the
-  localized email-confirmation state.
-- **Password reset/update:** reset requests are email-only and CAPTCHA-protected. The public
-  `/auth/update-password` route requires a valid recovery/auth session, then returns through
-  `resolveStartupDestination()`.
+- **CURRENT FRONTEND: no CAPTCHA dependency.** All four password flows (email sign-in, username
+  sign-in v4, signup, password reset) call Supabase Auth / `username-login` with no challenge
+  token. There is no CAPTCHA widget, no `captchaToken`, no `captcha_token`, no
+  `captcha_required` / `captcha_failed` user flow, and no CAPTCHA environment configuration
+  (`VITE_AUTH_CAPTCHA_PROVIDER` / `VITE_AUTH_CAPTCHA_SITE_KEY` are removed from both env
+  contexts). `@hcaptcha/react-hcaptcha` is removed.
+- **CURRENT SUPABASE DASHBOARD — MANUAL RUNTIME PREREQUISITE (NOT INDEPENDENTLY VERIFIED):**
+  Auth > Bot and Abuse Protection must be **disabled** for the production project. While it is
+  enabled, Supabase itself rejects tokenless password signup, sign-in and recovery with HTTP 400 /
+  stable code `captcha_failed` (reproduced live 2026-09-15 while protection was on). This setting
+  lives outside Lovable source; no live auth PASS is claimed until it is confirmed disabled and a
+  real browser signup/sign-in succeeds.
+- **Error handling:** a challenge-shaped provider error (`captcha_failed`) maps to the generic
+  localized auth error — it is never shown as wrong credentials, and no raw provider payload is
+  shown, logged or sent to telemetry.
+- **Email sign-in:** `supabase.auth.signInWithPassword({ email, password })`.
+- **Sign-up:** `auth.signUp({ email, password, options: { emailRedirectTo, data } })` sends the
+  normalized username plus `account_type_prefill`, `date_of_birth_prefill`, and
+  `guardian_email_prefill`; these are metadata hints only. The four legal checkboxes remain
+  explicit and are never pre-accepted. A returned session enters `resolveStartupDestination()`
+  immediately; no session shows the localized email-confirmation state.
+- **Password reset/update:** `auth.resetPasswordForEmail(email, { redirectTo })` — email only, no
+  challenge token, localized errors retained. The public `/auth/update-password` route requires a
+  valid recovery/auth session, then returns through `resolveStartupDestination()`.
+
 
 ## Username login (`username-login` Edge Function)
 
