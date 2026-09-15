@@ -1,0 +1,18 @@
+%% Status: CURRENT SUPABASE
+%% Source: frontend/src/lib/system-health.ts (requestMyDataDeletion), supabase Edge Function delete-my-data
+sequenceDiagram
+    participant User
+    participant UI as data-rights settings screen
+    participant Fn as requestMyDataDeletion({mode:"range", startAt, endAt, includePeer, includeAi})
+    participant Edge as Edge Function delete-my-data (JWT-protected)
+    participant Storage as Storage buckets
+    participant DB as content tables (peer_messages, chat history, etc. for caller only)
+
+    User->>UI: choose a date range + content types, confirm
+    UI->>Fn: requestMyDataDeletion(mode="range")
+    Fn->>Edge: functions.invoke("delete-my-data", body)
+    Edge->>Edge: identify caller from verified JWT only — never a target user id in the request
+    Edge->>Storage: delete matching Storage objects FIRST
+    Edge->>DB: delete matching rows within range for caller
+    Edge-->>Fn: { deleted_objects, deleted_rows, account_deleted:false }
+    Fn-->>UI: confirmation summary

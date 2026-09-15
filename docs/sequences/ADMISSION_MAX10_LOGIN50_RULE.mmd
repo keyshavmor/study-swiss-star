@@ -1,0 +1,21 @@
+%% Status: EXPECTED LOCAL BACKEND CONTRACT + CURRENT SUPABASE (policy)
+%% Source: frontend/src/lib/system-admission.types.ts, system-backend.server.ts
+sequenceDiagram
+    participant User
+    participant Fn as checkSystemAdmission (server fn)
+    participant Policy as get_system_admission_policy() (Supabase)
+    participant Backend as EXPECTED /api/system/admission/check
+
+    User->>Fn: request admission (new browser session)
+    Fn->>Policy: read policy (max_active_users=10, login free% = 50/50/50)
+    Fn->>Backend: POST admission/check(policy)
+    Backend->>Backend: count active_user_count
+    alt active_user_count >= 10
+        Backend-->>Fn: denied_user_limit (not retryable)
+    else GPU or RAM or storage free% < 50
+        Backend-->>Fn: denied_capacity (retryable, retry_at)
+    else capacity ok
+        Backend-->>Fn: admitted + lease_id + expires_at + heartbeat_interval_seconds
+    end
+    Fn-->>User: AdmissionStatus (state, lease, resources, thresholds)
+    Note over Backend: BACKEND TODO FOR CODEX: real active-user accounting and measurement do not exist yet.

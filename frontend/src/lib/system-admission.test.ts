@@ -1,4 +1,26 @@
 import { beforeEach, describe, expect, it } from "vitest";
+
+class MemoryStorage {
+  private map = new Map<string, string>();
+  getItem(key: string) {
+    return this.map.has(key) ? (this.map.get(key) as string) : null;
+  }
+  setItem(key: string, value: string) {
+    this.map.set(key, value);
+  }
+  removeItem(key: string) {
+    this.map.delete(key);
+  }
+}
+
+(globalThis as Record<string, unknown>)["window"] = {
+  sessionStorage: new MemoryStorage(),
+  dispatchEvent: () => true,
+};
+(globalThis as Record<string, unknown>)["CustomEvent"] = class {
+  constructor(public type: string) {}
+};
+
 import {
   AI_READY_FREE_FLOORS,
   DEFAULT_SYSTEM_ADMISSION_POLICY,

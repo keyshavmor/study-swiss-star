@@ -1,12 +1,88 @@
 /** Left-pane list of the signed-in user's peer conversations. */
 import { Link } from "@tanstack/react-router";
-import { MessageCirclePlus } from "lucide-react";
+import { Bell, MessageCirclePlus } from "lucide-react";
+import { useEffect, useState } from "react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Switch } from "@/components/ui/switch";
 import { useI18n } from "@/lib/i18n/provider";
+import {
+  getMessagingPreferences,
+  saveMessagingPreferences,
+  type MessagingPreferences,
+} from "@/lib/messaging-preferences";
 import type { PeerConversationSummary } from "@/lib/peer-messaging";
 import { cn } from "@/lib/utils";
+
+function NotificationSettings() {
+  const { t } = useI18n();
+  const [prefs, setPrefs] = useState<MessagingPreferences | null>(null);
+  const [note, setNote] = useState<string | null>(null);
+
+  useEffect(() => {
+    void getMessagingPreferences().then(setPrefs);
+  }, []);
+
+  async function togglePeer(next: boolean) {
+    const updated = await saveMessagingPreferences({ peerMessageNotifications: next });
+    setPrefs(updated);
+  }
+
+  async function toggleBrowser(next: boolean) {
+    setNote(null);
+    if (!next) {
+      const updated = await saveMessagingPreferences({ browserMessageNotifications: false });
+      setPrefs(updated);
+      return;
+    }
+    if (typeof window === "undefined" || typeof Notification === "undefined") {
+      setNote(t("messages.notifications.unsupported"));
+      return;
+    }
+    if (Notification.permission === "denied") {
+      setNote(t("messages.notifications.blocked"));
+      return;
+    }
+    const permission = await Notification.requestPermission();
+    if (permission === "granted") {
+      const updated = await saveMessagingPreferences({ browserMessageNotifications: true });
+      setPrefs(updated);
+      setNote(t("messages.notifications.enabled"));
+    } else {
+      setNote(t("messages.notifications.denied"));
+    }
+  }
+
+  if (!prefs) return null;
+
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button variant="ghost" size="icon" aria-label={t("messages.notifications.title")}>
+          <Bell className="h-4 w-4" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent align="end" className="space-y-4">
+        <p className="text-sm font-semibold">{t("messages.notifications.title")}</p>
+        <div className="flex items-center justify-between gap-3">
+          <span className="text-sm">{t("nav.messages")}</span>
+          <Switch checked={prefs.peerMessageNotifications} onCheckedChange={(v) => void togglePeer(v)} />
+        </div>
+        <div className="flex items-center justify-between gap-3">
+          <span className="text-sm">{t("messages.notifications.enable")}</span>
+          <Switch
+            checked={prefs.browserMessageNotifications}
+            onCheckedChange={(v) => void toggleBrowser(v)}
+          />
+        </div>
+        {note && <p className="text-xs text-muted-foreground">{note}</p>}
+        <p className="text-xs text-muted-foreground">{t("messages.persistNote")}</p>
+      </PopoverContent>
+    </Popover>
+  );
+}
 
 function peerDisplayName(conversation: PeerConversationSummary): string {
   const peer = conversation.members[0];
@@ -31,10 +107,13 @@ export function ConversationList({
     <div className={cn("flex h-full flex-col", className)}>
       <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-3">
         <h2 className="text-[16px] font-semibold">{t("messages.title")}</h2>
-        <Button size="sm" onClick={onNewConversation}>
-          <MessageCirclePlus className="mr-1.5 h-4 w-4" />
-          {t("messages.new")}
-        </Button>
+        <div className="flex items-center gap-1.5">
+          <NotificationSettings />
+          <Button size="sm" onClick={onNewConversation}>
+            <MessageCirclePlus className="mr-1.5 h-4 w-4" />
+            {t("messages.new")}
+          </Button>
+        </div>
       </div>
 
       {conversations.length === 0 ? (

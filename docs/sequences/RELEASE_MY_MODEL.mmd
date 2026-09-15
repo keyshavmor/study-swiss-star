@@ -1,0 +1,21 @@
+%% Status: EXPECTED LOCAL BACKEND CONTRACT + CURRENT FRONTEND
+%% Source: frontend/src/lib/system.functions.ts (releaseMyRuntime), system-backend.server.ts
+sequenceDiagram
+    participant User
+    participant UI as Settings / model screen "Release" action
+    participant Fn as releaseMyRuntime (server fn)
+    participant Adapter as releaseRuntimeOnBackend
+    participant Backend as EXPECTED /api/system/runtime/release
+
+    User->>UI: click "Free up my session"
+    UI->>Fn: releaseMyRuntime({ leaseId })
+    Fn->>Adapter: releaseRuntimeOnBackend(verified JWT, leaseId)
+    Adapter->>Backend: POST runtime/release
+    alt unavailable
+        Backend-->>Adapter: no response
+        Adapter-->>UI: { released:false, message_code:backend_unavailable }
+    else responds
+        Backend-->>Adapter: { released:true/false, message_code }
+        Adapter-->>UI: result
+    end
+    Note over Backend: BACKEND TODO FOR CODEX: actual VRAM/process teardown not implemented in this repo.

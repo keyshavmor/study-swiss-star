@@ -1,0 +1,16 @@
+%% Status: CURRENT SUPABASE + CURRENT FRONTEND
+%% Source: frontend/src/lib/peer-messaging.ts, messaging-session.ts
+sequenceDiagram
+    participant Sender
+    participant Backend as local backend send path
+    participant DB as peer_messages / peer_message_notifications
+    participant RecipientBrowser as Recipient's browser (signed out)
+    participant Recipient
+
+    Sender->>Backend: sends message (allow verdict)
+    Backend->>DB: insert peer_messages + peer_message_notifications(read_at=null) for recipient
+    Note over RecipientBrowser: Recipient is signed out — no realtime subscription,<br/>no OS push notification is promised.
+    Recipient->>RecipientBrowser: signs in later
+    RecipientBrowser->>DB: fetchUnreadCount() / fetchConversations()
+    DB-->>RecipientBrowser: unread notification rows still present
+    RecipientBrowser-->>Recipient: conversation shown with unread badge
