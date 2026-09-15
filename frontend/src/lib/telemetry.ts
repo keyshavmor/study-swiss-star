@@ -42,7 +42,7 @@ export const ANONYMOUS_EVENTS: ReadonlySet<string> = new Set([
 
 /** Keys that must never leave the browser, whatever the caller passes. */
 const FORBIDDEN_KEY =
-  /(password|token|secret|key|authorization|cookie|message|content|prompt|body|title|description|location|summary|email)/i;
+  /(password|token|secret|key|authorization|cookie|message|content|prompt|body|title|description|location|summary|email|username|user_name|identifier|guardian|phone|birth)/i;
 
 function sanitiseValue(value: unknown): Primitive | undefined {
   if (value === null) return null;
