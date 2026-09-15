@@ -51,7 +51,7 @@ export function ScientificExpression({
   );
 }
 
-function styleClass(block: Extract<ContentBlock, { style?: unknown }>): string | undefined {
+function styleClass(block: Extract<ContentBlock, { style?: unknown  | undefined}>): string | undefined {
   const style = "style" in block ? block.style : undefined;
   if (!style) return undefined;
   return cn(style.italic && "italic", style.monospace && "font-mono");
@@ -66,7 +66,7 @@ function Block({
   renderMedia,
 }: {
   block: ContentBlock;
-  renderMedia?: (mediaId: string, description?: string) => React.ReactNode;
+  renderMedia?: (mediaId: string | undefined, description?: string) => React.ReactNode | undefined;
 }) {
   switch (block.kind) {
     case "prose":
@@ -175,7 +175,7 @@ export function ScientificContentRenderer({
   content: RichContent;
   className?: string | undefined;
   inline?: boolean | undefined;
-  renderMedia?: (mediaId: string, description?: string) => React.ReactNode;
+  renderMedia?: (mediaId: string | undefined, description?: string) => React.ReactNode | undefined;
 }) {
   return (
     <div className={cn(inline ? "flex flex-wrap items-baseline gap-1" : "space-y-1.5", className)}>

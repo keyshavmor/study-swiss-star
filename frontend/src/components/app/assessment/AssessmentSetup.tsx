@@ -249,7 +249,7 @@ export function AssessmentSetup({
   config: AssessmentConfig;
   onChange: (next: AssessmentConfig) => void;
   onGenerate: () => void;
-  onCancel?: () => void;
+  onCancel?: () => void | undefined;
   materials: Array<{ id: string; name: string; section: string }>;
   topics: string[];
   learningGoals: Array<{ id: string; label: string }>;

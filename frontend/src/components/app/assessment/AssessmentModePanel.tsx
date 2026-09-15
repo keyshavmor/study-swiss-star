@@ -69,7 +69,7 @@ export function PreviewDataNotice() {
   );
 }
 
-export function BackendUnavailableNotice({ onRetry }: { onRetry?: () => void }) {
+export function BackendUnavailableNotice({ onRetry }: { onRetry?: () => void  | undefined}) {
   const { t } = useI18n();
   return (
     <div
@@ -381,9 +381,6 @@ export function AssessmentModePanel({
         <AssessmentResults
           result={session.result}
           onClose={() => dispatch({ type: "reset" })}
-          onPracticeIncorrect={undefined}
-          onQuizWeakTopics={undefined}
-          onAddToStudyPlan={undefined}
         />
       </div>
     );

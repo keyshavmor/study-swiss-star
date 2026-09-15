@@ -42,7 +42,7 @@ export function QuestionRenderer({
   onChange: (answer: StudentAnswer) => void;
   disabled?: boolean | undefined;
   marked?: boolean | undefined;
-  onToggleMark?: () => void;
+  onToggleMark?: () => void | undefined;
   /** Mock Exam presentation: no decorative extras. */
   quiet?: boolean | undefined;
 }) {

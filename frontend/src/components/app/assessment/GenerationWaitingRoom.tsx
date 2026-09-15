@@ -6,11 +6,11 @@ import type { GenerationPhase } from "@/lib/assessment/lifecycle";
 import type { AssessmentConfig, AttemptStatus } from "@/lib/assessment/types";
 import { totalQuestions } from "@/lib/assessment/config";
 
-const PHASE_LABEL_KEY: Record<GenerationPhase, string> = {
+const PHASE_LABEL_KEY = {
   queued: "assessment.generation.phase.queued",
   generating: "assessment.generation.phase.generating",
   validating: "assessment.generation.phase.validating",
-};
+} as const satisfies Record<GenerationPhase, string>;
 
 export function GenerationWaitingRoom({
   phase,
@@ -93,7 +93,7 @@ export function GradingPending({
 }: {
   status: AttemptStatus;
   onViewLater: () => void;
-  onRetry?: () => void;
+  onRetry?: () => void | undefined;
 }) {
   const { t } = useI18n();
   const failed = status === "grading_failed";

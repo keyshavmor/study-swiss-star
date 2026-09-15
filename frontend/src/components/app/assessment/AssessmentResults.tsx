@@ -23,10 +23,10 @@ export function AssessmentResults({
   onClose,
 }: {
   result: AssessmentResult;
-  onPracticeIncorrect?: () => void;
-  onQuizWeakTopics?: () => void;
-  onAddToStudyPlan?: () => void;
-  onClose?: () => void;
+  onPracticeIncorrect?: () => void | undefined;
+  onQuizWeakTopics?: () => void | undefined;
+  onAddToStudyPlan?: () => void | undefined;
+  onClose?: () => void | undefined;
 }) {
   const { t, formatDate } = useI18n();
 

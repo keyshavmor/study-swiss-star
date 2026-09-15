@@ -119,7 +119,7 @@ export function getAssessmentApi(): AssessmentApi {
  * FUTURE BACKEND / CODEX: cleanup must delete generated questions, question
  * metadata, answer keys and attempt configuration, and terminate generation.
  */
-export function requestAbandonCleanup(reference: { jobId?: string; attemptId?: string }): void {
+export function requestAbandonCleanup(reference: { jobId?: string | undefined; attemptId?: string  | undefined}): void {
   if (!reference.jobId && !reference.attemptId) return;
   void activeApi.abandonAssessment(reference).catch(() => undefined);
 }

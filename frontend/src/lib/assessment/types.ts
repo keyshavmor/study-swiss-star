@@ -383,7 +383,7 @@ export interface QuestionResult {
   explanation?: RichContent | undefined;
   improvement?: RichContent | undefined;
   /** Why relevant distractors are wrong, keyed by option id. */
-  optionExplanations?: Record<string, RichContent> | undefined;
+  optionExplanations?: Record<string | undefined, RichContent> | undefined;
   rubricFeedback?: Array<{ criterionId: string; description: string; awarded: number; max: number }>;
   sources?: SourceReference[] | undefined;
 }

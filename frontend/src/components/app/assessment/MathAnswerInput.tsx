@@ -92,7 +92,7 @@ export function MathAnswerInput({
 
   function insert(latex: string) {
     const field = fieldRef.current as unknown as
-      | { executeCommand?: (cmd: [string, string]) => void; value: string }
+      | { executeCommand?: (cmd: [string | undefined, string]) => void; value: string }
       | null;
     if (field?.executeCommand) {
       field.executeCommand(["insert", latex]);
