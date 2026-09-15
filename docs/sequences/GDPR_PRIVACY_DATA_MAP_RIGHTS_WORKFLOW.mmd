@@ -9,7 +9,7 @@ sequenceDiagram
 
     User->>UI: open "My data"
     UI->>Summary: get_my_data_summary()
-    Summary-->>UI: counts (peer_conversation_count, peer_message_count, etc.) for the caller only
+    Summary-->>UI: counts (peer_messages, peer_attachments, etc.) for the caller only
     User->>UI: choose export/deletion action
     UI->>Edge: requestMyDataDeletion(mode)
     Edge-->>UI: result summary
