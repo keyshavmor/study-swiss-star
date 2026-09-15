@@ -1,4 +1,5 @@
 /** Question-mix arithmetic and setup validation for assessment configuration. */
+import type { TranslationKey } from "@/lib/i18n";
 import {
   QUESTION_TYPES,
   type AssessmentConfig,
@@ -47,7 +48,7 @@ export function setMixCount(mix: QuestionMix, type: QuestionType, count: number)
 
 export interface SetupIssue {
   field: "questionMix" | "timeLimit" | "sourceScope" | "subject" | "total";
-  messageKey: string;
+  messageKey: TranslationKey;
 }
 
 /** Pure validation used by the wizard and by tests. */

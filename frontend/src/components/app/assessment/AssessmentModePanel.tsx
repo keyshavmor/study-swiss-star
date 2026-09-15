@@ -5,7 +5,7 @@
  * answers live only in memory: nothing is written to localStorage, and leaving
  * the panel, changing route or signing out requests backend cleanup.
  */
-import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
+import { useCallback, useEffect, useReducer, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useI18n } from "@/lib/i18n/provider";
 import { track } from "@/lib/telemetry";
@@ -15,7 +15,6 @@ import {
   assessmentReducer,
   createSession,
   isEphemeral,
-  reviewSummary,
 } from "@/lib/assessment/lifecycle";
 import { isPreviewAdapterEnabled } from "@/lib/assessment/preview-adapter";
 import {
@@ -27,18 +26,26 @@ import {
 import { AssessmentResults } from "./AssessmentResults";
 import { AssessmentRunner } from "./AssessmentRunner";
 import { AssessmentSetup } from "./AssessmentSetup";
+import { QuickCheckSetup } from "./QuickCheckPanel";
 import {
   AssessmentReadyScreen,
   GenerationWaitingRoom,
   GradingPending,
 } from "./GenerationWaitingRoom";
 
-const KIND_TITLE_KEY: Record<AssessmentKind, string> = {
+const KIND_TITLE_KEY = {
   quick_check: "assessment.mode.quickCheck",
   practice: "assessment.mode.practice",
   quiz: "assessment.mode.quiz",
   mock_exam: "assessment.mode.mockExam",
-};
+} as const satisfies Record<AssessmentKind, string>;
+
+const KIND_INTRO_KEY = {
+  quick_check: "assessment.mode.quickCheck.intro",
+  practice: "assessment.mode.practice.intro",
+  quiz: "assessment.mode.quiz.intro",
+  mock_exam: "assessment.mode.mockExam.intro",
+} as const satisfies Record<AssessmentKind, string>;
 
 export interface AssessmentContext {
   subjectSlug: string;
@@ -269,8 +276,6 @@ export function AssessmentModePanel({
 
   /* ------------------------------------------------------------ actions */
 
-  const summary = useMemo(() => reviewSummary(session, isAnswered), [session]);
-
   function begin() {
     dispatch({
       type: "begin",
@@ -418,7 +423,16 @@ export function AssessmentModePanel({
           {t("assessment.quitConfirm.recorded")}
         </p>
       )}
-      <p className="text-[14.5px] text-muted-foreground">{t(`${KIND_TITLE_KEY[kind]}.intro`)}</p>
+      <p className="text-[14.5px] text-muted-foreground">{t(KIND_INTRO_KEY[kind])}</p>
+      {kind === "quick_check" ? (
+        <QuickCheckSetup
+          config={config}
+          onChange={setConfig}
+          onGenerate={() => void startGeneration()}
+          materials={context.materials}
+          topics={context.topics}
+        />
+      ) : (
       <AssessmentSetup
         config={config}
         onChange={setConfig}
@@ -427,9 +441,7 @@ export function AssessmentModePanel({
         topics={context.topics}
         learningGoals={context.learningGoals}
       />
-      <p className="sr-only" aria-live="polite">
-        {summary.unanswered.length > 0 ? "" : ""}
-      </p>
+      )}
     </div>
   );
 }
