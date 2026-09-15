@@ -51,26 +51,20 @@ When the identifier does **not** contain `@`, the app normalises it
 (`USERNAME_PATTERN = /^[a-z0-9._-]{3,30}$/`, `AuthForm.tsx:35-51`) before calling:
 
 ```
-supabase.functions.invoke("username-login", { body: { username, password, captcha_token } })
+supabase.functions.invoke("username-login", { body: { username, password } })
 ```
 
-- **Caller:** `frontend/src/components/AuthForm.tsx:94`.
-- **v3 contract (verified 2026-09-15):** every expected outcome is HTTP 200 with a payload —
+- **Caller:** `frontend/src/components/AuthForm.tsx`.
+- **v4 contract (no CAPTCHA):** every expected outcome is HTTP 200 with a payload —
   `{ ok: true, access_token, refresh_token, expires_in, token_type }`,
-  `{ ok: false, error_code: "invalid_credentials" }`,
-  `{ ok: false, error_code: "captcha_required" }`,
-  `{ ok: false, error_code: "captcha_failed" }` or
+  `{ ok: false, error_code: "invalid_credentials" }` or
   `{ ok: false, error_code: "authentication_unavailable" }`. An ordinary wrong password is NOT an
-  HTTP 401 runtime error any more.
-- **Username login is CAPTCHA-protected too:** v3 performs its internal password grant with
-  `options.captchaToken`, so the browser MUST supply a fresh one-time challenge token as
-  `captcha_token` in the request body. The frontend therefore renders the CAPTCHA widget for ALL
-  password paths — email sign in, username sign in, signup and password reset — holds the token in
-  component state only, sends it once, and clears it after every attempt. It is never persisted,
-  logged or included in telemetry.
-- **CAPTCHA outcome mapping:** `captcha_required` → `auth.captchaRequired`, `captcha_failed` →
-  `auth.captchaFailed`. Neither is ever shown as wrong credentials. Missing public widget
-  configuration fails closed with `auth.captchaUnavailable` before any request is sent.
+  HTTP 401 runtime error. The request body carries ONLY `username` and `password`; the Edge
+  Function performs its internal password grant without a challenge token, which requires the
+  dashboard Bot and Abuse Protection prerequisite above.
+- **Unrecognised error codes** (including legacy `captcha_required` / `captcha_failed`) fall back
+  to the generic invalid-credentials message; the frontend has no challenge flow.
+
 - **On success:** the frontend immediately calls
   `supabase.auth.setSession({ access_token, refresh_token })`, then enters
   `resolveStartupDestination()` (compliance → language → admission → model → Home).
