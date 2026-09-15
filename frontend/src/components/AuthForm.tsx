@@ -196,18 +196,9 @@ export function AuthForm() {
     if (error) {
       // The raw message is never shown; only a stable code/status decides copy.
       // A 500 / `unexpected_failure` can equally be a service outage, so it is
-      // NOT blanket-mapped to "username taken": re-check the exact username and
-      // only say it is taken when availability confirms that.
-      if (error.code === "unexpected_failure" || error.status === 500) {
-        const recheck = await supabase.functions.invoke<UsernameAvailabilityResult>(
-          "username-availability",
-          { body: { username: normalised } },
-        );
-        if (isDuplicateUsernameAfterSignupError(recheck)) {
-          throw new UiError(t("auth.usernameTaken"));
-        }
-        throw new UiError(t("auth.errorGeneric"));
-      }
+      // NOT special-cased to "username taken" at all: the availability preflight
+      // above already handles the normal duplicate case, and stable duplicate
+      // codes are mapped by the shared safe mapper.
       throw new UiError(localizedAuthError(t, error));
     }
     track({ event_name: "auth_signup_succeeded", feature: "auth" });

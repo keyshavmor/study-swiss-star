@@ -558,7 +558,8 @@ export type Database = {
           document_version: string;
           accepted_at: string;
           withdrawn_at: string | null;
-          consent_source: string | null;
+          /** CURRENT SUPABASE (verified 2026-09-15): NOT NULL with a default. */
+          consent_source: string;
           created_at: string;
         };
         Insert: never;
