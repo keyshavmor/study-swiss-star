@@ -32,7 +32,7 @@ export const Route = createFileRoute("/_authenticated/onboarding/language")({
 });
 
 function LanguageOnboardingPage() {
-  const { t, language, setLanguage } = useI18n();
+  const { t, setLanguage } = useI18n();
   const navigate = useNavigate();
   const [selected, setSelected] = useState<LanguageCode | null>(null);
   const [saving, setSaving] = useState(false);
@@ -142,7 +142,6 @@ function LanguageOnboardingPage() {
             {saving ? t("onboarding.language.saving") : t("onboarding.language.continue")}
           </Button>
         </div>
-        <p className="mt-3 text-center text-[12px] text-muted-foreground">{language}</p>
       </div>
     </div>
   );
