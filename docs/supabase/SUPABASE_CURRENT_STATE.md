@@ -63,3 +63,19 @@ externally to this repository (not in `supabase/functions/` here) — CURRENT �
   30-minute assistant-media retention lifecycle.
 - `EDGE_FUNCTIONS.md` — per-function contracts.
 - `USER_PREFERENCES_CONTRACT.md` — `user_preferences.preferences` keys.
+
+
+## Added this pass — authenticated startup flow
+
+Signed out → `/` → `/onboarding/language` (once, CURRENT SUPABASE flag
+`language_onboarding_completed`) → `/onboarding/model` (every new browser session, CURRENT
+FRONTEND sessionStorage gate `alim.ai_session.v1`) → `/home`. Guard: `_authenticated/route.tsx`.
+Model preparation backend (`/api/model/prepare`, `/api/model/operation`) is EXPECTED LOCAL BACKEND
+CONTRACT / BACKEND TODO FOR CODEX. Resource policy: 50/50/50 admission, 30/25/30 runtime floors —
+CURRENT SUPABASE `get_ai_runtime_policy()`. Model catalog: CURRENT SUPABASE `ai_model_catalog`
+(10 Qwen entries), hard-coded list is fallback only. The per-user `auto_storage_cleanup`
+preference is REMOVED; storage cleanup is now the platform-wide 5-minute cron job described in
+`docs/supabase/STORAGE_LIFECYCLES.md`. See `docs/sequences/POST_LOGIN_STARTUP.mmd`,
+`LANGUAGE_ONBOARDING.mmd`, `MODEL_SELECTION_READINESS.mmd`, `MODEL_CACHED_SHARED_DOWNLOAD.mmd`,
+`RESOURCE_BLOCKED_NON_AI.mmd`, `SETTINGS_MODEL_RETRY.mmd`, `MODEL_DOWNLOAD_DEDUPLICATION.mmd`,
+`AI_SESSION_STATE_MACHINE.mmd`, `STORAGE_CAPACITY_CLEANUP.mmd`.
