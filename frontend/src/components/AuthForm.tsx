@@ -139,12 +139,14 @@ export function AuthForm() {
     if (invalid) throw new UiError(invalid);
 
     const { data, error } = await supabase.functions.invoke<UsernameLoginResult>("username-login", {
-      body: { username: normalised, password },
+      body: usernameLoginRequest(normalised, password, verifiedCaptchaTokenValue()),
     });
     // A transport/runtime failure or an unavailable auth service is NOT a wrong
     // password: show a generic service error instead of blaming the credentials.
     const outcome = classifyUsernameLogin(data, error);
     if (outcome.kind === "unavailable") throw new UiError(t("auth.errorGeneric"));
+    if (outcome.kind === "captcha_required") throw new UiError(t("auth.captchaRequired"));
+    if (outcome.kind === "captcha_failed") throw new UiError(t("auth.captchaFailed"));
     if (outcome.kind === "invalid_credentials") {
       // Deliberately generic: never reveal whether the username exists, and
       // never surface the account email behind it.
