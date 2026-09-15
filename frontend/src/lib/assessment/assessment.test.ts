@@ -8,9 +8,9 @@ import {
 } from "./config";
 import { assessmentReducer, createSession, isDurable, isEphemeral } from "./lifecycle";
 import {
-  answerKeySchema,
   isAnswered,
   publicQuestionSchema,
+  type AnswerKey,
   type AssessmentConfig,
   type PublicQuestion,
 } from "./types";
@@ -65,13 +65,11 @@ describe("question contract", () => {
     expect(parsed).not.toHaveProperty("modelAnswer");
   });
 
-  it("keeps the answer key in a separate schema", () => {
-    const key = answerKeySchema.safeParse({
-      questionId: "q1",
-      type: "multiple_choice",
-      correctOptionIds: ["a"],
-    });
-    expect(key.success).toBe(true);
+  it("keeps the answer key in a separate server-only shape", () => {
+    const key: AnswerKey = { questionId: "q1", correctOptionIds: ["a"] };
+    // The public question schema strips anything that resembles an answer key.
+    const parsed = publicQuestionSchema.parse({ ...mcq, ...key }) as Record<string, unknown>;
+    expect(parsed).not.toHaveProperty("correctOptionIds");
   });
 
   it("treats empty answers as unanswered", () => {
