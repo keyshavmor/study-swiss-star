@@ -527,11 +527,9 @@ export function AuthForm() {
           </div>
         )}
 
-        {(mode === "signup" ||
-          mode === "reset" ||
-          (mode === "signin" && identifier.includes("@"))) && (
-          <AuthCaptcha onToken={handleCaptchaToken} resetNonce={captchaResetNonce} />
-        )}
+        {/* Every password path (email sign in, username sign in, signup, reset)
+            is CAPTCHA-protected in production. */}
+        <AuthCaptcha onToken={handleCaptchaToken} resetNonce={captchaResetNonce} />
 
         <Button type="submit" className="w-full" disabled={isLoading}>
           {isLoading ? t("auth.pleaseWait") : submitLabel}
