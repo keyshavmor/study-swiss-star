@@ -70,8 +70,36 @@ flowchart TB
   CTXMGR --> MEDIAPROC
   CTXMGR --> WEBRET
 
+
+  subgraph BROWSER2["Browser (compliance/messaging/system-health screens, this pass)"]
+    COMPLIANCEUI["ComplianceOnboarding, SystemAdmissionGate"]
+    LEGALUI["LegalDocumentPage"]
+    MESSAGINGUI["messaging/* components"]
+    SYSHEALTHUI["SystemHealthPanel"]
+    DATARIGHTSUI["DataRightsPanel"]
+  end
+
+  subgraph LOCALMACHINE2["Trust boundary: Student local machine (admission/safety/messaging, this pass)"]
+    ADMISSIONEP["/api/system/admission/check, /api/system/health,<br/>/api/system/session/heartbeat, /api/system/runtime/release,<br/>/api/system/model/recommendation<br/>EXPECTED BACKEND CONTRACT"]
+    SAFETYEP["/api/safety/moderate, /api/safety/attachment-scan<br/>EXPECTED BACKEND CONTRACT"]
+    PEERSENDEP["/api/peer-messaging/send<br/>EXPECTED BACKEND CONTRACT"]
+  end
+
+  ROUTER --> COMPLIANCEUI & LEGALUI & MESSAGINGUI & SYSHEALTHUI & DATARIGHTSUI
+  COMPLIANCEUI -->|"fail-closed admission"| ADMISSIONEP
+  SYSHEALTHUI -->|"unavailable when missing"| ADMISSIONEP
+  ASSISTANT -->|"moderate before store/answer"| SAFETYEP
+  MESSAGINGUI -->|"fail-closed send"| SAFETYEP
+  MESSAGINGUI -->|"fail-closed send"| PEERSENDEP
+  COMPLIANCEUI --> SUPACLIENT
+  MESSAGINGUI --> SUPACLIENT
+  DATARIGHTSUI --> SUPACLIENT
+  DATARIGHTSUI -->|"delete-my-data"| SEDGE
+
 %% Added this pass: see docs/sequences/POST_LOGIN_STARTUP.mmd and related new sequence
 %% diagrams for the authenticated startup flow (language onboarding once, per-session model
 %% gate, EXPECTED LOCAL BACKEND CONTRACT for model prepare/poll, CURRENT SUPABASE ai_model_catalog
 %% and get_ai_runtime_policy 50/50/50 admission + 30/25/30 runtime floors). auto_storage_cleanup
 %% user preference removed; storage cleanup is now a platform-wide cron (STORAGE_CAPACITY_CLEANUP.mmd).
+
+%% Added this pass: compliance onboarding, system admission gate, suspension, legal document routes, peer messaging surfaces and system health panel. See docs/sequences/STARTUP_COMPLIANCE_LANGUAGE_ADMISSION_MODEL_HOME.mmd, docs/sequences/PEER_CHAT_CREATION_BY_USERNAME.mmd, docs/sequences/SYSTEM_HEALTH_AGGREGATION.mmd and docs/contracts/BACKEND_GAP_MATRIX.md.

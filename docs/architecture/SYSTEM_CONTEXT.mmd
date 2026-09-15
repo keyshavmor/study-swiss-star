@@ -37,8 +37,26 @@ C4Context
   Rel(webapp, oauth, "Sign in", "OAuth2, CURRENT - EXTERNAL INTEGRATION")
   Rel(supabase, google, "OAuth token exchange", "CURRENT - EXTERNAL INTEGRATION")
 
+
+  Person(guardian, "Parent/guardian", "Consents for minor accounts; receives human-review notification for confirmed second safety strikes")
+  Person(peer, "Peer student", "Recipient/sender of direct peer messages, exact-username discovery only")
+
+  Enterprise_Boundary(localmachine2, "Trust boundary: Student local machine (system/safety/messaging surfaces)") {
+    System(admission, "System admission + health endpoints", "/api/system/admission/check, /api/system/health, /api/system/session/heartbeat, /api/system/runtime/release, /api/system/model/recommendation - EXPECTED BACKEND CONTRACT")
+    System(safety, "Safety moderation + attachment scan endpoints", "/api/safety/moderate, /api/safety/attachment-scan - EXPECTED BACKEND CONTRACT")
+    System(peermsg, "Peer messaging send endpoint", "/api/peer-messaging/send - EXPECTED BACKEND CONTRACT")
+  }
+
+  Rel(webapp, admission, "Admission check + heartbeat + release, fail-closed", "HTTPS via server route, EXPECTED BACKEND CONTRACT")
+  Rel(webapp, safety, "Moderate chat/message text before storing or answering", "HTTPS via server route, EXPECTED BACKEND CONTRACT")
+  Rel(webapp, peermsg, "Send direct message after allow verdict", "HTTPS via server route, EXPECTED BACKEND CONTRACT")
+  Rel(guardian, supabase, "Reviews guardian_notification_queue item after confirmed second strike", "HUMAN review, CURRENT - SUPABASE (declared)")
+  Rel(peer, webapp, "Sends/receives peer messages", "HTTPS, CURRENT")
+
 %% Added this pass: see docs/sequences/POST_LOGIN_STARTUP.mmd and related new sequence
 %% diagrams for the authenticated startup flow (language onboarding once, per-session model
 %% gate, EXPECTED LOCAL BACKEND CONTRACT for model prepare/poll, CURRENT SUPABASE ai_model_catalog
 %% and get_ai_runtime_policy 50/50/50 admission + 30/25/30 runtime floors). auto_storage_cleanup
 %% user preference removed; storage cleanup is now a platform-wide cron (STORAGE_CAPACITY_CLEANUP.mmd).
+
+%% Added this pass: compliance onboarding, system admission gate, suspension, legal document routes, peer messaging surfaces and system health panel. See docs/sequences/STARTUP_COMPLIANCE_LANGUAGE_ADMISSION_MODEL_HOME.mmd, docs/sequences/PEER_CHAT_CREATION_BY_USERNAME.mmd, docs/sequences/SYSTEM_HEALTH_AGGREGATION.mmd and docs/contracts/BACKEND_GAP_MATRIX.md.
