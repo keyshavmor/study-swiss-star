@@ -219,7 +219,13 @@ export function AuthForm() {
     }
     toast.success(t("auth.checkEmailToConfirm"));
     setMode("signin");
-    setIdentifier(normalised);
+    // Prefill the EMAIL, not the username: an immediate retry must go through
+    // normal email auth so Supabase can answer `email_not_confirmed`. Username
+    // login deliberately returns generic invalid credentials for an unconfirmed
+    // account, which makes a successful signup look broken.
+    const pendingEmail = signupEmail.trim();
+    setIdentifier(pendingEmail);
+    setPendingConfirmationEmail(pendingEmail);
     setPassword("");
   };
 
