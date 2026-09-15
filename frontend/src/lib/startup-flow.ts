@@ -1,18 +1,29 @@
 /**
  * Authenticated startup flow resolution.
  *
- * SIGNED OUT → sign in → language onboarding (once, Supabase flag) → model
- * readiness gate (every new browser session) → Home (AI-ready or non-AI).
+ * SIGNED OUT → sign in → COMPLIANCE / SAFETY ONBOARDING (once, Supabase flag)
+ * → LANGUAGE ONBOARDING (once, Supabase flag) → SYSTEM ADMISSION GATE (every
+ * new browser session, local backend authority) → MODEL READINESS GATE (every
+ * admitted browser session) → Home (AI-ready or non-AI).
+ *
+ * A suspended account (`account_compliance.account_status =
+ * 'suspended_pending_review'`) is routed to the suspended screen before every
+ * ordinary product page.
  */
 import { fetchPreferences } from "@/lib/account-data";
+import { fetchAccountCompliance } from "@/lib/compliance";
 import { modelGateRequired } from "@/lib/ai-session";
+import { admissionGateRequired } from "@/lib/admission-session";
 
+export const COMPLIANCE_ONBOARDING_PATH = "/onboarding/compliance";
 export const LANGUAGE_ONBOARDING_PATH = "/onboarding/language";
+export const ADMISSION_ONBOARDING_PATH = "/onboarding/system-admission";
 export const MODEL_ONBOARDING_PATH = "/onboarding/model";
+export const SUSPENDED_PATH = "/account/suspended";
 export const HOME_PATH = "/home";
 
 /** Routes that must stay reachable while the startup flow is incomplete. */
-export const STARTUP_EXEMPT_PREFIXES = ["/onboarding", "/auth"] as const;
+export const STARTUP_EXEMPT_PREFIXES = ["/onboarding", "/auth", "/account", "/legal"] as const;
 
 export function isStartupExempt(pathname: string): boolean {
   return STARTUP_EXEMPT_PREFIXES.some(
@@ -20,15 +31,19 @@ export function isStartupExempt(pathname: string): boolean {
   );
 }
 
-// One successful read per browser session is enough; the flag only flips
-// through the onboarding screen, which invalidates the cache itself.
+// One successful read per browser session is enough; the flags only flip
+// through onboarding screens, which invalidate the cache themselves.
 // A FAILED read is never cached and never treated as "completed".
 let languageFlagCache: boolean | null = null;
+let complianceCache: { completed: boolean; suspended: boolean } | null = null;
 let preferencesReadFailed = false;
+let complianceReadFailed = false;
 
 export function invalidateStartupCache(): void {
   languageFlagCache = null;
+  complianceCache = null;
   preferencesReadFailed = false;
+  complianceReadFailed = false;
 }
 
 /** True when the last startup preference read failed and is worth retrying. */
@@ -36,7 +51,37 @@ export function startupPreferencesUnavailable(): boolean {
   return preferencesReadFailed;
 }
 
+/** True when the last compliance read failed and is worth retrying. */
+export function complianceStateUnavailable(): boolean {
+  return complianceReadFailed;
+}
+
 export type LanguageOnboardingStatus = "completed" | "required" | "unknown";
+export type ComplianceStatus = "completed" | "required" | "suspended" | "unknown";
+
+/**
+ * Resolves the persisted compliance state. A transient read failure yields
+ * `"unknown"` and is NEVER treated as completed — compliance must never be
+ * inferred from auth metadata or from a failed request.
+ */
+export async function complianceStatus(): Promise<ComplianceStatus> {
+  if (complianceCache) {
+    if (complianceCache.suspended) return "suspended";
+    return complianceCache.completed ? "completed" : "required";
+  }
+  try {
+    const compliance = await fetchAccountCompliance();
+    const suspended = compliance?.accountStatus === "suspended_pending_review";
+    const completed = compliance?.complianceOnboardingCompleted === true;
+    complianceCache = { completed, suspended };
+    complianceReadFailed = false;
+    if (suspended) return "suspended";
+    return completed ? "completed" : "required";
+  } catch {
+    complianceReadFailed = true;
+    return "unknown";
+  }
+}
 
 /**
  * Resolves the persisted language-onboarding flag.
@@ -63,15 +108,26 @@ export async function languageOnboardingCompleted(): Promise<boolean> {
 }
 
 export type StartupDestination =
-  typeof LANGUAGE_ONBOARDING_PATH | typeof MODEL_ONBOARDING_PATH | typeof HOME_PATH;
+  | typeof COMPLIANCE_ONBOARDING_PATH
+  | typeof LANGUAGE_ONBOARDING_PATH
+  | typeof ADMISSION_ONBOARDING_PATH
+  | typeof MODEL_ONBOARDING_PATH
+  | typeof SUSPENDED_PATH
+  | typeof HOME_PATH;
 
 /**
- * Where an authenticated user belongs right now. While language completion is
- * unknown the user stays on the language onboarding screen, which renders a
- * localized retry state — product routes stay unreachable.
+ * Where an authenticated user belongs right now. While a flag is unknown the
+ * user stays on the corresponding onboarding screen, which renders a localized
+ * retry state — product routes stay unreachable.
  */
 export async function resolveStartupDestination(): Promise<StartupDestination> {
+  const compliance = await complianceStatus();
+  if (compliance === "suspended") return SUSPENDED_PATH;
+  if (compliance !== "completed") return COMPLIANCE_ONBOARDING_PATH;
   if ((await languageOnboardingStatus()) !== "completed") return LANGUAGE_ONBOARDING_PATH;
+  // Admission FAILS CLOSED: without a lease from the local backend the session
+  // is not admitted and product routes stay unreachable.
+  if (admissionGateRequired()) return ADMISSION_ONBOARDING_PATH;
   if (modelGateRequired()) return MODEL_ONBOARDING_PATH;
   return HOME_PATH;
 }
@@ -81,7 +137,9 @@ export async function resolveStartupDestination(): Promise<StartupDestination> {
  * requested page may render.
  */
 export async function startupRedirectFor(pathname: string): Promise<StartupDestination | null> {
-  if (isStartupExempt(pathname)) return null;
   const destination = await resolveStartupDestination();
+  // The suspended screen outranks every exemption except itself.
+  if (destination === SUSPENDED_PATH) return pathname === SUSPENDED_PATH ? null : SUSPENDED_PATH;
+  if (isStartupExempt(pathname)) return null;
   return destination === HOME_PATH ? null : destination;
 }

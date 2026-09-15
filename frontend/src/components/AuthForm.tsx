@@ -6,7 +6,7 @@
  * (language onboarding, then the per-session model readiness gate).
  */
 import { useState } from "react";
-import { useNavigate } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,6 +17,9 @@ import { toast } from "sonner";
 import { UiError, localizedMessage } from "@/lib/ui-error";
 import { useI18n } from "@/lib/i18n/provider";
 import type { TranslationKey } from "@/lib/i18n/messages";
+import { Checkbox } from "@/components/ui/checkbox";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { validateComplianceInput, type ComplianceValidationError } from "@/lib/compliance";
 
 type Mode = "signin" | "signup" | "reset";
 type OAuthProvider = "github" | "linkedin_oidc" | "spotify";
@@ -68,6 +71,14 @@ export function AuthForm() {
   const [signupEmail, setSignupEmail] = useState("");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [signupAccountType, setSignupAccountType] = useState<"student" | "teacher" | "">("");
+  const [signupDob, setSignupDob] = useState("");
+  const [signupGuardianEmail, setSignupGuardianEmail] = useState("");
+  const [signupAcceptedTerms, setSignupAcceptedTerms] = useState(false);
+  const [signupAcceptedPrivacy, setSignupAcceptedPrivacy] = useState(false);
+  const [signupAcceptedAcceptableUse, setSignupAcceptedAcceptableUse] = useState(false);
+  const [signupAcceptedChildSafety, setSignupAcceptedChildSafety] = useState(false);
+  const [complianceErrors, setComplianceErrors] = useState<ComplianceValidationError[]>([]);
   const [resetEmail, setResetEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
@@ -122,6 +133,21 @@ export function AuthForm() {
     const invalid = validateUsername(normalised, t);
     if (invalid) throw new UiError(invalid);
 
+    const complianceErrs = validateComplianceInput({
+      accountType: signupAccountType,
+      dateOfBirth: signupDob,
+      guardianEmail: signupGuardianEmail,
+      accountEmail: signupEmail,
+      acceptedTerms: signupAcceptedTerms,
+      acceptedPrivacy: signupAcceptedPrivacy,
+      acceptedAcceptableUse: signupAcceptedAcceptableUse,
+      acceptedChildSafety: signupAcceptedChildSafety,
+    });
+    setComplianceErrors(complianceErrs);
+    if (complianceErrs.length > 0 || signupAccountType === "") {
+      throw new UiError(t(`compliance.error.${complianceErrs[0]}` as TranslationKey));
+    }
+
     // Ask the availability function first, so the student sees a clear message
     // instead of a database constraint error. When the check itself cannot run
     // we continue and let the unique index stay the final authority.
@@ -138,12 +164,19 @@ export function AuthForm() {
       }
     }
 
+    // DOB/guardian email are only a prefill hint here — the compliance RPC on
+    // /onboarding/compliance is the sole authority that persists them.
     const { error } = await supabase.auth.signUp({
       email: signupEmail.trim(),
       password,
       options: {
         emailRedirectTo: `${window.location.origin}/`,
-        data: { username: normalised },
+        data: {
+          username: normalised,
+          account_type_prefill: signupAccountType,
+          date_of_birth_prefill: signupDob,
+          guardian_email_prefill: signupAccountType === "student" ? signupGuardianEmail : null,
+        },
       },
     });
     if (error) {
@@ -157,6 +190,7 @@ export function AuthForm() {
     setMode("signin");
     setIdentifier(normalised);
     setPassword("");
+    setComplianceErrors([]);
   };
 
   const handleReset = async () => {
@@ -279,6 +313,115 @@ export function AuthForm() {
                 required
               />
             </div>
+
+            <div className="space-y-2">
+              <Label className="text-[13px] font-semibold text-muted-foreground">
+                {t("signup.accountType.label")}
+              </Label>
+              <RadioGroup
+                value={signupAccountType}
+                onValueChange={(value) => setSignupAccountType(value as "student" | "teacher")}
+                className="grid gap-2 sm:grid-cols-2"
+              >
+                <label className="flex cursor-pointer items-center gap-2 rounded-md border border-input px-3 py-2">
+                  <RadioGroupItem value="student" id="signup-account-student" />
+                  <span className="text-[13.5px] text-foreground">
+                    {t("signup.accountType.student")}
+                  </span>
+                </label>
+                <label className="flex cursor-pointer items-center gap-2 rounded-md border border-input px-3 py-2">
+                  <RadioGroupItem value="teacher" id="signup-account-teacher" />
+                  <span className="text-[13.5px] text-foreground">
+                    {t("signup.accountType.teacher")}
+                  </span>
+                </label>
+              </RadioGroup>
+              <p className="text-[12.5px] text-muted-foreground">{t("signup.accountType.hint")}</p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="signupDob" className="text-[13px] font-semibold text-muted-foreground">
+                {t("signup.dob.label")}
+              </Label>
+              <Input
+                id="signupDob"
+                type="date"
+                value={signupDob}
+                onChange={(e) => setSignupDob(e.target.value)}
+                required
+              />
+              <p className="text-[12.5px] text-muted-foreground">{t("signup.dob.hint")}</p>
+            </div>
+
+            {signupAccountType === "student" && (
+              <div className="space-y-2">
+                <Label
+                  htmlFor="signupGuardianEmail"
+                  className="text-[13px] font-semibold text-muted-foreground"
+                >
+                  {t("signup.guardianEmail.label")}
+                </Label>
+                <Input
+                  id="signupGuardianEmail"
+                  type="email"
+                  value={signupGuardianEmail}
+                  onChange={(e) => setSignupGuardianEmail(e.target.value)}
+                  required
+                />
+                <p className="text-[12.5px] text-muted-foreground">
+                  {t("signup.guardianEmail.hint")}
+                </p>
+              </div>
+            )}
+
+            <div className="space-y-2 rounded-md border border-input p-3">
+              <p className="text-[13px] font-semibold text-muted-foreground">
+                {t("signup.consent.title")}
+              </p>
+              <SignupConsentRow
+                id="signup-consent-terms"
+                checked={signupAcceptedTerms}
+                onChange={setSignupAcceptedTerms}
+                label={t("signup.consent.terms")}
+                href="/legal/terms"
+                linkLabel={t("signup.consent.openLink")}
+              />
+              <SignupConsentRow
+                id="signup-consent-privacy"
+                checked={signupAcceptedPrivacy}
+                onChange={setSignupAcceptedPrivacy}
+                label={t("signup.consent.privacy")}
+                href="/legal/privacy"
+                linkLabel={t("signup.consent.openLink")}
+              />
+              <SignupConsentRow
+                id="signup-consent-acceptable-use"
+                checked={signupAcceptedAcceptableUse}
+                onChange={setSignupAcceptedAcceptableUse}
+                label={t("signup.consent.acceptableUse")}
+                href="/legal/acceptable-use"
+                linkLabel={t("signup.consent.openLink")}
+              />
+              <SignupConsentRow
+                id="signup-consent-child-safety"
+                checked={signupAcceptedChildSafety}
+                onChange={setSignupAcceptedChildSafety}
+                label={t("signup.consent.childSafety")}
+                href="/legal/child-safety"
+                linkLabel={t("signup.consent.openLink")}
+              />
+              <p className="text-[12px] text-muted-foreground">{t("signup.consent.required")}</p>
+            </div>
+
+            {complianceErrors.length > 0 && (
+              <div className="space-y-1 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2">
+                {complianceErrors.map((code) => (
+                  <p key={code} className="text-[12.5px] text-destructive">
+                    {t(`compliance.error.${code}` as TranslationKey)}
+                  </p>
+                ))}
+              </div>
+            )}
           </>
         )}
 
@@ -389,6 +532,41 @@ export function AuthForm() {
           </>
         )}
       </p>
+    </div>
+  );
+}
+
+function SignupConsentRow({
+  id,
+  checked,
+  onChange,
+  label,
+  href,
+  linkLabel,
+}: {
+  id: string;
+  checked: boolean;
+  onChange: (value: boolean) => void;
+  label: string;
+  href: string;
+  linkLabel: string;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-3">
+      <div className="flex items-center gap-2">
+        <Checkbox id={id} checked={checked} onCheckedChange={(value) => onChange(value === true)} />
+        <Label htmlFor={id} className="cursor-pointer text-[13px] font-normal text-foreground">
+          {label}
+        </Label>
+      </div>
+      <Link
+        to={href}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="shrink-0 text-[12.5px] font-semibold text-primary hover:text-primary-hover"
+      >
+        {linkLabel}
+      </Link>
     </div>
   );
 }

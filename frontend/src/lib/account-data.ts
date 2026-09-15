@@ -61,6 +61,9 @@ export interface UserPreferences {
    * when `app_language` already holds the "en" default.
    */
   language_onboarding_completed: boolean;
+  /** Peer-message notification preferences (messaging area). Additive keys. */
+  peer_message_notifications: boolean;
+  browser_message_notifications: boolean;
 }
 
 export const DEFAULT_PREFERENCES: UserPreferences = {
@@ -73,6 +76,8 @@ export const DEFAULT_PREFERENCES: UserPreferences = {
   daily_study_summary: true,
   sound_effects: false,
   language_onboarding_completed: false,
+  peer_message_notifications: true,
+  browser_message_notifications: false,
 };
 
 function asRecord(value: Json | null | undefined): Record<string, unknown> {
@@ -222,6 +227,8 @@ export async function fetchPreferences(): Promise<UserPreferences> {
     daily_study_summary: bool("daily_study_summary") as boolean,
     sound_effects: bool("sound_effects") as boolean,
     language_onboarding_completed: bool("language_onboarding_completed") as boolean,
+    peer_message_notifications: bool("peer_message_notifications") as boolean,
+    browser_message_notifications: bool("browser_message_notifications") as boolean,
   };
 }
 

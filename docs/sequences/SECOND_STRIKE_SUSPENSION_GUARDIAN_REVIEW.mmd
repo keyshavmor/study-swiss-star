@@ -1,0 +1,21 @@
+%% Status: EXPECTED LOCAL BACKEND CONTRACT + CURRENT SUPABASE
+%% Source: frontend/src/lib/safety.types.ts, guardian_notification_queue, account_compliance
+sequenceDiagram
+    participant User
+    participant Backend as EXPECTED local backend classifier
+    participant StrikeFn as apply_confirmed_safety_strike (service-only)
+    participant DB as account_compliance / moderation_events / guardian_notification_queue
+    participant Admin as Human reviewer (admin-only queue)
+
+    User->>Backend: content submitted
+    Backend-->>Backend: CONFIRMED violation #2
+    Backend->>StrikeFn: apply_confirmed_safety_strike(user_id, ...)
+    StrikeFn->>DB: account_compliance.account_status = 'suspended_pending_review'
+    StrikeFn->>DB: insert moderation_events row
+    alt account_type = student
+        StrikeFn->>DB: insert guardian_notification_queue item, status = QUEUED FOR HUMAN REVIEW
+    end
+    Backend-->>User: verdict = block_suspend_pending_review
+    User->>User: next navigation resolves via startup-flow → /account/suspended (outranks all routes)
+    Admin->>DB: reviews guardian_notification_queue item (admin-only)
+    Note over DB: No automatic permanent deletion. No guardian disclosure happens<br/>on an unreviewed AI classification alone — a human reviews first.

@@ -1,0 +1,34 @@
+%% Status: CURRENT FRONTEND + CURRENT SUPABASE + EXPECTED LOCAL BACKEND CONTRACT
+%% Source: frontend/src/lib/attachment-processing.ts, safety-backend.server.ts
+sequenceDiagram
+    participant User
+    participant UI as message composer attach control
+    participant Prep as lib/attachment-processing.ts (prepareAttachment)
+    participant Fn as sendPeerMessage (server fn)
+    participant Backend as EXPECTED /api/peer-messaging/send + /api/safety/attachment-scan
+    participant Bucket as Storage: peer-message-attachments (private)
+
+    User->>UI: pick file
+    UI->>Prep: prepareAttachment(file, maxBytes=250000)
+    alt mime not allowed
+        Prep-->>UI: reject mime_not_allowed
+    else document too large
+        Prep-->>UI: reject document_too_large (documents are never truncated)
+    else image too large
+        Prep->>Prep: iterative scale/quality ladder (canvas re-encode to JPEG)
+        alt fits under 250000 bytes
+            Prep-->>UI: compressed Blob
+        else still too large
+            Prep-->>UI: reject image_compression_failed
+        end
+    end
+    UI->>Fn: sendPeerMessage({ attachments:[{..., data_base64}] })
+    Fn->>Backend: forwards attachment bytes with verified JWT
+    Backend->>Backend: safety scan attachment (BACKEND TODO FOR CODEX)
+    alt scan allow
+        Backend->>Bucket: store object (<=250000 bytes, allow-listed MIME)
+        Backend-->>UI: message + attachment persisted, scan_status recorded
+    else scan block
+        Backend-->>UI: not stored, safety verdict returned
+    end
+    Note over Bucket: No authenticated direct client upload path exists on purpose.

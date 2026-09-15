@@ -2,7 +2,14 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const prefs = { language_onboarding_completed: false, selected_qwen_model: "Qwen/Qwen3.8-27B" };
 let gateRequired = true;
+let admissionRequired = false;
 let readFails = false;
+
+const compliance = {
+  completed: true,
+  suspended: false,
+  fails: false,
+};
 
 vi.mock("@/lib/account-data", () => ({
   fetchPreferences: () =>
@@ -11,11 +18,28 @@ vi.mock("@/lib/account-data", () => ({
 vi.mock("@/lib/ai-session", () => ({
   modelGateRequired: () => gateRequired,
 }));
+vi.mock("@/lib/admission-session", () => ({
+  admissionGateRequired: () => admissionRequired,
+}));
+vi.mock("@/lib/compliance", () => ({
+  fetchAccountCompliance: () =>
+    compliance.fails
+      ? Promise.reject(new Error("read failed"))
+      : Promise.resolve({
+          complianceOnboardingCompleted: compliance.completed,
+          accountStatus: compliance.suspended ? "suspended_pending_review" : "active",
+        }),
+}));
 
 const {
+  ADMISSION_ONBOARDING_PATH,
+  COMPLIANCE_ONBOARDING_PATH,
   HOME_PATH,
   LANGUAGE_ONBOARDING_PATH,
   MODEL_ONBOARDING_PATH,
+  SUSPENDED_PATH,
+  complianceStateUnavailable,
+  complianceStatus,
   invalidateStartupCache,
   isStartupExempt,
   languageOnboardingStatus,
@@ -29,7 +53,11 @@ describe("authenticated startup flow", () => {
     invalidateStartupCache();
     prefs.language_onboarding_completed = false;
     gateRequired = true;
+    admissionRequired = false;
     readFails = false;
+    compliance.completed = true;
+    compliance.suspended = false;
+    compliance.fails = false;
   });
 
   it("sends a first-time user to language onboarding", async () => {
@@ -77,8 +105,68 @@ describe("authenticated startup flow", () => {
   it("keeps onboarding and auth routes reachable so guards cannot loop", async () => {
     expect(isStartupExempt(LANGUAGE_ONBOARDING_PATH)).toBe(true);
     expect(isStartupExempt(MODEL_ONBOARDING_PATH)).toBe(true);
+    expect(isStartupExempt(ADMISSION_ONBOARDING_PATH)).toBe(true);
     expect(isStartupExempt("/auth/update-password")).toBe(true);
+    expect(isStartupExempt("/legal/privacy")).toBe(true);
     expect(isStartupExempt("/home")).toBe(false);
     await expect(startupRedirectFor(MODEL_ONBOARDING_PATH)).resolves.toBeNull();
+  });
+
+  /* ------------------------------------------------------------ compliance */
+
+  it("requires compliance onboarding before language onboarding", async () => {
+    compliance.completed = false;
+    prefs.language_onboarding_completed = true;
+    await expect(resolveStartupDestination()).resolves.toBe(COMPLIANCE_ONBOARDING_PATH);
+    await expect(startupRedirectFor("/home")).resolves.toBe(COMPLIANCE_ONBOARDING_PATH);
+  });
+
+  it("never treats a failed compliance read as completed", async () => {
+    compliance.fails = true;
+    await expect(complianceStatus()).resolves.toBe("unknown");
+    expect(complianceStateUnavailable()).toBe(true);
+    await expect(resolveStartupDestination()).resolves.toBe(COMPLIANCE_ONBOARDING_PATH);
+    await expect(startupRedirectFor("/home")).resolves.toBe(COMPLIANCE_ONBOARDING_PATH);
+  });
+
+  it("routes a suspended account to the suspension screen from anywhere", async () => {
+    compliance.suspended = true;
+    prefs.language_onboarding_completed = true;
+    gateRequired = false;
+    await expect(resolveStartupDestination()).resolves.toBe(SUSPENDED_PATH);
+    await expect(startupRedirectFor("/home")).resolves.toBe(SUSPENDED_PATH);
+    await expect(startupRedirectFor("/messages")).resolves.toBe(SUSPENDED_PATH);
+    // Even otherwise-exempt onboarding routes are outranked by suspension.
+    await expect(startupRedirectFor(LANGUAGE_ONBOARDING_PATH)).resolves.toBe(SUSPENDED_PATH);
+    await expect(startupRedirectFor(SUSPENDED_PATH)).resolves.toBeNull();
+  });
+
+  /* ------------------------------------------------------------- admission */
+
+  it("requires system admission before the model gate", async () => {
+    prefs.language_onboarding_completed = true;
+    admissionRequired = true;
+    await expect(resolveStartupDestination()).resolves.toBe(ADMISSION_ONBOARDING_PATH);
+    await expect(startupRedirectFor("/home")).resolves.toBe(ADMISSION_ONBOARDING_PATH);
+  });
+
+  it("enforces the full order compliance → language → admission → model → home", async () => {
+    compliance.completed = false;
+    admissionRequired = true;
+    await expect(resolveStartupDestination()).resolves.toBe(COMPLIANCE_ONBOARDING_PATH);
+
+    compliance.completed = true;
+    invalidateStartupCache();
+    await expect(resolveStartupDestination()).resolves.toBe(LANGUAGE_ONBOARDING_PATH);
+
+    prefs.language_onboarding_completed = true;
+    invalidateStartupCache();
+    await expect(resolveStartupDestination()).resolves.toBe(ADMISSION_ONBOARDING_PATH);
+
+    admissionRequired = false;
+    await expect(resolveStartupDestination()).resolves.toBe(MODEL_ONBOARDING_PATH);
+
+    gateRequired = false;
+    await expect(resolveStartupDestination()).resolves.toBe(HOME_PATH);
   });
 });

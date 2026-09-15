@@ -1,0 +1,238 @@
+/**
+ * Peer messaging data access (CURRENT SUPABASE, browser side, RLS-scoped).
+ *
+ * Reads run as the signed-in user, so conversation membership isolation is
+ * enforced by production RLS. There is intentionally NO browser write path for
+ * `peer_messages` / `peer_message_attachments`: sending goes through the future
+ * safety backend (`sendPeerMessage` server function) and fails closed until it
+ * exists. Do not work around this.
+ *
+ * Privacy by design: peers are found by EXACT username only
+ * (`find_peer_by_exact_username`). No browsable directory, and no email, date of
+ * birth or guardian address is ever exposed to a peer.
+ */
+import { supabase } from "@/integrations/supabase/client";
+
+export interface PeerMember {
+  userId: string;
+  username: string;
+  preferredName: string | null;
+}
+
+export interface PeerConversationSummary {
+  id: string;
+  lastMessageAt: string | null;
+  updatedAt: string;
+  members: PeerMember[];
+  unreadCount: number;
+  lastMessagePreview: string | null;
+}
+
+export interface PeerMessageRow {
+  id: string;
+  conversationId: string;
+  senderId: string;
+  body: string;
+  createdAt: string;
+  attachments: {
+    id: string;
+    fileName: string;
+    mimeType: string;
+    byteSize: number;
+    bucket: string;
+    objectPath: string;
+    scanStatus: string;
+  }[];
+}
+
+export async function currentUserId(): Promise<string | null> {
+  const { data } = await supabase.auth.getUser();
+  return data.user?.id ?? null;
+}
+
+/** Exact-username lookup. Returns null when no such user exists. */
+export async function findPeerByExactUsername(username: string): Promise<PeerMember | null> {
+  const trimmed = username.trim();
+  if (!trimmed) return null;
+  const { data, error } = await supabase.rpc("find_peer_by_exact_username", {
+    p_username: trimmed,
+  });
+  if (error) throw new Error(error.message);
+  const row = Array.isArray(data) ? data[0] : null;
+  if (!row) return null;
+  return {
+    userId: row.user_id,
+    username: row.username,
+    preferredName: row.preferred_name,
+  };
+}
+
+/** Creates (or returns) the direct conversation with an exact username. */
+export async function getOrCreateDirectConversation(username: string): Promise<string> {
+  const { data, error } = await supabase.rpc("get_or_create_direct_peer_conversation", {
+    p_username: username.trim(),
+  });
+  if (error) throw new Error(error.message);
+  if (typeof data !== "string" || !data) throw new Error("conversation_not_created");
+  return data;
+}
+
+export async function markConversationRead(conversationId: string): Promise<void> {
+  const { error } = await supabase.rpc("mark_peer_conversation_read", {
+    p_conversation_id: conversationId,
+  });
+  if (error) throw new Error(error.message);
+}
+
+/** Conversations the signed-in user belongs to, newest activity first. */
+export async function fetchConversations(): Promise<PeerConversationSummary[]> {
+  const userId = await currentUserId();
+  if (!userId) return [];
+
+  const { data: memberships, error: membershipError } = await supabase
+    .from("peer_conversation_members")
+    .select("conversation_id, last_read_at");
+  if (membershipError) throw new Error(membershipError.message);
+  const conversationIds = (memberships ?? []).map((row) => row.conversation_id);
+  if (conversationIds.length === 0) return [];
+
+  const [{ data: conversations, error: conversationError }, { data: allMembers }, { data: notifications }] =
+    await Promise.all([
+      supabase
+        .from("peer_conversations")
+        .select("*")
+        .in("id", conversationIds)
+        .order("last_message_at", { ascending: false, nullsFirst: false }),
+      supabase
+        .from("peer_conversation_members")
+        .select("conversation_id, user_id")
+        .in("conversation_id", conversationIds),
+      supabase
+        .from("peer_message_notifications")
+        .select("conversation_id, read_at")
+        .in("conversation_id", conversationIds)
+        .is("read_at", null),
+    ]);
+  if (conversationError) throw new Error(conversationError.message);
+
+  const peerIds = new Set<string>();
+  for (const member of allMembers ?? []) {
+    if (member.user_id !== userId) peerIds.add(member.user_id);
+  }
+  const profileMap = new Map<string, { username: string; preferredName: string | null }>();
+  if (peerIds.size > 0) {
+    const { data: profiles } = await supabase
+      .from("profiles")
+      .select("user_id, username, preferred_name")
+      .in("user_id", [...peerIds]);
+    for (const profile of profiles ?? []) {
+      profileMap.set(profile.user_id, {
+        username: profile.username ?? "",
+        preferredName: profile.preferred_name ?? null,
+      });
+    }
+  }
+
+  const unreadByConversation = new Map<string, number>();
+  for (const notification of notifications ?? []) {
+    unreadByConversation.set(
+      notification.conversation_id,
+      (unreadByConversation.get(notification.conversation_id) ?? 0) + 1,
+    );
+  }
+
+  return (conversations ?? []).map((conversation) => ({
+    id: conversation.id,
+    lastMessageAt: conversation.last_message_at,
+    updatedAt: conversation.updated_at,
+    members: (allMembers ?? [])
+      .filter((member) => member.conversation_id === conversation.id && member.user_id !== userId)
+      .map((member) => ({
+        userId: member.user_id,
+        username: profileMap.get(member.user_id)?.username ?? "",
+        preferredName: profileMap.get(member.user_id)?.preferredName ?? null,
+      })),
+    unreadCount: unreadByConversation.get(conversation.id) ?? 0,
+    lastMessagePreview: null,
+  }));
+}
+
+/** Persisted messages of one conversation, oldest first. */
+export async function fetchMessages(conversationId: string): Promise<PeerMessageRow[]> {
+  const { data, error } = await supabase
+    .from("peer_messages")
+    .select("*")
+    .eq("conversation_id", conversationId)
+    .is("deleted_at", null)
+    .order("created_at", { ascending: true });
+  if (error) throw new Error(error.message);
+  const messages = data ?? [];
+  if (messages.length === 0) return [];
+
+  const { data: attachments } = await supabase
+    .from("peer_message_attachments")
+    .select("*")
+    .in(
+      "message_id",
+      messages.map((message) => message.id),
+    );
+
+  return messages.map((message) => ({
+    id: message.id,
+    conversationId: message.conversation_id,
+    senderId: message.sender_id,
+    body: message.body,
+    createdAt: message.created_at,
+    attachments: (attachments ?? [])
+      .filter((attachment) => attachment.message_id === message.id)
+      .map((attachment) => ({
+        id: attachment.id,
+        fileName: attachment.file_name,
+        mimeType: attachment.mime_type,
+        byteSize: attachment.byte_size,
+        bucket: attachment.storage_bucket,
+        objectPath: attachment.object_path,
+        scanStatus: attachment.scan_status,
+      })),
+  }));
+}
+
+/** Total unread notification rows for the badge. */
+export async function fetchUnreadCount(): Promise<number> {
+  const { count, error } = await supabase
+    .from("peer_message_notifications")
+    .select("id", { count: "exact", head: true })
+    .is("read_at", null);
+  if (error) return 0;
+  return count ?? 0;
+}
+
+/** Signed URL for a private attachment. Members only, short-lived. */
+export async function attachmentUrl(bucket: string, objectPath: string): Promise<string | null> {
+  const { data, error } = await supabase.storage.from(bucket).createSignedUrl(objectPath, 300);
+  if (error) return null;
+  return data?.signedUrl ?? null;
+}
+
+/**
+ * Realtime subscription for incoming messages/notifications while signed in.
+ * When the user is signed out nothing is delivered by the browser — messages
+ * simply persist in Supabase and appear as unread on the next login. We do NOT
+ * promise OS push delivery.
+ */
+export function subscribeToPeerMessaging(userId: string, onChange: () => void): () => void {
+  const channel = supabase
+    .channel(`peer-messaging-${userId}`)
+    .on(
+      "postgres_changes",
+      { event: "INSERT", schema: "public", table: "peer_message_notifications", filter: `user_id=eq.${userId}` },
+      () => onChange(),
+    )
+    .on("postgres_changes", { event: "INSERT", schema: "public", table: "peer_messages" }, () =>
+      onChange(),
+    )
+    .subscribe();
+  return () => {
+    void supabase.removeChannel(channel);
+  };
+}

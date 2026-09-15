@@ -1,0 +1,25 @@
+%% Status: CURRENT — SUPABASE
+%% Source: frontend/src/lib/peer-messaging.ts
+sequenceDiagram
+    participant User
+    participant UI as /messages (new conversation)
+    participant Lib as lib/peer-messaging.ts
+    participant RPC1 as find_peer_by_exact_username
+    participant RPC2 as get_or_create_direct_peer_conversation
+    participant DB as peer_conversations / peer_conversation_members
+
+    User->>UI: type exact username
+    UI->>Lib: findPeerByExactUsername(username)
+    Lib->>RPC1: rpc(find_peer_by_exact_username)
+    alt no match
+        RPC1-->>UI: null → "No user with that exact username."
+    else match
+        RPC1-->>UI: { userId, username, preferredName }
+        User->>UI: confirm "Start chat"
+        UI->>Lib: getOrCreateDirectConversation(username)
+        Lib->>RPC2: rpc(get_or_create_direct_peer_conversation)
+        RPC2->>DB: reuse existing 1:1 conversation or create + add both members
+        RPC2-->>UI: conversation_id
+        UI-->>User: navigate to /messages/$conversationId
+    end
+    Note over UI,DB: No browsable directory; only exact-username lookup is exposed.
