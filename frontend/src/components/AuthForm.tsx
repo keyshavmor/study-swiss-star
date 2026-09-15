@@ -16,7 +16,11 @@ import { track, trackFailure } from "@/lib/telemetry";
 import { toast } from "sonner";
 import { UiError, localizedMessage } from "@/lib/ui-error";
 import { localizedAuthError } from "@/lib/auth-errors";
-import { classifyUsernameLogin, type UsernameLoginPayload } from "@/lib/username-login";
+import {
+  classifyUsernameLogin,
+  usernameLoginRequest,
+  type UsernameLoginPayload,
+} from "@/lib/username-login";
 import { useI18n } from "@/lib/i18n/provider";
 import type { TranslationKey } from "@/lib/i18n/messages";
 import { Checkbox } from "@/components/ui/checkbox";
