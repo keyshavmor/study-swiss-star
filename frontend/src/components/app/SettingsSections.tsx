@@ -16,6 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Link } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { ModelReadinessPanel } from "@/components/app/ModelReadinessPanel";
 import { useAiAvailability } from "@/lib/ai-availability";
@@ -41,6 +42,13 @@ import {
   type StorageItemKind,
 } from "@/lib/storage-management";
 import type { StorageUsageStatus } from "@/integrations/supabase/types";
+import {
+  getMessagingPreferences,
+  saveMessagingPreferences,
+  type MessagingPreferences,
+} from "@/lib/messaging-preferences";
+import { fetchLocalBackendHealth } from "@/lib/system.functions";
+import { fetchAccountCompliance, fetchLegalConsents } from "@/lib/compliance";
 import { toast } from "sonner";
 import { track, trackFailure } from "@/lib/telemetry";
 import { cn } from "@/lib/utils";
