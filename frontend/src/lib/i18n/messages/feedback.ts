@@ -35,7 +35,8 @@ export const feedback = {
     "feedback.error.submitFailed": "Dein Feedback wurde nicht gespeichert: {message}",
     "feedback.error.submitFailedGeneric":
       "Dein Feedback wurde nicht gespeichert. Bitte versuche es erneut.",
-    "feedback.error.partial": "Dein Feedback wurde nur teilweise gespeichert. Bitte sende es erneut.",
+    "feedback.error.partial":
+      "Dein Feedback wurde nur teilweise gespeichert. Bitte sende es erneut.",
     "feedback.success.toast": "Danke — dein Feedback wurde gespeichert.",
     "feedback.success.saved": "Gespeichert. Danke — wir lesen jede Nachricht.",
     "feedback.submit": "Feedback senden",
@@ -57,7 +58,8 @@ export const feedback = {
     "feedback.error.submitFailed": "Dis Feedback isch nöd gspicheret worde: {message}",
     "feedback.error.submitFailedGeneric":
       "Dis Feedback isch nöd gspicheret worde. Bitte probier's nomal.",
-    "feedback.error.partial": "Dis Feedback isch nur teilwiis gspicheret worde. Bitte schick es nomal.",
+    "feedback.error.partial":
+      "Dis Feedback isch nur teilwiis gspicheret worde. Bitte schick es nomal.",
     "feedback.success.toast": "Merci — dis Feedback isch gspicheret worde.",
     "feedback.success.saved": "Gspicheret. Merci — mir lise jedi Nachricht.",
     "feedback.submit": "Feedback schicke",
@@ -98,7 +100,8 @@ export const feedback = {
     "feedback.error.tooShort": "Escribe al menos {min} caracteres para que podamos actuar.",
     "feedback.error.submitFailed": "Tu comentario no se guardó: {message}",
     "feedback.error.submitFailedGeneric": "Tu comentario no se guardó. Inténtalo de nuevo.",
-    "feedback.error.partial": "Tu comentario solo se guardó en parte. Vuelve a enviarlo, por favor.",
+    "feedback.error.partial":
+      "Tu comentario solo se guardó en parte. Vuelve a enviarlo, por favor.",
     "feedback.success.toast": "Gracias — tu comentario se ha guardado.",
     "feedback.success.saved": "Guardado. Gracias — leemos todos los mensajes.",
     "feedback.submit": "Enviar comentario",
@@ -140,7 +143,8 @@ export const feedback = {
     "feedback.error.tooShort": "Scrivi almeno {min} caratteri così possiamo agire.",
     "feedback.error.submitFailed": "Il tuo feedback non è stato salvato: {message}",
     "feedback.error.submitFailedGeneric": "Il tuo feedback non è stato salvato. Riprova.",
-    "feedback.error.partial": "Il tuo feedback è stato salvato solo in parte. Inviarlo di nuovo, per favore.",
+    "feedback.error.partial":
+      "Il tuo feedback è stato salvato solo in parte. Inviarlo di nuovo, per favore.",
     "feedback.success.toast": "Grazie — il tuo feedback è stato salvato.",
     "feedback.success.saved": "Salvato. Grazie — leggiamo ogni messaggio.",
     "feedback.submit": "Invia feedback",

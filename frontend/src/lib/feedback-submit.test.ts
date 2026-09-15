@@ -25,7 +25,10 @@ describe("classifyFeedbackResult", () => {
     expect(classifyFeedbackResult(null, new Error("boom"))).toEqual({ kind: "failed" });
     expect(classifyFeedbackResult(undefined, null)).toEqual({ kind: "failed" });
     expect(
-      classifyFeedbackResult({ ok: false, database_recorded: false, storage_recorded: false }, null),
+      classifyFeedbackResult(
+        { ok: false, database_recorded: false, storage_recorded: false },
+        null,
+      ),
     ).toEqual({ kind: "failed" });
   });
 });
