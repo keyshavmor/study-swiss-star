@@ -43,8 +43,8 @@ describe("post-signup confirmation-pending handoff", () => {
   });
 
   it("clears the notice as soon as the identifier changes", () => {
-    expect(authForm).toMatch(
-      /if \(pendingConfirmationEmail && e\.target\.value\.trim\(\) !== pendingConfirmationEmail\)/,
+    expect(authForm.replace(/\s+/g, " ")).toContain(
+      "if ( pendingConfirmationEmail && e.target.value.trim() !== pendingConfirmationEmail )",
     );
     expect(authForm).toContain('setPendingConfirmationEmail("")');
   });
