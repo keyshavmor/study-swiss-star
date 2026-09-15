@@ -37,7 +37,7 @@ function timeoutMs(): number {
   return Number(process.env["ALIM_MODEL_BACKEND_TIMEOUT_MS"] ?? 15_000);
 }
 
-export async function callBackend(
+async function callBackend(
   path: string,
   init: { method: "GET" | "POST"; body?: unknown; accessToken: string; studentId: string },
 ): Promise<unknown | null> {

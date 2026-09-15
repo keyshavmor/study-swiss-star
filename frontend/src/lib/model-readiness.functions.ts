@@ -6,6 +6,7 @@
  * the runtime policy is read from production Supabase, not from the browser.
  */
 import { createServerFn } from "@tanstack/react-start";
+import { getRequest } from "@tanstack/react-start/server";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import {
@@ -13,6 +14,16 @@ import {
   type AiRuntimePolicy,
   type ModelPreparationStatus,
 } from "@/lib/model-readiness.types";
+
+/**
+ * Reads the caller's verified Supabase access token from the request the
+ * authenticated middleware already validated. The token is the authorization
+ * boundary for the local backend; it is never logged or returned to the client.
+ */
+function callerAccessToken(): string {
+  const header = getRequest()?.headers.get("authorization") ?? "";
+  return header.startsWith("Bearer ") ? header.slice("Bearer ".length) : "";
+}
 
 const prepareInput = z.object({ modelId: z.string().min(1).max(200) });
 const pollInput = z.object({
@@ -61,6 +72,7 @@ export const prepareModel = createServerFn({ method: "POST" })
     const { prepareModelOnBackend } = await import("@/lib/model-backend.server");
     const policy = await readPolicy(context.supabase as unknown as SupabaseLike);
     return prepareModelOnBackend({
+      accessToken: callerAccessToken(),
       studentId: context.userId,
       modelId: data.modelId,
       policy,
@@ -74,6 +86,7 @@ export const pollModelOperation = createServerFn({ method: "POST" })
     const { pollModelOperationOnBackend } = await import("@/lib/model-backend.server");
     const policy = await readPolicy(context.supabase as unknown as SupabaseLike);
     return pollModelOperationOnBackend({
+      accessToken: callerAccessToken(),
       studentId: context.userId,
       modelId: data.modelId,
       operationId: data.operationId,
