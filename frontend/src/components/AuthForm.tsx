@@ -88,6 +88,9 @@ export function AuthForm() {
   const [signupAcceptedChildSafety, setSignupAcceptedChildSafety] = useState(false);
   const [complianceErrors, setComplianceErrors] = useState<ComplianceValidationError[]>([]);
   const [resetEmail, setResetEmail] = useState("");
+  // Email of a just-created account that still needs confirmation. Drives the
+  // persistent sign-in notice; cleared as soon as the identifier changes.
+  const [pendingConfirmationEmail, setPendingConfirmationEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
