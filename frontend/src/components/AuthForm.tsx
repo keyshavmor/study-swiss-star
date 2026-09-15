@@ -23,7 +23,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { validateComplianceInput, type ComplianceValidationError } from "@/lib/compliance";
 import { AuthCaptcha } from "@/components/auth/AuthCaptcha";
-import { getAuthCaptchaConfig, requireAuthCaptchaToken } from "@/lib/auth-captcha";
+import { captchaAuthOptions, getAuthCaptchaConfig } from "@/lib/auth-captcha";
 
 type Mode = "signin" | "signup" | "reset";
 type OAuthProvider = "github" | "linkedin_oidc" | "spotify";
@@ -95,7 +95,7 @@ export function AuthForm() {
   const verifiedCaptchaToken = () => {
     if (!getAuthCaptchaConfig()) throw new UiError(t("auth.captchaUnavailable"));
     try {
-      return requireAuthCaptchaToken(captchaToken);
+      return captchaAuthOptions(captchaToken);
     } catch {
       throw new UiError(t("auth.captchaRequired"));
     }
@@ -115,7 +115,7 @@ export function AuthForm() {
       const { error } = await supabase.auth.signInWithPassword({
         email: value,
         password,
-        options: { captchaToken: verifiedCaptchaToken() },
+        options: verifiedCaptchaToken(),
       });
       if (error) throw new UiError(localizedAuthError(t, error));
       track({
@@ -199,7 +199,7 @@ export function AuthForm() {
       password,
       options: {
         emailRedirectTo: `${window.location.origin}/`,
-        captchaToken: verifiedCaptchaToken(),
+        ...verifiedCaptchaToken(),
         data: {
           username: normalised,
           account_type_prefill: signupAccountType,
@@ -235,7 +235,7 @@ export function AuthForm() {
     const email = resetEmail.trim();
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: `${window.location.origin}/auth/update-password`,
-      captchaToken: verifiedCaptchaToken(),
+      ...verifiedCaptchaToken(),
     });
     if (error) throw new UiError(localizedAuthError(t, error));
     track({ event_name: "auth_password_reset_requested", feature: "auth" });

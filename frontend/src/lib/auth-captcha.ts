@@ -6,6 +6,10 @@ export interface AuthCaptchaConfig {
   siteKey: string;
 }
 
+export interface CaptchaAuthOptions {
+  captchaToken: string;
+}
+
 export function resolveAuthCaptchaConfig(values: {
   provider?: string;
   siteKey?: string;
@@ -27,4 +31,8 @@ export function getAuthCaptchaConfig(): AuthCaptchaConfig | null {
 export function requireAuthCaptchaToken(token: string | null): string {
   if (!token) throw new Error("captcha_required");
   return token;
+}
+
+export function captchaAuthOptions(token: string | null): CaptchaAuthOptions {
+  return { captchaToken: requireAuthCaptchaToken(token) };
 }

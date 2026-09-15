@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { requireAuthCaptchaToken, resolveAuthCaptchaConfig } from "./auth-captcha";
+import {
+  captchaAuthOptions,
+  requireAuthCaptchaToken,
+  resolveAuthCaptchaConfig,
+} from "./auth-captcha";
 
 describe("production Auth CAPTCHA configuration", () => {
   it("accepts only a supported provider with a public site key", () => {
@@ -22,5 +26,6 @@ describe("production Auth CAPTCHA configuration", () => {
   it("never lets a password Auth request proceed without a challenge token", () => {
     expect(() => requireAuthCaptchaToken(null)).toThrow("captcha_required");
     expect(requireAuthCaptchaToken("verified-token")).toBe("verified-token");
+    expect(captchaAuthOptions("verified-token")).toEqual({ captchaToken: "verified-token" });
   });
 });

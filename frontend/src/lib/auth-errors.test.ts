@@ -52,6 +52,16 @@ describe("localizedAuthError", () => {
     );
   });
 
+  it("maps a CAPTCHA rejection without exposing its raw provider message", () => {
+    const message = localizedAuthError(t, {
+      code: "captcha_failed",
+      status: 400,
+      message: "provider detail that must stay hidden",
+    });
+    expect(message).toBe(dictionaries.en["auth.captchaFailed"]);
+    expect(message).not.toContain("provider detail");
+  });
+
   it("maps expired recovery links", () => {
     expect(localizedAuthError(t, { code: "otp_expired" })).toBe(
       dictionaries.en["auth.recoveryLinkInvalid"],
