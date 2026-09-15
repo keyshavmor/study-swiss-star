@@ -359,3 +359,24 @@ finding; the absence of `unindexed_foreign_keys` warnings depends on them remain
 - Because no production CAPTCHA site key/token is available in this environment, a real account
   could not be created after the repair; therefore email signup/login, username login/setSession,
   trigger-created profile/preferences/compliance rows and final sign-out are **NOT marked PASS**.
+
+## Repository environment wiring corrected (2026-09-15)
+
+- CURRENT FRONTEND: the repository-root `.env` still targeted the retired Lovable-managed project
+  instead of authoritative production `ucacmeadsufiedxrgqit`. All six Supabase entries
+  (`SUPABASE_PROJECT_ID`, `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY` and the `VITE_` equivalents)
+  now point at production, and `frontend/.env` matches byte-for-byte. Only the public publishable
+  key is stored; no secret or service-role key is present in any env file or source file.
+- The values agree with the canonical pin in `frontend/vite.config.ts`, so browser and server reads
+  resolve to the same production project regardless of which env file the runtime loads.
+- Re-ran the real production Auth smoke test after the correction with freshly generated throwaway
+  values: `username-availability` returned HTTP 200 (`valid`, `available`), `username-login`
+  returned HTTP 200 `{ok:false,error_code:"invalid_credentials"}` for the uncreated account, and
+  both `auth.signUp(...)` and `auth.signInWithPassword(...)` still returned HTTP 400
+  `captcha_failed`. No account was created.
+- CONCLUSION: the env mismatch was a real defect and is fixed, but it was not the cause of the
+  password-Auth failure. The remaining blocker is unchanged and manual: production Auth CAPTCHA
+  enforcement with no public provider/site key available to this environment. End-to-end signup and
+  sign-in therefore remain **NOT PASS**; a headless script cannot solve a CAPTCHA challenge, so the
+  final confirmation must be a browser attempt once `VITE_AUTH_CAPTCHA_PROVIDER` and
+  `VITE_AUTH_CAPTCHA_SITE_KEY` are configured to match the production Auth CAPTCHA secret.
