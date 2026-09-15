@@ -21,7 +21,6 @@ Object.defineProperty(globalThis, "window", {
   },
 });
 
-
 const rpcCalls: { name: string; args: unknown }[] = [];
 const selects: { table: string; columns: string }[] = [];
 const orders: { table: string; column: string }[] = [];

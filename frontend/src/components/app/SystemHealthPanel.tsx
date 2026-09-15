@@ -289,7 +289,11 @@ function CloudHealthSection() {
   const realtime = health.realtime ?? null;
   const edge = health.edge_functions ?? null;
 
-  const usageLabel = (usage: number | null | undefined, quota: number | null | undefined, status?: string | null) => {
+  const usageLabel = (
+    usage: number | null | undefined,
+    quota: number | null | undefined,
+    status?: string | null,
+  ) => {
     const used = metricValue(usage);
     if (used === null || status === NOT_EXPOSED_STATUS) return t("systemHealth.cloud.notExposed");
     const cap = metricValue(quota);
@@ -383,10 +387,7 @@ function MyDataSection() {
 
   return (
     <div className="grid gap-3 sm:grid-cols-3">
-      <Stat
-        label={t("systemHealth.myData.peerMessages")}
-        value={count(summary.peer_messages)}
-      />
+      <Stat label={t("systemHealth.myData.peerMessages")} value={count(summary.peer_messages)} />
       <Stat
         label={t("systemHealth.myData.peerAttachments")}
         value={countWithBytes(summary.peer_attachments, summary.peer_attachment_bytes)}
@@ -407,14 +408,8 @@ function MyDataSection() {
         label={t("systemHealth.myData.documents")}
         value={countWithBytes(summary.documents, summary.document_bytes)}
       />
-      <Stat
-        label={t("systemHealth.myData.plannerEvents")}
-        value={count(summary.planner_events)}
-      />
-      <Stat
-        label={t("systemHealth.myData.feedbackItems")}
-        value={count(summary.feedback_items)}
-      />
+      <Stat label={t("systemHealth.myData.plannerEvents")} value={count(summary.planner_events)} />
+      <Stat label={t("systemHealth.myData.feedbackItems")} value={count(summary.feedback_items)} />
     </div>
   );
 }

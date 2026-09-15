@@ -20,7 +20,6 @@ Object.defineProperty(globalThis, "window", {
   },
 });
 
-
 const invoked: { name: string; body: Record<string, unknown> }[] = [];
 let session: unknown = null;
 

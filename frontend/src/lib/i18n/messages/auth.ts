@@ -44,14 +44,17 @@ export const auth = {
     "auth.saving": "Saving…",
     "auth.passwordsDoNotMatch": "The two passwords do not match.",
     "auth.passwordUpdated": "Password updated.",
-    "auth.errorInvalidCredentials": "Those sign-in details did not work. Please check and try again.",
+    "auth.errorInvalidCredentials":
+      "Those sign-in details did not work. Please check and try again.",
     "auth.errorEmailNotConfirmed": "Please confirm your email address first, then sign in.",
     "auth.errorRateLimited": "Too many attempts. Please wait a moment and try again.",
     "auth.errorEmailInUse": "An account already exists for those details. Try signing in instead.",
     "auth.errorWeakPassword": "Please choose a longer, stronger password.",
-    "auth.errorNetwork": "We could not reach the service. Please check your connection and try again.",
+    "auth.errorNetwork":
+      "We could not reach the service. Please check your connection and try again.",
     "auth.errorGeneric": "Something went wrong. Please try again.",
-    "auth.recoveryLinkInvalid": "This password link is invalid or has expired. Please request a new one.",
+    "auth.recoveryLinkInvalid":
+      "This password link is invalid or has expired. Please request a new one.",
   },
   de: {
     "auth.appName": "Alim's Study Assistant",
@@ -99,14 +102,19 @@ export const auth = {
     "auth.saving": "Wird gespeichert…",
     "auth.passwordsDoNotMatch": "Die beiden Passwörter stimmen nicht überein.",
     "auth.passwordUpdated": "Passwort aktualisiert.",
-    "auth.errorInvalidCredentials": "Diese Anmeldedaten haben nicht funktioniert. Bitte prüfe sie und versuche es erneut.",
-    "auth.errorEmailNotConfirmed": "Bitte bestätige zuerst deine E-Mail-Adresse und melde dich dann an.",
+    "auth.errorInvalidCredentials":
+      "Diese Anmeldedaten haben nicht funktioniert. Bitte prüfe sie und versuche es erneut.",
+    "auth.errorEmailNotConfirmed":
+      "Bitte bestätige zuerst deine E-Mail-Adresse und melde dich dann an.",
     "auth.errorRateLimited": "Zu viele Versuche. Bitte warte einen Moment und versuche es erneut.",
-    "auth.errorEmailInUse": "Für diese Angaben gibt es bereits ein Konto. Melde dich stattdessen an.",
+    "auth.errorEmailInUse":
+      "Für diese Angaben gibt es bereits ein Konto. Melde dich stattdessen an.",
     "auth.errorWeakPassword": "Bitte wähle ein längeres, stärkeres Passwort.",
-    "auth.errorNetwork": "Der Dienst war nicht erreichbar. Prüfe deine Verbindung und versuche es erneut.",
+    "auth.errorNetwork":
+      "Der Dienst war nicht erreichbar. Prüfe deine Verbindung und versuche es erneut.",
     "auth.errorGeneric": "Etwas ist schiefgelaufen. Bitte versuche es erneut.",
-    "auth.recoveryLinkInvalid": "Dieser Passwort-Link ist ungültig oder abgelaufen. Bitte fordere einen neuen an.",
+    "auth.recoveryLinkInvalid":
+      "Dieser Passwort-Link ist ungültig oder abgelaufen. Bitte fordere einen neuen an.",
   },
   gsw: {
     "auth.appName": "Alim's Study Assistant",
@@ -153,14 +161,18 @@ export const auth = {
     "auth.saving": "Wird gspeichert…",
     "auth.passwordsDoNotMatch": "Die zwei Passwörter stimmed nöd überein.",
     "auth.passwordUpdated": "Passwort aktualisiert.",
-    "auth.errorInvalidCredentials": "Die Aamäldedate hei nid funktioniert. Bitte prüef si und probier nomal.",
-    "auth.errorEmailNotConfirmed": "Bitte bestätig zerscht dini E-Mail-Adrässe und mäld di denn aa.",
+    "auth.errorInvalidCredentials":
+      "Die Aamäldedate hei nid funktioniert. Bitte prüef si und probier nomal.",
+    "auth.errorEmailNotConfirmed":
+      "Bitte bestätig zerscht dini E-Mail-Adrässe und mäld di denn aa.",
     "auth.errorRateLimited": "Z viel Versüech. Bitte wart e Momänt und probier nomal.",
     "auth.errorEmailInUse": "Für die Aagabe git es scho es Konto. Mäld di stattdesse aa.",
     "auth.errorWeakPassword": "Bitte wähl es längers, stärchers Passwort.",
-    "auth.errorNetwork": "De Dienscht isch nid erreichbar gsi. Prüef dini Verbindig und probier nomal.",
+    "auth.errorNetwork":
+      "De Dienscht isch nid erreichbar gsi. Prüef dini Verbindig und probier nomal.",
     "auth.errorGeneric": "Öppis isch schiefgloffe. Bitte probier nomal.",
-    "auth.recoveryLinkInvalid": "De Passwort-Link isch nid gültig oder abgloffe. Bitte verlang en nöie.",
+    "auth.recoveryLinkInvalid":
+      "De Passwort-Link isch nid gültig oder abgloffe. Bitte verlang en nöie.",
   },
   ru: {
     "auth.appName": "Alim's Study Assistant",
@@ -205,12 +217,14 @@ export const auth = {
     "auth.saving": "Сохранение…",
     "auth.passwordsDoNotMatch": "Пароли не совпадают.",
     "auth.passwordUpdated": "Пароль обновлён.",
-    "auth.errorInvalidCredentials": "Эти данные для входа не подошли. Проверьте их и попробуйте снова.",
+    "auth.errorInvalidCredentials":
+      "Эти данные для входа не подошли. Проверьте их и попробуйте снова.",
     "auth.errorEmailNotConfirmed": "Сначала подтвердите адрес электронной почты, затем войдите.",
     "auth.errorRateLimited": "Слишком много попыток. Подождите немного и попробуйте снова.",
     "auth.errorEmailInUse": "Аккаунт с такими данными уже существует. Попробуйте войти.",
     "auth.errorWeakPassword": "Выберите более длинный и надёжный пароль.",
-    "auth.errorNetwork": "Не удалось связаться со сервисом. Проверьте соединение и попробуйте снова.",
+    "auth.errorNetwork":
+      "Не удалось связаться со сервисом. Проверьте соединение и попробуйте снова.",
     "auth.errorGeneric": "Что-то пошло не так. Попробуйте снова.",
     "auth.recoveryLinkInvalid": "Эта ссылка недействительна или истекла. Запросите новую.",
   },
@@ -257,12 +271,14 @@ export const auth = {
     "auth.saving": "Guardando…",
     "auth.passwordsDoNotMatch": "Las dos contraseñas no coinciden.",
     "auth.passwordUpdated": "Contraseña actualizada.",
-    "auth.errorInvalidCredentials": "Esos datos de acceso no funcionaron. Compruébalos e inténtalo de nuevo.",
+    "auth.errorInvalidCredentials":
+      "Esos datos de acceso no funcionaron. Compruébalos e inténtalo de nuevo.",
     "auth.errorEmailNotConfirmed": "Confirma primero tu correo electrónico y luego inicia sesión.",
     "auth.errorRateLimited": "Demasiados intentos. Espera un momento e inténtalo de nuevo.",
     "auth.errorEmailInUse": "Ya existe una cuenta con esos datos. Prueba a iniciar sesión.",
     "auth.errorWeakPassword": "Elige una contraseña más larga y segura.",
-    "auth.errorNetwork": "No pudimos conectar con el servicio. Comprueba tu conexión e inténtalo de nuevo.",
+    "auth.errorNetwork":
+      "No pudimos conectar con el servicio. Comprueba tu conexión e inténtalo de nuevo.",
     "auth.errorGeneric": "Algo salió mal. Inténtalo de nuevo.",
     "auth.recoveryLinkInvalid": "Este enlace no es válido o ha caducado. Solicita uno nuevo.",
   },
@@ -312,7 +328,8 @@ export const auth = {
     "auth.saving": "Enregistrement…",
     "auth.passwordsDoNotMatch": "Les deux mots de passe ne correspondent pas.",
     "auth.passwordUpdated": "Mot de passe mis à jour.",
-    "auth.errorInvalidCredentials": "Ces informations de connexion n'ont pas fonctionné. Vérifie-les et réessaie.",
+    "auth.errorInvalidCredentials":
+      "Ces informations de connexion n'ont pas fonctionné. Vérifie-les et réessaie.",
     "auth.errorEmailNotConfirmed": "Confirme d'abord ton adresse e-mail, puis connecte-toi.",
     "auth.errorRateLimited": "Trop de tentatives. Patiente un instant et réessaie.",
     "auth.errorEmailInUse": "Un compte existe déjà avec ces informations. Essaie de te connecter.",
@@ -366,12 +383,14 @@ export const auth = {
     "auth.saving": "Salvataggio…",
     "auth.passwordsDoNotMatch": "Le due password non coincidono.",
     "auth.passwordUpdated": "Password aggiornata.",
-    "auth.errorInvalidCredentials": "Questi dati di accesso non hanno funzionato. Controllali e riprova.",
+    "auth.errorInvalidCredentials":
+      "Questi dati di accesso non hanno funzionato. Controllali e riprova.",
     "auth.errorEmailNotConfirmed": "Conferma prima il tuo indirizzo e-mail, poi accedi.",
     "auth.errorRateLimited": "Troppi tentativi. Attendi un momento e riprova.",
     "auth.errorEmailInUse": "Esiste già un account con questi dati. Prova ad accedere.",
     "auth.errorWeakPassword": "Scegli una password più lunga e sicura.",
-    "auth.errorNetwork": "Non è stato possibile raggiungere il servizio. Controlla la connessione e riprova.",
+    "auth.errorNetwork":
+      "Non è stato possibile raggiungere il servizio. Controlla la connessione e riprova.",
     "auth.errorGeneric": "Qualcosa è andato storto. Riprova.",
     "auth.recoveryLinkInvalid": "Questo link non è valido o è scaduto. Richiedine uno nuovo.",
   },
