@@ -25,7 +25,7 @@ describe("hCaptcha password-flow wiring", () => {
     expect(form).toContain(
       "usernameLoginRequest(normalised, password, verifiedCaptchaTokenValue())",
     );
-    expect(form).toMatch(/signUp\([\s\S]*?captchaToken: verifiedCaptchaTokenValue\(\)/);
+    expect(form).toMatch(/signUp\([\s\S]*?\.\.\.verifiedCaptchaToken\(\)/);
     expect(form).toMatch(/resetPasswordForEmail\([\s\S]*?\.\.\.verifiedCaptchaToken\(\)/);
     expect(form).toContain('outcome.kind === "captcha_required"');
     expect(form).toContain('outcome.kind === "captcha_failed"');
