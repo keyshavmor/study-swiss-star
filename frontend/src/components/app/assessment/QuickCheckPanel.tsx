@@ -27,7 +27,7 @@ export function QuickCheckSetup({
   onGenerate: () => void;
   materials: Array<{ id: string; name: string; section: string }>;
   topics: string[];
-  disabled?: boolean;
+  disabled?: boolean | undefined;
 }) {
   const { t } = useI18n();
   const [settingsOpen, setSettingsOpen] = useState(false);

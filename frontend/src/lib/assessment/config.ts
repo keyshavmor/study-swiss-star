@@ -84,7 +84,7 @@ export function createDefaultConfig(input: {
   kind: AssessmentKind;
   subjectSlug: string;
   subjectName: string;
-  component?: string;
+  component?: string | undefined;
   language: string;
   schoolLevel: string | null;
   academicYear: string | null;

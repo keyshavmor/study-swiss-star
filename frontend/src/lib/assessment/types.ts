@@ -260,19 +260,19 @@ export const publicQuestionListSchema = z.array(publicQuestionSchema);
 export interface AnswerKey {
   questionId: string;
   /** Model answer shown to the student only after grading. */
-  modelAnswer?: RichContent;
-  correctOptionIds?: string[];
-  correctBoolean?: boolean;
+  modelAnswer?: RichContent | undefined;
+  correctOptionIds?: string[] | undefined;
+  correctBoolean?: boolean | undefined;
   correctPairs?: Array<{ leftId: string; rightId: string }>;
-  canonicalValue?: string;
-  tolerance?: number;
-  unit?: string;
-  rubric?: GradingRubric;
+  canonicalValue?: string | undefined;
+  tolerance?: number | undefined;
+  unit?: string | undefined;
+  rubric?: GradingRubric | undefined;
 }
 
 export interface GradingRubric {
   criteria: Array<{ id: string; description: string; maxPoints: number }>;
-  notes?: string;
+  notes?: string | undefined;
 }
 
 /* ------------------------------------------------------------------ answers */
@@ -350,8 +350,8 @@ export interface AssessmentConfig {
   subjectSlug: string;
   subjectName: string;
   /** Component of an SPF subject when applicable. */
-  component?: string;
-  topic?: string;
+  component?: string | undefined;
+  topic?: string | undefined;
   learningGoalIds: string[];
   difficulty: Difficulty;
   sourceScope: SourceScope;
@@ -379,13 +379,13 @@ export interface QuestionResult {
   awardedPoints: number;
   maxPoints: number;
   correctness: "correct" | "partial" | "incorrect" | "unanswered" | "pending";
-  modelAnswer?: RichContent;
-  explanation?: RichContent;
-  improvement?: RichContent;
+  modelAnswer?: RichContent | undefined;
+  explanation?: RichContent | undefined;
+  improvement?: RichContent | undefined;
   /** Why relevant distractors are wrong, keyed by option id. */
-  optionExplanations?: Record<string, RichContent>;
+  optionExplanations?: Record<string, RichContent> | undefined;
   rubricFeedback?: Array<{ criterionId: string; description: string; awarded: number; max: number }>;
-  sources?: SourceReference[];
+  sources?: SourceReference[] | undefined;
 }
 
 export interface AssessmentResult {

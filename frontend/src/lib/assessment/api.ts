@@ -40,9 +40,9 @@ export interface GenerationStatus {
   state: "queued" | "generating" | "validating" | "ready" | "failed" | "cancelled" | "expired";
   phase: GenerationPhase | null;
   /** Present only in the `ready` state. Contains no answer keys. */
-  questions?: PublicQuestion[];
-  attemptId?: string;
-  errorKey?: string;
+  questions?: PublicQuestion[] | undefined;
+  attemptId?: string | undefined;
+  errorKey?: string | undefined;
 }
 
 export interface SubmitPayload {
@@ -60,7 +60,7 @@ export interface SubmitPayload {
 export interface GradingStatus {
   attemptId: string;
   status: AttemptStatus;
-  errorKey?: string;
+  errorKey?: string | undefined;
 }
 
 export interface AssessmentApi {
@@ -71,8 +71,8 @@ export interface AssessmentApi {
   heartbeat(attemptId: string): Promise<AssessmentApiResult<{ alive: boolean }>>;
   submitAssessment(payload: SubmitPayload): Promise<AssessmentApiResult<{ attemptId: string }>>;
   abandonAssessment(reference: {
-    jobId?: string;
-    attemptId?: string;
+    jobId?: string | undefined;
+    attemptId?: string | undefined;
   }): Promise<AssessmentApiResult<{ cleaned: boolean }>>;
   getGradingStatus(attemptId: string): Promise<AssessmentApiResult<GradingStatus>>;
   getResult(attemptId: string): Promise<AssessmentApiResult<AssessmentResult>>;

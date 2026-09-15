@@ -50,7 +50,7 @@ const KIND_INTRO_KEY = {
 export interface AssessmentContext {
   subjectSlug: string;
   subjectName: string;
-  component?: string;
+  component?: string | undefined;
   language: string;
   schoolLevel: string | null;
   academicYear: string | null;

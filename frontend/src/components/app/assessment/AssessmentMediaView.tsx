@@ -19,8 +19,8 @@ export function AssessmentMediaView({
   description,
 }: {
   media: AssessmentMedia;
-  className?: string;
-  description?: string;
+  className?: string | undefined;
+  description?: string | undefined;
 }) {
   const { t } = useI18n();
   const [showLongDescription, setShowLongDescription] = useState(false);

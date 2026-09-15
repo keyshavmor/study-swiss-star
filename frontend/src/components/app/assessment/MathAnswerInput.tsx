@@ -42,8 +42,8 @@ export function MathAnswerInput({
   value: string;
   onChange: (latex: string) => void;
   label: string;
-  describedById?: string;
-  disabled?: boolean;
+  describedById?: string | undefined;
+  disabled?: boolean | undefined;
 }) {
   const { t } = useI18n();
   const [rawMode, setRawMode] = useState(false);

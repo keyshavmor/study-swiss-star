@@ -253,7 +253,7 @@ export function AssessmentSetup({
   materials: Array<{ id: string; name: string; section: string }>;
   topics: string[];
   learningGoals: Array<{ id: string; label: string }>;
-  disabled?: boolean;
+  disabled?: boolean | undefined;
 }) {
   const { t } = useI18n();
   const issues = useMemo(() => validateSetup(config), [config]);

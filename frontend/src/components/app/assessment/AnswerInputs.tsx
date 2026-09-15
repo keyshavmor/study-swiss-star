@@ -28,7 +28,7 @@ export interface AnswerEditorProps {
   question: PublicQuestion;
   answer: StudentAnswer | undefined;
   onChange: (answer: StudentAnswer) => void;
-  disabled?: boolean;
+  disabled?: boolean | undefined;
 }
 
 export function AnswerEditor({ question, answer, onChange, disabled }: AnswerEditorProps) {

@@ -40,11 +40,11 @@ export function QuestionRenderer({
   total: number;
   answer: StudentAnswer | undefined;
   onChange: (answer: StudentAnswer) => void;
-  disabled?: boolean;
-  marked?: boolean;
+  disabled?: boolean | undefined;
+  marked?: boolean | undefined;
   onToggleMark?: () => void;
   /** Mock Exam presentation: no decorative extras. */
-  quiet?: boolean;
+  quiet?: boolean | undefined;
 }) {
   const { t } = useI18n();
   const mediaFor = (mediaId: string, description?: string) => {

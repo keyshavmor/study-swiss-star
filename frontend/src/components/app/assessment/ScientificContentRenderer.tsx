@@ -34,8 +34,8 @@ export function ScientificExpression({
   className,
 }: {
   latex: string;
-  display?: boolean;
-  className?: string;
+  display?: boolean | undefined;
+  className?: string | undefined;
 }) {
   const html = useMemo(() => renderLatex(latex, display), [latex, display]);
   if (!html) {
@@ -173,8 +173,8 @@ export function ScientificContentRenderer({
   renderMedia,
 }: {
   content: RichContent;
-  className?: string;
-  inline?: boolean;
+  className?: string | undefined;
+  inline?: boolean | undefined;
   renderMedia?: (mediaId: string, description?: string) => React.ReactNode;
 }) {
   return (

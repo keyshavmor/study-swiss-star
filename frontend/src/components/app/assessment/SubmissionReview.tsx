@@ -101,7 +101,7 @@ export function SubmitConfirmation({
 }: {
   onConfirm: () => void;
   unansweredCount: number;
-  trigger?: React.ReactNode;
+  trigger?: React.ReactNode | undefined;
 }) {
   const { t } = useI18n();
   const [open, setOpen] = useOpenState();
