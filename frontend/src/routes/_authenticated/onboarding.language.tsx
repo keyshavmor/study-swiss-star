@@ -1,15 +1,20 @@
 /** TanStack route module defining one Alim screen or local API boundary. */
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { Check, Languages } from "lucide-react";
+import { AlertTriangle, Check, Languages } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { cn } from "@/lib/utils";
 import { useI18n } from "@/lib/i18n/provider";
 import { LANGUAGES, type LanguageCode } from "@/lib/i18n/languages";
 import { savePreferences } from "@/lib/account-data";
-import { invalidateStartupCache, MODEL_ONBOARDING_PATH } from "@/lib/startup-flow";
+import {
+  invalidateStartupCache,
+  languageOnboardingStatus,
+  MODEL_ONBOARDING_PATH,
+} from "@/lib/startup-flow";
 import { track, trackFailure } from "@/lib/telemetry";
+
 
 export const Route = createFileRoute("/_authenticated/onboarding/language")({
   head: () => ({
