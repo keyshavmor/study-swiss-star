@@ -423,9 +423,29 @@ environment configuration are removed:
   raw provider payloads are never shown, logged or telemetered (the OAuth `console.error` of the
   raw provider error was also removed).
 
-MANUAL RUNTIME PREREQUISITE (NOT INDEPENDENTLY VERIFIED): production Supabase Auth > Bot and Abuse
-Protection must be **disabled**. While it is enabled, Supabase rejects tokenless password signup,
-sign-in and recovery with HTTP 400 / `captcha_failed` (reproduced live earlier this day). Because
-that setting lives outside Lovable source and was not re-verified, **live production auth is NOT
-declared PASS** in this pass; unit tests alone are not treated as evidence. Security Advisor is
-still not claimed to be zero.
+OBSERVED RUNTIME (2026-09-15): a fresh production `auth.signUp` made with NO challenge token
+**succeeded** — it created the user and sent the confirmation email, with no `captcha_failed`. Bot
+and Abuse Protection therefore did not block tokenless signup in the observed runtime and is not
+described as a blocking prerequisite. Production `mailer_autoconfirm=false`, so the successful
+signup returned no session; full successful password and username login remains pending a
+confirmed account in the smoke test and is **NOT declared PASS** from signup alone. Whether
+Bot/Abuse Protection is enabled or disabled in the dashboard is not independently verified from
+here; historically, while it was enabled, tokenless signup/sign-in/recovery returned HTTP 400
+`captcha_failed` (see the historical entries above). Unit tests alone are not treated as evidence.
+Security Advisor is still not claimed to be zero.
+
+## 2026-09-15 — live production signup observed succeeding without CAPTCHA (CURRENT)
+
+Independently observed against production Supabase `ucacmeadsufiedxrgqit` on 2026-09-15:
+
+- A fresh production `auth.signUp` made with NO challenge token **succeeded**: it created the user
+  and sent the confirmation email. There was no `captcha_failed`. Bot/Abuse Protection therefore
+  did not block tokenless signup in the observed runtime and is no longer described as an unverified
+  remaining prerequisite.
+- Production `mailer_autoconfirm=false`, so the successful signup returned **no session** until the
+  confirmation email link is used. Full successful password login and username-login v4 login
+  therefore remain **pending a confirmed account** in the smoke test and are **NOT declared PASS**
+  from signup alone.
+- The frontend still has no CAPTCHA dependency; no code changed in this documentation follow-up.
+
+Historical hCaptcha/CAPTCHA incidents above remain clearly marked HISTORICAL.
