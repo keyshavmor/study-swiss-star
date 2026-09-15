@@ -18,6 +18,23 @@ export type StorageUsageStatus = {
   emergency_cleanup_needed: boolean;
 };
 
+/**
+ * CURRENT SUPABASE: return shape of `public.get_ai_runtime_policy()`.
+ * Percent values are whole numbers (50 means "50% free").
+ */
+export type AiRuntimePolicyRow = {
+  preflight_gpu_free_percent: number;
+  preflight_ram_free_percent: number;
+  preflight_storage_free_percent: number;
+  ready_gpu_free_percent: number;
+  ready_ram_free_percent: number;
+  ready_storage_free_percent: number;
+  check_active_users: boolean;
+  deduplicate_model_downloads: boolean;
+  allow_parallel_per_user_model_processes: boolean;
+};
+
+
 export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "14.5";
@@ -370,6 +387,33 @@ export type Database = {
         };
         Relationships: [];
       };
+      /**
+       * CURRENT SUPABASE: read-only catalog of selectable local models.
+       * Authenticated users may SELECT; nobody writes from the frontend.
+       */
+      ai_model_catalog: {
+        Row: {
+          model_id: string;
+          display_name: string;
+          enabled: boolean;
+          sort_order: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          model_id: string;
+          display_name: string;
+          enabled?: boolean;
+          sort_order?: number;
+        };
+        Update: {
+          display_name?: string;
+          enabled?: boolean;
+          sort_order?: number;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
     };
     Views: {
       [_ in never]: never;
@@ -379,7 +423,12 @@ export type Database = {
         Args: Record<string, never>;
         Returns: StorageUsageStatus[];
       };
+      get_ai_runtime_policy: {
+        Args: Record<string, never>;
+        Returns: AiRuntimePolicyRow[];
+      };
     };
+
     Enums: {
       [_ in never]: never;
     };
