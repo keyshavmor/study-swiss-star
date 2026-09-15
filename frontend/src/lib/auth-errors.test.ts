@@ -52,13 +52,13 @@ describe("localizedAuthError", () => {
     );
   });
 
-  it("maps a CAPTCHA rejection without exposing its raw provider message", () => {
+  it("maps a challenge-shaped provider error to the generic message", () => {
     const message = localizedAuthError(t, {
       code: "captcha_failed",
       status: 400,
       message: "provider detail that must stay hidden",
     });
-    expect(message).toBe(dictionaries.en["auth.captchaFailed"]);
+    expect(message).toBe(dictionaries.en["auth.errorGeneric"]);
     expect(message).not.toContain("provider detail");
   });
 

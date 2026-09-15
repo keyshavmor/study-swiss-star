@@ -67,16 +67,11 @@ describe("isDuplicateUsernameAfterSignupError", () => {
 });
 
 describe("usernameLoginRequest", () => {
-  it("sends username, password and the one-time captcha_token expected by v3", () => {
-    expect(usernameLoginRequest("student", "secret", "challenge-token")).toEqual({
+  it("sends only username and password (v4, no CAPTCHA token)", () => {
+    expect(usernameLoginRequest("student", "secret")).toEqual({
       username: "student",
       password: "secret",
-      captcha_token: "challenge-token",
     });
-    expect(Object.keys(usernameLoginRequest("a", "b", "c")).sort()).toEqual([
-      "captcha_token",
-      "password",
-      "username",
-    ]);
+    expect(Object.keys(usernameLoginRequest("a", "b")).sort()).toEqual(["password", "username"]);
   });
 });
