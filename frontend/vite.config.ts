@@ -26,7 +26,7 @@ export default defineConfig({
       // Prebundle the auth widget with React rather than discovering it during
       // Fast Refresh. Reject stale dependency URLs so Vite reloads the page
       // instead of mixing React instances from different optimizer generations.
-      include: ["@hcaptcha/react-hcaptcha"],
+      include: ["katex", "katex/contrib/mhchem"],
       ignoreOutdatedRequests: false,
     },
     define: {
