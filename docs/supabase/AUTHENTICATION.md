@@ -18,13 +18,25 @@ reset.
 
 ## Email/password
 
-- Sign-in: `supabase.auth.signInWithPassword({ email, password })` when the identifier contains
-  `@` (`AuthForm.tsx:77-85`).
-- Sign-up: `supabase.auth.signUp({ email, password, options: { emailRedirectTo: "<origin>/home",
-  data: { username } } })` (`AuthForm.tsx:126-134`), after the username-availability pre-check
-  below.
-- Password reset/update: `auth.update-password.tsx` route (not detailed further here; standard
-  Supabase recovery flow).
+- **Live result, 2026-09-15:** production email/password requests without a CAPTCHA token return
+  HTTP 400 / stable code `captcha_failed`. This was reproduced directly with the same
+  `@supabase/supabase-js` calls as the app. The rejected signup created no user.
+- **Frontend repair:** email sign-in, signup and reset now fail closed until the configured
+  Turnstile or hCaptcha widget returns a token, then pass it as `options.captchaToken`. The token is
+  React state only: it is cleared after every attempt and is never persisted, logged or sent to
+  telemetry. Username login remains on its server-side v2 endpoint and does not use the browser
+  CAPTCHA.
+- **Public configuration required:** `VITE_AUTH_CAPTCHA_PROVIDER` (`turnstile` or `hcaptcha`) and
+  `VITE_AUTH_CAPTCHA_SITE_KEY`. The matching private CAPTCHA secret stays only in the production
+  Auth dashboard; it must never be placed in a `VITE_*` variable.
+- **Sign-up:** `auth.signUp` sends the normalized username plus `account_type_prefill`,
+  `date_of_birth_prefill`, and `guardian_email_prefill`; these are metadata hints only. The four
+  legal checkboxes remain explicit and are never pre-accepted. The redirect is the public app
+  origin. A returned session enters `resolveStartupDestination()` immediately; no session shows the
+  localized email-confirmation state.
+- **Password reset/update:** reset requests are email-only and CAPTCHA-protected. The public
+  `/auth/update-password` route requires a valid recovery/auth session, then returns through
+  `resolveStartupDestination()`.
 
 ## Username login (`username-login` Edge Function)
 
@@ -42,9 +54,9 @@ supabase.functions.invoke("username-login", { body: { username, password } })
   `{ ok: false, error_code: "invalid_credentials" }` or
   `{ ok: false, error_code: "authentication_unavailable" }`. An ordinary wrong password is NOT an
   HTTP 401 runtime error any more.
-- **On success:** the frontend immediately
-  calls `supabase.auth.setSession({ access_token, refresh_token })` (`AuthForm.tsx:103-107`) and
-  navigates to `/home`.
+- **On success:** the frontend immediately calls
+  `supabase.auth.setSession({ access_token, refresh_token })`, then enters
+  `resolveStartupDestination()` (compliance → language → admission → model → Home).
 - **On failure:** `invalid_credentials` shows a generic invalid username/password message — no
   account enumeration, no email disclosed. `authentication_unavailable` (and any transport
   failure) shows a generic service error instead of blaming the credentials.
@@ -58,18 +70,23 @@ supabase.functions.invoke("username-login", { body: { username, password } })
   generic. HTTP 401 falls back to invalid credentials and 429 to rate-limited; 400/403/422 without
   a recognised stable code fall back to the generic message, because they also occur in signup,
   reset and recovery contexts.
-### External Auth configuration (MANUAL, NOT VERIFIABLE FROM THE PROJECT)
+### External Auth configuration (MANUAL / PARTLY VERIFIED)
 
 The following live in the Supabase Auth configuration console and CANNOT be verified or changed from
 the Lovable-managed project. They remain manual operator tasks:
 
 - Site URL and the redirect allow-list (must include the app origin and `/auth/update-password`,
   plus `/planner?google=connected` for Google Calendar linking).
-- Whether email confirmation is required on signup (this decides whether `signUp` returns a session
-  immediately or the confirm-email state is shown).
+- Email confirmation is currently required (`mailer_autoconfirm=false` from the public production
+  Auth settings endpoint). This means a successful signup intentionally returns no session until
+  the confirmation link is used.
 - SMTP / mail sender configuration.
 - Password policy: minimum length and leaked-password protection.
 - Auth rate limits.
+- CAPTCHA provider/secret setup and allowed hostnames. The provider and private secret are not
+  exposed by the public settings endpoint. The frontend public provider/site-key variables are
+  currently absent from the Lovable-managed environment, so email sign-in/signup/reset must show
+  the localized configuration error instead of sending another guaranteed-to-fail request.
 - OAuth provider enablement and client credentials (Google linking, GitHub, LinkedIn, Spotify), and
   whether manual identity linking is allowed.
 
@@ -140,10 +157,10 @@ the Supabase session; a user's data is whatever rows/objects carry their `auth.u
 
 `frontend/src/lib/sign-out.ts` (`signOutCompletely`):
 
-1. Sends `auth_signout` telemetry (before the session ends, so it is still attributed to the user).
-2. Calls `supabase.auth.signOut()`. On failure, tracks `auth_signout_failed` and rethrows.
-3. In a `finally` block, calls `clearGoogleAccess()` to drop the `sessionStorage` Google token
-   regardless of sign-out success.
+1. Attempts runtime-lease release while the access token is still valid.
+2. Sends `auth_signout` telemetry, then calls `supabase.auth.signOut()`.
+3. In `finally`, clears the Google token, AI/admission session state, messaging state and startup
+   cache whether sign-out succeeds or fails.
 
 ## Admin access model
 

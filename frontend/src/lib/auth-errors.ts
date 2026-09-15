@@ -64,6 +64,8 @@ export function localizedAuthError(t: TranslateFn, error: unknown): string {
     case "validation_failed":
     case "unexpected_failure":
       return t("auth.errorGeneric");
+    case "captcha_failed":
+      return t("auth.captchaFailed");
     default:
       break;
   }
