@@ -44,7 +44,7 @@ export type AccountStatus = "active" | "suspended_pending_review" | "deletion_pe
  * CURRENT SUPABASE (verified 2026-09-15): `user_legal_consents.document_type`.
  * The column is `document_type` — there is no `document_kind`.
  */
-export type LegalDocumentType = "terms" | "privacy" | "acceptable_use" | "child_safety";
+export type LegalDocumentType = "terms" | "privacy" | "acceptable_use" | "safety_notice";
 
 /**
  * CURRENT SUPABASE (verified 2026-09-15): one row returned by
@@ -609,7 +609,8 @@ export type Database = {
         Row: {
           id: string;
           conversation_type: string;
-          created_by: string;
+          /** CURRENT SUPABASE (verified 2026-09-15): nullable. */
+          created_by: string | null;
           direct_key: string | null;
           title: string | null;
           created_at: string;

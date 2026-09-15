@@ -30,7 +30,7 @@ function ChildSafetyPage() {
     <LegalDocumentPage
       title={t("legal.childSafety.title")}
       intro={t("legal.childSafety.intro")}
-      version={LEGAL_VERSIONS.child_safety}
+      version={LEGAL_VERSIONS.safety_notice}
       sections={[
         { title: t("legal.childSafety.title"), body: t("legal.childSafety.warning") },
         { title: t("legal.childSafety.report.title"), body: t("legal.childSafety.report.body") },

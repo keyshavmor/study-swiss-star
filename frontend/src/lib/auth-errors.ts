@@ -50,6 +50,7 @@ export function localizedAuthError(t: TranslateFn, error: unknown): string {
     case "user_already_exists":
     case "email_exists":
     case "phone_exists":
+    case "identity_already_exists":
       return t("auth.errorEmailInUse");
     case "weak_password":
       return t("auth.errorWeakPassword");
@@ -58,6 +59,11 @@ export function localizedAuthError(t: TranslateFn, error: unknown): string {
     case "flow_state_not_found":
     case "session_not_found":
       return t("auth.recoveryLinkInvalid");
+    // A failed field validation is NOT a wrong password and NOT a duplicate
+    // account: fall through to the generic localized message.
+    case "validation_failed":
+    case "unexpected_failure":
+      return t("auth.errorGeneric");
     default:
       break;
   }
@@ -65,10 +71,10 @@ export function localizedAuthError(t: TranslateFn, error: unknown): string {
   if (name === "AuthRetryableFetchError" || name === "TypeError") {
     return t("auth.errorNetwork");
   }
-  if (status === 400 || status === 401 || status === 403) {
-    return t("auth.errorInvalidCredentials");
-  }
-  if (status === 422) return t("auth.errorEmailInUse");
+  // Only 401 is a credentials-shaped fallback. 400/403/422 happen in signup,
+  // reset and recovery contexts too, so they must not falsely claim the
+  // credentials are wrong or that the account already exists.
+  if (status === 401) return t("auth.errorInvalidCredentials");
   if (status === 429) return t("auth.errorRateLimited");
   return t("auth.errorGeneric");
 }

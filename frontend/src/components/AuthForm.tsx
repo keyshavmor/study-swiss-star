@@ -16,6 +16,11 @@ import { track, trackFailure } from "@/lib/telemetry";
 import { toast } from "sonner";
 import { UiError, localizedMessage } from "@/lib/ui-error";
 import { localizedAuthError } from "@/lib/auth-errors";
+import {
+  classifyUsernameLogin,
+  isDuplicateUsernameAfterSignupError,
+  type UsernameLoginPayload,
+} from "@/lib/username-login";
 import { useI18n } from "@/lib/i18n/provider";
 import type { TranslationKey } from "@/lib/i18n/messages";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -55,10 +60,12 @@ export function validateUsername(raw: string, t: (key: TranslationKey) => string
   return null;
 }
 
-interface UsernameLoginResult {
-  access_token?: string;
-  refresh_token?: string;
-}
+/**
+ * CURRENT SUPABASE (`username-login` v2, verified 2026-09-15): expected bad
+ * credentials come back as an HTTP 200 payload with `ok:false` and a stable
+ * `error_code`, never as an HTTP 401 Edge Function runtime error.
+ */
+type UsernameLoginResult = UsernameLoginPayload;
 
 interface UsernameAvailabilityResult {
   available?: boolean;
@@ -113,14 +120,18 @@ export function AuthForm() {
     const { data, error } = await supabase.functions.invoke<UsernameLoginResult>("username-login", {
       body: { username: normalised, password },
     });
-    // Deliberately generic: never reveal whether the username exists, and
-    // never surface the account email behind it.
-    if (error || !data?.access_token || !data?.refresh_token) {
+    // A transport/runtime failure or an unavailable auth service is NOT a wrong
+    // password: show a generic service error instead of blaming the credentials.
+    const outcome = classifyUsernameLogin(data, error);
+    if (outcome.kind === "unavailable") throw new UiError(t("auth.errorGeneric"));
+    if (outcome.kind === "invalid_credentials") {
+      // Deliberately generic: never reveal whether the username exists, and
+      // never surface the account email behind it.
       throw new UiError(t("auth.usernamePasswordError"));
     }
     const { error: sessionError } = await supabase.auth.setSession({
-      access_token: data.access_token,
-      refresh_token: data.refresh_token,
+      access_token: outcome.accessToken,
+      refresh_token: outcome.refreshToken,
     });
     if (sessionError) throw new UiError(localizedAuthError(t, sessionError));
     track({
@@ -184,8 +195,18 @@ export function AuthForm() {
     });
     if (error) {
       // The raw message is never shown; only a stable code/status decides copy.
+      // A 500 / `unexpected_failure` can equally be a service outage, so it is
+      // NOT blanket-mapped to "username taken": re-check the exact username and
+      // only say it is taken when availability confirms that.
       if (error.code === "unexpected_failure" || error.status === 500) {
-        throw new UiError(t("auth.usernameTaken"));
+        const recheck = await supabase.functions.invoke<UsernameAvailabilityResult>(
+          "username-availability",
+          { body: { username: normalised } },
+        );
+        if (isDuplicateUsernameAfterSignupError(recheck)) {
+          throw new UiError(t("auth.usernameTaken"));
+        }
+        throw new UiError(t("auth.errorGeneric"));
       }
       throw new UiError(localizedAuthError(t, error));
     }

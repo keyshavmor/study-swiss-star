@@ -275,12 +275,15 @@ username discovery only (`find_peer_by_exact_username`, no directory);
 `get_or_create_direct_peer_conversation(p_username)` (returns a ROW SET of
 `conversation_id, peer_user_id, peer_username, peer_preferred_name` — NOT a bare id string) and
 `mark_peer_conversation_read(p_conversation_id)` (returns `void`); tables
-`peer_conversations` (`id, conversation_type, created_by, direct_key, title, created_at,
+`peer_conversations` (`id, conversation_type, created_by (NULLABLE), direct_key, title, created_at,
 updated_at` — there is NO `kind` and NO `last_message_at`; lists sort by `updated_at`),
 `peer_conversation_members` (`conversation_id, user_id, member_role, joined_at, last_read_at,
 muted, left_at`), `peer_messages` (`sender_user_id`, `moderation_status`, `moderation_event_id` —
 there is NO `sender_id` and NO `safety_verdict`), `peer_message_attachments` (`owner_user_id`,
-with NO `scan_status` column: openability follows the parent message's `moderation_status`),
+with NO `scan_status` column: openability follows the parent message's `moderation_status`, whose
+only RLS-visible value is `approved` — production RLS exposes `peer_messages` rows only when
+`moderation_status = 'approved'`, so an approved message and its attachments are the visible,
+openable state and no further production states are invented in the UI),
 `peer_message_notifications`, all RLS-scoped by membership. Direct client writes to messages and
 attachments are intentionally disabled — only the local backend, after an `allow` verdict, may
 persist them via `sendPeerMessage`. Attachments: private bucket `peer-message-attachments`, hard
@@ -319,7 +322,11 @@ status}`; an absent group/key or a `not_exposed_by_sql` status renders as "Not e
 NEVER coerced to 0. `get_my_data_summary()` returns ONE JSON object with exactly
 `peer_messages, peer_attachments, peer_attachment_bytes, assistant_messages,
 assistant_attachments, assistant_attachment_bytes, study_chat_messages, documents, document_bytes,
-planner_events, feedback_items`. `user_legal_consents` uses `document_type, document_version,
+planner_events, feedback_items`. `user_legal_consents.document_type` is constrained by
+`user_legal_consents_document_type_check` to EXACTLY `terms`, `privacy`, `acceptable_use`,
+`safety_notice` (the live `complete_account_compliance_onboarding` RPC inserts `safety_notice`;
+there is NO `child_safety` DB value — the user-facing page is still titled Child Safety).
+`user_legal_consents` uses `document_type, document_version,
 accepted_at, withdrawn_at, consent_source, created_at` (there is NO `document_kind`), and
 `complete_account_compliance_onboarding(...)` returns JSONB. The migration
 `harden_auth_peer_rpcs_and_signup_defaults` is live: the auth trigger creates the username,

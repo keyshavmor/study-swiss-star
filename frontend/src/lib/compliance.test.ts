@@ -28,7 +28,7 @@ describe("legal versions", () => {
       terms: "2026-09-15",
       privacy: "2026-09-15",
       acceptable_use: "2026-09-15",
-      child_safety: "2026-09-15",
+      safety_notice: "2026-09-15",
     });
   });
 });

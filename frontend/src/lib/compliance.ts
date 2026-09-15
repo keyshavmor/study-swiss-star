@@ -16,7 +16,8 @@ export const LEGAL_VERSIONS = {
   terms: "2026-09-15",
   privacy: "2026-09-15",
   acceptable_use: "2026-09-15",
-  child_safety: "2026-09-15",
+  /** DB `document_type` is `safety_notice`; the page is titled Child Safety. */
+  safety_notice: "2026-09-15",
 } as const;
 
 export interface AccountComplianceState {
@@ -158,7 +159,7 @@ export async function completeComplianceOnboarding(input: {
     p_terms_version: LEGAL_VERSIONS.terms,
     p_privacy_version: LEGAL_VERSIONS.privacy,
     p_acceptable_use_version: LEGAL_VERSIONS.acceptable_use,
-    p_safety_version: LEGAL_VERSIONS.child_safety,
+    p_safety_version: LEGAL_VERSIONS.safety_notice,
   });
   if (error) throw new Error(error.message);
 }

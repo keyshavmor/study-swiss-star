@@ -24,9 +24,10 @@ sequenceDiagram
         Avail-->>Auth: { valid: true, available: true }
     end
     Auth->>Supa: auth.signUp({ email, password, options.data: { username } })
-    alt duplicate/unique error mentioning username
-        Supa-->>Auth: error
-        Auth-->>User: usernameTaken
+    alt unexpected_failure / 500 and availability re-check says available:false
+        Supa-->>Auth: error (stable code only; message never inspected)
+        Auth->>Avail: functions.invoke("username-availability", { username })
+        Auth-->>User: usernameTaken (else generic localized auth error)
     else success
         Supa-->>Auth: success (email confirmation required)
         Auth->>Telemetry: track auth_signup_succeeded

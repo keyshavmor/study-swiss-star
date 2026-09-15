@@ -37,11 +37,26 @@ supabase.functions.invoke("username-login", { body: { username, password } })
 ```
 
 - **Caller:** `frontend/src/components/AuthForm.tsx:94`.
-- **On success:** the function returns `{ access_token, refresh_token }`; the frontend immediately
+- **v2 contract (verified 2026-09-15):** every expected outcome is HTTP 200 with a payload —
+  `{ ok: true, access_token, refresh_token, expires_in, token_type }`,
+  `{ ok: false, error_code: "invalid_credentials" }` or
+  `{ ok: false, error_code: "authentication_unavailable" }`. An ordinary wrong password is NOT an
+  HTTP 401 runtime error any more.
+- **On success:** the frontend immediately
   calls `supabase.auth.setSession({ access_token, refresh_token })` (`AuthForm.tsx:103-107`) and
   navigates to `/home`.
-- **On failure:** a generic invalid-credentials error is shown — no account enumeration, no email
-  disclosed (`docs/archive/SUPABASE_SERVICES.md`).
+- **On failure:** `invalid_credentials` shows a generic invalid username/password message — no
+  account enumeration, no email disclosed. `authentication_unavailable` (and any transport
+  failure) shows a generic service error instead of blaming the credentials.
+- **Signup 500 handling:** an `unexpected_failure` / HTTP 500 from `auth.signUp` is NOT assumed to
+  mean "username taken" (it can be a service outage). The exact username is re-checked via
+  `username-availability`; only `available: false` shows `auth.usernameTaken`, otherwise a generic
+  localized auth error is shown. Raw `error.message` is never inspected or displayed.
+- **Auth error mapping:** `frontend/src/lib/auth-errors.ts` keys off stable codes only.
+  `identity_already_exists` → account-in-use copy; `validation_failed` / `unexpected_failure` →
+  generic. HTTP 401 falls back to invalid credentials and 429 to rate-limited; 400/403/422 without
+  a recognised stable code fall back to the generic message, because they also occur in signup,
+  reset and recovery contexts.
 - **Implementation:** deployed externally as a Supabase Edge Function; not present in this repo
   (BACKEND IMPLEMENTATION UNKNOWN for internals, CURRENT — EXTERNAL INTEGRATION for the contract).
 
