@@ -8,6 +8,7 @@ import {
   ClipboardList,
   FileQuestion,
   MessageSquare,
+  Sparkles,
   Wrench,
 } from "lucide-react";
 import { useState } from "react";
@@ -18,6 +19,12 @@ import { AssessmentDialog } from "@/components/app/AssessmentDialog";
 import { FailingBadge } from "@/components/app/Badges";
 import { AverageWithRounded, GradeLineChart } from "@/components/app/GradeDisplay";
 import { MaterialsPanel } from "@/components/app/MaterialsPanel";
+import {
+  AssessmentModePanel,
+  type AssessmentContext,
+} from "@/components/app/assessment/AssessmentModePanel";
+import { KnowledgeProfile } from "@/components/app/assessment/KnowledgeProfile";
+import { LEARNING_GOALS } from "@/lib/mock/materials";
 import { useI18n } from "@/lib/i18n/provider";
 import { EmptyState } from "@/components/app/States";
 import { Button } from "@/components/ui/button";
@@ -61,13 +68,17 @@ export const Route = createFileRoute("/_authenticated/school/$subject")({
 
 const MODE_ICONS: Record<SubjectMode, typeof MessageSquare> = {
   Chat: MessageSquare,
-  "Knowledge Analysis": Brain,
+  "Quick Check": Sparkles,
+  "Knowledge Profile": Brain,
   "Quiz Mode": FileQuestion,
-  "Exam Mode": ClipboardList,
+  "Mock Exam": ClipboardList,
   "Study Plan": CalendarRange,
   Statistics: BarChart3,
   "Subject Tools": Wrench,
 };
+
+/** Practice and scored quizzes share the Quiz Mode surface. */
+type QuizVariant = "practice" | "quiz";
 
 function SubjectDashboard() {
   const { t, formatDate, formatMonth } = useI18n();
@@ -76,6 +87,7 @@ function SubjectDashboard() {
   const [activeSlug, setActiveSlug] = useState<string>(components[0] ?? subject.slug);
   const [statsView, setStatsView] = useState<"combined" | "component">("combined");
   const [mode, setMode] = useState<SubjectMode>("Chat");
+  const [quizVariant, setQuizVariant] = useState<QuizVariant>("practice");
   const { assessments, materials, events } = useAppData();
   const active = (components.length ? getSubject(activeSlug) : subject) ?? subject;
   const combined = summariseSubjectView(assessments, subject);
@@ -86,6 +98,20 @@ function SubjectDashboard() {
     .map((e) => e.date)
     .sort()
     .find((d) => d >= new Date().toISOString().slice(0, 10));
+
+  const assessmentContext: AssessmentContext = {
+    subjectSlug: active.slug,
+    subjectName: active.name,
+    component: components.length ? active.name : undefined,
+    language: subject.language,
+    schoolLevel: null,
+    academicYear: null,
+    topics: [],
+    learningGoals: LEARNING_GOALS.map((label, index) => ({ id: `goal-${index + 1}`, label })),
+    materials: materials
+      .filter((file) => file.subjectSlug === active.slug && !file.archived)
+      .map((file) => ({ id: file.id, name: file.name, section: file.section })),
+  };
 
   return (
     <AppShell wide>
@@ -417,6 +443,45 @@ function SubjectDashboard() {
                   </div>
                 </>
               )}
+            </div>
+          ) : mode === "Quick Check" ? (
+            <div className="mt-4">
+              <AssessmentModePanel kind="quick_check" context={assessmentContext} />
+            </div>
+          ) : mode === "Knowledge Profile" ? (
+            <div className="mt-4">
+              <KnowledgeProfile entries={[]} subjectName={active.name} />
+            </div>
+          ) : mode === "Quiz Mode" ? (
+            <div className="mt-4 space-y-4">
+              <div className="flex flex-wrap gap-2 rounded-[16px] bg-surface-2 p-1.5">
+                {(["practice", "quiz"] as const).map((variant) => (
+                  <button
+                    key={variant}
+                    type="button"
+                    onClick={() => setQuizVariant(variant)}
+                    className={cn(
+                      "rounded-[14px] px-4 py-2.5 text-[14px] font-semibold transition-colors duration-200",
+                      quizVariant === variant
+                        ? "bg-card text-foreground shadow-sm"
+                        : "text-muted-foreground hover:text-foreground",
+                    )}
+                  >
+                    {variant === "practice"
+                      ? t("assessment.mode.practice")
+                      : t("assessment.mode.quiz")}
+                  </button>
+                ))}
+              </div>
+              <AssessmentModePanel
+                key={quizVariant}
+                kind={quizVariant === "practice" ? "practice" : "quiz"}
+                context={assessmentContext}
+              />
+            </div>
+          ) : mode === "Mock Exam" ? (
+            <div className="mt-4">
+              <AssessmentModePanel kind="mock_exam" context={assessmentContext} />
             </div>
           ) : (
             <EmptyState
