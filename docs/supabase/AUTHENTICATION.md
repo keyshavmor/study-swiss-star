@@ -24,12 +24,16 @@ reset.
   `captcha_required` / `captcha_failed` user flow, and no CAPTCHA environment configuration
   (`VITE_AUTH_CAPTCHA_PROVIDER` / `VITE_AUTH_CAPTCHA_SITE_KEY` are removed from both env
   contexts). `@hcaptcha/react-hcaptcha` is removed.
-- **CURRENT SUPABASE DASHBOARD — MANUAL RUNTIME PREREQUISITE (NOT INDEPENDENTLY VERIFIED):**
-  Auth > Bot and Abuse Protection must be **disabled** for the production project. While it is
-  enabled, Supabase itself rejects tokenless password signup, sign-in and recovery with HTTP 400 /
-  stable code `captcha_failed` (reproduced live 2026-09-15 while protection was on). This setting
-  lives outside Lovable source; no live auth PASS is claimed until it is confirmed disabled and a
-  real browser signup/sign-in succeeds.
+- **CURRENT SUPABASE — observed runtime (2026-09-15):** a fresh production `auth.signUp` made with
+  NO challenge token **succeeded** — it created the user and sent the confirmation email, with no
+  `captcha_failed`. Bot/Abuse Protection therefore did not block tokenless signup in the observed
+  runtime and is not carried here as a blocking prerequisite. (Historically, while protection was
+  on, Supabase rejected tokenless signup/sign-in/recovery with HTTP 400 `captcha_failed` — see the
+  historical entries in `docs/DOCUMENTATION_DISCOVERED_ISSUES.md`.)
+- **Email confirmation is required:** production `mailer_autoconfirm=false`, so a successful signup
+  intentionally returns no session until the confirmation link is used. Full successful password and
+  username login therefore remains pending a confirmed account in the smoke test; no live login
+  PASS is claimed from signup alone.
 - **Error handling:** a challenge-shaped provider error (`captcha_failed`) maps to the generic
   localized auth error — it is never shown as wrong credentials, and no raw provider payload is
   shown, logged or sent to telemetry.
@@ -60,8 +64,9 @@ supabase.functions.invoke("username-login", { body: { username, password } })
   `{ ok: false, error_code: "invalid_credentials" }` or
   `{ ok: false, error_code: "authentication_unavailable" }`. An ordinary wrong password is NOT an
   HTTP 401 runtime error. The request body carries ONLY `username` and `password`; the Edge
-  Function performs its internal password grant without a challenge token, which requires the
-  dashboard Bot and Abuse Protection prerequisite above.
+  Function performs its internal password grant without a challenge token. (Historically this
+  required Bot/Abuse Protection to be disabled; the 2026-09-15 observed tokenless signup
+  succeeded with no `captcha_failed` — see "Email/password" above.)
 - **Unrecognised error codes** (including legacy `captcha_required` / `captcha_failed`) fall back
   to the generic invalid-credentials message; the frontend has no challenge flow.
 
@@ -94,10 +99,12 @@ the Lovable-managed project. They remain manual operator tasks:
 - SMTP / mail sender configuration.
 - Password policy: minimum length and leaked-password protection.
 - Auth rate limits.
-- **Bot and Abuse Protection (CAPTCHA) must be DISABLED** for password signup, sign-in and
-  recovery to work without tokens. This is a manual runtime prerequisite and is NOT independently
-  verified from Lovable. While it is enabled, password Auth returns `captcha_failed` and live auth
-  cannot be declared PASS. No hCaptcha provider or sitekey is configured in the frontend any more.
+- **Bot and Abuse Protection (CAPTCHA):** the frontend has no CAPTCHA dependency (no hCaptcha
+  provider or sitekey configured). In the 2026-09-15 observed runtime, a tokenless production
+  signup succeeded with no `captcha_failed`, so protection was not blocking signup; whether it is
+  currently enabled or disabled in the dashboard is not independently verified from here.
+  Historically, while it was enabled, tokenless password signup/sign-in/recovery returned HTTP 400
+  `captcha_failed`.
 
 - OAuth provider enablement and client credentials (Google linking, GitHub, LinkedIn, Spotify), and
   whether manual identity linking is allowed.
