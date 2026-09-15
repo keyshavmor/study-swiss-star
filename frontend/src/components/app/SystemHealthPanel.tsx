@@ -247,7 +247,7 @@ function LocalBackendSection() {
 }
 
 function metricLabel(
-  t: (key: Parameters<ReturnType<typeof useI18n>["t"]>[0], vars?: Record<string, unknown>) => string,
+  t: ReturnType<typeof useI18n>["t"],
   used: number | null,
   quota: number | null,
   percent: number | null,

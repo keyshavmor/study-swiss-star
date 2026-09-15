@@ -59,13 +59,14 @@ export function DataRightsPanel() {
         pendingMode === "range"
           ? {
               mode: "range",
-              startAt: start ? new Date(start).toISOString() : undefined,
-              endAt: end ? new Date(end).toISOString() : undefined,
+              ...(start ? { startAt: new Date(start).toISOString() } : {}),
+              ...(end ? { endAt: new Date(end).toISOString() } : {}),
               includePeer,
               includeAi,
             }
           : { mode: pendingMode },
       );
+
       track({ event_name: "data_rights_deletion_completed", feature: "data_rights" });
       setResult("done");
       setPendingMode(null);
