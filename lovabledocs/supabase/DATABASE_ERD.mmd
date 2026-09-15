@@ -1,0 +1,28 @@
+%% Status: CURRENT — live verified 2026-09-15
+erDiagram
+  AUTH_USERS ||--o| PROFILES : owns
+  AUTH_USERS ||--o| USER_PREFERENCES : owns
+  AUTH_USERS ||--o{ THREADS : owns
+  THREADS ||--o{ MESSAGES : composite_owner
+  THREADS ||--o{ CONVERSATION_SUMMARIES : composite_owner
+  THREADS ||--o{ WORKING_MEMORY : composite_owner
+  AUTH_USERS ||--o{ DOCUMENTS : owns
+  DOCUMENTS ||--o{ DOCUMENT_CHUNKS : composite_owner
+  AUTH_USERS ||--o{ STUDENT_MEMORIES : owns
+  AUTH_USERS ||--o{ LEARNING_EVENTS : owns
+  AUTH_USERS ||--o{ CONTEXT_ARTIFACTS : owns
+  AUTH_USERS ||--o{ ASSISTANT_THREADS : owns
+  ASSISTANT_THREADS ||--o{ ASSISTANT_MESSAGES : composite_owner
+  ASSISTANT_THREADS ||--o{ ASSISTANT_ATTACHMENTS : composite_owner
+  ASSISTANT_MESSAGES ||--o{ ASSISTANT_ATTACHMENTS : optional_composite_owner
+  ASSISTANT_ATTACHMENTS ||--o{ MEDIA_RETENTION_QUEUE : optional
+  AUTH_USERS ||--o{ ASSESSMENTS : owns
+  AUTH_USERS ||--o{ PLANNER_EVENTS : owns
+  AUTH_USERS ||--o{ SCHOOL_LINKS : owns
+  AUTH_USERS ||--o{ NOTIFICATION_STATE : owns
+  AUTH_USERS ||--o{ QUIZZES : owns
+  QUIZZES ||--o{ QUIZ_ATTEMPTS : composite_owner
+  AUTH_USERS ||--o{ MOCK_EXAMS : owns
+  MOCK_EXAMS ||--o{ MOCK_EXAM_ATTEMPTS : composite_owner
+  AUTH_USERS ||--o{ GRADING_RESULTS : owns
+  AUTH_USERS ||--o{ STUDY_PLANS : owns

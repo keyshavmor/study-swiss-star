@@ -1,0 +1,12 @@
+%% Status: CURRENT — deployed source verified
+sequenceDiagram
+  participant UI as AuthForm
+  participant Fn as username-login
+  participant Admin as Trusted Supabase client
+  participant Auth as Supabase Auth
+  UI->>Fn: normalized username + password
+  Fn->>Fn: validate ^[a-z0-9._-]{3,30}$
+  Fn->>Admin: resolve profile user_id and account email
+  Fn->>Auth: signInWithPassword via public client
+  Auth-->>Fn: session or generic invalid credentials
+  Fn-->>UI: session tokens only on success

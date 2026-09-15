@@ -9,6 +9,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useAcademicYear } from "@/lib/store/academic-year";
+import { useI18n } from "@/lib/i18n/provider";
 import { cn } from "@/lib/utils";
 
 /**
@@ -22,6 +23,7 @@ export function AcademicYearSelector({
   className?: string;
   compact?: boolean;
 }) {
+  const { t } = useI18n();
   const { yearId, years, setYearId, step } = useAcademicYear();
   const index = years.findIndex((y) => y.id === yearId);
 
@@ -30,7 +32,7 @@ export function AcademicYearSelector({
       <Button
         variant="secondary"
         size="icon-sm"
-        aria-label="Previous academic year"
+        aria-label={t("misc.year.previous")}
         disabled={index <= 0}
         onClick={() => step(-1)}
       >
@@ -39,7 +41,7 @@ export function AcademicYearSelector({
 
       <Select value={yearId} onValueChange={setYearId}>
         <SelectTrigger
-          aria-label="Academic year"
+          aria-label={t("misc.year.label")}
           className={cn("h-9 min-w-[210px]", compact && "min-w-[180px] text-[13.5px]")}
         >
           <SelectValue />
@@ -56,7 +58,7 @@ export function AcademicYearSelector({
       <Button
         variant="secondary"
         size="icon-sm"
-        aria-label="Next academic year"
+        aria-label={t("misc.year.next")}
         disabled={index >= years.length - 1}
         onClick={() => step(1)}
       >

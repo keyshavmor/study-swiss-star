@@ -1,0 +1,8 @@
+%% Status: DEFERRED — no media producer
+sequenceDiagram
+  participant Assistant
+  participant Producer as Future defined producer
+  participant Descriptor
+  participant Queue
+  Assistant--xProducer: No generation contract exists
+  Note over Producer,Queue: Any future producer must store a descriptor before marking retention ready.

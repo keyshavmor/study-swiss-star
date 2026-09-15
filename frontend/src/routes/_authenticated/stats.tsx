@@ -2,12 +2,12 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Plus } from "lucide-react";
 import { useMemo, useState } from "react";
+import { useI18n } from "@/lib/i18n/provider";
 import { AcademicYearSelector } from "@/components/app/AcademicYearSelector";
 import { AppShell, PageHeading } from "@/components/app/AppShell";
 import { PageNav } from "@/components/app/Breadcrumbs";
 import { AssessmentActions } from "@/components/app/AssessmentActions";
 import { AssessmentDialog } from "@/components/app/AssessmentDialog";
-import { DemoModeBanner, DemoModeButton } from "@/components/app/DemoMode";
 import { EmptyState } from "@/components/app/States";
 import { MiniTrendChart } from "@/components/app/StatsOverviewPanel";
 import { Button } from "@/components/ui/button";
@@ -29,7 +29,6 @@ import {
 } from "@/components/ui/table";
 import { useAcademicYear } from "@/lib/store/academic-year";
 import {
-  formatDate,
   gradeOf,
   monthlySeries,
   percentageOf,
@@ -37,6 +36,7 @@ import {
   summariseYear,
 } from "@/lib/grade-math";
 import { isFailing } from "@/lib/mock/grades";
+import { ASSESSMENT_TYPE_LABEL_KEY, GRADE_SOURCE_LABEL_KEY } from "@/lib/store/types";
 import { SCHOOL_SUBJECTS, getSubject } from "@/lib/mock/subjects";
 import { useAppData } from "@/lib/store/app-data";
 import { cn } from "@/lib/utils";
@@ -63,6 +63,7 @@ export const Route = createFileRoute("/_authenticated/stats")({
 });
 
 function StatsPage() {
+  const { t, formatDate } = useI18n();
   const { assessments } = useAppData();
   const { yearId, year } = useAcademicYear();
   const [subject, setSubject] = useState("all");
@@ -90,32 +91,29 @@ function StatsPage() {
   return (
     <AppShell wide>
       <PageNav
-        back={{ to: "/school", label: "School" }}
+        back={{ to: "/school", label: t("stats.back.school") }}
         crumbs={[
-          { label: "Home", to: "/home" },
-          { label: "School", to: "/school" },
-          { label: "Statistics" },
+          { label: t("stats.crumb.home"), to: "/home" },
+          { label: t("stats.crumb.school"), to: "/school" },
+          { label: t("stats.crumb.statistics") },
         ]}
       />
       <PageHeading
-        title="Statistics"
-        description="Averages, trends and every test you added — all of it editable."
+        title={t("stats.title")}
+        description={t("stats.description")}
         action={
           <div className="flex gap-2">
             <AssessmentDialog
               trigger={
                 <Button>
                   <Plus className="h-4 w-4" />
-                  Add Test
+                  {t("stats.addTest")}
                 </Button>
               }
             />
-            <DemoModeButton className="hidden sm:inline-flex" />
           </div>
         }
       />
-
-      <DemoModeBanner />
 
       <div className="mb-6 flex flex-wrap gap-3">
         <AcademicYearSelector />
@@ -124,7 +122,7 @@ function StatsPage() {
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All subjects</SelectItem>
+            <SelectItem value="all">{t("stats.subjectFilter.all")}</SelectItem>
             {SCHOOL_SUBJECTS.map((s) => (
               <SelectItem key={s.slug} value={s.slug}>
                 {s.name}
@@ -136,14 +134,14 @@ function StatsPage() {
 
       {yearTests.length === 0 ? (
         <EmptyState
-          heading={`No tests in ${year.label}`}
-          description="Add a test, or upload a transcript, to build your statistics for this school year."
+          heading={t("stats.empty.heading", { year: year.label })}
+          description={t("stats.empty.description")}
           action={
             <AssessmentDialog
               trigger={
                 <Button>
                   <Plus className="h-4 w-4" />
-                  Add Test
+                  {t("stats.addTest")}
                 </Button>
               }
             />
@@ -153,29 +151,38 @@ function StatsPage() {
         <>
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <KPI
-              label="School-year average"
-              value={summary.exactYearAverage?.toFixed(2) ?? "—"}
+              label={t("stats.kpi.yearAverage")}
+              value={summary.exactYearAverage?.toFixed(2) ?? t("stats.emptyValue")}
               failing={isFailing(summary.exactYearAverage)}
             />
-            <KPI label="Tests added" value={String(summary.totalTests)} />
-            <KPI label="Highest grade" value={summary.highestGrade?.toFixed(2) ?? "—"} />
+            <KPI label={t("stats.kpi.testsAdded")} value={String(summary.totalTests)} />
             <KPI
-              label="Lowest grade"
-              value={summary.lowestGrade?.toFixed(2) ?? "—"}
+              label={t("stats.kpi.highestGrade")}
+              value={summary.highestGrade?.toFixed(2) ?? t("stats.emptyValue")}
+            />
+            <KPI
+              label={t("stats.kpi.lowestGrade")}
+              value={summary.lowestGrade?.toFixed(2) ?? t("stats.emptyValue")}
               failing={isFailing(summary.lowestGrade)}
             />
           </div>
 
           <div className="mt-5 grid gap-5 xl:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
             <section className="app-card p-5">
-              <h2 className="text-[18px] font-semibold tracking-tight">Average over time</h2>
+              <h2 className="text-[18px] font-semibold tracking-tight">
+                {t("stats.chart.averageOverTime")}
+              </h2>
               <MiniTrendChart className="mt-4" data={series} />
             </section>
 
             <section className="app-card p-5">
-              <h2 className="text-[18px] font-semibold tracking-tight">Subject comparison</h2>
+              <h2 className="text-[18px] font-semibold tracking-tight">
+                {t("stats.chart.subjectComparison")}
+              </h2>
               {subjectsWithGrades.length === 0 ? (
-                <p className="mt-3 text-[14px] text-muted-foreground">No subject averages yet.</p>
+                <p className="mt-3 text-[14px] text-muted-foreground">
+                  {t("stats.chart.noSubjectAverages")}
+                </p>
               ) : (
                 <ul className="mt-4 space-y-3">
                   {subjectsWithGrades.map(({ subject: s, summary: sum }) => (
@@ -212,23 +219,25 @@ function StatsPage() {
 
           <section className="app-card mt-5 p-5">
             <div className="mb-4 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
-              <h2 className="text-[18px] font-semibold tracking-tight">Your tests</h2>
-              <Badge variant="secondary">{rows.length} entries</Badge>
+              <h2 className="text-[18px] font-semibold tracking-tight">
+                {t("stats.table.yourTests")}
+              </h2>
+              <Badge variant="secondary">{t("stats.table.entries", { count: rows.length })}</Badge>
             </div>
 
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Subject</TableHead>
-                    <TableHead>Test</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead className="text-right">Points</TableHead>
-                    <TableHead className="text-right">%</TableHead>
-                    <TableHead className="text-right">Grade</TableHead>
-                    <TableHead>Source</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                    <TableHead>{t("stats.table.date")}</TableHead>
+                    <TableHead>{t("stats.table.subject")}</TableHead>
+                    <TableHead>{t("stats.table.test")}</TableHead>
+                    <TableHead>{t("stats.table.type")}</TableHead>
+                    <TableHead className="text-right">{t("stats.table.points")}</TableHead>
+                    <TableHead className="text-right">{t("stats.table.percent")}</TableHead>
+                    <TableHead className="text-right">{t("stats.table.grade")}</TableHead>
+                    <TableHead>{t("stats.table.source")}</TableHead>
+                    <TableHead className="text-right">{t("stats.table.actions")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -245,13 +254,13 @@ function StatsPage() {
                         </TableCell>
                         <TableCell>{a.title}</TableCell>
                         <TableCell className="whitespace-nowrap text-muted-foreground">
-                          {a.type}
+                          {t(ASSESSMENT_TYPE_LABEL_KEY[a.type])}
                         </TableCell>
                         <TableCell className="tabular text-right">
-                          {a.points === null ? "—" : `${a.points}/${a.maxPoints}`}
+                          {a.points === null ? t("stats.emptyValue") : `${a.points}/${a.maxPoints}`}
                         </TableCell>
                         <TableCell className="tabular text-right">
-                          {pct === null ? "—" : `${pct}%`}
+                          {pct === null ? t("stats.emptyValue") : `${pct}%`}
                         </TableCell>
                         <TableCell
                           className={cn(
@@ -259,11 +268,11 @@ function StatsPage() {
                             isFailing(grade) && "text-warning",
                           )}
                         >
-                          {grade === null ? "—" : grade.toFixed(2)}
+                          {grade === null ? t("stats.emptyValue") : grade.toFixed(2)}
                         </TableCell>
                         <TableCell>
                           <Badge variant="secondary" className="whitespace-nowrap text-[11.5px]">
-                            {a.source}
+                            {t(GRADE_SOURCE_LABEL_KEY[a.source])}
                           </Badge>
                         </TableCell>
                         <TableCell className="text-right">
@@ -277,11 +286,8 @@ function StatsPage() {
             </div>
 
             <div className="mt-5 rounded-[18px] bg-surface-2 p-4 text-[14.5px]">
-              <p className="font-medium">Grade = 1.0 + 5.0 × (achieved points ÷ maximum points)</p>
-              <p className="mt-1 text-muted-foreground">
-                Minimum 1.0 · Maximum 6.0 · Passing 4.0 · 0% → 1.0 · 50% → 3.5 · 80% → 5.0 · 100% →
-                6.0
-              </p>
+              <p className="font-medium">{t("stats.formula.title")}</p>
+              <p className="mt-1 text-muted-foreground">{t("stats.formula.range")}</p>
             </div>
           </section>
         </>

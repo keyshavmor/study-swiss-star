@@ -1,0 +1,16 @@
+%% Status: CURRENT — backend implemented, UI trigger not wired
+sequenceDiagram
+  participant Caller as Trusted caller
+  participant API as FastAPI
+  participant Storage as Private user-materials
+  participant Parser as DocumentIngestor
+  participant Store as SupabaseContextStore
+  Caller->>API: bearer JWT + owned path or text
+  API->>Storage: download with caller JWT
+  Storage-->>API: owned bytes
+  API->>Parser: temporary file/text + metadata
+  Parser->>Parser: parse, chunk, count, embed
+  Parser->>Store: documents + JSONB embedding chunks
+  Store-->>Parser: RLS-protected persistence
+  API->>API: delete temporary file in finally
+  API-->>Caller: document_id/chunks/token_count

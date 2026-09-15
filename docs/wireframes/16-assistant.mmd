@@ -1,0 +1,27 @@
+%% General-purpose AI assistant (AssistantChat.tsx): separate data model from tutoring chat.
+sequenceDiagram
+    autonumber
+    actor Student
+    participant UI as AssistantChat.tsx (/assistant)
+    participant I18n as detectLanguage / effectiveResponseLanguage
+    participant DB as Supabase assistant_* tables
+    participant ST as Storage chat-attachments bucket
+    participant PY as Local Python backend (future)
+    Student->>UI: New chat
+    UI->>DB: insert assistant_threads
+    Student->>UI: Type message + attach files
+    UI->>I18n: Compute responseLanguageHint, CLIENT STATE ONLY, not sent to backend today
+    UI->>UI: Validate media <= 1 MB, allow PDF/DOCX
+    UI->>DB: insert assistant_messages (role=user)
+    UI->>ST: upload <uid>/<threadId>/<file>
+    UI->>DB: insert assistant_attachments (parse_status=unparsed)
+    UI-->>Student: "Saved and ready for the local AI backend"
+    Note over UI,PY: No reply is fabricated. Generation and parsing<br/>begin once the assistant endpoint is connected.<br/>DEFERRED.
+    PY-->>DB: (future) insert assistant_messages (role=assistant)
+    DB-->>UI: reply appears in history on next load
+    opt Listen / Stop read-aloud on a completed assistant message
+      Student->>UI: Click Listen
+      UI->>UI: lib/speech.ts speechSynthesis, ephemeral, never stored
+      Note over UI: Autoplay (assistant_audio_autoplay) speaks only<br/>newly completed answers when enabled.
+    end
+    Note over PY,DB: DEFERRED: assistant output media descriptor<br/>generation, upload to assistant-descriptors, and<br/>media_retention_queue enqueue.

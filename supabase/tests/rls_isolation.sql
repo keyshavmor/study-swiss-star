@@ -51,6 +51,18 @@ insert into public.quizzes (id, user_id, subject, questions)
 values ('60000000-0000-4000-8000-00000000000b', 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', 'biology', '[]');
 insert into public.mock_exams (id, user_id, subject, questions)
 values ('70000000-0000-4000-8000-00000000000b', 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', 'biology', '[]');
+insert into public.assistant_threads (id, user_id, title)
+values ('80000000-0000-4000-8000-00000000000b', 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', 'B assistant thread');
+insert into public.assistant_messages (id, thread_id, user_id, role, content)
+values ('81000000-0000-4000-8000-00000000000b', '80000000-0000-4000-8000-00000000000b', 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', 'user', 'B private assistant message');
+insert into public.assistant_attachments
+  (id, user_id, thread_id, message_id, file_name, mime_type, byte_size, kind, object_path)
+values
+  ('82000000-0000-4000-8000-00000000000b', 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', '80000000-0000-4000-8000-00000000000b', '81000000-0000-4000-8000-00000000000b', 'private.pdf', 'application/pdf', 12, 'document', 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb/private.pdf');
+insert into public.media_retention_queue
+  (id, user_id, attachment_id, media_kind, storage_bucket, object_path, descriptor_bucket, descriptor_path, status)
+values
+  ('83000000-0000-4000-8000-00000000000b', 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', '82000000-0000-4000-8000-00000000000b', 'image', 'chat-attachments', 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb/private.png', 'assistant-descriptors', 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb/private.md', 'ready');
 insert into storage.objects (bucket_id, name, owner_id)
 values
   ('user-materials', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa/a.pdf', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'),
@@ -68,6 +80,10 @@ select pg_temp.assert_true((select count(*) = 1 from public.document_chunks), 'A
 select pg_temp.assert_true((select count(*) = 0 from public.student_memories), 'A sees no B memories');
 select pg_temp.assert_true((select count(*) = 0 from public.quizzes), 'A sees no B quizzes');
 select pg_temp.assert_true((select count(*) = 0 from public.mock_exams), 'A sees no B exams');
+select pg_temp.assert_true((select count(*) = 0 from public.assistant_threads), 'A sees no B assistant threads');
+select pg_temp.assert_true((select count(*) = 0 from public.assistant_messages), 'A sees no B assistant messages');
+select pg_temp.assert_true((select count(*) = 0 from public.assistant_attachments), 'A sees no B assistant attachments');
+select pg_temp.assert_true((select count(*) = 0 from public.media_retention_queue), 'A sees no B retention rows');
 select pg_temp.assert_true(
   (select count(*) = 0 from storage.objects where name like 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb/%'),
   'A cannot read or list B storage objects'
@@ -94,6 +110,28 @@ begin
   get diagnostics changed_rows = row_count;
   perform pg_temp.assert_true(changed_rows = 0, 'A cannot update B storage object');
 
+end;
+$$;
+
+do $$
+begin
+  begin
+    insert into public.assistant_messages (thread_id, user_id, role, content)
+    values ('80000000-0000-4000-8000-00000000000b', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'user', 'cross-owner');
+    raise exception 'cross-owner assistant message unexpectedly succeeded';
+  exception when foreign_key_violation or insufficient_privilege then
+    null;
+  end;
+
+  begin
+    insert into public.media_retention_queue
+      (user_id, attachment_id, media_kind, storage_bucket, object_path, descriptor_bucket, descriptor_path, status)
+    values
+      ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', '82000000-0000-4000-8000-00000000000b', 'image', 'chat-attachments', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa/forged.png', 'assistant-descriptors', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa/forged.md', 'ready');
+    raise exception 'cross-owner retention row unexpectedly succeeded';
+  exception when foreign_key_violation or insufficient_privilege then
+    null;
+  end;
 end;
 $$;
 

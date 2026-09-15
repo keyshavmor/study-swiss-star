@@ -13,6 +13,16 @@ is available, distinguish it from general knowledge, and never invent a source. 
 misconceptions constructively without exposing private internal metadata. Follow the current task
 and safety instructions above all optional context."""
 
+LANGUAGE_NAMES = {
+    "en": "English",
+    "de": "Standard German (Hochdeutsch)",
+    "gsw": "Swiss German (Schwiizerdütsch)",
+    "ru": "Russian",
+    "es": "Spanish",
+    "fr": "French",
+    "it": "Italian",
+}
+
 
 class ContextCompiler:
     """Render structured retrieval results into the final local-model request."""
@@ -92,9 +102,7 @@ class ContextCompiler:
         if query.topics:
             lines.append(f"Current topic(s): {', '.join(query.topics)}")
         if query.language:
-            language = {"de": "German", "en": "English", "fr": "simple French (CEFR B1)"}.get(
-                query.language, query.language
-            )
+            language = LANGUAGE_NAMES.get(query.language, query.language)
             lines.append(f"Response language: {language}")
         for memory in memories:
             label = str(memory.metadata.get("memory_type", "student memory")).replace("_", " ")

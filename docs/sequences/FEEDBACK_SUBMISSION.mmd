@@ -1,0 +1,14 @@
+%% Status: CURRENT — live source verified
+sequenceDiagram
+  participant UI
+  participant Fn as feedback-submit
+  participant Auth as Supabase Auth
+  participant DB as feedback
+  participant Bucket as feedback-messages
+  UI->>Fn: bearer token + category/message/bounded context
+  Fn->>Auth: verify caller
+  Auth-->>Fn: user id
+  Fn->>DB: insert user-owned row
+  Fn->>Bucket: write private user-prefixed text mirror
+  Fn-->>UI: 200 or 207 partial-storage result
+  Note over DB,Bucket: Reads are admin-only via app_metadata role.

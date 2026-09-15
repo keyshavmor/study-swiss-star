@@ -1,0 +1,81 @@
+%% Document status: CURRENT
+%% Generated from: current Lovable project · GitHub main (keyshavmor/study-swiss-star) · live Supabase project ucacmeadsufiedxrgqit
+%% Last verified: 2026-09-14 (UTC)
+%% Frontend commit: e0ef3464557d4786d214accb0d1bf44082ae3466
+flowchart TD
+  Root(["Any URL"]) --> Root_check{"Session check<br/>frontend/src/routes/index.tsx / auth.tsx"}
+  Root_check -->|"signed out, at /"| Welcome["/ Welcome + AuthForm<br/>frontend/src/routes/index.tsx"]
+  Root_check -->|"signed in, at /"| Home
+  Root_check -->|"any /auth request"| AuthAlias["/auth alias<br/>frontend/src/routes/auth.tsx"]
+  AuthAlias -->|"signed out"| Welcome
+  AuthAlias -->|"signed in"| Home
+
+  Welcome -->|"email/username sign-in success"| Home
+  Welcome -->|"OAuth GitHub/LinkedIn/Spotify"| OAuthRedirect["External provider redirect"]
+  OAuthRedirect --> Home
+  Welcome -->|"sign up"| Welcome
+  Welcome -->|"forgot password"| ResetForm["Reset mode (same screen)"]
+  ResetForm --> Welcome
+
+  ProtectedGate{"_authenticated/route.tsx<br/>beforeLoad: supabase.auth.getUser()"}
+  ProtectedGate -->|"no user"| Welcome
+  ProtectedGate -->|"user present"| AuthedOutlet["Authenticated Outlet"]
+
+  Home["/home"] --> ProtectedGate
+  School["/school"] --> ProtectedGate
+  SubjectPage["/school/$subject"] --> ProtectedGate
+  Planner["/planner"] --> ProtectedGate
+  Stats["/stats"] --> ProtectedGate
+  ChatIndex["/chat (redirect)"] --> ProtectedGate
+  ChatThread["/chat/$threadId"] --> ProtectedGate
+  AssistantIndex["/assistant"] --> ProtectedGate
+  AssistantThread["/assistant/$threadId"] --> ProtectedGate
+  Profile["/profile"] --> ProtectedGate
+  Settings["/settings"] --> ProtectedGate
+  Feedback["/feedback"] --> ProtectedGate
+  Help["/help"] --> ProtectedGate
+
+  AuthedOutlet --> Home
+  Home -->|"School card / nav"| School
+  Home -->|"Planner card / nav"| Planner
+  School -->|"click subject card"| SubjectPage
+  School -->|"nav Statistics"| Stats
+  SubjectPage -->|"not found"| SchoolNotFound["Subject not found<br/>EmptyState -> back to /school"]
+  SchoolNotFound --> School
+  SubjectPage -->|"Chat tab -> Open Study Chat"| ChatIndex
+  ChatIndex -->|"no threads: create; else latest"| ChatThread
+  Planner -->|"Connect Google Calendar"| GoogleOAuth["External Google consent screen"]
+  GoogleOAuth -->|"redirect back"| Planner
+
+  AppHeaderNav{"AppHeader nav<br/>frontend/src/components/app/AppHeader.tsx"}
+  Home --- AppHeaderNav
+  School --- AppHeaderNav
+  Planner --- AppHeaderNav
+  Stats --- AppHeaderNav
+  AssistantIndex --- AppHeaderNav
+  Help --- AppHeaderNav
+  Feedback --- AppHeaderNav
+  Profile --- AppHeaderNav
+  Settings --- AppHeaderNav
+
+  AppHeaderNav --> Home
+  AppHeaderNav --> School
+  AppHeaderNav --> Planner
+  AppHeaderNav --> AssistantIndex
+  AppHeaderNav --> Stats
+  AppHeaderNav --> Help
+  AppHeaderNav --> Feedback
+  AppHeaderNav --> Profile
+  AppHeaderNav --> Settings
+
+  AssistantIndex -->|"select/create thread"| AssistantThread
+  AssistantThread -->|"switch thread"| AssistantThread
+
+  Help -->|"open language guide, new tab"| PdfGuide["Static PDF: /help-guides/alim-user-guide-*.pdf"]
+
+  AppHeaderNav -->|"Sign out<br/>frontend/src/lib/sign-out.ts"| SignOut["signOutCompletely()"]
+  SignOut --> Welcome
+
+  ApiChat(["POST /api/chat<br/>frontend/src/routes/api/chat.ts<br/>(server route, non-visual)"])
+  ChatThread -.->|"Bearer token fetch"| ApiChat
+  ApiChat -.->|"streams reply"| ChatThread

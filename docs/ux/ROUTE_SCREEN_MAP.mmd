@@ -1,0 +1,90 @@
+%% Document status: CURRENT
+%% Generated from: current Lovable project · GitHub main (keyshavmor/study-swiss-star) · live Supabase project ucacmeadsufiedxrgqit
+%% Last verified: 2026-09-14 (UTC)
+%% Frontend commit: e0ef3464557d4786d214accb0d1bf44082ae3466
+%% Superseded document: the older top-level docs/ROUTE_SCREEN_MAP.md is superseded by this diagram.
+flowchart LR
+  ROOT["__root.tsx<br/>Providers: QueryClient -> I18n -> Theme -> AppData -> AcademicYear"]
+
+  subgraph PUBLIC["Public routes"]
+    IDX["/ index.tsx<br/>WelcomeAuthScreen"]
+    AUTHALIAS["/auth auth.tsx<br/>redirect only"]
+    UPDATEPW["/auth/update-password<br/>UpdatePasswordPage"]
+  end
+
+  AUTHFORM["AuthForm.tsx"]
+  IDX --> AUTHFORM
+
+  GATE["_authenticated/route.tsx<br/>auth gate (getUser)"]
+
+  subgraph AUTHED["Authenticated screens"]
+    HOME["/home home.tsx<br/>HomePage"]
+    SCHOOLIDX["/school school.index.tsx<br/>Subject grid + year average"]
+    SCHOOLSUB["/school/$subject school.$subject.tsx<br/>SubjectDashboard (7 mode tabs)"]
+    PLANNER["/planner planner.tsx<br/>Timetable"]
+    STATS["/stats stats.tsx<br/>StatsOverviewPanel"]
+    HELP["/help help.tsx"]
+    FEEDBACK["/feedback feedback.tsx"]
+    PROFILE["/profile profile.tsx"]
+    SETTINGS["/settings settings.tsx"]
+    CHATIDX["/chat chat.index.tsx<br/>thread list/create, redirects"]
+    CHATTHREAD["/chat/$threadId chat.$threadId.tsx<br/>StudyChat"]
+    ASSISTIDX["/assistant assistant.index.tsx<br/>AssistantChat"]
+    ASSISTTHREAD["/assistant/$threadId assistant.$threadId.tsx<br/>AssistantChat"]
+  end
+
+  APICHAT["/api/chat api/chat.ts<br/>server POST handler"]
+
+  ROOT --> PUBLIC
+  ROOT --> GATE
+  GATE --> AUTHED
+  IDX -. signed in .-> HOME
+  AUTHALIAS -. redirect .-> HOME
+  AUTHALIAS -. redirect .-> IDX
+  UPDATEPW -- navigate --> HOME
+
+  HOME --> SCHOOLIDX
+  HOME --> PLANNER
+  SCHOOLIDX --> SCHOOLSUB
+  SCHOOLSUB -- "Chat tab link" --> CHATIDX
+  SCHOOLIDX --> STATS
+  CHATIDX -- create/select thread --> CHATTHREAD
+
+  subgraph SUPABASE_SVC["Supabase (auth + Postgres + storage + Edge Functions)"]
+    AUTHSVC["auth.* (signIn/signUp/OAuth/linkIdentity)"]
+    PROFILES[("public.profiles")]
+    USERPREFS[("public.user_preferences")]
+    FEEDBACKTBL[("public.feedback")]
+    THREADSTBL[("public.threads / public.messages")]
+    ASSISTTBL[("public.assistant_threads / assistant_messages / assistant_attachments")]
+    STORAGEBUCKETS[("Storage: profile-avatars, chat-attachments, feedback-messages, user-materials")]
+    EDGEFN_USERNAME["Edge Fn: username-login / username-availability"]
+    EDGEFN_ACTIVITY["Edge Fn: activity-log"]
+    EDGEFN_FEEDBACK["Edge Fn: feedback-submit"]
+    EDGEFN_CLEANUP["Edge Fn: storage-emergency-cleanup"]
+  end
+
+  AUTHFORM --> AUTHSVC
+  AUTHFORM --> EDGEFN_USERNAME
+  UPDATEPW --> AUTHSVC
+  GATE --> AUTHSVC
+  PROFILE --> PROFILES
+  PROFILE --> STORAGEBUCKETS
+  SETTINGS --> USERPREFS
+  SETTINGS --> EDGEFN_CLEANUP
+  FEEDBACK --> EDGEFN_FEEDBACK
+  EDGEFN_FEEDBACK --> FEEDBACKTBL
+  EDGEFN_FEEDBACK --> STORAGEBUCKETS
+  CHATIDX --> THREADSTBL
+  CHATTHREAD --> THREADSTBL
+  ASSISTIDX --> ASSISTTBL
+  ASSISTTHREAD --> ASSISTTBL
+  ROOT -. onAuthStateChange .-> AUTHSVC
+  ROOT -. page_viewed telemetry .-> EDGEFN_ACTIVITY
+
+  CHATTHREAD -- "POST /api/chat" --> APICHAT
+  APICHAT --> THREADSTBL
+  APICHAT -- "Bearer JWT + language; requestContextAnswer (CURRENT)" --> CONTEXTBACKEND["Local Python context backend<br/>ALIM_CONTEXT_BACKEND_URL"]
+
+  classDef backendUnknown fill:#fdf1d0,stroke:#a67c00,color:#333;
+  class ASSISTTHREAD,ASSISTIDX backendUnknown

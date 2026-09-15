@@ -16,24 +16,19 @@ import { PageNav } from "@/components/app/Breadcrumbs";
 import { AssessmentActions } from "@/components/app/AssessmentActions";
 import { AssessmentDialog } from "@/components/app/AssessmentDialog";
 import { FailingBadge } from "@/components/app/Badges";
-import { DemoModeBanner } from "@/components/app/DemoMode";
 import { AverageWithRounded, GradeLineChart } from "@/components/app/GradeDisplay";
 import { MaterialsPanel } from "@/components/app/MaterialsPanel";
+import { useI18n } from "@/lib/i18n/provider";
 import { EmptyState } from "@/components/app/States";
 import { Button } from "@/components/ui/button";
 import type { SubjectMode } from "@/lib/mock/materials";
 import { SUBJECT_MODES } from "@/lib/mock/materials";
-import {
-  formatDate,
-  formatMonthYear,
-  gradeOf,
-  summariseSubject,
-  summariseSubjectView,
-} from "@/lib/grade-math";
+import { gradeOf, summariseSubject, summariseSubjectView } from "@/lib/grade-math";
 import { isFailing } from "@/lib/mock/grades";
-import { getSchoolSubject, getSubject } from "@/lib/mock/subjects";
+import { TREND_LABEL_KEY, getSchoolSubject, getSubject } from "@/lib/mock/subjects";
 import { useAppData } from "@/lib/store/app-data";
 import { cn } from "@/lib/utils";
+import { ASSESSMENT_TYPE_LABEL_KEY, GRADE_SOURCE_LABEL_KEY } from "@/lib/store/types";
 
 export const Route = createFileRoute("/_authenticated/school/$subject")({
   loader: ({ params }) => {
@@ -75,6 +70,7 @@ const MODE_ICONS: Record<SubjectMode, typeof MessageSquare> = {
 };
 
 function SubjectDashboard() {
+  const { t, formatDate, formatMonth } = useI18n();
   const { subject } = Route.useLoaderData();
   const components = subject.components ?? [];
   const [activeSlug, setActiveSlug] = useState<string>(components[0] ?? subject.slug);
@@ -94,10 +90,10 @@ function SubjectDashboard() {
   return (
     <AppShell wide>
       <PageNav
-        back={{ to: "/school", label: "School" }}
+        back={{ to: "/school", label: t("nav.school") }}
         crumbs={[
-          { label: "Home", to: "/home" },
-          { label: "School", to: "/school" },
+          { label: t("nav.home"), to: "/home" },
+          { label: t("nav.school"), to: "/school" },
           { label: subject.name },
         ]}
       />
@@ -125,7 +121,7 @@ function SubjectDashboard() {
           </div>
           <dl className="hidden gap-6 text-right sm:flex">
             <Meta
-              label={components.length ? "Combined average" : "Average"}
+              label={components.length ? t("subject.combinedAverage") : t("subject.average")}
               value={
                 components.length
                   ? (combined.exactAverage?.toFixed(2) ?? "—")
@@ -133,25 +129,31 @@ function SubjectDashboard() {
               }
               failing={isFailing((components.length ? combined : grades).exactAverage)}
             />
-            <Meta label="Next exam" value={nextExam ? formatDate(nextExam) : "None planned"} />
             <Meta
-              label="Materials"
+              label={t("subject.nextExam")}
+              value={nextExam ? formatDate(nextExam) : t("subject.nonePlanned")}
+            />
+            <Meta
+              label={t("subject.materials")}
               value={
-                fileCount === 0 ? "None added" : `${fileCount} file${fileCount === 1 ? "" : "s"}`
+                fileCount === 0
+                  ? t("subject.materials.none")
+                  : fileCount === 1
+                    ? t("subject.materials.fileCount", { count: fileCount })
+                    : t("subject.materials.filesCount", { count: fileCount })
               }
             />
           </dl>
         </div>
-        <DemoModeBanner className="mt-5" />
       </div>
 
       {components.length > 0 && (
         <div className="mb-5 grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,360px)]">
           <div className="app-card p-4">
-            <p className="text-[13px] text-muted-foreground">Active subject</p>
+            <p className="text-[13px] text-muted-foreground">{t("subject.activeSubject")}</p>
             <div
               role="tablist"
-              aria-label="Switch SPF component"
+              aria-label={t("subject.switchAriaLabel")}
               className="mt-2.5 flex gap-2 rounded-[16px] bg-surface-2 p-1.5"
             >
               {components.map((slug: string) => {
@@ -177,13 +179,12 @@ function SubjectDashboard() {
               })}
             </div>
             <p className="mt-2.5 text-[13px] text-muted-foreground">
-              Everything below — tests, materials, chat, quizzes and statistics — belongs to{" "}
-              {active.name}.
+              {t("subject.everythingBelow", { name: active.name })}
             </p>
           </div>
 
           <div className="app-card p-4">
-            <p className="text-[13px] text-muted-foreground">SPF Overall</p>
+            <p className="text-[13px] text-muted-foreground">{t("subject.spfOverall")}</p>
             <AverageWithRounded exact={combined.exactAverage} rounded={combined.roundedAverage} />
             <dl className="mt-3 space-y-1.5 border-t border-border pt-3">
               {combined.parts.map((part) => (
@@ -205,8 +206,9 @@ function SubjectDashboard() {
               ))}
             </dl>
             <p className="mt-2.5 text-[13px] text-muted-foreground">
-              {combined.tests.length} test{combined.tests.length === 1 ? "" : "s"} total · combined
-              average = (SPF Biology + SPF Chemistry) ÷ 2
+              {combined.tests.length === 1
+                ? t("subject.combinedTestsTotal", { count: combined.tests.length })
+                : t("subject.combinedTestsTotalPlural", { count: combined.tests.length })}
             </p>
           </div>
         </div>
@@ -259,7 +261,7 @@ function SubjectDashboard() {
                     : "text-muted-foreground hover:text-foreground",
                 )}
               >
-                Combined SPF
+                {t("subject.combinedSpf")}
               </button>
               {components.map((slug: string) => {
                 const selected = statsView === "component" && slug === active.slug;
@@ -287,17 +289,16 @@ function SubjectDashboard() {
           {mode === "Chat" ? (
             <div className="mt-4">
               <p className="text-[15px] text-muted-foreground">
-                Ask questions about {active.name} and get answers grounded in your uploaded
-                materials, the official syllabus and approved online sources.
+                {t("subject.chatDescription", { name: active.name })}
               </p>
               <Button asChild className="mt-5">
-                <Link to="/chat">Open study chat</Link>
+                <Link to="/chat">{t("subject.openStudyChat")}</Link>
               </Button>
             </div>
           ) : mode === "Statistics" && components.length > 0 && statsView === "combined" ? (
             <div className="mt-4 space-y-5">
               <div>
-                <p className="text-[13px] text-muted-foreground">Combined average</p>
+                <p className="text-[13px] text-muted-foreground">{t("subject.combinedAverage")}</p>
                 <AverageWithRounded
                   exact={combined.exactAverage}
                   rounded={combined.roundedAverage}
@@ -321,9 +322,13 @@ function SubjectDashboard() {
                         : part.summary.exactAverage.toFixed(2)}
                     </p>
                     <p className="text-[13px] text-muted-foreground">
-                      {part.summary.tests.length} test
-                      {part.summary.tests.length === 1 ? "" : "s"} ·{" "}
-                      {part.summary.trend ?? "No trend yet"}
+                      {part.summary.tests.length === 1
+                        ? t("subject.testCountSingular", { count: part.summary.tests.length })
+                        : t("subject.testCountPlural", { count: part.summary.tests.length })}{" "}
+                      ·{" "}
+                      {part.summary.trend
+                        ? t(TREND_LABEL_KEY[part.summary.trend])
+                        : t("subject.noTrendYet")}
                     </p>
                   </div>
                 ))}
@@ -331,14 +336,18 @@ function SubjectDashboard() {
               {combined.counted.length > 1 && (
                 <GradeLineChart
                   data={combined.counted.map((t) => ({
-                    label: formatMonthYear(t.date),
+                    label: formatMonth(t.date),
                     value: gradeOf(t) as number,
                   }))}
                 />
               )}
               <p className="text-[13.5px] text-muted-foreground">
-                {combined.tests.length} tests total · combined trend:{" "}
-                {combined.trend ?? "No trend yet"}
+                {t("subject.combinedTrend", {
+                  count: combined.tests.length,
+                  trend: combined.trend
+                    ? t(TREND_LABEL_KEY[combined.trend])
+                    : t("subject.noTrendYet"),
+                })}
               </p>
             </div>
           ) : mode === "Statistics" ? (
@@ -346,12 +355,12 @@ function SubjectDashboard() {
               {grades.tests.length === 0 ? (
                 <EmptyState
                   className="border-0 bg-surface-2"
-                  heading="No tests yet"
-                  description={`Add your first ${active.name} test to see averages and trends.`}
+                  heading={t("subject.noTestsYet.heading")}
+                  description={t("subject.noTestsYet.description", { name: active.name })}
                   action={
                     <AssessmentDialog
                       subjectSlug={active.slug}
-                      trigger={<Button>Add Test</Button>}
+                      trigger={<Button>{t("subject.addTest")}</Button>}
                     />
                   }
                 />
@@ -365,7 +374,7 @@ function SubjectDashboard() {
                   {grades.counted.length > 1 && (
                     <GradeLineChart
                       data={grades.counted.map((t) => ({
-                        label: formatMonthYear(t.date),
+                        label: formatMonth(t.date),
                         value: gradeOf(t) as number,
                       }))}
                     />
@@ -381,7 +390,8 @@ function SubjectDashboard() {
                           <div className="min-w-0">
                             <p className="truncate text-[14px] font-medium">{test.title}</p>
                             <p className="text-[12.5px] text-muted-foreground">
-                              {formatDate(test.date)} · {test.type} · {test.source}
+                              {formatDate(test.date)} · {t(ASSESSMENT_TYPE_LABEL_KEY[test.type])} ·{" "}
+                              {t(GRADE_SOURCE_LABEL_KEY[test.source])}
                             </p>
                           </div>
                           <p
@@ -400,7 +410,7 @@ function SubjectDashboard() {
                       subjectSlug={active.slug}
                       trigger={
                         <Button size="sm" variant="secondary">
-                          Add Test
+                          {t("subject.addTest")}
                         </Button>
                       }
                     />
@@ -411,9 +421,9 @@ function SubjectDashboard() {
           ) : (
             <EmptyState
               className="mt-6 border-0 bg-surface-2"
-              heading={`${mode} is coming next`}
-              description="This mode is part of the next prototype pass and will appear here in the same dashboard."
-              action={<Button variant="secondary">Notify me</Button>}
+              heading={t("subject.comingNext", { mode })}
+              description={t("subject.comingNextDescription")}
+              action={<Button variant="secondary">{t("subject.notifyMe")}</Button>}
             />
           )}
         </section>
@@ -436,14 +446,15 @@ function Meta({ label, value, failing }: { label: string; value: string; failing
 }
 
 function SubjectNotFound() {
+  const { t } = useI18n();
   return (
     <AppShell>
       <EmptyState
-        heading="Subject not found"
-        description="This subject does not exist in the prototype."
+        heading={t("subject.notFound.heading")}
+        description={t("subject.notFound.description")}
         action={
           <Button asChild>
-            <Link to="/school">Back to School</Link>
+            <Link to="/school">{t("subject.notFound.backButton")}</Link>
           </Button>
         }
       />

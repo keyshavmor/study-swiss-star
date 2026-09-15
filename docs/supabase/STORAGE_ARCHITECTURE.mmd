@@ -1,0 +1,12 @@
+%% Status: CURRENT
+flowchart LR
+  User["Authenticated user"] -->|"own-prefix CRUD"| Chat["chat-attachments"]
+  User -->|"own-prefix CRUD"| Avatar["profile-avatars"]
+  User -->|"own-prefix CRUD"| Materials["user-materials"]
+  FastAPI["FastAPI + caller JWT"] -->|"temporary download"| Materials
+  Functions["Edge Functions"] --> Activity["activity-logs"]
+  Functions --> Feedback["feedback-messages"]
+  Producer["Future media descriptor producer"] --> Descriptors["assistant-descriptors"]
+  User -->|"own-prefix read"| Descriptors
+  Cron["media-retention-cleanup"] --> Descriptors
+  Cron --> Chat

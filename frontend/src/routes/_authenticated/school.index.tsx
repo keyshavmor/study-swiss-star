@@ -2,12 +2,13 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ChevronRight, Plus, TriangleAlert, Upload } from "lucide-react";
 import { useMemo, useState } from "react";
+import { useI18n } from "@/lib/i18n/provider";
+import type { TranslationKey } from "@/lib/i18n/messages";
 import { AcademicYearSelector } from "@/components/app/AcademicYearSelector";
 import { AppShell, PageHeading } from "@/components/app/AppShell";
 import { PageNav } from "@/components/app/Breadcrumbs";
 import { AssessmentDialog } from "@/components/app/AssessmentDialog";
 import { FailingBadge } from "@/components/app/Badges";
-import { DemoModeBanner, DemoModeButton } from "@/components/app/DemoMode";
 import { RoundingInfo } from "@/components/app/GradeDisplay";
 import { EmptyState } from "@/components/app/States";
 import { StatsOverviewPanel } from "@/components/app/StatsOverviewPanel";
@@ -64,22 +65,23 @@ export const Route = createFileRoute("/_authenticated/school/")({
 type SortKey = "name" | "average-desc" | "average-asc" | "recent";
 type FilterKey = "all" | "failing" | "with-grades" | "no-grades";
 
-const SORT_OPTIONS: { value: SortKey; label: string }[] = [
-  { value: "name", label: "Subject name (A–Z)" },
-  { value: "average-desc", label: "Average — highest first" },
-  { value: "average-asc", label: "Average — lowest first" },
-  { value: "recent", label: "Most recent test activity" },
+const SORT_KEYS: { value: SortKey; key: TranslationKey }[] = [
+  { value: "name", key: "school.sort.name" },
+  { value: "average-desc", key: "school.sort.averageDesc" },
+  { value: "average-asc", key: "school.sort.averageAsc" },
+  { value: "recent", key: "school.sort.recent" },
 ];
 
-const FILTER_OPTIONS: { value: FilterKey; label: string }[] = [
-  { value: "all", label: "All subjects" },
-  { value: "failing", label: "Below passing grade" },
-  { value: "with-grades", label: "With grades" },
-  { value: "no-grades", label: "Without grades" },
+const FILTER_KEYS: { value: FilterKey; key: TranslationKey }[] = [
+  { value: "all", key: "school.filter.all" },
+  { value: "failing", key: "school.filter.failing" },
+  { value: "with-grades", key: "school.filter.withGrades" },
+  { value: "no-grades", key: "school.filter.noGrades" },
 ];
 
 function SchoolPage() {
-  const { assessments, demoMode } = useAppData();
+  const { t } = useI18n();
+  const { assessments } = useAppData();
   const { yearId, year } = useAcademicYear();
   const [sort, setSort] = useState<SortKey>("name");
   const [filter, setFilter] = useState<FilterKey>("all");
@@ -127,19 +129,23 @@ function SchoolPage() {
   return (
     <AppShell wide>
       <PageNav
-        back={{ to: "/home", label: "Home" }}
-        crumbs={[{ label: "Home", to: "/home" }, { label: "School" }]}
+        back={{ to: "/home", label: t("nav.home") }}
+        crumbs={[{ label: t("nav.home"), to: "/home" }, { label: t("nav.school") }]}
       />
       <PageHeading
-        title="School"
-        description={`${year.label} · ${year.gradeLevel} — ${SCHOOL_SUBJECTS.length} subjects`}
+        title={t("school.title")}
+        description={t("school.description", {
+          label: year.label,
+          gradeLevel: year.gradeLevel,
+          count: SCHOOL_SUBJECTS.length,
+        })}
         action={
           <div className="flex gap-2">
             <AssessmentDialog
               trigger={
                 <Button className="hidden sm:inline-flex">
                   <Plus className="h-4 w-4" />
-                  Add Test
+                  {t("school.addTest")}
                 </Button>
               }
             />
@@ -147,16 +153,13 @@ function SchoolPage() {
               trigger={
                 <Button variant="secondary" className="hidden sm:inline-flex">
                   <Upload className="h-4 w-4" />
-                  Upload Transcript
+                  {t("school.uploadTranscript")}
                 </Button>
               }
             />
-            <DemoModeButton className="hidden sm:inline-flex" />
           </div>
         }
       />
-
-      <DemoModeBanner />
 
       <div className="mb-5">
         <AcademicYearSelector />
@@ -164,37 +167,40 @@ function SchoolPage() {
 
       <div className="mb-5 flex flex-wrap items-center gap-3">
         <div className="flex items-center gap-2">
-          <span className="text-[13px] text-muted-foreground">Sort by</span>
+          <span className="text-[13px] text-muted-foreground">{t("school.sortBy")}</span>
           <Select value={sort} onValueChange={(v) => setSort(v as SortKey)}>
             <SelectTrigger className="h-10 w-[230px]">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {SORT_OPTIONS.map((o) => (
+              {SORT_KEYS.map((o) => (
                 <SelectItem key={o.value} value={o.value}>
-                  {o.label}
+                  {t(o.key)}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-[13px] text-muted-foreground">Show</span>
+          <span className="text-[13px] text-muted-foreground">{t("school.show")}</span>
           <Select value={filter} onValueChange={(v) => setFilter(v as FilterKey)}>
             <SelectTrigger className="h-10 w-[210px]">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {FILTER_OPTIONS.map((o) => (
+              {FILTER_KEYS.map((o) => (
                 <SelectItem key={o.value} value={o.value}>
-                  {o.label}
+                  {t(o.key)}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
         </div>
         <span className="text-[13px] text-muted-foreground">
-          {visibleSubjects.length} of {SCHOOL_SUBJECTS.length} subjects
+          {t("school.subjectsCount", {
+            visible: visibleSubjects.length,
+            total: SCHOOL_SUBJECTS.length,
+          })}
         </span>
       </div>
 
@@ -202,11 +208,16 @@ function SchoolPage() {
         <div className="mb-5 flex flex-wrap items-center gap-3 rounded-[18px] bg-warning-soft px-4 py-3.5 text-[14px] text-warning">
           <TriangleAlert className="h-4 w-4 shrink-0" />
           <span>
-            {failingSubjects.length === 1
-              ? "1 subject is"
-              : `${failingSubjects.length} subjects are`}{" "}
-            below the passing grade of {PASSING_THRESHOLD.toFixed(1)}:{" "}
-            {failingSubjects.map((row) => row.subject.name).join(", ")}.
+            {t(
+              failingSubjects.length === 1
+                ? "school.failingBanner.one"
+                : "school.failingBanner.many",
+              {
+                count: failingSubjects.length,
+                threshold: PASSING_THRESHOLD.toFixed(1),
+                subjects: failingSubjects.map((row) => row.subject.name).join(", "),
+              },
+            )}
           </span>
         </div>
       )}
@@ -216,22 +227,24 @@ function SchoolPage() {
           <SubjectGrid subjects={visibleSubjects} />
 
           <section className="app-card mt-6 p-5">
-            <h2 className="text-[18px] font-semibold tracking-tight">Current year average</h2>
+            <h2 className="text-[18px] font-semibold tracking-tight">
+              {t("school.yearAverage.title")}
+            </h2>
             <p className="mt-1 text-[13.5px] text-muted-foreground">
-              {year.label} · calculated from your own rounded subject grades.
+              {t("school.yearAverage.description", { year: year.label })}
             </p>
 
             {exactYear === null ? (
               <EmptyState
                 className="mt-4 border-0 bg-surface-2"
-                heading="No grades yet"
-                description="Add your first test to see subject and yearly averages here."
+                heading={t("school.emptyState.heading")}
+                description={t("school.emptyState.description")}
                 action={
                   <AssessmentDialog
                     trigger={
                       <Button>
                         <Plus className="h-4 w-4" />
-                        Add Test
+                        {t("school.addTest")}
                       </Button>
                     }
                   />
@@ -241,28 +254,31 @@ function SchoolPage() {
               <>
                 <div className="mt-4 grid gap-4 sm:grid-cols-3">
                   <Metric
-                    label="Exact yearly average"
+                    label={t("school.metric.exactAverage")}
                     value={exactYear.toFixed(2)}
                     failing={isFailing(exactYear)}
                   />
                   <Metric
-                    label="Rounded yearly average"
+                    label={t("school.metric.roundedAverage")}
                     value={formatHalf(roundToHalf(exactYear))}
                     muted
                     info
                     failing={isFailing(roundToHalf(exactYear))}
                   />
-                  <Metric label="Tests added" value={String(summary.totalTests)} />
+                  <Metric
+                    label={t("school.metric.testsAdded")}
+                    value={String(summary.totalTests)}
+                  />
                 </div>
 
                 <div className="mt-5 overflow-x-auto">
                   <table className="w-full min-w-[420px] text-left text-[14px]">
                     <thead className="text-[12.5px] uppercase tracking-wide text-muted-foreground">
                       <tr>
-                        <th className="pb-2 font-medium">Subject</th>
-                        <th className="pb-2 text-right font-medium">Exact</th>
-                        <th className="pb-2 text-right font-medium">Rounded</th>
-                        <th className="pb-2 text-right font-medium">Tests</th>
+                        <th className="pb-2 font-medium">{t("school.table.subject")}</th>
+                        <th className="pb-2 text-right font-medium">{t("school.table.exact")}</th>
+                        <th className="pb-2 text-right font-medium">{t("school.table.rounded")}</th>
+                        <th className="pb-2 text-right font-medium">{t("school.table.tests")}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -271,7 +287,9 @@ function SchoolPage() {
                           <td className="py-2.5">
                             <span className="inline-flex items-center gap-2">
                               {subject.name}
-                              {isFailing(grades.exactAverage) && <FailingBadge label="Failing" />}
+                              {isFailing(grades.exactAverage) && (
+                                <FailingBadge label={t("school.failingLabel")} />
+                              )}
                             </span>
                           </td>
                           <td
@@ -302,7 +320,10 @@ function SchoolPage() {
                 </div>
 
                 <p className="mt-4 text-[14px] text-muted-foreground">
-                  Subjects included: {included.length} of {SCHOOL_SUBJECTS.length}
+                  {t("school.includedSubjects", {
+                    included: included.length,
+                    total: SCHOOL_SUBJECTS.length,
+                  })}
                 </p>
               </>
             )}
@@ -310,48 +331,42 @@ function SchoolPage() {
             <Accordion type="single" collapsible className="mt-2">
               <AccordionItem value="method" className="border-0">
                 <AccordionTrigger className="text-[14.5px]">
-                  How the yearly average is calculated
+                  {t("school.accordion.methodTitle")}
                 </AccordionTrigger>
                 <AccordionContent>
                   <ol className="list-decimal space-y-1 pl-5 text-[14.5px] text-muted-foreground">
-                    <li>Calculate the exact average of all tests in each subject.</li>
-                    <li>Round every subject average to the nearest 0.5.</li>
-                    <li>Average those rounded subject grades to get the yearly average.</li>
-                    <li>Subjects without grades are excluded from the calculation.</li>
+                    <li>{t("school.accordion.step1")}</li>
+                    <li>{t("school.accordion.step2")}</li>
+                    <li>{t("school.accordion.step3")}</li>
+                    <li>{t("school.accordion.step4")}</li>
                   </ol>
                   <p className="tabular mt-3 text-[13.5px] text-muted-foreground">
-                    Rounding examples: {ROUNDING_EXAMPLES.join(" · ")}
+                    {t("school.accordion.roundingExamples", {
+                      examples: ROUNDING_EXAMPLES.join(" · "),
+                    })}
                   </p>
                 </AccordionContent>
               </AccordionItem>
               <AccordionItem value="formula" className="border-0">
                 <AccordionTrigger className="text-[14.5px]">
-                  How was a single grade calculated?
+                  {t("school.accordion.formulaTitle")}
                 </AccordionTrigger>
                 <AccordionContent>
                   <div className="rounded-[14px] bg-surface-2 p-4 text-[14.5px]">
-                    <p className="font-medium">
-                      Grade = 1.0 + 5.0 × (achieved points ÷ maximum points)
-                    </p>
+                    <p className="font-medium">{t("school.accordion.formula")}</p>
                     <p className="mt-2 text-muted-foreground">
-                      Minimum grade: 1.0 · Maximum grade: 6.0 · Passing grade: 4.0
+                      {t("school.accordion.formulaRange")}
                     </p>
                     <ul className="tabular mt-2 space-y-0.5 text-muted-foreground">
-                      <li>0% → 1.0</li>
-                      <li>50% → 3.5</li>
-                      <li>80% → 5.0</li>
-                      <li>100% → 6.0</li>
+                      <li>{t("school.accordion.formulaExample0")}</li>
+                      <li>{t("school.accordion.formulaExample50")}</li>
+                      <li>{t("school.accordion.formulaExample80")}</li>
+                      <li>{t("school.accordion.formulaExample100")}</li>
                     </ul>
                   </div>
                 </AccordionContent>
               </AccordionItem>
             </Accordion>
-
-            {demoMode && (
-              <p className="mt-3 text-[13px] text-muted-foreground">
-                Demo Mode is on — these figures come from example content you can edit freely.
-              </p>
-            )}
           </section>
         </div>
 

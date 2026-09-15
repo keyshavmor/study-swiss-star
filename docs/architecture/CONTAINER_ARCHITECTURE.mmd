@@ -1,0 +1,28 @@
+%% Status: CURRENT
+flowchart TB
+  subgraph Browser
+    UI["Routes / components / i18n"]
+    Local["asa.data.v2"]
+    Calendar["Google Calendar client"]
+  end
+  subgraph TanStack
+    ChatRoute["POST /api/chat"]
+    Adapter["context-backend.server.ts"]
+  end
+  subgraph Supabase
+    Auth["Auth"]
+    DB["Postgres + RLS"]
+    Storage["Private Storage"]
+    Edge["Edge Functions + cron"]
+  end
+  subgraph LocalAI
+    API["FastAPI :8001"]
+    Context["Context / RAG / memory / ingestion"]
+    Model["Qwen :8000"]
+  end
+  UI --> ChatRoute --> Adapter --> API --> Context --> Model
+  UI --> Auth
+  ChatRoute --> DB
+  Context --> DB
+  Context --> Storage
+  Calendar --> Google["Google Calendar API"]

@@ -1,0 +1,10 @@
+%% Status: CURRENT — verified 2026-09-15
+flowchart LR
+  Student --> Browser["TanStack / React UI"]
+  Browser --> Supabase["Supabase Auth, RLS DB, private Storage, Edge Functions"]
+  Browser -->|"Bearer token"| Server["TanStack server routes"]
+  Server -->|"verified bearer + matching user context"| Backend["Local FastAPI :8001"]
+  Backend -->|"caller JWT + publishable key"| Supabase
+  Backend --> Context["Context / RAG / memory / ingestion"]
+  Context --> Model["Local Qwen :8000"]
+  Browser -->|"provider token in sessionStorage; read-only"| Google["Google Calendar API"]

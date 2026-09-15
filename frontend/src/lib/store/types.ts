@@ -1,3 +1,5 @@
+import type { TranslationKey } from "@/lib/i18n/messages";
+
 /**
  * Prototype data model. Everything here lives in editable frontend state —
  * these records do not use the Python context backend, and every record can be
@@ -17,6 +19,13 @@ export const GRADE_SOURCES: GradeSource[] = [
   "AI practice assessment",
 ];
 
+export const GRADE_SOURCE_LABEL_KEY: Record<GradeSource, TranslationKey> = {
+  "Calculated from points": "grades.source.calculatedFromPoints",
+  "Teacher grade": "grades.source.teacherGrade",
+  "Imported from transcript": "grades.source.importedFromTranscript",
+  "AI practice assessment": "grades.source.aiPracticeAssessment",
+};
+
 export const ASSESSMENT_TYPES = [
   "Written exam",
   "Oral exam",
@@ -31,6 +40,19 @@ export const ASSESSMENT_TYPES = [
 ] as const;
 
 export type AssessmentType = (typeof ASSESSMENT_TYPES)[number];
+
+export const ASSESSMENT_TYPE_LABEL_KEY: Record<AssessmentType, TranslationKey> = {
+  "Written exam": "grades.type.writtenExam",
+  "Oral exam": "grades.type.oralExam",
+  Presentation: "grades.type.presentation",
+  Essay: "grades.type.essay",
+  "Laboratory work": "grades.type.laboratoryWork",
+  "Practical assessment": "grades.type.practicalAssessment",
+  Project: "grades.type.project",
+  "Practice quiz": "grades.type.practiceQuiz",
+  "Practice exam": "grades.type.practiceExam",
+  Other: "grades.type.other",
+};
 
 export interface Assessment {
   id: string;
@@ -78,6 +100,19 @@ export const EVENT_CATEGORIES: EventCategory[] = [
   "Travel",
 ];
 
+export const EVENT_CATEGORY_LABEL_KEY: Record<EventCategory, TranslationKey> = {
+  "School class": "events.category.schoolClass",
+  "School exam": "events.category.schoolExam",
+  "Study session": "events.category.studySession",
+  "Extracurricular activity": "events.category.extracurricularActivity",
+  Homework: "events.category.homework",
+  Deadline: "events.category.deadline",
+  Appointment: "events.category.appointment",
+  "Personal reminder": "events.category.personalReminder",
+  Break: "events.category.break",
+  Travel: "events.category.travel",
+};
+
 export const CATEGORY_COLOR: Record<EventCategory, string> = {
   "School class": "#4A8FD6",
   "School exam": "#6558D9",
@@ -93,12 +128,12 @@ export const CATEGORY_COLOR: Record<EventCategory, string> = {
 
 export type Recurrence = "none" | "daily" | "weekly" | "biweekly" | "monthly";
 
-export const RECURRENCE_LABEL: Record<Recurrence, string> = {
-  none: "Does not repeat",
-  daily: "Every day",
-  weekly: "Every week",
-  biweekly: "Every two weeks",
-  monthly: "Every month",
+export const RECURRENCE_LABEL_KEY: Record<Recurrence, TranslationKey> = {
+  none: "events.recurrence.none",
+  daily: "events.recurrence.daily",
+  weekly: "events.recurrence.weekly",
+  biweekly: "events.recurrence.biweekly",
+  monthly: "events.recurrence.monthly",
 };
 
 export const REMINDER_OPTIONS = [
@@ -110,6 +145,16 @@ export const REMINDER_OPTIONS = [
   "1 day before",
   "1 week before",
 ] as const;
+
+export const REMINDER_LABEL_KEY: Record<(typeof REMINDER_OPTIONS)[number], TranslationKey> = {
+  None: "events.reminder.none",
+  "At start time": "events.reminder.atStartTime",
+  "10 minutes before": "events.reminder.tenMinutesBefore",
+  "30 minutes before": "events.reminder.thirtyMinutesBefore",
+  "1 hour before": "events.reminder.oneHourBefore",
+  "1 day before": "events.reminder.oneDayBefore",
+  "1 week before": "events.reminder.oneWeekBefore",
+};
 
 export interface PlannerEvent {
   id: string;
@@ -145,6 +190,10 @@ export interface PlannerEvent {
   done?: boolean;
   /** True for sessions produced by "Generate study plan". */
   generated?: boolean;
+  /** Set for items mirrored from an external calendar (read-only). */
+  externalSource?: "google";
+  /** True when the item cannot be edited, moved or deleted in the app. */
+  readOnly?: boolean;
 }
 
 export type MaterialSection =
@@ -187,10 +236,6 @@ export interface Material {
   status: "Indexed" | "Processing" | "Needs review";
   added: string;
   archived?: boolean;
-  /** Private Supabase Storage path; never a public URL. */
-  storagePath?: string;
-  mimeType?: string;
-  byteSize?: number;
 }
 
 export const LINK_CATEGORIES = [

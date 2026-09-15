@@ -1,15 +1,18 @@
+%% REWRITTEN: previous version documented an opt-in "Lovable AI Gateway" fallback that does
+%% not exist in current code. /api/chat now returns a plain error when the Python backend is
+%% unreachable or fails; there is no cloud-model fallback path today.
 flowchart TD
-  Start[App operation] --> Cloud{MY Supabase reachable?}
-  Cloud -->|No before sign-in| AuthBlocked[Protected pages unavailable]
-  Cloud -->|Session cache present| LocalScreens[Cached screens may remain readable]
-  Cloud -->|Yes| Gate[Authentication and durable history available]
-  Gate --> Python{Python backend reachable?}
-  Python -->|Yes| AI[Context-backed chat works]
-  Python -->|No| Error[Chat returns clear 503\nNO CLOUD MODEL FALLBACK]
-  Python -. future health UI .-> Banner[Non-blocking offline banner + Retry\nPLANNED]
-  Banner -.-> Disable[Disable AI-only actions\nPLANNED]
-  Error --> Continue[Cached grades stats planner profile links and demo remain usable]
+  Start["App operation"] --> Cloud{"external Supabase reachable?"}
+  Cloud -->|No, before sign-in| AuthBlocked["Protected pages unavailable, redirected to /"]
+  Cloud -->|Session already valid| LocalScreens["Local-only screens (school, stats, planner, profile links)<br/>may remain usable"]
+  Cloud -->|Yes| Gate["Authentication and chat/thread history available"]
+  Gate --> Python{"Local Python backend (default 127.0.0.1:8001) reachable?"}
+  Python -->|Yes| AI["Context-backed chat works via POST /api/chat"]
+  Python -->|No, or backend error| Error["frontend/src/routes/api/chat.ts preserves structured status, code and request ID<br/>default 503, no fallback answer is generated<br/>CURRENT - INTEGRATED"]
+  Python -. future health UI .-> Banner["Non-blocking offline banner + Retry<br/>DEFERRED / frontend not wired"]
+  Banner -.-> Disable["Disable AI-only actions<br/>PLANNED"]
+  Error --> Continue["School, grades, stats, planner, profile and links remain usable locally"]
   Disable --> Continue
-  Continue --> Store[(UUID-scoped disposable cache)]
-  ModelDown{Model unavailable but FastAPI reachable} --> Degraded["/health returns degraded"]
+  Continue --> Store["Browser storage (AppDataProvider)"]
+  ModelDown{"Local model runtime down but FastAPI reachable"} --> Degraded["GET /health reports degraded and model reachability false<br/>CURRENT - BACKEND"]
   Degraded -. planned UI .-> Banner

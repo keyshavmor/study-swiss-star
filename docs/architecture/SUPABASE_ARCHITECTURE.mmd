@@ -1,0 +1,13 @@
+%% Status: CURRENT
+flowchart TB
+  Browser["Browser + publishable key"] --> Auth["Supabase Auth"]
+  Browser -->|"session JWT + RLS"| Data["Postgres Data API"]
+  Browser -->|"owner prefix + RLS"| Storage["Private Storage"]
+  Browser --> Functions["Edge Functions"]
+  TanStack["TanStack /api/chat"] -->|"caller JWT"| Auth
+  TanStack -->|"caller JWT + RLS"| Data
+  FastAPI["FastAPI request-scoped store"] -->|"caller JWT + publishable key"| Data
+  FastAPI -->|"temporary material download"| Storage
+  Cron["pg_cron + Vault"] --> Cleanup["media-retention-cleanup"]
+  Cleanup --> Data
+  Cleanup --> Storage

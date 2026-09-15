@@ -22,14 +22,13 @@ managed Qwen runtime.
 
 ## Source map
 
-| Path | Responsibility |
-| --- | --- |
-| `src/components/` | Reusable application and UI components |
-| `src/routes/` | TanStack file routes, including the local chat proxy |
-| `src/lib/` | Authenticated backend bridges, Supabase-backed state adapter, fixtures, and utilities |
-| `src/integrations/` | Supabase clients/session middleware and Lovable preview compatibility |
-| `src/styles.css` | Global Tailwind styles and theme tokens |
+| Path                | Responsibility                                         |
+| ------------------- | ------------------------------------------------------ |
+| `src/components/`   | Reusable application and UI components                 |
+| `src/routes/`       | TanStack file routes, including the local chat proxy   |
+| `src/lib/`          | Backend clients, state stores, fixtures, and utilities |
+| `src/integrations/` | Optional Lovable and Supabase adapters                 |
+| `src/styles.css`    | Global Tailwind styles and theme tokens                |
 
 `src/routeTree.gen.ts`, lockfiles, and build output are generated artifacts and should not be
-hand-edited. Lovable remains the editor/frontend generator, not the runtime auth or database owner.
-Copy `.env.example` to an ignored local env file and supply the target project's publishable key.
+hand-edited. The local test commands used for this work do not contact Lovable or Supabase.

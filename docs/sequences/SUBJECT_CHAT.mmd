@@ -1,0 +1,23 @@
+%% Status: CURRENT — implemented
+sequenceDiagram
+  participant Browser as StudyChat
+  participant TS as TanStack /api/chat
+  participant SB as Supabase
+  participant Adapter as server-only adapter
+  participant API as FastAPI /api/chat
+  participant Ctx as Context/RAG
+  participant Model as Local Qwen
+  Browser->>TS: bearer token + UI messages + uiLanguage
+  TS->>SB: verify claims and read owned thread
+  SB-->>TS: verified subject and thread
+  TS->>SB: insert user message
+  TS->>Adapter: token, verified subject, request, and response language
+  Adapter->>API: Authorization and matching X-Student-Id
+  API->>SB: independently verify token
+  API->>Ctx: compile caller-owned context
+  Ctx->>SB: publishable key, caller JWT, and RLS
+  API->>Model: bounded prompt
+  Model-->>API: answer
+  API-->>TS: answer, sources, model, language, request ID
+  TS-->>Browser: AI-SDK UI-message stream
+  TS->>SB: insert successful assistant message

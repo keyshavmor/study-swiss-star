@@ -1,0 +1,23 @@
+%% Status: CURRENT — FRONTEND / CURRENT — SUPABASE (Edge Function)
+%% Source: frontend/src/lib/telemetry.ts
+sequenceDiagram
+    participant Caller as Any app code (track / trackFailure / logActivity)
+    participant Telemetry as lib/telemetry.ts
+    participant Fn as Edge Function: activity-log
+    participant DB as Supabase table: usage_events
+    participant Bucket as Storage bucket: activity-logs
+
+    Caller->>Telemetry: track({ event_name, feature?, subject?, properties? })
+    Telemetry->>Telemetry: sanitiseProperties()
+    Note over Telemetry: Forbidden content is never sent, enforced by key and value rules<br/>Credentials, content, private text, and non-primitive values are dropped<br/>Strings are bounded and raw error messages are never forwarded<br/>Only classifyError output such as error_name, status, and code is sent
+    Telemetry->>Telemetry: payload = { event_name (<=80 chars), feature? (<=80), subject? (<=120),<br/>properties: { route: window.location.pathname, ...sanitised } }
+    Telemetry->>Fn: functions.invoke("activity-log", { body: payload })
+    alt invoke throws
+        Fn--xTelemetry: error
+        Telemetry-->>Caller: swallowed, best-effort logging never breaks the primary action
+    else success
+        Fn->>DB: insert usage_events (id, user_id, event_name, feature, subject, properties, occurred_at)
+        Fn->>Bucket: write text mirror into activity-logs (private, <uid>/... convention)
+        Fn-->>Telemetry: ok
+    end
+    Note over Caller,Fn: track is fire-and-forget<br/>trackFailure classifies an error before tracking a failed operation

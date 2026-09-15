@@ -8,6 +8,7 @@ export class ContextBackendError extends Error {
     message: string,
     readonly status: number,
     readonly code: string,
+    readonly requestId?: string,
   ) {
     super(message);
     this.name = "ContextBackendError";
@@ -16,12 +17,15 @@ export class ContextBackendError extends Error {
 
 export async function requestContextAnswer(input: {
   accessToken: string;
+  studentId: string;
   threadId: string;
   userMessageId?: string;
   question: string;
   subject?: string;
   academicYear?: string;
   gradeLevel?: number;
+  responseLanguage: "en" | "de" | "gsw" | "ru" | "es" | "fr" | "it";
+  signal?: AbortSignal;
 }): Promise<ContextChatResponse> {
   const baseUrl = (process.env["ALIM_CONTEXT_BACKEND_URL"] ?? "http://127.0.0.1:8001").replace(
     /\/$/,
@@ -32,19 +36,22 @@ export async function requestContextAnswer(input: {
     () => controller.abort(),
     Number(process.env["ALIM_CONTEXT_BACKEND_TIMEOUT_MS"] ?? 90_000),
   );
+  const cancel = () => controller.abort();
+  input.signal?.addEventListener("abort", cancel, { once: true });
   try {
     const response = await fetch(`${baseUrl}/api/chat`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${input.accessToken}`,
+        "X-Student-Id": input.studentId,
       },
       body: JSON.stringify({
         thread_id: input.threadId,
         user_message_id: input.userMessageId,
         question: input.question,
         subject_id: normalizeSubjectId(input.subject),
-        language: languageForSubject(input.subject),
+        language: input.responseLanguage,
         academic_year: input.academicYear,
         grade_level: input.gradeLevel,
         include_sources: true,
@@ -54,13 +61,16 @@ export async function requestContextAnswer(input: {
       signal: controller.signal,
     });
     const payload = (await response.json().catch(() => null)) as
-      ContextChatResponse | { error?: { code?: string; message?: string } } | null;
+      | ContextChatResponse
+      | { error?: { code?: string; message?: string; request_id?: string } }
+      | null;
     if (!response.ok) {
       const error = payload && "error" in payload ? payload.error : undefined;
       throw new ContextBackendError(
         error?.message ?? `Context backend returned HTTP ${response.status}`,
         response.status,
         error?.code ?? "context_backend_error",
+        error?.request_id ?? response.headers.get("x-request-id") ?? undefined,
       );
     }
     if (!payload || !("answer" in payload) || typeof payload.answer !== "string") {
@@ -80,6 +90,7 @@ export async function requestContextAnswer(input: {
     throw new ContextBackendError(message, 503, "context_backend_unavailable");
   } finally {
     clearTimeout(timeout);
+    input.signal?.removeEventListener("abort", cancel);
   }
 }
 
@@ -94,12 +105,4 @@ function normalizeSubjectId(subject?: string): string | undefined {
   };
   const normalized = subject.trim().toLowerCase();
   return known[normalized] ?? normalized.replace(/\s+/g, "-");
-}
-
-function languageForSubject(subject?: string): "de" | "en" | "fr" | undefined {
-  const normalized = subject?.trim().toLowerCase();
-  if (!normalized || normalized === "all subjects") return undefined;
-  if (["mathematics", "physics", "english", "history"].includes(normalized)) return "en";
-  if (normalized === "french") return "fr";
-  return "de";
 }

@@ -24,6 +24,7 @@ import { SUBJECTS } from "@/lib/mock/subjects";
 import { useAppData } from "@/lib/store/app-data";
 import type { StudentProfile } from "@/lib/store/types";
 import { toast } from "sonner";
+import { useI18n } from "@/lib/i18n/provider";
 
 const NO_SUBJECT = "__none";
 const LANGUAGES = ["English", "German", "French", "Italian"];
@@ -38,6 +39,7 @@ const SCHOOL_TYPES = [
 
 /** Edit the student profile. Nothing is pre-filled with invented data. */
 export function EditProfileDialog({ trigger }: { trigger: ReactNode }) {
+  const { t } = useI18n();
   const { profile, updateProfile } = useAppData();
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState<StudentProfile>(profile);
@@ -56,14 +58,12 @@ export function EditProfileDialog({ trigger }: { trigger: ReactNode }) {
       <DialogTrigger asChild>{trigger}</DialogTrigger>
       <DialogContent className="max-h-[88vh] overflow-y-auto sm:max-w-[580px]">
         <DialogHeader>
-          <DialogTitle>Edit profile</DialogTitle>
-          <DialogDescription>
-            Only what you enter is shown. Leave anything blank if you would rather not fill it in.
-          </DialogDescription>
+          <DialogTitle>{t("profile.editDialog.title")}</DialogTitle>
+          <DialogDescription>{t("profile.editDialog.description")}</DialogDescription>
         </DialogHeader>
 
         <div className="grid gap-4">
-          <Field label="Profile photo URL" id="pf-photo">
+          <Field label={t("profile.editDialog.photoLabel")} id="pf-photo">
             <Input
               id="pf-photo"
               value={draft.photo}
@@ -73,21 +73,21 @@ export function EditProfileDialog({ trigger }: { trigger: ReactNode }) {
           </Field>
 
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="Full name" id="pf-name">
+            <Field label={t("profile.editDialog.fullNameLabel")} id="pf-name">
               <Input
                 id="pf-name"
                 value={draft.fullName}
                 onChange={(e) => set("fullName", e.target.value)}
               />
             </Field>
-            <Field label="Preferred name" id="pf-preferred">
+            <Field label={t("profile.editDialog.preferredNameLabel")} id="pf-preferred">
               <Input
                 id="pf-preferred"
                 value={draft.preferredName}
                 onChange={(e) => set("preferredName", e.target.value)}
               />
             </Field>
-            <Field label="Date of birth" id="pf-dob">
+            <Field label={t("profile.editDialog.dobLabel")} id="pf-dob">
               <Input
                 id="pf-dob"
                 type="date"
@@ -95,32 +95,32 @@ export function EditProfileDialog({ trigger }: { trigger: ReactNode }) {
                 onChange={(e) => set("dateOfBirth", e.target.value)}
               />
             </Field>
-            <Field label="School name" id="pf-school">
+            <Field label={t("profile.editDialog.schoolNameLabel")} id="pf-school">
               <Input
                 id="pf-school"
                 value={draft.schoolName}
                 onChange={(e) => set("schoolName", e.target.value)}
               />
             </Field>
-            <Field label="School type">
+            <Field label={t("profile.editDialog.schoolTypeLabel")}>
               <Select
                 value={draft.schoolType || NO_SUBJECT}
                 onValueChange={(v) => set("schoolType", v === NO_SUBJECT ? "" : v)}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Not set" />
+                  <SelectValue placeholder={t("profile.editDialog.notSetOption")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value={NO_SUBJECT}>Not set</SelectItem>
-                  {SCHOOL_TYPES.map((t) => (
-                    <SelectItem key={t} value={t}>
-                      {t}
+                  <SelectItem value={NO_SUBJECT}>{t("profile.editDialog.notSetOption")}</SelectItem>
+                  {SCHOOL_TYPES.map((t2) => (
+                    <SelectItem key={t2} value={t2}>
+                      {t2}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </Field>
-            <Field label="Class" id="pf-class">
+            <Field label={t("profile.editDialog.classLabel")} id="pf-class">
               <Input
                 id="pf-class"
                 value={draft.className}
@@ -128,23 +128,23 @@ export function EditProfileDialog({ trigger }: { trigger: ReactNode }) {
                 placeholder="11a"
               />
             </Field>
-            <Field label="Class teacher" id="pf-teacher">
+            <Field label={t("profile.editDialog.classTeacherLabel")} id="pf-teacher">
               <Input
                 id="pf-teacher"
                 value={draft.classTeacher}
                 onChange={(e) => set("classTeacher", e.target.value)}
               />
             </Field>
-            <Field label="Focus subject">
+            <Field label={t("profile.editDialog.focusSubjectLabel")}>
               <Select
                 value={draft.focusSubject || NO_SUBJECT}
                 onValueChange={(v) => set("focusSubject", v === NO_SUBJECT ? "" : v)}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Not set" />
+                  <SelectValue placeholder={t("profile.editDialog.notSetOption")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value={NO_SUBJECT}>Not set</SelectItem>
+                  <SelectItem value={NO_SUBJECT}>{t("profile.editDialog.notSetOption")}</SelectItem>
                   {SUBJECTS.map((s) => (
                     <SelectItem key={s.slug} value={s.name}>
                       {s.name}
@@ -153,7 +153,7 @@ export function EditProfileDialog({ trigger }: { trigger: ReactNode }) {
                 </SelectContent>
               </Select>
             </Field>
-            <Field label="School email" id="pf-email">
+            <Field label={t("profile.editDialog.schoolEmailLabel")} id="pf-email">
               <Input
                 id="pf-email"
                 type="email"
@@ -161,21 +161,21 @@ export function EditProfileDialog({ trigger }: { trigger: ReactNode }) {
                 onChange={(e) => set("schoolEmail", e.target.value)}
               />
             </Field>
-            <Field label="Student number" id="pf-number">
+            <Field label={t("profile.editDialog.studentNumberLabel")} id="pf-number">
               <Input
                 id="pf-number"
                 value={draft.studentNumber}
                 onChange={(e) => set("studentNumber", e.target.value)}
               />
             </Field>
-            <Field label="Username" id="pf-username">
+            <Field label={t("profile.editDialog.usernameLabel")} id="pf-username">
               <Input
                 id="pf-username"
                 value={draft.username}
                 onChange={(e) => set("username", e.target.value)}
               />
             </Field>
-            <Field label="Interface language">
+            <Field label={t("profile.editDialog.interfaceLanguageLabel")}>
               <Select value={draft.language} onValueChange={(v) => set("language", v)}>
                 <SelectTrigger>
                   <SelectValue />
@@ -194,16 +194,16 @@ export function EditProfileDialog({ trigger }: { trigger: ReactNode }) {
 
         <DialogFooter>
           <Button variant="ghost" onClick={() => setOpen(false)}>
-            Cancel
+            {t("common.cancel")}
           </Button>
           <Button
             onClick={() => {
               updateProfile(draft);
               setOpen(false);
-              toast.success("Profile updated");
+              toast.success(t("profile.editDialog.updated"));
             }}
           >
-            Save changes
+            {t("profile.editDialog.saveChanges")}
           </Button>
         </DialogFooter>
       </DialogContent>

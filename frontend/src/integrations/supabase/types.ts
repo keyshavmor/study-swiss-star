@@ -71,6 +71,137 @@ export type Database = {
         };
         Relationships: [];
       };
+      assistant_attachments: {
+        Row: {
+          byte_size: number;
+          created_at: string;
+          deleted_at: string | null;
+          file_name: string;
+          id: string;
+          kind: string;
+          message_id: string | null;
+          metadata: Json;
+          mime_type: string;
+          object_path: string;
+          parse_status: string;
+          storage_bucket: string;
+          thread_id: string;
+          user_id: string;
+        };
+        Insert: {
+          byte_size: number;
+          created_at?: string;
+          deleted_at?: string | null;
+          file_name: string;
+          id?: string;
+          kind: string;
+          message_id?: string | null;
+          metadata?: Json;
+          mime_type: string;
+          object_path: string;
+          parse_status?: string;
+          storage_bucket?: string;
+          thread_id: string;
+          user_id: string;
+        };
+        Update: {
+          byte_size?: number;
+          created_at?: string;
+          deleted_at?: string | null;
+          file_name?: string;
+          id?: string;
+          kind?: string;
+          message_id?: string | null;
+          metadata?: Json;
+          mime_type?: string;
+          object_path?: string;
+          parse_status?: string;
+          storage_bucket?: string;
+          thread_id?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "assistant_attachments_message_owner_fkey";
+            columns: ["message_id", "user_id"];
+            isOneToOne: false;
+            referencedRelation: "assistant_messages";
+            referencedColumns: ["id", "user_id"];
+          },
+          {
+            foreignKeyName: "assistant_attachments_thread_owner_fkey";
+            columns: ["thread_id", "user_id"];
+            isOneToOne: false;
+            referencedRelation: "assistant_threads";
+            referencedColumns: ["id", "user_id"];
+          },
+        ];
+      };
+      assistant_messages: {
+        Row: {
+          content: string;
+          created_at: string;
+          id: string;
+          metadata: Json;
+          parts: Json;
+          role: string;
+          thread_id: string;
+          user_id: string;
+        };
+        Insert: {
+          content?: string;
+          created_at?: string;
+          id?: string;
+          metadata?: Json;
+          parts?: Json;
+          role: string;
+          thread_id: string;
+          user_id: string;
+        };
+        Update: {
+          content?: string;
+          created_at?: string;
+          id?: string;
+          metadata?: Json;
+          parts?: Json;
+          role?: string;
+          thread_id?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "assistant_messages_thread_owner_fkey";
+            columns: ["thread_id", "user_id"];
+            isOneToOne: false;
+            referencedRelation: "assistant_threads";
+            referencedColumns: ["id", "user_id"];
+          },
+        ];
+      };
+      assistant_threads: {
+        Row: {
+          created_at: string;
+          id: string;
+          title: string;
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          id?: string;
+          title?: string;
+          updated_at?: string;
+          user_id: string;
+        };
+        Update: {
+          created_at?: string;
+          id?: string;
+          title?: string;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
       context_artifacts: {
         Row: {
           artifact_type: string;
@@ -408,6 +539,68 @@ export type Database = {
         };
         Relationships: [];
       };
+      media_retention_queue: {
+        Row: {
+          attachment_id: string | null;
+          created_at: string;
+          delete_after: string;
+          deleted_at: string | null;
+          descriptor_bucket: string;
+          descriptor_path: string;
+          error_code: string | null;
+          id: string;
+          media_kind: string;
+          object_path: string;
+          source_path: string | null;
+          source_url: string | null;
+          status: string;
+          storage_bucket: string;
+          user_id: string;
+        };
+        Insert: {
+          attachment_id?: string | null;
+          created_at?: string;
+          delete_after?: string;
+          deleted_at?: string | null;
+          descriptor_bucket?: string;
+          descriptor_path: string;
+          error_code?: string | null;
+          id?: string;
+          media_kind: string;
+          object_path: string;
+          source_path?: string | null;
+          source_url?: string | null;
+          status?: string;
+          storage_bucket: string;
+          user_id: string;
+        };
+        Update: {
+          attachment_id?: string | null;
+          created_at?: string;
+          delete_after?: string;
+          deleted_at?: string | null;
+          descriptor_bucket?: string;
+          descriptor_path?: string;
+          error_code?: string | null;
+          id?: string;
+          media_kind?: string;
+          object_path?: string;
+          source_path?: string | null;
+          source_url?: string | null;
+          status?: string;
+          storage_bucket?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "media_retention_queue_attachment_id_fkey";
+            columns: ["attachment_id"];
+            isOneToOne: false;
+            referencedRelation: "assistant_attachments";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       messages: {
         Row: {
           content: string;
@@ -659,11 +852,14 @@ export type Database = {
         Row: {
           class_name: string;
           class_teacher: string;
+          contact_details: Json;
+          contact_phone: string;
           created_at: string;
           date_of_birth: string | null;
           focus_subject: string;
           full_name: string;
           language: string;
+          nationality: string;
           photo: string;
           preferred_name: string;
           school_email: string;
@@ -677,11 +873,14 @@ export type Database = {
         Insert: {
           class_name?: string;
           class_teacher?: string;
+          contact_details?: Json;
+          contact_phone?: string;
           created_at?: string;
           date_of_birth?: string | null;
           focus_subject?: string;
           full_name?: string;
           language?: string;
+          nationality?: string;
           photo?: string;
           preferred_name?: string;
           school_email?: string;
@@ -695,11 +894,14 @@ export type Database = {
         Update: {
           class_name?: string;
           class_teacher?: string;
+          contact_details?: Json;
+          contact_phone?: string;
           created_at?: string;
           date_of_birth?: string | null;
           focus_subject?: string;
           full_name?: string;
           language?: string;
+          nationality?: string;
           photo?: string;
           preferred_name?: string;
           school_email?: string;
@@ -992,7 +1194,7 @@ export type Database = {
           occurred_at: string;
           properties: Json;
           subject: string | null;
-          user_id: string;
+          user_id: string | null;
         };
         Insert: {
           event_name: string;
@@ -1001,7 +1203,7 @@ export type Database = {
           occurred_at?: string;
           properties?: Json;
           subject?: string | null;
-          user_id: string;
+          user_id?: string | null;
         };
         Update: {
           event_name?: string;
@@ -1010,7 +1212,7 @@ export type Database = {
           occurred_at?: string;
           properties?: Json;
           subject?: string | null;
-          user_id?: string;
+          user_id?: string | null;
         };
         Relationships: [];
       };
@@ -1087,7 +1289,43 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
-      [_ in never]: never;
+      begin_emergency_storage_cleanup: {
+        Args: never;
+        Returns: {
+          quota_bytes: number;
+          run_token: string;
+          target_delete_bytes: number;
+          used_bytes: number;
+        }[];
+      };
+      finish_emergency_storage_cleanup: {
+        Args: { p_freed_bytes: number; p_run_token: string };
+        Returns: undefined;
+      };
+      get_emergency_cleanup_candidates: {
+        Args: { p_target_bytes: number };
+        Returns: {
+          bucket_id: string;
+          created_at: string;
+          object_path: string;
+          size_bytes: number;
+        }[];
+      };
+      get_storage_usage_status: {
+        Args: never;
+        Returns: {
+          cleanup_delete_percent: number;
+          cleanup_remaining_percent: number;
+          emergency_cleanup_needed: boolean;
+          quota_bytes: number;
+          remaining_bytes: number;
+          remaining_percent: number;
+          used_bytes: number;
+          used_percent: number;
+          warning: boolean;
+          warning_remaining_percent: number;
+        }[];
+      };
     };
     Enums: {
       [_ in never]: never;
@@ -1214,3 +1452,6 @@ export const Constants = {
     Enums: {},
   },
 } as const;
+
+export type StorageUsageStatus =
+  Database["public"]["Functions"]["get_storage_usage_status"]["Returns"][number];

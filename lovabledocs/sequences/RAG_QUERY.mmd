@@ -1,0 +1,17 @@
+%% Status: CURRENT — implemented
+sequenceDiagram
+  participant API as FastAPI
+  participant Manager as ContextManager
+  participant Store as SupabaseContextStore
+  participant Retrieval as Hybrid retrieval
+  participant Budget as Context budget/compiler
+  participant Model as Local Qwen
+  API->>Manager: verified user + message + subject/language
+  Manager->>Store: caller-scoped memory/messages/chunks/artifacts
+  Store-->>Manager: RLS-filtered records
+  Manager->>Retrieval: sparse+dense candidates and optional web
+  Retrieval-->>Budget: ranked, deduplicated context items
+  Budget-->>API: bounded source-labelled prompt
+  API->>Model: OpenAI-compatible completion
+  Model-->>API: answer/model metadata
+  API->>Manager: process memory and summaries

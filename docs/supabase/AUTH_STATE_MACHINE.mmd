@@ -1,0 +1,11 @@
+%% Status: CURRENT
+stateDiagram-v2
+  [*] --> SignedOut
+  SignedOut --> Authenticating: email/username/password or OAuth
+  Authenticating --> SignedOut: failure
+  Authenticating --> SignedIn: verified Supabase session
+  SignedIn --> Home: redirect /home
+  SignedIn --> Chat: bearer token
+  Chat --> Chat: TanStack and FastAPI verify same token
+  Chat --> SignedOut: 401
+  SignedIn --> SignedOut: supabase.auth.signOut + clear provider token

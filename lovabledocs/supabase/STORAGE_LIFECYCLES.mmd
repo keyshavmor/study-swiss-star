@@ -1,0 +1,10 @@
+%% Status: CURRENT
+flowchart LR
+  Media["Generated media"] --> Descriptor["Generate descriptor"]
+  Descriptor -->|"success"| Store["Store private descriptor"]
+  Store --> Ready["Queue status ready"]
+  Ready --> Wait["Wait until delete_after"]
+  Wait --> Verify["Cleanup downloads descriptor"]
+  Verify -->|"present"| Delete["Delete original"]
+  Verify -->|"missing/error"| Deferred["Keep original; set error_code"]
+  Delete --> Done["status deleted + deleted_at"]

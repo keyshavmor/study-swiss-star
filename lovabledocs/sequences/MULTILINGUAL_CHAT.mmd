@@ -1,0 +1,16 @@
+%% Status: CURRENT — implemented
+sequenceDiagram
+  participant User
+  participant Chat as StudyChat
+  participant TS as TanStack chat route
+  participant API as FastAPI
+  participant Compiler
+  User->>Chat: current message
+  Chat->>TS: message + selected UI language
+  TS->>TS: detect supported current-message language
+  Note over TS: confident message language > UI language > en
+  TS->>API: explicit en/de/gsw/ru/es/fr/it language
+  API->>Compiler: validated language
+  Compiler-->>API: named response-language instruction
+  API-->>Chat: answer + language
+  Chat->>Chat: choose TTS locale independently

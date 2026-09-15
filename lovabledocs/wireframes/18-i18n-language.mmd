@@ -1,0 +1,23 @@
+%% Seven-language i18n flow: languages.ts, detect.ts, format.ts, provider.ts.
+flowchart TD
+  Boot["App boot"] --> Cache["Read localStorage alim.app_language, flash-avoidance cache"]
+  Cache --> Render["Render with cached or default English language"]
+  Boot --> AuthCheck{"Signed in?"}
+  AuthCheck -->|No| WelcomeLocal["Localise welcome/auth screen from cache"]
+  AuthCheck -->|Yes| Load["Load user_preferences.preferences.app_language, AUTHORITATIVE"]
+  Load --> Valid{"Value is one of en de gsw ru es fr it?"}
+  Valid -->|Yes| Apply["Apply language, update cache"]
+  Valid -->|No or missing| English["Recover to English default"]
+  English --> Apply
+  Apply --> UI["All screens via useI18n() / t()"]
+  Change["Student opens LanguageMenu.tsx in AppHeader<br/>between NotificationCenter and the profile avatar"] --> Pick["Pick a flag: en/de/gsw/ru/es/fr/it"]
+  Pick --> WriteCache["Write localStorage alim.app_language"]
+  Pick --> WriteDB["Update user_preferences.preferences.app_language"]
+  WriteCache --> UI
+  WriteDB --> UI
+  UI --> Format["lib/i18n/format.ts: formatDate/formatWeekday/formatTime etc.<br/>dd/mm/yyyy, weekday, 24h HH:mm"]
+  UI --> Detect["Per-message: detectLanguage / effectiveResponseLanguage (chat + assistant)"]
+  Detect --> Hint["responseLanguageHint retained for local read-aloud state"]
+  Detect --> SpeechLocale["speechLocaleFor for Listen/Stop read-aloud"]
+  Hint --> ChatContract["Tutoring /api/chat applies message_then_app<br/>and forwards effective language to FastAPI<br/>CURRENT - INTEGRATED"]
+  Hint -.-> AssistantContract["General Assistant generation language contract<br/>DEFERRED with generation endpoint"]

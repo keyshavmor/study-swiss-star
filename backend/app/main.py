@@ -15,7 +15,7 @@ from contextlib import asynccontextmanager
 from datetime import UTC, datetime
 from pathlib import Path
 from time import monotonic
-from typing import Any
+from typing import Any, Literal
 
 from fastapi import Depends, FastAPI, Header, Request
 from fastapi.exceptions import RequestValidationError
@@ -39,6 +39,8 @@ from .services import (
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("alim.api")
+
+SupportedLanguage = Literal["en", "de", "gsw", "ru", "es", "fr", "it"]
 
 
 class RequestIdMiddleware:
@@ -87,7 +89,7 @@ class ChatRequest(BaseModel):
     question: str = Field(min_length=1, max_length=4_000)
     subject_id: str | None = None
     component_subject_id: str | None = None
-    language: str | None = None
+    language: SupportedLanguage | None = None
     academic_year: str | None = None
     grade_level: int | None = None
     learning_goal_id: str | None = None
@@ -277,16 +279,6 @@ def create_app(
         """Verify Supabase identity and reject spoofed legacy student headers."""
 
         if not authorization or not authorization.startswith("Bearer "):
-            if (
-                os.getenv("ALIM_ENV") == "test"
-                and os.getenv("ALIM_ALLOW_INSECURE_TEST_AUTH", "false").lower() == "true"
-                and x_student_id
-            ):
-                return AuthenticatedUser(
-                    user_id=x_student_id,
-                    access_token="test-only-bypass",
-                    claims={"sub": x_student_id, "test_only": True},
-                )
             raise ApiAuthError(401, "unauthorized", "A valid Supabase bearer token is required")
         token = authorization.removeprefix("Bearer ").strip()
         if not token:

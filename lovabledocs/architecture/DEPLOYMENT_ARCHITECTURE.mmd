@@ -1,0 +1,7 @@
+%% Status: CURRENT
+flowchart LR
+  Browser["Browser"] --> Web["TanStack application"]
+  Browser --> Supabase["Supabase eu-central-2"]
+  Web -->|"verified bearer token"| FastAPI["Local FastAPI :8001"]
+  FastAPI -->|"caller JWT + publishable key"| Supabase
+  FastAPI --> Model["Local Qwen / llama.cpp :8000"]

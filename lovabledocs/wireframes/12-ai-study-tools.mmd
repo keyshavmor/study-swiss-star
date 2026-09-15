@@ -1,21 +1,22 @@
+%% Planned quiz / mock exam / grading tools. Not implemented in the current backend.
 flowchart TD
-  Subject[Subject workspace] --> Quiz[Generate quiz\nPLANNED]
-  Subject --> Exam[Generate mock exam\nPLANNED]
-  Subject --> Grade[Grade answer\nPLANNED]
-  Quiz -.-> QAPI[POST /api/quiz/generate]
-  Exam -.-> EAPI[POST /api/mock-exam/generate]
-  Grade -.-> GAPI[POST /api/grade]
-  QAPI -.-> Retrieve[Python retrieves goals and materials]
+  Subject["Subject workspace tools tab"] --> Quiz["Generate quiz<br/>DEFERRED"]
+  Subject --> Exam["Generate mock exam<br/>DEFERRED"]
+  Subject --> Grade["Grade answer<br/>DEFERRED"]
+  Quiz -.-> QAPI["POST /api/quiz/generate"]
+  Exam -.-> EAPI["POST /api/mock-exam/generate"]
+  Grade -.-> GAPI["POST /api/grade"]
+  QAPI -.-> Retrieve["Backend retrieves goals and materials"]
   EAPI -.-> Retrieve
-  GAPI -.-> Rubric[Python retrieves rubric and references]
-  Retrieve -.-> Model[Local Qwen3.8-27B via llama.cpp]
+  GAPI -.-> Rubric["Backend retrieves rubric and references"]
+  Retrieve -.-> Model["Local model runtime (llama.cpp / Qwen)"]
   Rubric -.-> Model
-  Model -.-> QuizUI[Quiz questions + sources]
-  Model -.-> ExamUI[Exam questions + points + rubrics]
-  Model -.-> Result[Points + strengths + gaps + advice + sources]
-  QuizUI -.-> Answers[Student answers and sees score]
+  Model -.-> QuizUI["Quiz questions + sources"]
+  Model -.-> ExamUI["Exam questions + points + rubrics"]
+  Model -.-> Result["Points + strengths + gaps + advice + sources"]
+  QuizUI -.-> Answers["Student answers and sees score"]
   ExamUI -.-> Grade
-  Result -.-> Formula[Exact grade = 1 + 5 times points / max\nclamped 1 to 6]
-  Formula -.-> Display[Frontend rounds to 0.5 and marks below 4.0]
-  Display -.-> Confirm{Save as practice assessment?}
-  Confirm -. yes .-> Local[(Supabase via AppDataProvider)]
+  Result -.-> Formula["Exact grade = 1 + 5 * points/max, clamped 1 to 6"]
+  Formula -.-> Display["Frontend rounds to 0.5 and marks below 4.0"]
+  Display -.-> Confirm{"Save as practice assessment?"}
+  Confirm -. yes .-> Local["Browser storage via AppDataProvider<br/>CURRENT - FRONTEND once a result exists"]

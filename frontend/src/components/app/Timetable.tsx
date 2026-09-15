@@ -1,6 +1,9 @@
 /** Alim application component for study, planning, profile, or navigation workflows. */
 import { useRef, useState } from "react";
-import { addDays, minutesOf, timeOf, todayIso, WEEKDAY_SHORT } from "@/lib/date-utils";
+import { GoogleCalendarLogo } from "@/components/app/BrandLogos";
+import { addDays, minutesOf, timeOf, todayIso } from "@/lib/date-utils";
+import { useI18n } from "@/lib/i18n/provider";
+
 import type { Occurrence } from "@/lib/store/app-data";
 import { CATEGORY_COLOR } from "@/lib/store/types";
 import { cn } from "@/lib/utils";
@@ -48,9 +51,19 @@ export function Timetable({
   onMove: (request: MoveRequest) => void;
   highlightEventId?: string | undefined;
 }) {
+  const { t } = useI18n();
   const gridRef = useRef<HTMLDivElement>(null);
   const [drag, setDrag] = useState<DragState | null>(null);
   const today = todayIso();
+  const weekdayShort = [
+    t("subject.timetable.weekday.mon"),
+    t("subject.timetable.weekday.tue"),
+    t("subject.timetable.weekday.wed"),
+    t("subject.timetable.weekday.thu"),
+    t("subject.timetable.weekday.fri"),
+    t("subject.timetable.weekday.sat"),
+    t("subject.timetable.weekday.sun"),
+  ];
 
   const hours = Array.from({ length: toHour - fromHour }, (_, i) => fromHour + i);
   const dayList = Array.from({ length: days }, (_, i) => addDays(weekStart, i));
@@ -63,6 +76,8 @@ export function Timetable({
   }
 
   function commit(occurrence: Occurrence, state: DragState) {
+    // Read-only occurrences (e.g. Google Calendar) can never be moved.
+    if (occurrence.event.readOnly) return;
     const dayDelta = Math.round(state.dx / columnWidth());
     const minuteDelta = Math.round(((state.dy / HOUR_HEIGHT) * 60) / SNAP_MINUTES) * SNAP_MINUTES;
     if (dayDelta === 0 && minuteDelta === 0) return;
@@ -97,7 +112,7 @@ export function Timetable({
               )}
             >
               <p className="text-[12px] font-medium uppercase tracking-wide text-muted-foreground">
-                {WEEKDAY_SHORT[(new Date(`${iso}T12:00:00`).getDay() + 6) % 7]}
+                {weekdayShort[(new Date(`${iso}T12:00:00`).getDay() + 6) % 7]}
               </p>
               <p
                 className={cn("tabular text-[15px] font-semibold", iso === today && "text-primary")}
@@ -158,6 +173,7 @@ export function Timetable({
                     );
                     const colour = o.event.color ?? CATEGORY_COLOR[o.event.category];
                     const dragging = drag?.key === key;
+                    const readOnly = o.event.readOnly === true;
 
                     return (
                       <button
@@ -177,12 +193,15 @@ export function Timetable({
                           "absolute touch-none overflow-hidden rounded-[10px] border-l-[3px] px-2 py-1 text-left transition-shadow",
                           "hover:shadow-[0_2px_10px_-4px_rgba(0,0,0,0.28)]",
                           dragging && "cursor-grabbing opacity-90 shadow-lg",
-                          !dragging && "cursor-grab",
+                          !dragging && (readOnly ? "cursor-pointer" : "cursor-grab"),
+                          readOnly && "border-l-dashed",
+
                           highlightEventId === o.event.id &&
                             "ring-2 ring-primary ring-offset-1 ring-offset-surface",
                           o.event.done && "opacity-60",
                         )}
                         onPointerDown={(e) => {
+                          if (readOnly) return;
                           (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
                           setDrag({
                             key,
@@ -194,6 +213,7 @@ export function Timetable({
                             moved: false,
                           });
                         }}
+
                         onPointerMove={(e) => {
                           setDrag((d) => {
                             if (!d || d.key !== key) return d;
@@ -208,6 +228,10 @@ export function Timetable({
                           });
                         }}
                         onPointerUp={() => {
+                          if (readOnly) {
+                            onSelect(o);
+                            return;
+                          }
                           setDrag((d) => {
                             if (!d || d.key !== key) return null;
                             if (d.moved) commit(o, d);
@@ -219,12 +243,14 @@ export function Timetable({
                       >
                         <span
                           className={cn(
-                            "block truncate text-[12.5px] font-semibold leading-tight",
+                            "flex items-center gap-1 text-[12.5px] font-semibold leading-tight",
                             o.event.done && "line-through",
                           )}
                         >
-                          {o.title}
+                          {readOnly && <GoogleCalendarLogo className="h-3 w-3 shrink-0" />}
+                          <span className="truncate">{o.title}</span>
                         </span>
+
                         {height > 34 && (
                           <span className="tabular block truncate text-[11.5px] text-muted-foreground">
                             {o.start}–{o.end}
@@ -247,7 +273,7 @@ export function Timetable({
       </div>
 
       <p className="border-t border-border bg-surface-2 px-4 py-2.5 text-[12.5px] text-muted-foreground">
-        Drag a block to move it to another day or time. Times are shown in 24-hour format.
+        {t("subject.timetable.dragHint")}
       </p>
     </div>
   );

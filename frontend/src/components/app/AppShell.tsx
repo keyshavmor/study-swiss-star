@@ -3,6 +3,7 @@ import { Link } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 import { AppHeader } from "@/components/app/AppHeader";
 import { MobileNavigation } from "@/components/app/MobileNavigation";
+import { useI18n } from "@/lib/i18n/provider";
 import { cn } from "@/lib/utils";
 
 export function AppShell({
@@ -33,19 +34,17 @@ export function AppShell({
 }
 
 export function AppFooter() {
+  const { t } = useI18n();
   return (
     <footer className="border-t border-border bg-surface">
       <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-5 py-5 text-[13.5px] text-muted-foreground sm:px-6">
-        <span>Alim's Study Assistant — study prototype</span>
+        <span>{t("common.footer.tagline")}</span>
         <div className="flex items-center gap-5">
           <Link to="/feedback" className="transition-colors hover:text-foreground">
-            Feedback
+            {t("nav.feedback")}
           </Link>
           <Link to="/help" className="transition-colors hover:text-foreground">
-            Help
-          </Link>
-          <Link to="/diagnostics" className="transition-colors hover:text-foreground">
-            Diagnostics
+            {t("nav.help")}
           </Link>
         </div>
       </div>

@@ -1,0 +1,37 @@
+%% Status: CURRENT — FRONTEND (local browser state; not synced to Supabase)
+%% Source: frontend/src/components/app/AssessmentDialog.tsx, frontend/src/components/app/AssessmentActions.tsx,
+%% frontend/src/lib/store/app-data.tsx, frontend/src/lib/grade-math.ts
+sequenceDiagram
+    participant User
+    participant Dialog as AssessmentDialog.tsx
+    participant AppData as AppDataProvider (lib/store/app-data.tsx)
+    participant LS as localStorage ("asa.data.v2")
+    participant Math as lib/grade-math.ts
+    participant View as school.$subject.tsx (GradeDisplay, stats)
+
+    User->>Dialog: open "Add grade" for a subject (test/exam/homework, points or teacher grade)
+    Dialog->>Math: pointsToGrade() / gradeOf() preview as the user types
+    Math-->>Dialog: computed grade preview
+    User->>Dialog: save
+    Dialog->>AppData: addAssessment(input)
+    AppData->>LS: persist DataState (assessments[]) to localStorage
+    AppData-->>Dialog: created Assessment
+    Dialog-->>User: closes and shows toast confirmation
+
+    User->>View: open subject dashboard / Statistics
+    View->>Math: summariseSubject() / summariseSubjectView() / summariseYear()
+    Math-->>View: exactAverage, roundedGrade, isFailing(), trend
+    View-->>User: renders grade charts, failing badges, year summary
+
+    User->>Dialog: edit / duplicate / delete an assessment (AssessmentActions.tsx)
+    alt edit
+        Dialog->>AppData: updateAssessment(id, patch)
+    else duplicate
+        Dialog->>AppData: duplicateAssessment(id)
+    else delete
+        Dialog->>AppData: removeAssessment(id)
+        Note over AppData: restoreAssessment(record) supports undo
+    end
+    AppData->>LS: persist updated DataState
+
+    Note over AppData,LS: CURRENT FRONTEND: grades and assessments remain prototype client-side state<br/>A live assessments table exists but this UI does not use it<br/>server persistence is a deferred product integration

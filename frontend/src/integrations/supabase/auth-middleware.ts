@@ -6,7 +6,7 @@ import { createClient } from "@supabase/supabase-js";
 import type { Database } from "./types";
 
 function isNewSupabaseApiKey(value: string): boolean {
-  return value.startsWith("sb_publishable_");
+  return value.startsWith("sb_publishable_") || value.startsWith("sb_secret_");
 }
 
 function createSupabaseFetch(supabaseKey: string): typeof fetch {
@@ -42,12 +42,9 @@ export const requireSupabaseAuth = createMiddleware({ type: "function" }).server
         ...(!SUPABASE_URL ? ["SUPABASE_URL"] : []),
         ...(!SUPABASE_PUBLISHABLE_KEY ? ["SUPABASE_PUBLISHABLE_KEY"] : []),
       ];
-      const message = `Missing Supabase environment variable(s): ${missing.join(", ")}. Configure the server environment from .env.example.`;
+      const message = `Missing Supabase environment variable(s): ${missing.join(", ")}. Set them in the deployment environment configuration.`;
       console.error(`[Supabase] ${message}`);
       throw new Error(message);
-    }
-    if (SUPABASE_PUBLISHABLE_KEY.startsWith("sb_secret_")) {
-      throw new Error("SUPABASE_PUBLISHABLE_KEY must not contain a secret key");
     }
 
     const request = getRequest();
@@ -102,7 +99,6 @@ export const requireSupabaseAuth = createMiddleware({ type: "function" }).server
       context: {
         supabase,
         userId: data.claims.sub,
-        accessToken: token,
         claims: data.claims,
       },
     });

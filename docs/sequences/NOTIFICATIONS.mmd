@@ -1,0 +1,30 @@
+%% Status: CURRENT — FRONTEND (derived client-side; nothing delivered/pushed)
+%% Source: frontend/src/lib/notifications.ts, frontend/src/components/app/NotificationCenter.tsx
+sequenceDiagram
+    participant User
+    participant Bell as NotificationCenter.tsx
+    participant AppData as AppDataProvider (events, dismissed/read state)
+    participant Lib as lib/notifications.ts (buildNotifications)
+
+    Bell->>AppData: read events, dismissedNotifications, readNotifications
+    Bell->>Lib: buildNotifications(events, dismissedNotifications)
+    Lib->>Lib: occurrencesInRange(events, today-14d, today+30d)
+    Lib->>Lib: for each occurrence: compute section (Today/Upcoming/Earlier),<br/>relative-day label, summary, timestamp
+    Lib->>Lib: filter dismissed keys, then sort by section and date/time
+    Lib-->>Bell: EventNotification[]
+    Bell->>Bell: unread = notifications not in readNotifications
+    Bell-->>User: bell icon with unread count badge and grouped popover list
+
+    alt user opens a notification
+        User->>Bell: click a notification
+        Bell->>AppData: markNotificationRead(key)
+        Bell->>Bell: open EventDetailDialog for the underlying occurrence
+    else user marks all read
+        User->>Bell: "Mark all read"
+        Bell->>AppData: markAllNotificationsRead()
+    else user dismisses one
+        User->>Bell: dismiss (X)
+        Bell->>AppData: dismissNotification(key)
+    end
+
+    Note over Lib,Bell: Entirely derived client-side from local planner events —<br/>nothing is delivered, scheduled, or pushed anywhere (no push/email/SMS).<br/>Google Calendar occurrences participate the same way as any other<br/>occurrence in this derivation.

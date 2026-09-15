@@ -1,16 +1,15 @@
+%% MaterialsPanel on the subject workspace (frontend/src/components).
 flowchart TD
-  Panel[MaterialsPanel on subject workspace] --> LocalList[User files links and notes]
-  LocalList --> CRUD[Add edit archive delete restore]
-  CRUD --> Cloud[(Supabase documents + private Storage\nIMPLEMENTED)]
-  Panel --> BackendList[Indexed user materials]
-  BackendList -.-> GET["GET /api/subjects/{id}/materials\nPLANNED"]
-  Upload[Choose PDF DOCX or image\nIMPLEMENTED] --> Cloud
-  Cloud --> Import[POST /api/context/documents/storage\nBEARER AUTH]
-  Import --> Parse[Temporary local parse and normalize]
-  Parse --> Chunk[Local chunk + embed + index]
-  Chunk --> Store[(Supabase user-scoped chunks)]
-  Store --> BackendList
-  Import --> Status[Indexed status]
-  Import --> Review[Parse failure stays Needs review]
-  Text[POST /api/context/documents/text\nIMPLEMENTED BACKEND] --> Chunk
-  Transcript[TranscriptImportDialog\nsimulated OCR review confirm] --> Assessments[Supabase assessments after review]
+  Panel["MaterialsPanel on /school/$subject"] --> LocalList["Local user files, links and notes"]
+  LocalList --> CRUD["Add / edit / archive / delete / restore"]
+  CRUD --> Local["Browser storage (AppDataProvider)<br/>CURRENT - FRONTEND"]
+  Panel -.-> BackendList["Indexed corpus materials list<br/>DEFERRED - no list endpoint/UI connection"]
+  Upload["Choose PDF / DOCX / MD / TXT<br/>UI wiring DEFERRED"] -.-> Import["POST /api/context/documents/storage<br/>CURRENT - BACKEND, UI not connected"]
+  Import -.-> Parse["Backend parse and normalise"]
+  Parse -.-> Chunk["Chunk + embed + index"]
+  Chunk -.-> Store["Request-scoped Supabase documents/document_chunks<br/>CURRENT - BACKEND"]
+  Store -.-> BackendList
+  Import -. success .-> Status["Indexed status: pages, chunks, warnings"]
+  Import -. parse failure .-> Review["Item stays visible as Needs review"]
+  Text["POST /api/context/documents/text<br/>CURRENT - BACKEND"] --> Chunk
+  Transcript["TranscriptImportDialog: simulated OCR, review, confirm"] --> Assessments["Local assessments only<br/>CURRENT - FRONTEND"]

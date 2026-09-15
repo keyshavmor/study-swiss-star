@@ -2,39 +2,47 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AppShell, PageHeading } from "@/components/app/AppShell";
 import { PageNav } from "@/components/app/Breadcrumbs";
-import { Switch } from "@/components/ui/switch";
+import {
+  AccountSection,
+  PreferencesSections,
+  StorageSection,
+} from "@/components/app/SettingsSections";
+import { useI18n } from "@/lib/i18n/provider";
 
 export const Route = createFileRoute("/_authenticated/settings")({
   head: () => ({
     meta: [
       { title: "Settings — Alim's Study Assistant" },
-      { name: "description", content: "Appearance, notification and study preferences." },
+      {
+        name: "description",
+        content: "Account, local model, storage and study preferences.",
+      },
       { property: "og:title", content: "Settings — Alim's Study Assistant" },
-      { property: "og:description", content: "Appearance, notification and study preferences." },
+      {
+        property: "og:description",
+        content: "Account, local model, storage and study preferences.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
   }),
-  component: () => (
+  component: SettingsPage,
+});
+
+function SettingsPage() {
+  const { t } = useI18n();
+  return (
     <AppShell>
       <PageNav
-        back={{ to: "/home", label: "Home" }}
-        crumbs={[{ label: "Home", to: "/home" }, { label: "Settings" }]}
+        back={{ to: "/home", label: t("nav.home") }}
+        crumbs={[{ label: t("nav.home"), to: "/home" }, { label: t("nav.settings") }]}
       />
-      <PageHeading title="Settings" description="Preferences for the prototype interface." />
-      <div className="app-card max-w-2xl divide-y divide-border p-5">
-        {["Exam reminders", "Daily study summary", "Apple Reminders sync", "Sound effects"].map(
-          (label, i) => (
-            <div
-              key={label}
-              className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 py-3.5"
-            >
-              <span className="text-[15px] font-medium">{label}</span>
-              <Switch defaultChecked={i < 2} />
-            </div>
-          ),
-        )}
+      <PageHeading title={t("settings.page.title")} description={t("settings.page.description")} />
+      <div className="max-w-3xl space-y-5">
+        <AccountSection />
+        <PreferencesSections />
+        <StorageSection />
       </div>
     </AppShell>
-  ),
-});
+  );
+}

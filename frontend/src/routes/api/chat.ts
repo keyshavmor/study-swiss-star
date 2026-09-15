@@ -8,6 +8,8 @@ import {
   type ContextResponseMetadata,
 } from "@/lib/context-backend.server";
 import type { Database, Json } from "@/integrations/supabase/types";
+import { effectiveResponseLanguage } from "@/lib/i18n/detect";
+import { normaliseLanguage } from "@/lib/i18n/languages";
 
 type AlimUIMessage = UIMessage<never, { "context-metadata": ContextResponseMetadata }>;
 
@@ -73,6 +75,24 @@ async function getUserClient(request: Request) {
   return { supabase, userId: data.claims.sub, accessToken: token };
 }
 
+function backendErrorResponse(error: unknown): Response {
+  const contextError = error instanceof ContextBackendError ? error : null;
+  const requestId = contextError?.requestId;
+  const init: ResponseInit = { status: contextError?.status ?? 503 };
+  if (requestId) init.headers = { "X-Request-Id": requestId };
+  return Response.json(
+    {
+      error: {
+        code: contextError?.code ?? "context_backend_unavailable",
+        message: contextError?.message ?? "Local Qwen backend unavailable",
+        retryable: !contextError || contextError.status >= 500,
+        ...(requestId ? { request_id: requestId } : {}),
+      },
+    },
+    init,
+  );
+}
+
 export const Route = createFileRoute("/api/chat")({
   server: {
     handlers: {
@@ -83,7 +103,13 @@ export const Route = createFileRoute("/api/chat")({
           threadId?: string;
           academicYear?: string;
           gradeLevel?: number;
-          data?: { threadId?: string; academicYear?: string; gradeLevel?: number };
+          uiLanguage?: string;
+          data?: {
+            threadId?: string;
+            academicYear?: string;
+            gradeLevel?: number;
+            uiLanguage?: string;
+          };
         };
 
         const messages = body.messages ?? [];
@@ -134,20 +160,22 @@ export const Route = createFileRoute("/api/chat")({
         try {
           const academicYear = body.academicYear ?? body.data?.academicYear;
           const gradeLevel = body.gradeLevel ?? body.data?.gradeLevel;
+          const uiLanguage = normaliseLanguage(body.uiLanguage ?? body.data?.uiLanguage);
+          const responseLanguage = effectiveResponseLanguage(question, uiLanguage);
           contextResponse = await requestContextAnswer({
             accessToken,
+            studentId: userId,
             threadId,
             userMessageId: lastMessage.id,
             question,
             ...(thread.subject ? { subject: thread.subject } : {}),
             ...(academicYear ? { academicYear } : {}),
             ...(gradeLevel !== undefined ? { gradeLevel } : {}),
+            responseLanguage,
+            signal: request.signal,
           });
         } catch (error) {
-          const contextError = error instanceof ContextBackendError ? error : null;
-          return new Response(contextError?.message ?? "Local Qwen backend unavailable", {
-            status: contextError?.status ?? 503,
-          });
+          return backendErrorResponse(error);
         }
 
         const stream = createUIMessageStream<AlimUIMessage>({

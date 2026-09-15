@@ -1,20 +1,21 @@
+%% /school overview (routes/_authenticated/school.index.tsx).
 flowchart TD
-  Open[Open /school] --> Subjects[Load SCHOOL_SUBJECTS\n15 top-level subjects]
-  Open --> Data[Read assessments for selected year]
-  Subjects --> Filter[Search filter and sort]
-  Data --> SubjectCalc[summariseSubjectView per card]
-  Data --> YearCalc[summariseYear]
-  SubjectCalc --> SPF{Subject is SPF?}
-  SPF -->|Yes| Combine[Average SPF Biology and SPF Chemistry component averages]
-  SPF -->|No| Single[Weighted subject assessment average]
-  Combine --> Cards[Subject cards + component breakdown]
+  Open["Open /school"] --> Subjects["Load SCHOOL_SUBJECTS: 15 top-level subjects"]
+  Open --> Data["Read assessments for selected year"]
+  Subjects --> Filter["Search filter and sort"]
+  Data --> SubjectCalc["summariseSubjectView per card (grade-math.ts)"]
+  Data --> YearCalc["summariseYear"]
+  SubjectCalc --> SPF{"Subject is SPF?"}
+  SPF -->|Yes| Combine["Average SPF Biology and SPF Chemistry component averages"]
+  SPF -->|No| Single["Weighted subject assessment average"]
+  Combine --> Cards["Subject cards + component breakdown"]
   Single --> Cards
-  YearCalc --> Overview[Year average + alerts + statistics]
-  Cards --> Failing{Rounded grade below 4.0?}
-  Failing -->|Yes| Orange[Warning styling]
-  Failing -->|No| Normal[Standard styling]
+  YearCalc --> Overview["Year average + alerts + statistics"]
+  Cards --> Failing{"Rounded grade below 4.0?"}
+  Failing -->|Yes| Orange["Warning styling"]
+  Failing -->|No| Normal["Standard styling"]
   Cards --> Subject["/school/$subject"]
-  Add[Add edit duplicate move delete assessment] --> AppData[AppDataProvider CRUD]
-  Import[Transcript simulation: parse review confirm] --> AppData
-  AppData --> Store[(Supabase-backed state\nUUID cache)]
+  Add["Add / edit / duplicate / move / delete assessment"] --> AppData["AppDataProvider CRUD"]
+  Import["Transcript simulation: parse, review, confirm"] --> AppData
+  AppData --> Store["Browser storage<br/>CURRENT - FRONTEND"]
   Store --> Data

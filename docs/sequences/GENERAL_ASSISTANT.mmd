@@ -1,0 +1,11 @@
+%% Status: CURRENT — UI and Supabase persistence; generation explicitly deferred
+sequenceDiagram
+  participant User
+  participant UI as AssistantChat
+  participant Storage as chat-attachments
+  participant DB as assistant tables
+  User->>UI: message + optional attachments
+  UI->>Storage: upload validated files under user prefix
+  UI->>DB: insert user message and attachment metadata
+  DB-->>UI: persisted message
+  Note over UI,DB: No assistant reply is fabricated. Generation/history/attachment parsing semantics need a product contract.

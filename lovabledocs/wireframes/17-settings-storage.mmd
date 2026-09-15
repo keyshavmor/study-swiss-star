@@ -1,0 +1,21 @@
+%% /settings against the live Supabase schema.
+flowchart TD
+    S["/settings"] --> A[Account section]
+    S --> M[Local model section]
+    S --> P[Preferences section]
+    S --> AU2[Assistant audio section]
+    S --> G[Storage section]
+    A -->|profiles update| DBP[(profiles)]
+    A -->|upload / remove| AV[(profile-avatars bucket)]
+    A -->|auth.updateUser email| AU[Supabase Auth]
+    A -->|auth.updateUser password| AU
+    M -->|preferences.selected_qwen_model| DBU[(user_preferences)]
+    P -->|exam_reminders, daily_study_summary,<br/>sound_effects, auto_storage_cleanup| DBU
+    AU2 -->|assistant_audio_enabled default true,<br/>assistant_audio_autoplay default false| DBU
+    NoteLang["Language menu lives in AppHeader.tsx, not Settings"] -.-> S
+    G -->|rpc get_storage_usage_status| RPC[(usage status: quota/used/remaining/percent)]
+    RPC -->|remaining <= 10%| W[Prominent warning]
+    RPC -->|remaining <= 1%| EC[invoke storage-emergency-cleanup, once per session]
+    G -->|list| L[assistant_attachments + documents with storage paths]
+    L -->|select + confirm| D1[Storage bucket remove first]
+    D1 --> D2[assistant_attachments.deleted_at set;<br/>documents storage pointer cleared]

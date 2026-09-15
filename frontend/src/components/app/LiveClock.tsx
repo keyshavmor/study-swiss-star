@@ -1,20 +1,7 @@
 /** Alim application component for study, planning, profile, or navigation workflows. */
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
-
-function format(now: Date) {
-  const time = new Intl.DateTimeFormat("en-GB", {
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  }).format(now);
-  const date = new Intl.DateTimeFormat("en-GB", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-  }).format(now);
-  return { time, date };
-}
+import { useI18n } from "@/lib/i18n/provider";
 
 /**
  * Live 24-hour clock. Frontend-only — ticks from the device clock.
@@ -28,6 +15,7 @@ export function LiveClock({
   showDate?: boolean;
   align?: "left" | "right";
 }) {
+  const { t, formatTime, formatWeekdayDate } = useI18n();
   const [now, setNow] = useState<Date | null>(null);
 
   useEffect(() => {
@@ -36,7 +24,8 @@ export function LiveClock({
     return () => window.clearInterval(id);
   }, []);
 
-  const { time, date } = now ? format(now) : { time: "--:--", date: "" };
+  const time = now ? formatTime(now) : "--:--";
+  const date = now ? formatWeekdayDate(now, "short") : "";
 
   return (
     <div
@@ -45,7 +34,7 @@ export function LiveClock({
         align === "right" ? "items-end text-right" : "items-start text-left",
         className,
       )}
-      aria-label={`Current time ${time}`}
+      aria-label={t("misc.clock.currentTime", { time })}
     >
       <span className="tabular text-[15px] font-medium tracking-tight">{time}</span>
       {showDate && date && (

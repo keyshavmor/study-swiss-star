@@ -1,11 +1,12 @@
 /** Alim application component for study, planning, profile, or navigation workflows. */
-import { Link, useRouterState } from "@tanstack/react-router";
+import { Link, useNavigate, useRouter, useRouterState } from "@tanstack/react-router";
+
 import { GraduationCap, LogOut, Menu, Settings, User } from "lucide-react";
 import { useState } from "react";
-import { DemoModeButton } from "@/components/app/DemoMode";
 import { NotificationCenter } from "@/components/app/NotificationCenter";
 import { LiveClock } from "@/components/app/LiveClock";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { LanguageMenu } from "@/components/app/LanguageMenu";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -18,24 +19,45 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { useAppData } from "@/lib/store/app-data";
+import { useI18n } from "@/lib/i18n/provider";
+import { signOutCompletely } from "@/lib/sign-out";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 const NAV = [
-  { to: "/home", label: "Home" },
-  { to: "/school", label: "School" },
-  { to: "/planner", label: "Planner" },
-  { to: "/stats", label: "Stats" },
-  { to: "/help", label: "Help" },
-  { to: "/feedback", label: "Feedback" },
+  { to: "/home", key: "nav.home" },
+  { to: "/school", key: "nav.school" },
+  { to: "/planner", key: "nav.planner" },
+  { to: "/assistant", key: "nav.assistant" },
+  { to: "/stats", key: "nav.stats" },
+  { to: "/help", key: "nav.help" },
+  { to: "/feedback", key: "nav.feedback" },
 ] as const;
 
 export function AppHeader() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const [open, setOpen] = useState(false);
   const { profile } = useAppData();
-  const displayName = profile.preferredName || profile.fullName || "Your profile";
+  const { t } = useI18n();
+  const displayName = profile.preferredName || profile.fullName || t("nav.yourProfile");
 
   const isActive = (to: string) => pathname === to || pathname.startsWith(`${to}/`);
+
+  const navigate = useNavigate();
+  const router = useRouter();
+
+  async function handleSignOut() {
+    try {
+      await signOutCompletely();
+    } catch (err) {
+      // Never surface a raw provider message: it would inject English into the UI.
+      console.error("sign-out failed", err);
+      toast.error(t("nav.signOutFailed"));
+      return;
+    }
+    await router.invalidate();
+    await navigate({ to: "/", replace: true });
+  }
 
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-surface/95 backdrop-blur-none">
@@ -43,12 +65,17 @@ export function AppHeader() {
         <div className="flex min-w-0 items-center gap-3">
           <Sheet open={open} onOpenChange={setOpen}>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="lg:hidden" aria-label="Open menu">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="lg:hidden"
+                aria-label={t("nav.openMenu")}
+              >
                 <Menu className="h-5 w-5" />
               </Button>
             </SheetTrigger>
             <SheetContent side="left" className="w-[280px] p-6">
-              <SheetTitle className="text-[17px]">Alim's Study Assistant</SheetTitle>
+              <SheetTitle className="text-[17px]">{t("common.appName")}</SheetTitle>
               <nav className="mt-6 flex flex-col gap-1">
                 {NAV.map((item) => (
                   <Link
@@ -62,7 +89,7 @@ export function AppHeader() {
                         : "text-muted-foreground hover:bg-hover hover:text-foreground",
                     )}
                   >
-                    {item.label}
+                    {t(item.key)}
                   </Link>
                 ))}
                 <Link
@@ -70,41 +97,45 @@ export function AppHeader() {
                   onClick={() => setOpen(false)}
                   className="rounded-xl px-4 py-3 text-[16px] font-medium text-muted-foreground transition-colors hover:bg-hover hover:text-foreground"
                 >
-                  Profile
+                  {t("nav.profile")}
                 </Link>
                 <Link
                   to="/settings"
                   onClick={() => setOpen(false)}
                   className="rounded-xl px-4 py-3 text-[16px] font-medium text-muted-foreground transition-colors hover:bg-hover hover:text-foreground"
                 >
-                  Settings
+                  {t("nav.settings")}
                 </Link>
               </nav>
             </SheetContent>
           </Sheet>
 
-          <Link to="/home" className="flex min-w-0 items-center gap-2.5">
+          <Link
+            to="/home"
+            aria-label={t("nav.home")}
+            className="flex min-w-0 items-center gap-2.5 rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
             <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground">
               <GraduationCap className="h-[18px] w-[18px]" />
             </span>
             <span className="truncate text-[15px] font-semibold tracking-tight">
-              Alim's Study Assistant
+              {t("common.appName")}
             </span>
           </Link>
 
-          <nav className="ml-6 hidden items-center gap-1 lg:flex">
+          <nav className="ml-5 hidden flex-1 items-center justify-start gap-0.5 lg:flex xl:ml-8 xl:gap-1.5">
             {NAV.map((item) => (
               <Link
                 key={item.to}
                 to={item.to}
                 className={cn(
-                  "rounded-full px-3.5 py-2 text-[14.5px] font-medium transition-colors duration-200",
+                  "whitespace-nowrap rounded-full px-3 py-2 text-[14.5px] font-medium transition-colors duration-200 xl:px-4",
                   isActive(item.to)
                     ? "bg-thread-active text-foreground"
                     : "text-muted-foreground hover:bg-hover hover:text-foreground",
                 )}
               >
-                {item.label}
+                {t(item.key)}
               </Link>
             ))}
           </nav>
@@ -112,16 +143,16 @@ export function AppHeader() {
 
         <div className="flex shrink-0 items-center gap-2">
           <LiveClock className="mr-1 hidden sm:flex" />
-          <DemoModeButton className="hidden lg:inline-flex" />
           <ThemeToggle className="hidden sm:inline-flex" />
 
           <NotificationCenter />
+          <LanguageMenu />
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button
                 type="button"
-                aria-label="Profile menu"
+                aria-label={t("nav.profileMenu")}
                 className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border border-border bg-surface-2 text-muted-foreground transition-colors hover:text-foreground"
               >
                 {profile.photo ? (
@@ -137,21 +168,19 @@ export function AppHeader() {
               <DropdownMenuItem asChild>
                 <Link to="/profile">
                   <User className="h-4 w-4" />
-                  View profile
+                  {t("nav.viewProfile")}
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
                 <Link to="/settings">
                   <Settings className="h-4 w-4" />
-                  Settings
+                  {t("nav.settings")}
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem asChild>
-                <Link to="/auth">
-                  <LogOut className="h-4 w-4" />
-                  Sign out
-                </Link>
+              <DropdownMenuItem onSelect={() => void handleSignOut()}>
+                <LogOut className="h-4 w-4" />
+                {t("nav.signOut")}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

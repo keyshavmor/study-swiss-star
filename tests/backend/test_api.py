@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import unittest
 
+from app.auth import TokenVerificationError
 from app.context.config import ContextConfig
 from app.context.manager import ContextManager
 from app.context.models import DocumentChunk
@@ -45,6 +46,8 @@ class FakeTokenVerifier:
     """Treat deterministic test tokens as verified Supabase subjects."""
 
     def verify(self, token: str):
+        if token == "token-invalid":
+            raise TokenVerificationError("invalid test token")
         return {"sub": token.removeprefix("token-")}
 
 
@@ -145,6 +148,58 @@ class ApiTests(unittest.IsolatedAsyncioTestCase):
         )
         self.assertEqual(spoofed.status_code, 403)
         self.assertEqual(spoofed.json()["error"]["code"], "student_id_mismatch")
+
+        invalid = await self.client.post(
+            "/api/context/events",
+            headers={"Authorization": "Bearer token-invalid"},
+            json={"event_type": "study_session", "content": "Reviewed meiosis"},
+        )
+        self.assertEqual(invalid.status_code, 401)
+        self.assertEqual(invalid.json()["error"]["code"], "invalid_token")
+
+        matching = await self.client.post(
+            "/api/context/events",
+            headers={
+                "Authorization": "Bearer token-user-a",
+                "X-Student-Id": "user-a",
+            },
+            json={"event_type": "study_session", "content": "Reviewed meiosis"},
+        )
+        self.assertEqual(matching.status_code, 200)
+
+    async def test_all_supported_response_languages_reach_the_compiler(self) -> None:
+        for language in ("en", "de", "gsw", "ru", "es", "fr", "it"):
+            with self.subTest(language=language):
+                response = await self.client.post(
+                    "/api/chat",
+                    headers={"Authorization": "Bearer token-student-1"},
+                    json={
+                        "thread_id": f"thread-{language}",
+                        "question": "Explain this concept",
+                        "language": language,
+                        "allow_web": False,
+                        "stream": False,
+                    },
+                )
+                self.assertEqual(response.status_code, 200)
+                self.assertEqual(response.json()["language"], language)
+                self.assertIn(
+                    "Response language:",
+                    self.model.last_context.prompt_messages[0]["content"],
+                )
+
+        unsupported = await self.client.post(
+            "/api/chat",
+            headers={"Authorization": "Bearer token-student-1"},
+            json={
+                "thread_id": "thread-unsupported",
+                "question": "Explain this concept",
+                "language": "xx",
+                "allow_web": False,
+                "stream": False,
+            },
+        )
+        self.assertEqual(unsupported.status_code, 422)
 
 
 if __name__ == "__main__":

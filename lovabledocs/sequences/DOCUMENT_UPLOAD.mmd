@@ -1,0 +1,9 @@
+%% Status: CURRENT — visible UI preserved; no upload-to-index action
+sequenceDiagram
+  participant UI as Materials UI
+  participant Local as asa.data.v2
+  participant Storage as user-materials
+  participant API as FastAPI ingestion
+  UI->>Local: save current metadata-only material
+  Note over UI,Local: This does not claim backend indexing.
+  Note over Storage,API: Secure Storage ingestion exists, but the current UI has no binary upload/index trigger.

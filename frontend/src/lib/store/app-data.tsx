@@ -1,16 +1,7 @@
 /** Local application-state types and persistence helpers. */
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import { addDays, daysBetween, startOfWeek, weekdayIndex } from "@/lib/date-utils";
-import { createDemoState } from "@/lib/store/demo-data";
 import type {
   Assessment,
   DataState,
@@ -20,26 +11,37 @@ import type {
   StudentProfile,
 } from "@/lib/store/types";
 import { EMPTY_PROFILE, EMPTY_STATE } from "@/lib/store/types";
-import { supabase } from "@/integrations/supabase/client";
-import {
-  emptyAppData,
-  loadAppData,
-  saveAppData,
-  uploadMaterialObject,
-} from "@/lib/store/app-data.repository";
-import { toast } from "sonner";
-import { ingestMaterial } from "@/lib/material.functions";
-import { appDataCacheKey, readCachedAppData } from "@/lib/store/app-data.cache";
+import { track } from "@/lib/telemetry";
 
-const DEMO_KEY = "asa.demo.v1";
+const STORAGE_KEY = "asa.data.v2";
 
-function uid() {
-  return crypto.randomUUID();
+function uid(prefix: string) {
+  return `${prefix}-${Math.random().toString(36).slice(2, 9)}`;
+}
+
+/**
+ * Central planner telemetry. Only structural facts are recorded — never the
+ * title, notes, location or any other content of an appointment, and never
+ * anything about Google-origin (read-only) events.
+ */
+function trackPlanner(
+  event_name: string,
+  event: PlannerEvent | undefined,
+  properties?: Record<string, string | number | boolean>,
+): void {
+  if (event?.externalSource === "google") return;
+  track({
+    event_name,
+    feature: "planner",
+    properties: {
+      ...properties,
+      category: event?.category ?? null,
+      recurring: event ? event.recurrence !== "none" : null,
+    },
+  });
 }
 
 interface DataContextValue extends DataState {
-  demoMode: boolean;
-  setDemoMode: (on: boolean) => void;
   hasAnyData: boolean;
 
   addAssessment: (input: Omit<Assessment, "id">) => Assessment;
@@ -68,7 +70,6 @@ interface DataContextValue extends DataState {
   updateMaterial: (id: string, patch: Partial<Material>) => void;
   removeMaterial: (id: string) => void;
   restoreMaterial: (record: Material) => void;
-  uploadMaterial: (file: File, input: Omit<Material, "id">) => Promise<Material>;
 
   addLink: (input: Omit<SchoolLink, "id" | "order" | "opens">) => SchoolLink;
   updateLink: (id: string, patch: Partial<SchoolLink>) => void;
@@ -89,81 +90,43 @@ interface DataContextValue extends DataState {
 
 const DataContext = createContext<DataContextValue | null>(null);
 
-function readStored(userId: string): DataState {
+function readStored(): DataState {
   if (typeof window === "undefined") return EMPTY_STATE;
-  return readCachedAppData(window.localStorage, userId);
+  try {
+    const raw =
+      window.localStorage.getItem(STORAGE_KEY) ?? window.localStorage.getItem("asa.data.v1");
+    if (!raw) return EMPTY_STATE;
+    const parsed = JSON.parse(raw) as Partial<DataState>;
+    return {
+      assessments: parsed.assessments ?? [],
+      events: parsed.events ?? [],
+      materials: parsed.materials ?? [],
+      links: parsed.links ?? [],
+      profile: { ...EMPTY_PROFILE, ...(parsed.profile ?? {}) },
+      readNotifications: parsed.readNotifications ?? [],
+      dismissedNotifications: parsed.dismissedNotifications ?? [],
+    };
+  } catch {
+    return EMPTY_STATE;
+  }
 }
 
 export function AppDataProvider({ children }: { children: ReactNode }) {
   const [hydrated, setHydrated] = useState(false);
-  const [userId, setUserId] = useState<string | null>(null);
   const [userState, setUserState] = useState<DataState>(EMPTY_STATE);
-  const [demoState, setDemoState] = useState<DataState>(() => createDemoState());
-  const [demoMode, setDemoModeState] = useState(false);
-  const loadGeneration = useRef(0);
-  const saveQueue = useRef<Promise<void>>(Promise.resolve());
 
   useEffect(() => {
-    setDemoModeState(window.localStorage.getItem(DEMO_KEY) === "on");
-    const switchUser = async (nextUserId: string | null) => {
-      const generation = ++loadGeneration.current;
-      setHydrated(false);
-      setUserId(nextUserId);
-      setUserState(emptyAppData());
-      if (!nextUserId) {
-        setHydrated(true);
-        return;
-      }
-      const cached = readStored(nextUserId);
-      try {
-        const remote = await loadAppData(nextUserId);
-        if (generation !== loadGeneration.current) return;
-        setUserState(remote);
-        window.localStorage.setItem(appDataCacheKey(nextUserId), JSON.stringify(remote));
-      } catch (error) {
-        if (generation !== loadGeneration.current) return;
-        setUserState(cached);
-        toast.error("Your cloud data could not be loaded", {
-          description: error instanceof Error ? error.message : "Using this account's local cache.",
-        });
-      } finally {
-        if (generation === loadGeneration.current) setHydrated(true);
-      }
-    };
-
-    void supabase.auth.getSession().then(({ data }) => switchUser(data.session?.user.id ?? null));
-    const { data } = supabase.auth.onAuthStateChange((_event, session) => {
-      void switchUser(session?.user.id ?? null);
-    });
-    return () => data.subscription.unsubscribe();
+    setUserState(readStored());
+    setHydrated(true);
   }, []);
 
   useEffect(() => {
-    if (!hydrated || !userId || demoMode) return;
-    window.localStorage.setItem(appDataCacheKey(userId), JSON.stringify(userState));
-    const generation = loadGeneration.current;
-    const timeout = window.setTimeout(() => {
-      saveQueue.current = saveQueue.current
-        .catch(() => undefined)
-        .then(() => saveAppData(userId, userState))
-        .catch((error) => {
-          if (generation !== loadGeneration.current) return;
-          toast.error("Changes are saved on this device but not yet in Supabase", {
-            description: error instanceof Error ? error.message : "Cloud synchronization failed.",
-          });
-        });
-    }, 350);
-    return () => window.clearTimeout(timeout);
-  }, [demoMode, hydrated, userId, userState]);
+    if (!hydrated) return;
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(userState));
+  }, [hydrated, userState]);
 
-  const setDemoMode = useCallback((on: boolean) => {
-    setDemoModeState(on);
-    if (typeof window !== "undefined") window.localStorage.setItem(DEMO_KEY, on ? "on" : "off");
-    if (on) setDemoState(createDemoState());
-  }, []);
-
-  const state = demoMode ? demoState : userState;
-  const setState = demoMode ? setDemoState : setUserState;
+  const state = userState;
+  const setState = setUserState;
 
   const value = useMemo<DataContextValue>(() => {
     const patchList = <T extends { id: string }>(list: T[], id: string, patch: Partial<T>) =>
@@ -171,8 +134,6 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
 
     return {
       ...state,
-      demoMode,
-      setDemoMode,
       hasAnyData:
         state.assessments.length > 0 ||
         state.events.length > 0 ||
@@ -180,7 +141,7 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
         state.links.length > 0,
 
       addAssessment: (input) => {
-        const record: Assessment = { ...input, id: uid() };
+        const record: Assessment = { ...input, id: uid("a") };
         setState((s) => ({ ...s, assessments: [...s.assessments, record] }));
         return record;
       },
@@ -194,7 +155,7 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
             ...s,
             assessments: [
               ...s.assessments,
-              { ...found, id: uid(), title: `${found.title} (copy)` },
+              { ...found, id: uid("a"), title: `${found.title} (copy)` },
             ],
           };
         }),
@@ -205,13 +166,25 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
       getAssessment: (id) => state.assessments.find((x) => x.id === id),
 
       addEvent: (input) => {
-        const record: PlannerEvent = { ...input, id: uid() };
+        const record: PlannerEvent = { ...input, id: uid("e") };
         setState((s) => ({ ...s, events: [...s.events, record] }));
+        trackPlanner("planner_event_created", record);
         return record;
       },
-      updateEvent: (id, patch) =>
-        setState((s) => ({ ...s, events: patchList(s.events, id, patch) })),
-      updateOccurrence: (id, isoDate, patch) =>
+      updateEvent: (id, patch) => {
+        trackPlanner(
+          "planner_event_updated",
+          state.events.find((x) => x.id === id),
+          { patched_fields: Object.keys(patch).join(",") },
+        );
+        setState((s) => ({ ...s, events: patchList(s.events, id, patch) }));
+      },
+      updateOccurrence: (id, isoDate, patch) => {
+        trackPlanner(
+          "planner_occurrence_updated",
+          state.events.find((x) => x.id === id),
+          { patched_fields: Object.keys(patch).join(",") },
+        );
         setState((s) => ({
           ...s,
           events: s.events.map((e) =>
@@ -225,16 +198,22 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
                 }
               : e,
           ),
-        })),
+        }));
+      },
       /** Ends the original series the day before `isoDate` and starts a new one. */
-      splitSeriesFrom: (id, isoDate, patch) =>
+      splitSeriesFrom: (id, isoDate, patch) => {
+        trackPlanner(
+          "planner_series_split",
+          state.events.find((x) => x.id === id),
+          { patched_fields: Object.keys(patch).join(",") },
+        );
         setState((s) => {
           const found = s.events.find((x) => x.id === id);
           if (!found) return s;
           const tail: PlannerEvent = {
             ...found,
             ...patch,
-            id: uid(),
+            id: uid("e"),
             date: patch.date ?? isoDate,
             exceptions: [],
             overrides: {},
@@ -245,34 +224,59 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
             ...s,
             events: [...s.events.filter((x) => x.id !== id), ...(keepHead ? [head] : []), tail],
           };
-        }),
-      duplicateEvent: (id) =>
+        });
+      },
+      duplicateEvent: (id) => {
+        trackPlanner(
+          "planner_event_duplicated",
+          state.events.find((x) => x.id === id),
+        );
         setState((s) => {
           const found = s.events.find((x) => x.id === id);
           if (!found) return s;
           return {
             ...s,
-            events: [...s.events, { ...found, id: uid(), title: `${found.title} (copy)` }],
+            events: [...s.events, { ...found, id: uid("e"), title: `${found.title} (copy)` }],
           };
-        }),
-      removeEvent: (id) => setState((s) => ({ ...s, events: s.events.filter((x) => x.id !== id) })),
-      removeOccurrence: (id, isoDate) =>
+        });
+      },
+      removeEvent: (id) => {
+        trackPlanner(
+          "planner_event_deleted",
+          state.events.find((x) => x.id === id),
+        );
+        setState((s) => ({ ...s, events: s.events.filter((x) => x.id !== id) }));
+      },
+      removeOccurrence: (id, isoDate) => {
+        trackPlanner(
+          "planner_occurrence_deleted",
+          state.events.find((x) => x.id === id),
+        );
         setState((s) => ({
           ...s,
           events: s.events.map((e) =>
             e.id === id ? { ...e, exceptions: [...(e.exceptions ?? []), isoDate] } : e,
           ),
-        })),
-      endSeriesBefore: (id, isoDate) =>
+        }));
+      },
+      endSeriesBefore: (id, isoDate) => {
+        trackPlanner(
+          "planner_series_ended",
+          state.events.find((x) => x.id === id),
+        );
         setState((s) => ({
           ...s,
           events: s.events.map((e) => (e.id === id ? { ...e, until: addDays(isoDate, -1) } : e)),
-        })),
-      restoreEvent: (record) => setState((s) => ({ ...s, events: [...s.events, record] })),
+        }));
+      },
+      restoreEvent: (record) => {
+        trackPlanner("planner_event_restored", record);
+        setState((s) => ({ ...s, events: [...s.events, record] }));
+      },
       getEvent: (id) => state.events.find((x) => x.id === id),
 
       addMaterial: (input) => {
-        const record: Material = { ...input, id: uid() };
+        const record: Material = { ...input, id: uid("m") };
         setState((s) => ({ ...s, materials: [...s.materials, record] }));
         return record;
       },
@@ -281,60 +285,11 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
       removeMaterial: (id) =>
         setState((s) => ({ ...s, materials: s.materials.filter((x) => x.id !== id) })),
       restoreMaterial: (record) => setState((s) => ({ ...s, materials: [...s.materials, record] })),
-      uploadMaterial: async (file, input) => {
-        if (demoMode) {
-          const record: Material = { ...input, id: uid(), status: "Indexed" };
-          setDemoState((s) => ({ ...s, materials: [...s.materials, record] }));
-          return record;
-        }
-        if (!userId) throw new Error("Sign in before uploading a private material.");
-        const id = uid();
-        const storagePath = await uploadMaterialObject(userId, id, file);
-        const record: Material = {
-          ...input,
-          id,
-          storagePath,
-          ...(file.type ? { mimeType: file.type } : {}),
-          byteSize: file.size,
-          status: "Processing",
-        };
-        setUserState((s) => ({ ...s, materials: [...s.materials, record] }));
-        try {
-          await ingestMaterial({
-            data: {
-              documentId: id,
-              storagePath,
-              originalFilename: file.name,
-              title: record.name,
-              subject: record.subjectSlug,
-              documentType: record.type,
-              ...(record.section ? { section: record.section } : {}),
-              ...(record.notes ? { notes: record.notes } : {}),
-            },
-          });
-          const indexed = { ...record, status: "Indexed" as const };
-          setUserState((s) => ({
-            ...s,
-            materials: s.materials.map((item) => (item.id === id ? indexed : item)),
-          }));
-          return indexed;
-        } catch (error) {
-          const needsReview = { ...record, status: "Needs review" as const };
-          setUserState((s) => ({
-            ...s,
-            materials: s.materials.map((item) => (item.id === id ? needsReview : item)),
-          }));
-          toast.error("The file is private in Supabase but local indexing failed", {
-            description: error instanceof Error ? error.message : undefined,
-          });
-          return needsReview;
-        }
-      },
 
       addLink: (input) => {
         const record: SchoolLink = {
           ...input,
-          id: uid(),
+          id: uid("l"),
           order: state.links.length,
           opens: 0,
         };
@@ -350,7 +305,7 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
             ...s,
             links: [
               ...s.links,
-              { ...found, id: uid(), name: `${found.name} (copy)`, order: s.links.length },
+              { ...found, id: uid("l"), name: `${found.name} (copy)`, order: s.links.length },
             ],
           };
         }),
@@ -391,7 +346,7 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
 
       clearAll: () => setState(() => ({ ...EMPTY_STATE, profile: { ...EMPTY_PROFILE } })),
     };
-  }, [state, setState, demoMode, setDemoMode, userId]);
+  }, [state, setState]);
 
   return <DataContext.Provider value={value}>{children}</DataContext.Provider>;
 }

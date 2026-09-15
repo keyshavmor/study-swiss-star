@@ -2,6 +2,7 @@
 import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { Trash2 } from "lucide-react";
+import { useI18n } from "@/lib/i18n/provider";
 
 interface Thread {
   id: string;
@@ -18,6 +19,8 @@ interface ThreadListProps {
 }
 
 export function ThreadList({ threads, activeThreadId, onDelete, isLoading }: ThreadListProps) {
+  const { t } = useI18n();
+
   if (isLoading) {
     return (
       <div className="space-y-2">
@@ -29,7 +32,7 @@ export function ThreadList({ threads, activeThreadId, onDelete, isLoading }: Thr
   }
 
   if (threads.length === 0) {
-    return <p className="px-3 py-2 text-[14px] text-muted-foreground">No sessions yet.</p>;
+    return <p className="px-3 py-2 text-[14px] text-muted-foreground">{t("chat.sessionsEmpty")}</p>;
   }
 
   return (
@@ -65,7 +68,7 @@ export function ThreadList({ threads, activeThreadId, onDelete, isLoading }: Thr
                 e.stopPropagation();
                 onDelete(thread.id);
               }}
-              aria-label="Delete session"
+              aria-label={t("chat.deleteSessionAria")}
             >
               <Trash2 className="h-4 w-4" />
             </Button>

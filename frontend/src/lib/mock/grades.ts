@@ -45,15 +45,6 @@ export function isFailing(value: number | null | undefined): boolean {
   return typeof value === "number" && value < PASSING_THRESHOLD;
 }
 
-export const FAILING_TOOLTIP =
-  "In the Swiss grading system used here, grades below 4.0 are failing grades.";
-
-export const DEMO_TOOLTIP =
-  "Example content shown while Demo Mode is on. Turn Demo Mode off to return to your own data.";
-
-export const ROUNDED_TOOLTIP =
-  "This is the subject average rounded to the nearest 0.5. The rounded value is used when calculating the yearly average.";
-
 type Seed = {
   title: string;
   date: string;

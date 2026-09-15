@@ -1,0 +1,20 @@
+%% Status: CURRENT — deployed cleanup consumer; no active producer
+sequenceDiagram
+  participant Producer
+  participant Descriptor as assistant-descriptors
+  participant Queue as media_retention_queue
+  participant Cron as pg_cron every minute
+  participant Cleanup as media-retention-cleanup
+  participant Media as original private bucket
+  Producer->>Descriptor: store durable text descriptor
+  Producer->>Queue: enqueue then mark ready
+  Cron->>Cleanup: POST with Vault-held secret
+  Cleanup->>Queue: select ready rows past delete_after
+  Cleanup->>Descriptor: verify descriptor exists
+  alt descriptor present
+    Cleanup->>Media: remove original
+    Cleanup->>Queue: status deleted + deleted_at
+  else missing or removal failure
+    Cleanup->>Queue: retain row/object and set error_code
+  end
+  Note over Producer: Current backend produces no media, so no active producer exists.

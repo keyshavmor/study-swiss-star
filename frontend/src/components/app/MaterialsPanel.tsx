@@ -38,12 +38,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { formatDate } from "@/lib/grade-math";
 import { SUBJECTS } from "@/lib/mock/subjects";
 import { useAppData } from "@/lib/store/app-data";
 import type { Material, MaterialSection, MaterialType } from "@/lib/store/types";
 import { MATERIAL_SECTIONS, MATERIAL_TYPES } from "@/lib/store/types";
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/lib/i18n/provider";
 import { toast } from "sonner";
 
 function fileIcon(type: MaterialType) {
@@ -73,9 +73,8 @@ function MaterialDialog({
   subjectSlug: string;
   record?: Material;
 }) {
-  const { addMaterial, updateMaterial, uploadMaterial } = useAppData();
-  const [file, setFile] = useState<File | null>(null);
-  const [saving, setSaving] = useState(false);
+  const { t } = useI18n();
+  const { addMaterial, updateMaterial } = useAppData();
   const [draft, setDraft] = useState<Draft>(() => ({
     name: record?.name ?? "",
     type: record?.type ?? "PDF",
@@ -87,72 +86,57 @@ function MaterialDialog({
 
   const set = <K extends keyof Draft>(k: K, v: Draft[K]) => setDraft((d) => ({ ...d, [k]: v }));
 
-  async function save() {
-    setSaving(true);
-    try {
-      if (record) {
-        updateMaterial(record.id, {
-          name: draft.name.trim(),
-          type: draft.type,
-          section: draft.section,
-          subjectSlug: draft.subjectSlug,
-          url: draft.url.trim(),
-          notes: draft.notes.trim(),
-        });
-        toast.success("Material updated");
-      } else {
-        const input = {
-          name: draft.name.trim(),
-          type: draft.type,
-          section: draft.section,
-          subjectSlug: draft.subjectSlug,
-          url: draft.url.trim(),
-          notes: draft.notes.trim(),
-          status: "Indexed" as const,
-          added: new Date().toISOString().slice(0, 10),
-        };
-        if (file) await uploadMaterial(file, input);
-        else addMaterial(input);
-        toast.success("Material added", {
-          description: file
-            ? "The private upload is ready for local indexing."
-            : "You can rename, move or delete it later.",
-        });
-      }
-      onOpenChange(false);
-    } catch (error) {
-      toast.error("Material could not be saved", {
-        description: error instanceof Error ? error.message : undefined,
+  function save() {
+    if (record) {
+      updateMaterial(record.id, {
+        name: draft.name.trim(),
+        type: draft.type,
+        section: draft.section,
+        subjectSlug: draft.subjectSlug,
+        url: draft.url.trim(),
+        notes: draft.notes.trim(),
       });
-    } finally {
-      setSaving(false);
+      toast.success(t("materials.toast.updated"));
+    } else {
+      addMaterial({
+        name: draft.name.trim(),
+        type: draft.type,
+        section: draft.section,
+        subjectSlug: draft.subjectSlug,
+        url: draft.url.trim(),
+        notes: draft.notes.trim(),
+        status: "Indexed",
+        added: new Date().toISOString().slice(0, 10),
+      });
+      toast.success(t("materials.toast.added"), {
+        description: t("materials.toast.added.description"),
+      });
     }
+    onOpenChange(false);
   }
-
-  const requiresFile = !record && draft.type !== "Web link" && draft.type !== "Note";
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[88vh] overflow-y-auto sm:max-w-[520px]">
         <DialogHeader>
-          <DialogTitle>{record ? "Edit material" : "Add material"}</DialogTitle>
-          <DialogDescription>
-            Files are stored privately in your Supabase account. Links and notes remain editable.
-          </DialogDescription>
+          <DialogTitle>
+            {record ? t("materials.dialog.title.edit") : t("materials.dialog.title.add")}
+          </DialogTitle>
+          <DialogDescription>{t("materials.dialog.description")}</DialogDescription>
         </DialogHeader>
         <div className="grid gap-4">
           <div className="grid gap-2">
-            <Label htmlFor="mat-name">Name</Label>
+            <Label htmlFor="mat-name">{t("materials.dialog.name")}</Label>
             <Input
               id="mat-name"
               value={draft.name}
               onChange={(e) => set("name", e.target.value)}
-              placeholder="Cell biology notes"
+              placeholder={t("materials.dialog.name.placeholder")}
             />
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="grid gap-2">
-              <Label>Type</Label>
+              <Label>{t("materials.dialog.type")}</Label>
               <Select value={draft.type} onValueChange={(v) => set("type", v as MaterialType)}>
                 <SelectTrigger>
                   <SelectValue />
@@ -167,7 +151,7 @@ function MaterialDialog({
               </Select>
             </div>
             <div className="grid gap-2">
-              <Label>Section</Label>
+              <Label>{t("materials.dialog.section")}</Label>
               <Select
                 value={draft.section}
                 onValueChange={(v) => set("section", v as MaterialSection)}
@@ -185,7 +169,7 @@ function MaterialDialog({
               </Select>
             </div>
             <div className="grid gap-2 sm:col-span-2">
-              <Label>Subject</Label>
+              <Label>{t("materials.dialog.subject")}</Label>
               <Select value={draft.subjectSlug} onValueChange={(v) => set("subjectSlug", v)}>
                 <SelectTrigger>
                   <SelectValue />
@@ -202,7 +186,7 @@ function MaterialDialog({
           </div>
           {draft.type === "Web link" && (
             <div className="grid gap-2">
-              <Label htmlFor="mat-url">Link</Label>
+              <Label htmlFor="mat-url">{t("materials.dialog.link")}</Label>
               <Input
                 id="mat-url"
                 value={draft.url}
@@ -211,22 +195,8 @@ function MaterialDialog({
               />
             </div>
           )}
-          {requiresFile && (
-            <div className="grid gap-2">
-              <Label htmlFor="mat-file">File</Label>
-              <Input
-                id="mat-file"
-                type="file"
-                accept=".pdf,.docx,.png,.jpg,.jpeg,.svg,.txt,.md"
-                onChange={(event) => setFile(event.target.files?.[0] ?? null)}
-              />
-              <p className="text-[12px] text-muted-foreground">
-                Stored in the private user-materials bucket; maximum 50 MB.
-              </p>
-            </div>
-          )}
           <div className="grid gap-2">
-            <Label htmlFor="mat-notes">Notes (optional)</Label>
+            <Label htmlFor="mat-notes">{t("materials.dialog.notes")}</Label>
             <Textarea
               id="mat-notes"
               value={draft.notes}
@@ -236,13 +206,10 @@ function MaterialDialog({
         </div>
         <DialogFooter>
           <Button variant="ghost" onClick={() => onOpenChange(false)}>
-            Cancel
+            {t("common.cancel")}
           </Button>
-          <Button
-            disabled={saving || draft.name.trim() === "" || (requiresFile && !file)}
-            onClick={() => void save()}
-          >
-            {saving ? "Saving…" : record ? "Save changes" : "Add material"}
+          <Button disabled={draft.name.trim() === ""} onClick={save}>
+            {record ? t("materials.dialog.save.edit") : t("materials.dialog.save.add")}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -251,6 +218,7 @@ function MaterialDialog({
 }
 
 export function MaterialFileCard({ file }: { file: Material }) {
+  const { t, formatDate: fmtDate } = useI18n();
   const { updateMaterial, removeMaterial, restoreMaterial } = useAppData();
   const [editing, setEditing] = useState(false);
   const Icon = fileIcon(file.type);
@@ -264,7 +232,7 @@ export function MaterialFileCard({ file }: { file: Material }) {
         <div className="min-w-0">
           <p className="truncate text-[14.5px] font-medium">{file.name}</p>
           <p className="text-[12.5px] text-muted-foreground">
-            {file.type} · added {formatDate(file.added)}
+            {file.type} · {t("materials.card.addedOn", { date: fmtDate(file.added) })}
           </p>
           {file.notes && (
             <p className="mt-1 line-clamp-2 text-[12.5px] text-muted-foreground">{file.notes}</p>
@@ -276,19 +244,23 @@ export function MaterialFileCard({ file }: { file: Material }) {
                 file.archived ? "bg-surface-2 text-muted-foreground" : "bg-chart-3/12 text-chart-3",
               )}
             >
-              {file.archived ? "Archived" : file.status}
+              {file.archived ? t("materials.card.archived") : file.status}
             </span>
           </div>
         </div>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon-sm" aria-label={`Actions for ${file.name}`}>
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              aria-label={t("materials.card.actionsFor", { name: file.name })}
+            >
               <MoreHorizontal className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuItem onSelect={() => setTimeout(() => setEditing(true), 0)}>
-              Rename or edit
+              {t("materials.card.renameOrEdit")}
             </DropdownMenuItem>
             <DropdownMenuItem
               onSelect={() =>
@@ -298,7 +270,7 @@ export function MaterialFileCard({ file }: { file: Material }) {
                 })
               }
             >
-              {file.archived ? "Restore from archive" : "Archive"}
+              {file.archived ? t("materials.card.restore") : t("materials.card.archive")}
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem
@@ -306,12 +278,15 @@ export function MaterialFileCard({ file }: { file: Material }) {
               onSelect={() => {
                 const snapshot = { ...file };
                 removeMaterial(file.id);
-                toast.success("Material deleted", {
-                  action: { label: "Undo", onClick: () => restoreMaterial(snapshot) },
+                toast.success(t("materials.toast.deleted"), {
+                  action: {
+                    label: t("materials.toast.undo"),
+                    onClick: () => restoreMaterial(snapshot),
+                  },
                 });
               }}
             >
-              Delete
+              {t("materials.card.delete")}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -336,6 +311,7 @@ export function MaterialsPanel({
   className?: string;
   subjectSlug?: string;
 }) {
+  const { t } = useI18n();
   const { materials } = useAppData();
   const [adding, setAdding] = useState(false);
   const mine = materials.filter((m) => !subjectSlug || m.subjectSlug === subjectSlug);
@@ -343,27 +319,28 @@ export function MaterialsPanel({
   return (
     <aside className={cn("app-card flex flex-col gap-4 p-5", className)}>
       <div>
-        <h2 className="text-[18px] font-semibold tracking-tight">Notes and Materials</h2>
+        <h2 className="text-[18px] font-semibold tracking-tight">{t("materials.panel.title")}</h2>
         <p className="mt-1 text-[13px] text-muted-foreground">
-          {mine.length === 0 ? "Nothing added yet" : `${mine.length} items you added`}
+          {mine.length === 0
+            ? t("materials.panel.empty")
+            : t("materials.panel.count", { count: mine.length })}
         </p>
       </div>
 
       <div className="flex flex-wrap gap-2">
         <Button size="sm" onClick={() => setAdding(true)}>
           <Plus className="h-4 w-4" />
-          Add Material
+          {t("materials.panel.addMaterial")}
         </Button>
         <Button size="sm" variant="secondary" onClick={() => setAdding(true)}>
           <Link2 className="h-4 w-4" />
-          Add Web Link
+          {t("materials.panel.addWebLink")}
         </Button>
       </div>
 
       {mine.length === 0 ? (
         <p className="rounded-[14px] bg-surface-2 px-3 py-4 text-[13.5px] text-muted-foreground">
-          Add notes, documents or links and they will appear here. Everything can be renamed, moved
-          or deleted at any time.
+          {t("materials.panel.emptyBody")}
         </p>
       ) : (
         <div className="flex flex-col gap-5">
@@ -398,7 +375,7 @@ export function MaterialsPanel({
         className="inline-flex items-center gap-1.5 text-[13.5px] text-primary hover:underline"
       >
         <Archive className="h-4 w-4" />
-        How material indexing works
+        {t("materials.panel.helpLink")}
       </Link>
 
       {adding && (

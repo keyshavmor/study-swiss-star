@@ -1,0 +1,19 @@
+%% Listen/Stop read-aloud (lib/speech.ts), used in StudyChat.tsx and AssistantChat.tsx.
+flowchart TD
+  Message["Completed assistant message (StudyChat.tsx or AssistantChat.tsx)"] --> Support{"speechSupported()?<br/>window.speechSynthesis + SpeechSynthesisUtterance"}
+  Support -->|No| Hidden["Listen control hidden or disabled"]
+  Support -->|Yes| Button["Show Listen / Stop control"]
+  Button --> Click["Student clicks Listen"]
+  Click --> Locale["speechLocaleFor: detectLanguage over answer text,<br/>fallback to current UI language"]
+  Locale --> VoiceMatch{"Matching browser voice found?"}
+  VoiceMatch -->|Yes| Speak["window.speechSynthesis.speak"]
+  VoiceMatch -->|No| Degrade["Graceful no-op: outcome = no-voice"]
+  Speak --> Playing["Playing state, Stop control shown"]
+  Playing --> StopClick["Student clicks Stop, or navigates away/unmounts"]
+  StopClick --> Cancel["speechSynthesis.cancel"]
+  Cancel --> Idle["Idle"]
+  Speak --> End["onEnd fires naturally"]
+  End --> Idle
+  Autoplay["assistant_audio_autoplay enabled"] -. only newly completed answers .-> Click
+  AudioOff["assistant_audio_enabled = false"] --> Hidden
+  Note1["Nothing is uploaded or stored; playback is ephemeral<br/>and browser-only. CURRENT - FRONTEND"] -.-> Speak

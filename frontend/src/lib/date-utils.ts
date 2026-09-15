@@ -64,38 +64,16 @@ export function daysBetween(a: string, b: string): number {
   return Math.round((fromIso(b).getTime() - fromIso(a).getTime()) / 86_400_000);
 }
 
-export const WEEKDAY_LONG = [
-  "Monday",
-  "Tuesday",
-  "Wednesday",
-  "Thursday",
-  "Friday",
-  "Saturday",
-  "Sunday",
-] as const;
-
-export const WEEKDAY_SHORT = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"] as const;
-export const WEEKDAY_INITIAL = ["M", "T", "W", "T", "F", "S", "S"] as const;
-
-export function weekdayName(iso: string): string {
-  return WEEKDAY_LONG[weekdayIndex(iso)]!;
-}
-
-export function formatLongDate(iso: string): string {
-  return new Intl.DateTimeFormat("en-GB", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  }).format(fromIso(iso));
-}
-
-export function formatDayMonth(iso: string): string {
-  return new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "long" }).format(fromIso(iso));
-}
-
-export function formatMonthTitle(iso: string): string {
-  return new Intl.DateTimeFormat("en-GB", { month: "long", year: "numeric" }).format(fromIso(iso));
+/**
+ * A Monday-first weekday `index` (0 = Monday … 6 = Sunday) has no calendar
+ * date of its own — e.g. a weekly recurrence's `weekdays` field, or a
+ * timetable/month-grid column header. This maps such an index onto a real
+ * ISO date sharing that weekday, so it can be labelled with
+ * `useI18n().formatWeekday`, which is the only supported source of localized
+ * weekday names (it also carries the explicit Swiss German labels).
+ */
+export function isoForWeekdayIndex(index: number): string {
+  return addDays("2024-01-01", index); // 2024-01-01 is a Monday.
 }
 
 /** "17:00" → 1020 */

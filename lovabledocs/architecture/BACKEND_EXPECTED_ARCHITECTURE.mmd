@@ -1,0 +1,14 @@
+%% Status: CURRENT — verified backend architecture
+flowchart LR
+  Browser["Browser UI"] -->|"Supabase bearer token"| TanStack["TanStack POST /api/chat"]
+  TanStack -->|"verify claims + thread owner"| Supabase["Live Supabase Auth / Postgres / Storage"]
+  TanStack -->|"Bearer JWT + matching X-Student-Id"| FastAPI["FastAPI :8001"]
+  FastAPI --> Auth["Supabase token verifier"]
+  FastAPI --> Context["Context manager / compiler / budgets"]
+  Context --> Store["Request-scoped SupabaseContextStore"]
+  Store -->|"publishable key + caller JWT + RLS"| Supabase
+  Context --> Retrieval["RAG / memory / artifacts / optional web"]
+  FastAPI --> LLM["OpenAI-compatible local client"]
+  LLM --> Qwen["Qwen / llama.cpp :8000"]
+  FastAPI --> Ingest["Text + private Storage document ingestion"]
+  Ingest --> Store

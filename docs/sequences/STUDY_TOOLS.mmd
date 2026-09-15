@@ -1,0 +1,10 @@
+%% Status: DEFERRED — UI placeholders and live tables only
+flowchart LR
+  Subject["Subject workspace"] --> Quiz["Quiz placeholder"]
+  Subject --> Exam["Mock exam placeholder"]
+  Subject --> Grade["Grading placeholder"]
+  Subject --> Plan["Study-plan placeholder"]
+  Quiz -. "endpoint contract required" .-> Backend["Future backend adapters"]
+  Exam -. "endpoint contract required" .-> Backend
+  Grade -. "endpoint contract required" .-> Backend
+  Plan -. "endpoint contract required" .-> Backend

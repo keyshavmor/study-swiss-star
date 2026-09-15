@@ -1,17 +1,27 @@
+%% State ownership: what lives in the browser, what lives in Supabase, what is client-only.
 flowchart LR
-  Static[Static frontend\n15 subjects + languages + SPF mapping] --> UI[Rendered UI]
-  Cloud[(MY Supabase\nall durable private state)] --> AppData[AppDataProvider]
-  Local[(UUID-scoped disposable cache + demo)] --> AppData
+  Static["Static frontend data<br/>15 school subjects + languages + SPF mapping"] --> UI[Rendered UI]
+  Local["Browser storage (AppDataProvider)<br/>assessments, events, materials, links, profile"] --> AppData[AppDataProvider]
   AppData --> UI
-  AppData --> Grade[grade-math.ts\nSwiss formula + summaries + SPF]
+  AppData --> Grade["grade-math.ts<br/>Swiss formula + summaries + SPF combination"]
   Grade --> UI
-  Cloud --> Academic[AcademicYearProvider]
+  Year["Browser storage: selected academic year"] --> Academic[AcademicYearProvider]
   Academic --> UI
-  Cloud --> ServerFns[Authenticated server functions]
+  Lang[("public.user_preferences.preferences.app_language<br/>authoritative<br/>CURRENT - SUPABASE")] --> I18n[I18nProvider]
+  LangCache["localStorage alim.app_language<br/>flash-avoidance + signed-out cache only"] --> I18n
+  I18n --> UI
+  Audio[("public.user_preferences.preferences<br/>assistant_audio_enabled default true<br/>assistant_audio_autoplay default false<br/>CURRENT - SUPABASE")] --> SettingsUI["Settings audio controls<br/>routes/_authenticated/settings.tsx"]
+  SettingsUI --> UI
+  MsgHint["responseLanguageHint (detect.ts effectiveResponseLanguage)<br/>local read-aloud state; same policy sent by tutoring /api/chat"] --> UI
+  SpeechState["speechSynthesis playback state (lib/speech.ts)<br/>ephemeral, never persisted"] --> UI
+  Cloud[("external Supabase<br/>auth identity, threads/messages,<br/>assistant_threads/messages/attachments,<br/>profiles, user_preferences,<br/>feedback, usage_events, media_retention_queue<br/>CURRENT - SUPABASE")] --> ServerFns[Authenticated server functions]
+  Telemetry["telemetry.ts<br/>sanitised activity + bounded error classification only<br/>never raw error text, credentials, chat content,<br/>feedback text, or calendar details"] --> Cloud
+  GoogleToken["sessionStorage only: Google provider token<br/>lib/google-calendar.ts"] --> GoogleEvents["Read-only Google Calendar occurrences<br/>render-merged, never persisted"]
+  GoogleEvents --> UI
   ServerFns --> UI
-  Python[(Local Python + Supabase RLS\nchunks memories artifacts)] --> FastAPI[FastAPI]
-  FastAPI --> ChatAPI[TanStack /api/chat]
+  PythonState[("Request-scoped Supabase context store in production;<br/>SQLite only for explicit local/test adapters<br/>CURRENT - BACKEND")] --> FastAPI["Local Python backend, FastAPI /api/chat"]
+  FastAPI --> ChatAPI["frontend/src/routes/api/chat.ts POST /api/chat"]
   ChatAPI --> UI
   Static -->|subject/language context| ChatAPI
-  Academic -->|year/grade context| ChatAPI
-  Future[(Supabase durable models\nquiz exam grading plan feedback)] -. user scoped .-> FastAPI
+  Academic -->|academic year/grade level context| ChatAPI
+  Future["Deferred backend surfaces: quiz, exam, grading, study plan,<br/>General Assistant generation and media descriptor production"] -. DEFERRED .-> FastAPI
