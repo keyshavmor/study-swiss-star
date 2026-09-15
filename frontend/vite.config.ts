@@ -22,6 +22,13 @@ export default defineConfig({
     server: { entry: "server" },
   },
   vite: {
+    optimizeDeps: {
+      // Prebundle the auth widget with React rather than discovering it during
+      // Fast Refresh. Reject stale dependency URLs so Vite reloads the page
+      // instead of mixing React instances from different optimizer generations.
+      include: ["@hcaptcha/react-hcaptcha"],
+      ignoreOutdatedRequests: false,
+    },
     define: {
       "import.meta.env.VITE_SUPABASE_URL": JSON.stringify(CANONICAL_SUPABASE_URL),
       "import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY": JSON.stringify(
