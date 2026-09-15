@@ -784,3 +784,235 @@ export function StorageSection() {
     </SectionCard>
   );
 }
+
+/* ------------------------------------------------------------- messaging --- */
+
+export function MessagingSection() {
+  const { t } = useI18n();
+  const [prefs, setPrefs] = useState<MessagingPreferences | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [notice, setNotice] = useState<string | null>(null);
+
+  useEffect(() => {
+    getMessagingPreferences()
+      .then(setPrefs)
+      .catch(() => toast.error(t("settings.preferences.loadError")))
+      .finally(() => setLoading(false));
+  }, [t]);
+
+  const handlePeerToggle = async (checked: boolean) => {
+    if (!prefs) return;
+    const previous = prefs;
+    setPrefs({ ...prefs, peerMessageNotifications: checked });
+    try {
+      const saved = await saveMessagingPreferences({ peerMessageNotifications: checked });
+      setPrefs(saved);
+    } catch {
+      setPrefs(previous);
+      toast.error(t("settings.preferences.saveError"));
+    }
+  };
+
+  const handleBrowserToggle = async (checked: boolean) => {
+    if (!prefs) return;
+    if (!checked) {
+      const previous = prefs;
+      setPrefs({ ...prefs, browserMessageNotifications: false });
+      try {
+        const saved = await saveMessagingPreferences({ browserMessageNotifications: false });
+        setPrefs(saved);
+      } catch {
+        setPrefs(previous);
+        toast.error(t("settings.preferences.saveError"));
+      }
+      return;
+    }
+
+    if (typeof window === "undefined" || !("Notification" in window)) {
+      setNotice(t("messages.notifications.unsupported"));
+      return;
+    }
+
+    if (Notification.permission === "denied") {
+      setNotice(t("messages.notifications.blocked"));
+      return;
+    }
+
+    try {
+      const permission = await Notification.requestPermission();
+      if (permission !== "granted") {
+        setNotice(t("messages.notifications.denied"));
+        return;
+      }
+      setNotice(null);
+      const previous = prefs;
+      setPrefs({ ...prefs, browserMessageNotifications: true });
+      try {
+        const saved = await saveMessagingPreferences({ browserMessageNotifications: true });
+        setPrefs(saved);
+      } catch {
+        setPrefs(previous);
+        toast.error(t("settings.preferences.saveError"));
+      }
+    } catch {
+      setNotice(t("messages.notifications.unsupported"));
+    }
+  };
+
+  return (
+    <SectionCard
+      title={t("messages.notifications.title")}
+      description={t("messages.subtitle")}
+    >
+      {loading || !prefs ? (
+        <p className="text-[14px] text-muted-foreground">{t("settings.preferences.loadError")}</p>
+      ) : (
+        <div className="divide-y divide-border">
+          <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 py-3.5">
+            <div>
+              <span className="text-[15px] font-medium">
+                {t("settings.messaging.peerNotifications")}
+              </span>
+              <p className="mt-1 text-[13px] text-muted-foreground">
+                {t("settings.messaging.peerNotificationsHint")}
+              </p>
+            </div>
+            <Switch
+              checked={prefs.peerMessageNotifications}
+              onCheckedChange={(checked) => void handlePeerToggle(checked)}
+            />
+          </div>
+          <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 py-3.5">
+            <div>
+              <span className="text-[15px] font-medium">
+                {t("settings.messaging.browserNotifications")}
+              </span>
+              <p className="mt-1 text-[13px] text-muted-foreground">
+                {t("settings.messaging.browserNotificationsHint")}
+              </p>
+            </div>
+            <Switch
+              checked={prefs.browserMessageNotifications}
+              onCheckedChange={(checked) => void handleBrowserToggle(checked)}
+            />
+          </div>
+        </div>
+      )}
+      {notice && <p className="text-[13px] text-warning">{notice}</p>}
+      {prefs?.browserMessageNotifications && (
+        <p className="text-[13px] text-muted-foreground">{t("messages.notifications.enabled")}</p>
+      )}
+    </SectionCard>
+  );
+}
+
+/* --------------------------------------------------------------- privacy --- */
+
+export function PrivacySection() {
+  const { t } = useI18n();
+  const legalLinks: { to: string; label: string }[] = [
+    { to: "/legal/terms", label: t("legal.terms.title") },
+    { to: "/legal/privacy", label: t("legal.privacy.title") },
+    { to: "/legal/acceptable-use", label: t("legal.acceptableUse.title") },
+    { to: "/legal/child-safety", label: t("legal.childSafety.title") },
+  ];
+
+  return (
+    <SectionCard title={t("settings.privacy.title")} description={t("settings.privacy.body")}>
+      <Button variant="outline" asChild className="w-fit">
+        <Link to="/system-health">{t("settings.privacy.openSystemHealth")}</Link>
+      </Button>
+      <div className="space-y-1.5">
+        <p className="text-[13px] font-medium text-muted-foreground">
+          {t("settings.privacy.legal")}
+        </p>
+        <ul className="flex flex-wrap gap-x-4 gap-y-1.5">
+          {legalLinks.map((link) => (
+            <li key={link.to}>
+              <Link to={link.to} className="text-[14px] text-primary underline-offset-4 hover:underline">
+                {link.label}
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </SectionCard>
+  );
+}
+
+/* ----------------------------------------------------------- compliance --- */
+
+export function ComplianceSection() {
+  const { t, formatDate } = useI18n();
+  const [accountType, setAccountType] = useState<"student" | "teacher" | "unknown">("unknown");
+  const [accountStatus, setAccountStatus] = useState<
+    "active" | "suspended_pending_review" | "deletion_pending" | null
+  >(null);
+  const [strikeCount, setStrikeCount] = useState(0);
+  const [consents, setConsents] = useState<
+    { document_kind: string; document_version: string; accepted_at: string }[]
+  >([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    Promise.all([fetchAccountCompliance(), fetchLegalConsents()])
+      .then(([compliance, legalConsents]) => {
+        if (compliance) {
+          setAccountType(compliance.accountType === "unknown" ? "unknown" : compliance.accountType);
+          setAccountStatus(compliance.accountStatus);
+          setStrikeCount(compliance.safetyStrikeCount);
+        }
+        setConsents(legalConsents);
+      })
+      .catch(() => {
+        // Leave the section empty when the backend is unavailable; never invent values.
+      })
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) {
+    return (
+      <SectionCard title={t("settings.compliance.title")}>
+        <p className="text-[14px] text-muted-foreground">{t("settings.account.loading")}</p>
+      </SectionCard>
+    );
+  }
+
+  return (
+    <SectionCard title={t("settings.compliance.title")}>
+      <div className="space-y-1.5 text-[14px]">
+        <p>
+          <span className="font-medium">{t("settings.compliance.accountType")}:</span>{" "}
+          {t(`settings.compliance.accountType.${accountType}`)}
+        </p>
+        {accountStatus && (
+          <p>
+            <span className="font-medium">{t("settings.compliance.title")}:</span>{" "}
+            {t(`settings.compliance.status.${accountStatus}`)}
+          </p>
+        )}
+        <p>{t("settings.compliance.strikes", { count: strikeCount })}</p>
+      </div>
+      {consents.length > 0 && (
+        <ul className="divide-y divide-border rounded-xl border border-border">
+          {consents.map((consent) => (
+            <li
+              key={`${consent.document_kind}-${consent.document_version}`}
+              className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 p-3.5 text-[14px]"
+            >
+              <span className="font-medium capitalize">
+                {consent.document_kind.replace(/_/g, " ")}
+              </span>
+              <span className="text-muted-foreground">
+                {t("settings.compliance.accepted", {
+                  date: formatDate(consent.accepted_at),
+                  version: consent.document_version,
+                })}
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </SectionCard>
+  );
+}

@@ -4,7 +4,10 @@ import { AppShell, PageHeading } from "@/components/app/AppShell";
 import { PageNav } from "@/components/app/Breadcrumbs";
 import {
   AccountSection,
+  ComplianceSection,
+  MessagingSection,
   PreferencesSections,
+  PrivacySection,
   StorageSection,
 } from "@/components/app/SettingsSections";
 import { useI18n } from "@/lib/i18n/provider";
@@ -41,7 +44,10 @@ function SettingsPage() {
       <div className="max-w-3xl space-y-5">
         <AccountSection />
         <PreferencesSections />
+        <MessagingSection />
         <StorageSection />
+        <PrivacySection />
+        <ComplianceSection />
       </div>
     </AppShell>
   );
