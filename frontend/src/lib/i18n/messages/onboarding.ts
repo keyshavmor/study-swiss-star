@@ -13,6 +13,9 @@ export const onboarding = {
     "onboarding.language.saving": "Saving…",
     "onboarding.language.saveError": "Could not save your language. Please try again.",
     "onboarding.language.selected": "Selected",
+    "onboarding.language.loadError":
+      "We could not load your saved settings. Check your connection and try again.",
+    "onboarding.language.retry": "Try again",
 
     /* ------------------------------------------------- model onboarding --- */
     "onboarding.model.title": "Prepare your study AI",
@@ -124,6 +127,9 @@ export const onboarding = {
     "onboarding.language.saveError":
       "Sprache konnte nicht gespeichert werden. Bitte versuche es erneut.",
     "onboarding.language.selected": "Ausgewählt",
+    "onboarding.language.loadError":
+      "Wir konnten deine gespeicherten Einstellungen nicht laden. Prüfe deine Verbindung und versuche es erneut.",
+    "onboarding.language.retry": "Erneut versuchen",
 
     "onboarding.model.title": "Bereite deine Lern-KI vor",
     "onboarding.model.subtitle":
@@ -231,6 +237,9 @@ export const onboarding = {
     "onboarding.language.saveError":
       "Sprach het nid chönne gspeicheret werde. Bitte versuechs nomol.",
     "onboarding.language.selected": "Usgwählt",
+    "onboarding.language.loadError":
+      "Mir hei dini gspeicherete Iistellige nid chöne lade. Prüef dini Verbindig und versuech s nomal.",
+    "onboarding.language.retry": "Nomal versueche",
 
     "onboarding.model.title": "Bereit dini Lern-KI vor",
     "onboarding.model.subtitle":
@@ -335,6 +344,9 @@ export const onboarding = {
     "onboarding.language.saving": "Сохранение…",
     "onboarding.language.saveError": "Не удалось сохранить язык. Попробуйте ещё раз.",
     "onboarding.language.selected": "Выбрано",
+    "onboarding.language.loadError":
+      "Не удалось загрузить сохранённые настройки. Проверьте подключение и попробуйте снова.",
+    "onboarding.language.retry": "Попробовать снова",
 
     "onboarding.model.title": "Подготовьте свой учебный ИИ",
     "onboarding.model.subtitle":
@@ -439,6 +451,9 @@ export const onboarding = {
     "onboarding.language.saving": "Guardando…",
     "onboarding.language.saveError": "No se pudo guardar tu idioma. Inténtalo de nuevo.",
     "onboarding.language.selected": "Seleccionado",
+    "onboarding.language.loadError":
+      "No pudimos cargar tus ajustes guardados. Comprueba tu conexión e inténtalo de nuevo.",
+    "onboarding.language.retry": "Intentar de nuevo",
 
     "onboarding.model.title": "Prepara tu IA de estudio",
     "onboarding.model.subtitle":
@@ -548,6 +563,9 @@ export const onboarding = {
     "onboarding.language.saving": "Enregistrement…",
     "onboarding.language.saveError": "Impossible d'enregistrer votre langue. Veuillez réessayer.",
     "onboarding.language.selected": "Sélectionné",
+    "onboarding.language.loadError":
+      "Nous n'avons pas pu charger vos réglages enregistrés. Vérifiez votre connexion et réessayez.",
+    "onboarding.language.retry": "Réessayer",
 
     "onboarding.model.title": "Préparez votre IA d'étude",
     "onboarding.model.subtitle":
@@ -655,6 +673,9 @@ export const onboarding = {
     "onboarding.language.saving": "Salvataggio…",
     "onboarding.language.saveError": "Impossibile salvare la lingua. Riprova.",
     "onboarding.language.selected": "Selezionata",
+    "onboarding.language.loadError":
+      "Non è stato possibile caricare le tue impostazioni salvate. Controlla la connessione e riprova.",
+    "onboarding.language.retry": "Riprova",
 
     "onboarding.model.title": "Prepara la tua IA di studio",
     "onboarding.model.subtitle":

@@ -176,3 +176,20 @@ preference is REMOVED; storage cleanup is now the platform-wide 5-minute cron jo
 `LANGUAGE_ONBOARDING.mmd`, `MODEL_SELECTION_READINESS.mmd`, `MODEL_CACHED_SHARED_DOWNLOAD.mmd`,
 `RESOURCE_BLOCKED_NON_AI.mmd`, `SETTINGS_MODEL_RETRY.mmd`, `MODEL_DOWNLOAD_DEDUPLICATION.mmd`,
 `AI_SESSION_STATE_MACHINE.mmd`, `STORAGE_CAPACITY_CLEANUP.mmd`.
+
+
+## Hardening addendum — bearer JWT is the authorization boundary
+
+STATUS: CURRENT FRONTEND / EXPECTED LOCAL BACKEND CONTRACT.
+
+Model-readiness requests from the TanStack server adapter carry:
+
+```
+Authorization: Bearer <caller Supabase access token>   # authorization boundary
+X-Student-Id: <verified claims.sub>                     # context / cross-check only
+```
+
+The token comes from the request already verified by `requireSupabaseAuth`; it is never logged,
+persisted, echoed to the browser or included in telemetry, and no service-role key is involved.
+**BACKEND TODO FOR CODEX**: verify the JWT against Supabase JWKS/issuer and treat `X-Student-Id`
+purely as a cross-check.

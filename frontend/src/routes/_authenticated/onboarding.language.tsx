@@ -1,14 +1,18 @@
 /** TanStack route module defining one Alim screen or local API boundary. */
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { Check, Languages } from "lucide-react";
+import { AlertTriangle, Check, Languages } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { cn } from "@/lib/utils";
 import { useI18n } from "@/lib/i18n/provider";
 import { LANGUAGES, type LanguageCode } from "@/lib/i18n/languages";
 import { savePreferences } from "@/lib/account-data";
-import { invalidateStartupCache, MODEL_ONBOARDING_PATH } from "@/lib/startup-flow";
+import {
+  invalidateStartupCache,
+  languageOnboardingStatus,
+  MODEL_ONBOARDING_PATH,
+} from "@/lib/startup-flow";
 import { track, trackFailure } from "@/lib/telemetry";
 
 export const Route = createFileRoute("/_authenticated/onboarding/language")({
@@ -37,6 +41,21 @@ function LanguageOnboardingPage() {
   const [selected, setSelected] = useState<LanguageCode | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(false);
+  const [loadFailed, setLoadFailed] = useState(false);
+
+  // A failed preference read must not silently skip this screen: show a
+  // localized retry state instead, and move on only once the persisted flag is
+  // actually read as completed.
+  const refreshStatus = useCallback(async () => {
+    invalidateStartupCache();
+    const status = await languageOnboardingStatus();
+    setLoadFailed(status === "unknown");
+    if (status === "completed") await navigate({ to: MODEL_ONBOARDING_PATH, replace: true });
+  }, [navigate]);
+
+  useEffect(() => {
+    void refreshStatus();
+  }, [refreshStatus]);
 
   const choose = (code: LanguageCode) => {
     setSelected(code);
@@ -130,6 +149,17 @@ function LanguageOnboardingPage() {
           <p className="mt-2 text-center text-[13px] text-destructive">
             {t("onboarding.language.saveError")}
           </p>
+        )}
+        {loadFailed && (
+          <div className="mt-3 flex flex-col items-center gap-2 rounded-xl border border-destructive/40 bg-destructive/10 px-4 py-3 text-center">
+            <p className="flex items-center gap-2 text-[13px] font-medium text-destructive">
+              <AlertTriangle className="h-4 w-4" />
+              {t("onboarding.language.loadError")}
+            </p>
+            <Button variant="outline" size="sm" onClick={() => void refreshStatus()}>
+              {t("onboarding.language.retry")}
+            </Button>
+          </div>
         )}
 
         <div className="mt-6 flex justify-center">
