@@ -18,29 +18,31 @@ reset.
 
 ## Email/password
 
-- **Live result, 2026-09-15:** production email/password requests without a CAPTCHA token return
-  HTTP 400 / stable code `captcha_failed`. This was reproduced directly with the same
-  `@supabase/supabase-js` calls as the app. The rejected signup created no user.
-- **Frontend repair:** all four password flows (email sign-in, username sign-in v3, signup,
-  and password reset) require a one-time hCaptcha token. Email Auth uses `captchaToken`;
-  username-login sends `captcha_token`. Tokens remain in React state only and are cleared
-  after every attempt; `@hcaptcha/react-hcaptcha` receives the public sitekey, sets the token
-  through `onVerify`, and calls `resetCaptcha()` after each request. Expiry and errors clear it.
-- **Confirmed provider:** `VITE_AUTH_CAPTCHA_PROVIDER=hcaptcha` in root and frontend environment
-  configuration. **SITEKEY_MISSING:** no real public `VITE_AUTH_CAPTCHA_SITE_KEY` was found in
-  accessible environment/public configuration. Missing configuration fails closed.
-- **Official guidance:** https://supabase.com/docs/guides/auth/auth-captcha — the hCaptcha secret
-  belongs only in production Supabase Auth > Bot and Abuse Protection. The separate public
-  sitekey belongs in both frontend environment contexts. Never substitute the secret for it;
-  never put the secret in source, environment files, documentation, logs, tests, or telemetry.
-- **Sign-up:** `auth.signUp` sends the normalized username plus `account_type_prefill`,
-  `date_of_birth_prefill`, and `guardian_email_prefill`; these are metadata hints only. The four
-  legal checkboxes remain explicit and are never pre-accepted. The redirect is the public app
-  origin. A returned session enters `resolveStartupDestination()` immediately; no session shows the
-  localized email-confirmation state.
-- **Password reset/update:** reset requests are email-only and CAPTCHA-protected. The public
-  `/auth/update-password` route requires a valid recovery/auth session, then returns through
-  `resolveStartupDestination()`.
+- **CURRENT FRONTEND: no CAPTCHA dependency.** All four password flows (email sign-in, username
+  sign-in v4, signup, password reset) call Supabase Auth / `username-login` with no challenge
+  token. There is no CAPTCHA widget, no `captchaToken`, no `captcha_token`, no
+  `captcha_required` / `captcha_failed` user flow, and no CAPTCHA environment configuration
+  (`VITE_AUTH_CAPTCHA_PROVIDER` / `VITE_AUTH_CAPTCHA_SITE_KEY` are removed from both env
+  contexts). `@hcaptcha/react-hcaptcha` is removed.
+- **CURRENT SUPABASE DASHBOARD — MANUAL RUNTIME PREREQUISITE (NOT INDEPENDENTLY VERIFIED):**
+  Auth > Bot and Abuse Protection must be **disabled** for the production project. While it is
+  enabled, Supabase itself rejects tokenless password signup, sign-in and recovery with HTTP 400 /
+  stable code `captcha_failed` (reproduced live 2026-09-15 while protection was on). This setting
+  lives outside Lovable source; no live auth PASS is claimed until it is confirmed disabled and a
+  real browser signup/sign-in succeeds.
+- **Error handling:** a challenge-shaped provider error (`captcha_failed`) maps to the generic
+  localized auth error — it is never shown as wrong credentials, and no raw provider payload is
+  shown, logged or sent to telemetry.
+- **Email sign-in:** `supabase.auth.signInWithPassword({ email, password })`.
+- **Sign-up:** `auth.signUp({ email, password, options: { emailRedirectTo, data } })` sends the
+  normalized username plus `account_type_prefill`, `date_of_birth_prefill`, and
+  `guardian_email_prefill`; these are metadata hints only. The four legal checkboxes remain
+  explicit and are never pre-accepted. A returned session enters `resolveStartupDestination()`
+  immediately; no session shows the localized email-confirmation state.
+- **Password reset/update:** `auth.resetPasswordForEmail(email, { redirectTo })` — email only, no
+  challenge token, localized errors retained. The public `/auth/update-password` route requires a
+  valid recovery/auth session, then returns through `resolveStartupDestination()`.
+
 
 ## Username login (`username-login` Edge Function)
 
@@ -49,26 +51,20 @@ When the identifier does **not** contain `@`, the app normalises it
 (`USERNAME_PATTERN = /^[a-z0-9._-]{3,30}$/`, `AuthForm.tsx:35-51`) before calling:
 
 ```
-supabase.functions.invoke("username-login", { body: { username, password, captcha_token } })
+supabase.functions.invoke("username-login", { body: { username, password } })
 ```
 
-- **Caller:** `frontend/src/components/AuthForm.tsx:94`.
-- **v3 contract (verified 2026-09-15):** every expected outcome is HTTP 200 with a payload —
+- **Caller:** `frontend/src/components/AuthForm.tsx`.
+- **v4 contract (no CAPTCHA):** every expected outcome is HTTP 200 with a payload —
   `{ ok: true, access_token, refresh_token, expires_in, token_type }`,
-  `{ ok: false, error_code: "invalid_credentials" }`,
-  `{ ok: false, error_code: "captcha_required" }`,
-  `{ ok: false, error_code: "captcha_failed" }` or
+  `{ ok: false, error_code: "invalid_credentials" }` or
   `{ ok: false, error_code: "authentication_unavailable" }`. An ordinary wrong password is NOT an
-  HTTP 401 runtime error any more.
-- **Username login is CAPTCHA-protected too:** v3 performs its internal password grant with
-  `options.captchaToken`, so the browser MUST supply a fresh one-time challenge token as
-  `captcha_token` in the request body. The frontend therefore renders the CAPTCHA widget for ALL
-  password paths — email sign in, username sign in, signup and password reset — holds the token in
-  component state only, sends it once, and clears it after every attempt. It is never persisted,
-  logged or included in telemetry.
-- **CAPTCHA outcome mapping:** `captcha_required` → `auth.captchaRequired`, `captcha_failed` →
-  `auth.captchaFailed`. Neither is ever shown as wrong credentials. Missing public widget
-  configuration fails closed with `auth.captchaUnavailable` before any request is sent.
+  HTTP 401 runtime error. The request body carries ONLY `username` and `password`; the Edge
+  Function performs its internal password grant without a challenge token, which requires the
+  dashboard Bot and Abuse Protection prerequisite above.
+- **Unrecognised error codes** (including legacy `captcha_required` / `captcha_failed`) fall back
+  to the generic invalid-credentials message; the frontend has no challenge flow.
+
 - **On success:** the frontend immediately calls
   `supabase.auth.setSession({ access_token, refresh_token })`, then enters
   `resolveStartupDestination()` (compliance → language → admission → model → Home).
@@ -98,10 +94,11 @@ the Lovable-managed project. They remain manual operator tasks:
 - SMTP / mail sender configuration.
 - Password policy: minimum length and leaked-password protection.
 - Auth rate limits.
-- hCaptcha is confirmed by the operator. Its secret configuration and allowed hostnames remain
-  external checks. Supply the separate PUBLIC sitekey for both environment contexts; then solve
-  the challenge in the preview to test production signup, confirmation, email/username login,
-  sessions and sign-out. No new live auth PASS is claimed while the sitekey is missing.
+- **Bot and Abuse Protection (CAPTCHA) must be DISABLED** for password signup, sign-in and
+  recovery to work without tokens. This is a manual runtime prerequisite and is NOT independently
+  verified from Lovable. While it is enabled, password Auth returns `captcha_failed` and live auth
+  cannot be declared PASS. No hCaptcha provider or sitekey is configured in the frontend any more.
+
 - OAuth provider enablement and client credentials (Google linking, GitHub, LinkedIn, Spotify), and
   whether manual identity linking is allowed.
 

@@ -53,10 +53,6 @@ export const auth = {
     "auth.errorNetwork":
       "We could not reach the service. Please check your connection and try again.",
     "auth.errorGeneric": "Something went wrong. Please try again.",
-    "auth.captchaRequired": "Complete the security check before continuing.",
-    "auth.captchaFailed": "The security check failed. Please complete it again.",
-    "auth.captchaUnavailable":
-      "The security check is not configured. Please contact the app administrator.",
     "auth.recoveryLinkInvalid":
       "This password link is invalid or has expired. Please request a new one.",
   },
@@ -117,10 +113,6 @@ export const auth = {
     "auth.errorNetwork":
       "Der Dienst war nicht erreichbar. Prüfe deine Verbindung und versuche es erneut.",
     "auth.errorGeneric": "Etwas ist schiefgelaufen. Bitte versuche es erneut.",
-    "auth.captchaRequired": "Schliesse die Sicherheitsprüfung ab, bevor du fortfährst.",
-    "auth.captchaFailed": "Die Sicherheitsprüfung ist fehlgeschlagen. Bitte führe sie erneut aus.",
-    "auth.captchaUnavailable":
-      "Die Sicherheitsprüfung ist nicht eingerichtet. Bitte kontaktiere die App-Administration.",
     "auth.recoveryLinkInvalid":
       "Dieser Passwort-Link ist ungültig oder abgelaufen. Bitte fordere einen neuen an.",
   },
@@ -179,10 +171,6 @@ export const auth = {
     "auth.errorNetwork":
       "De Dienscht isch nid erreichbar gsi. Prüef dini Verbindig und probier nomal.",
     "auth.errorGeneric": "Öppis isch schiefgloffe. Bitte probier nomal.",
-    "auth.captchaRequired": "Mach d Sicherheitsprüefig fertig, bevor du wiitermachsch.",
-    "auth.captchaFailed": "D Sicherheitsprüefig isch fehlgschlage. Mach si bitte nomal.",
-    "auth.captchaUnavailable":
-      "D Sicherheitsprüefig isch nid iigrichtet. Bitte mäld di bi de App-Administration.",
     "auth.recoveryLinkInvalid":
       "De Passwort-Link isch nid gültig oder abgloffe. Bitte verlang en nöie.",
   },
@@ -238,10 +226,6 @@ export const auth = {
     "auth.errorNetwork":
       "Не удалось связаться со сервисом. Проверьте соединение и попробуйте снова.",
     "auth.errorGeneric": "Что-то пошло не так. Попробуйте снова.",
-    "auth.captchaRequired": "Пройдите проверку безопасности, прежде чем продолжить.",
-    "auth.captchaFailed": "Проверка безопасности не пройдена. Выполните её ещё раз.",
-    "auth.captchaUnavailable":
-      "Проверка безопасности не настроена. Обратитесь к администратору приложения.",
     "auth.recoveryLinkInvalid": "Эта ссылка недействительна или истекла. Запросите новую.",
   },
   es: {
@@ -296,10 +280,6 @@ export const auth = {
     "auth.errorNetwork":
       "No pudimos conectar con el servicio. Comprueba tu conexión e inténtalo de nuevo.",
     "auth.errorGeneric": "Algo salió mal. Inténtalo de nuevo.",
-    "auth.captchaRequired": "Completa la comprobación de seguridad antes de continuar.",
-    "auth.captchaFailed": "La comprobación de seguridad falló. Complétala de nuevo.",
-    "auth.captchaUnavailable":
-      "La comprobación de seguridad no está configurada. Contacta con la administración de la aplicación.",
     "auth.recoveryLinkInvalid": "Este enlace no es válido o ha caducado. Solicita uno nuevo.",
   },
   fr: {
@@ -356,10 +336,6 @@ export const auth = {
     "auth.errorWeakPassword": "Choisis un mot de passe plus long et plus solide.",
     "auth.errorNetwork": "Le service est injoignable. Vérifie ta connexion et réessaie.",
     "auth.errorGeneric": "Une erreur est survenue. Réessaie.",
-    "auth.captchaRequired": "Termine la vérification de sécurité avant de continuer.",
-    "auth.captchaFailed": "La vérification de sécurité a échoué. Recommence-la.",
-    "auth.captchaUnavailable":
-      "La vérification de sécurité n'est pas configurée. Contacte l'administration de l'application.",
     "auth.recoveryLinkInvalid": "Ce lien est invalide ou expiré. Demande un nouveau lien.",
   },
   it: {
@@ -416,10 +392,6 @@ export const auth = {
     "auth.errorNetwork":
       "Non è stato possibile raggiungere il servizio. Controlla la connessione e riprova.",
     "auth.errorGeneric": "Qualcosa è andato storto. Riprova.",
-    "auth.captchaRequired": "Completa il controllo di sicurezza prima di continuare.",
-    "auth.captchaFailed": "Il controllo di sicurezza non è riuscito. Completalo di nuovo.",
-    "auth.captchaUnavailable":
-      "Il controllo di sicurezza non è configurato. Contatta l'amministrazione dell'app.",
     "auth.recoveryLinkInvalid": "Questo link non è valido o è scaduto. Richiedine uno nuovo.",
   },
 };

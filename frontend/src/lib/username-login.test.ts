@@ -38,15 +38,9 @@ describe("classifyUsernameLogin", () => {
     ).toEqual({ kind: "unavailable" });
   });
 
-  it("reports a missing challenge separately from wrong credentials (v3)", () => {
+  it("never classifies an unrecognised error code as a challenge outcome", () => {
     expect(classifyUsernameLogin({ ok: false, error_code: "captcha_required" }, null)).toEqual({
-      kind: "captcha_required",
-    });
-  });
-
-  it("reports a rejected challenge separately from wrong credentials (v3)", () => {
-    expect(classifyUsernameLogin({ ok: false, error_code: "captcha_failed" }, null)).toEqual({
-      kind: "captcha_failed",
+      kind: "invalid_credentials",
     });
   });
 
@@ -71,16 +65,11 @@ describe("isDuplicateUsernameAfterSignupError", () => {
 });
 
 describe("usernameLoginRequest", () => {
-  it("sends username, password and the one-time captcha_token expected by v3", () => {
-    expect(usernameLoginRequest("student", "secret", "challenge-token")).toEqual({
+  it("sends only username and password (v4, no CAPTCHA token)", () => {
+    expect(usernameLoginRequest("student", "secret")).toEqual({
       username: "student",
       password: "secret",
-      captcha_token: "challenge-token",
     });
-    expect(Object.keys(usernameLoginRequest("a", "b", "c")).sort()).toEqual([
-      "captcha_token",
-      "password",
-      "username",
-    ]);
+    expect(Object.keys(usernameLoginRequest("a", "b")).sort()).toEqual(["password", "username"]);
   });
 });

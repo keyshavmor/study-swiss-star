@@ -5,7 +5,7 @@
  * Spotify OAuth. Successful sign-in enters the authenticated startup flow
  * (language onboarding, then the per-session model readiness gate).
  */
-import { useCallback, useState } from "react";
+import { useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -26,8 +26,6 @@ import type { TranslationKey } from "@/lib/i18n/messages";
 import { Checkbox } from "@/components/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { validateComplianceInput, type ComplianceValidationError } from "@/lib/compliance";
-import { AuthCaptcha } from "@/components/auth/AuthCaptcha";
-import { captchaAuthOptions, getAuthCaptchaConfig } from "@/lib/auth-captcha";
 
 type Mode = "signin" | "signup" | "reset";
 type OAuthProvider = "github" | "linkedin_oidc" | "spotify";
@@ -63,10 +61,9 @@ export function validateUsername(raw: string, t: (key: TranslationKey) => string
 }
 
 /**
- * CURRENT SUPABASE (`username-login` v3, verified 2026-09-15): expected bad
- * credentials come back as an HTTP 200 payload with `ok:false` and a stable
- * `error_code`, never as an HTTP 401 Edge Function runtime error. v3 also
- * requires `captcha_token` because its password grant is CAPTCHA-protected.
+ * CURRENT SUPABASE (`username-login` v4): expected bad credentials come back as
+ * an HTTP 200 payload with `ok:false` and a stable `error_code`, never as an
+ * HTTP 401 Edge Function runtime error. v4 needs no CAPTCHA token.
  */
 type UsernameLoginResult = UsernameLoginPayload;
 
@@ -92,26 +89,7 @@ export function AuthForm() {
   const [complianceErrors, setComplianceErrors] = useState<ComplianceValidationError[]>([]);
   const [resetEmail, setResetEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
-  const [captchaResetNonce, setCaptchaResetNonce] = useState(0);
   const navigate = useNavigate();
-  const handleCaptchaToken = useCallback((token: string | null) => setCaptchaToken(token), []);
-
-  // One-time challenge token: held in component state only, never persisted or logged.
-  const verifiedCaptchaTokenValue = () => {
-    if (!getAuthCaptchaConfig()) throw new UiError(t("auth.captchaUnavailable"));
-    if (!captchaToken) throw new UiError(t("auth.captchaRequired"));
-    return captchaToken;
-  };
-
-  const verifiedCaptchaToken = () => {
-    if (!getAuthCaptchaConfig()) throw new UiError(t("auth.captchaUnavailable"));
-    try {
-      return captchaAuthOptions(captchaToken);
-    } catch {
-      throw new UiError(t("auth.captchaRequired"));
-    }
-  };
 
   // Enter the startup flow rather than jumping straight to Home.
   const goHome = async () => {
@@ -127,7 +105,6 @@ export function AuthForm() {
       const { error } = await supabase.auth.signInWithPassword({
         email: value,
         password,
-        options: verifiedCaptchaToken(),
       });
       if (error) throw new UiError(localizedAuthError(t, error));
       track({
@@ -144,19 +121,18 @@ export function AuthForm() {
     if (invalid) throw new UiError(invalid);
 
     const { data, error } = await supabase.functions.invoke<UsernameLoginResult>("username-login", {
-      body: usernameLoginRequest(normalised, password, verifiedCaptchaTokenValue()),
+      body: usernameLoginRequest(normalised, password),
     });
     // A transport/runtime failure or an unavailable auth service is NOT a wrong
     // password: show a generic service error instead of blaming the credentials.
     const outcome = classifyUsernameLogin(data, error);
     if (outcome.kind === "unavailable") throw new UiError(t("auth.errorGeneric"));
-    if (outcome.kind === "captcha_required") throw new UiError(t("auth.captchaRequired"));
-    if (outcome.kind === "captcha_failed") throw new UiError(t("auth.captchaFailed"));
     if (outcome.kind === "invalid_credentials") {
       // Deliberately generic: never reveal whether the username exists, and
       // never surface the account email behind it.
       throw new UiError(t("auth.usernamePasswordError"));
     }
+
     const { error: sessionError } = await supabase.auth.setSession({
       access_token: outcome.accessToken,
       refresh_token: outcome.refreshToken,
@@ -213,7 +189,6 @@ export function AuthForm() {
       password,
       options: {
         emailRedirectTo: `${window.location.origin}/`,
-        ...verifiedCaptchaToken(),
         data: {
           username: normalised,
           account_type_prefill: signupAccountType,
@@ -249,8 +224,8 @@ export function AuthForm() {
     const email = resetEmail.trim();
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: `${window.location.origin}/auth/update-password`,
-      ...verifiedCaptchaToken(),
     });
+
     if (error) throw new UiError(localizedAuthError(t, error));
     track({ event_name: "auth_password_reset_requested", feature: "auth" });
     toast.success(t("auth.resetLinkSent"));
@@ -281,8 +256,6 @@ export function AuthForm() {
       toast.error(localizedMessage(err) ?? t("auth.authenticationFailed"));
     } finally {
       setIsLoading(false);
-      setCaptchaToken(null);
-      setCaptchaResetNonce((value) => value + 1);
     }
   };
 
@@ -298,7 +271,7 @@ export function AuthForm() {
         feature: "auth",
         properties: { provider },
       });
-      console.error("oauth sign-in failed", error);
+      // Never log the raw provider error: payloads can carry sensitive request data.
       toast.error(t("auth.oauthSignInFailed", { provider: label }));
       setIsLoading(false);
     }
@@ -532,10 +505,6 @@ export function AuthForm() {
             />
           </div>
         )}
-
-        {/* Every password path (email sign in, username sign in, signup, reset)
-            is CAPTCHA-protected in production. */}
-        <AuthCaptcha onToken={handleCaptchaToken} resetNonce={captchaResetNonce} />
 
         <Button type="submit" className="w-full" disabled={isLoading}>
           {isLoading ? t("auth.pleaseWait") : submitLabel}
