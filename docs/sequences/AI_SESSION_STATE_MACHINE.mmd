@@ -1,0 +1,28 @@
+%% Status: CURRENT FRONTEND
+%% Source: frontend/src/lib/ai-session.ts, frontend/src/lib/ai-availability.tsx,
+%% frontend/src/lib/sign-out.ts
+stateDiagram-v2
+    [*] --> GateRequired : new browser session<br/>readAiSession() === null
+    GateRequired --> Preparing : ai.setPreparing() (in-memory only,<br/>not persisted to sessionStorage)
+    Preparing --> Ready : backend state=ready AND can_continue_with_ai<br/>markAiReady(modelId) written to sessionStorage
+    Preparing --> Unavailable : backend blocked/failed/backend_unavailable<br/>(transient, in-memory only)
+    Unavailable --> Preparing : user retries (Settings or onboarding gate)
+    Unavailable --> NonAi : user clicks "Continue without AI"<br/>markNonAi() written to sessionStorage
+    GateRequired --> NonAi : user clicks "Continue without AI" directly
+    Ready --> Preparing : user retries in Settings (switch model)
+    NonAi --> Preparing : user opens the gate again from Settings notice
+    Ready --> [*] : signOutCompletely() → clearAiSession()
+    NonAi --> [*] : signOutCompletely() → clearAiSession()
+    GateRequired --> [*] : signOutCompletely() → clearAiSession() (no-op, already null)
+
+    note right of Ready
+      Persisted key: sessionStorage "alim.ai_session.v1"
+      { mode: "ai-ready", modelId, decidedAt }
+      Survives client-side navigation, cleared on
+      real sign-out and on browser/tab session end.
+    end note
+    note right of NonAi
+      { mode: "non-ai", modelId: null, decidedAt }
+      AI-dependent UI renders AiUnavailableNotice
+      instead of fabricating a response.
+    end note

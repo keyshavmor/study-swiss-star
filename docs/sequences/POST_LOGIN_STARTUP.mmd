@@ -1,0 +1,51 @@
+%% Status: CURRENT FRONTEND (routing/gate logic) + CURRENT SUPABASE (preferences read)
+%% Source: frontend/src/lib/startup-flow.ts, frontend/src/lib/ai-session.ts,
+%% frontend/src/routes/index.tsx, frontend/src/routes/auth.tsx,
+%% frontend/src/routes/_authenticated/route.tsx
+sequenceDiagram
+    participant User
+    participant Entry as "/" or "/auth" (index.tsx / auth.tsx)
+    participant Supa as Supabase Auth
+    participant Flow as lib/startup-flow.ts
+    participant Prefs as user_preferences (Supabase)
+    participant Session as sessionStorage<br/>alim.ai_session.v1
+    participant Gate as _authenticated/route.tsx
+
+    User->>Entry: load "/" (or "/auth") while signed in
+    Entry->>Supa: auth.getUser()
+    Supa-->>Entry: user
+    Entry->>Flow: resolveStartupDestination()
+    Flow->>Prefs: fetchPreferences() (cached per session)
+    Prefs-->>Flow: language_onboarding_completed
+    alt language_onboarding_completed !== true
+        Flow-->>Entry: /onboarding/language
+    else language completed
+        Flow->>Session: modelGateRequired() = readAiSession() === null
+        alt no AI session yet this browser session
+            Flow-->>Entry: /onboarding/model
+        else session already decided (ai-ready or non-ai)
+            Flow-->>Entry: /home
+        end
+    end
+    Entry-->>User: redirect to destination
+
+    Note over Gate: Every /_authenticated navigation re-runs the same guard
+    User->>Gate: navigate directly to /home (or any protected route)
+    Gate->>Supa: auth.getUser()
+    alt not signed in
+        Gate-->>User: redirect to "/"
+    else signed in
+        Gate->>Flow: startupRedirectFor(pathname)
+        alt pathname under /onboarding or /auth
+            Flow-->>Gate: null (exempt)
+        else
+            Flow->>Flow: resolveStartupDestination()
+            alt destination !== requested page
+                Flow-->>Gate: destination
+                Gate-->>User: redirect(destination, replace)
+            else
+                Flow-->>Gate: null
+                Gate-->>User: render requested page
+            end
+        end
+    end

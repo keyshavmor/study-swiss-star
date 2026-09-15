@@ -74,6 +74,34 @@ allowed to diverge — if they do, `docs/` is the source of truth and `lovabledo
 4. `FEATURE_DEPENDENCY_MATRIX.md`
 5. `DOCUMENTATION_DISCOVERED_ISSUES.md`
 
+## New authenticated startup flow (added this pass)
+
+Signed out → `/` (sign in/up) → `/onboarding/language` (once, gated by
+`user_preferences.preferences.language_onboarding_completed`, CURRENT SUPABASE) →
+`/onboarding/model` (every NEW authenticated browser session, gated by sessionStorage key
+`alim.ai_session.v1`, CURRENT FRONTEND) → `/home` (AI-ready or non-AI). The guard lives in
+`frontend/src/routes/_authenticated/route.tsx`; direct navigation to `/home` cannot bypass the
+model gate; `/onboarding/*` and `/auth` are exempt. See:
+
+- `sequences/POST_LOGIN_STARTUP.mmd`
+- `sequences/LANGUAGE_ONBOARDING.mmd`
+- `sequences/MODEL_SELECTION_READINESS.mmd`
+- `sequences/MODEL_CACHED_SHARED_DOWNLOAD.mmd`
+- `sequences/RESOURCE_BLOCKED_NON_AI.mmd`
+- `sequences/SETTINGS_MODEL_RETRY.mmd`
+- `sequences/MODEL_DOWNLOAD_DEDUPLICATION.mmd`
+- `sequences/AI_SESSION_STATE_MACHINE.mmd`
+- `sequences/STORAGE_CAPACITY_CLEANUP.mmd`
+
+Model preparation endpoints (`/api/model/status`, `/api/model/prepare`, `/api/model/operation`)
+are **EXPECTED LOCAL BACKEND CONTRACT / BACKEND TODO FOR CODEX** — not implemented anywhere in
+this repository yet; every call degrades to `backend_unavailable` and the frontend never
+fabricates readiness. The 50/50/50 admission and 30/25/30 runtime-floor resource policy is
+**CURRENT SUPABASE** (`public.get_ai_runtime_policy()`), read by the server-side adapter, never
+measured by the browser. The per-user `auto_storage_cleanup` preference has been **REMOVED**;
+storage cleanup is now the platform-wide, non-user-disableable job described in
+`supabase/STORAGE_LIFECYCLES.md` and `sequences/STORAGE_CAPACITY_CLEANUP.mmd`.
+
 ## File map (this documentation pass)
 
 ```
