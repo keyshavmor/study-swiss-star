@@ -1,6 +1,6 @@
 Document status: CURRENT
-Generated from: current Lovable project · GitHub main (keyshavmor/study-swiss-star) · live Supabase project ucacmeadsufiedxrgqit
-Last verified: 2026-09-14 (UTC)
+Generated from: current Lovable-managed project state · live Supabase project ucacmeadsufiedxrgqit (these Lovable-only edits are NOT claimed to be on any GitHub branch)
+Production Supabase verified: 2026-09-15 (UTC)
 Frontend commit: e0ef3464557d4786d214accb0d1bf44082ae3466
 
 > Supersedes: `docs/archive/FRONTEND_ARCHITECTURE.md` (top-level). The old file is archived centrally; this document is the current source of truth.
