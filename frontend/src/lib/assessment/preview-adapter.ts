@@ -117,7 +117,11 @@ function sampleQuestion(
         allowWorkings: true,
         prompt: [
           { kind: "prose", text: "A body falls freely for 3 s. Determine its final velocity." },
-          { kind: "math", latex: "v = v_0 + g t,\\quad g = 9.81\\,\\mathrm{m\\,s^{-2}}", display: true },
+          {
+            kind: "math",
+            latex: "v = v_0 + g t,\\quad g = 9.81\\,\\mathrm{m\\,s^{-2}}",
+            display: true,
+          },
         ],
       };
   }
@@ -168,7 +172,9 @@ function scoreAnswer(question: PublicQuestion, answer: StudentAnswer | undefined
       "Development sample explanation. The production backend supplies the real explanation and sources.",
     ),
     improvement:
-      awarded < max ? prose("Add a clearer link between the mechanism and the outcome.") : undefined,
+      awarded < max
+        ? prose("Add a clearer link between the mechanism and the outcome.")
+        : undefined,
     sources: question.sources,
   };
 }
@@ -236,7 +242,10 @@ export const previewAssessmentApi: AssessmentApi = {
     const job = jobs.get(jobId);
     if (!job) return { ok: false, failure: "backend_unavailable" };
     if (job.cancelled) {
-      return { ok: true, data: { jobId, state: "cancelled", phase: null } satisfies GenerationStatus };
+      return {
+        ok: true,
+        data: { jobId, state: "cancelled", phase: null } satisfies GenerationStatus,
+      };
     }
     const elapsed = Date.now() - job.createdAt;
     if (elapsed < GENERATION_MS * 0.4) {
@@ -273,9 +282,10 @@ export const previewAssessmentApi: AssessmentApi = {
   },
   async abandonAssessment(reference) {
     if (reference.jobId) jobs.delete(reference.jobId);
-    if (reference.attemptId) jobs.forEach((job, id) => {
-      if (job.attemptId === reference.attemptId) jobs.delete(id);
-    });
+    if (reference.attemptId)
+      jobs.forEach((job, id) => {
+        if (job.attemptId === reference.attemptId) jobs.delete(id);
+      });
     return { ok: true, data: { cleaned: true } };
   },
   async getGradingStatus(attemptId) {

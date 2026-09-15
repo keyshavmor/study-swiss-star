@@ -44,7 +44,12 @@ export function AnswerEditor({ question, answer, onChange, disabled }: AnswerEdi
       );
     case "true_false":
       return (
-        <TrueFalseInput question={question} answer={answer} onChange={onChange} disabled={disabled} />
+        <TrueFalseInput
+          question={question}
+          answer={answer}
+          onChange={onChange}
+          disabled={disabled}
+        />
       );
     case "short_answer":
       return (
@@ -66,7 +71,12 @@ export function AnswerEditor({ question, answer, onChange, disabled }: AnswerEdi
       );
     case "essay":
       return (
-        <EssayAnswerInput question={question} answer={answer} onChange={onChange} disabled={disabled} />
+        <EssayAnswerInput
+          question={question}
+          answer={answer}
+          onChange={onChange}
+          disabled={disabled}
+        />
       );
     case "calculation":
       return (
@@ -130,7 +140,11 @@ function MultipleChoiceInput({ question, answer, onChange, disabled }: AnswerEdi
         )}
       >
         {single ? (
-          <RadioGroupItem value={option.id} id={`${question.id}-${option.id}`} disabled={disabled} />
+          <RadioGroupItem
+            value={option.id}
+            id={`${question.id}-${option.id}`}
+            disabled={disabled}
+          />
         ) : (
           <Checkbox
             id={`${question.id}-${option.id}`}

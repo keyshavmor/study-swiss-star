@@ -54,7 +54,10 @@ export function QuestionRenderer({
   };
 
   return (
-    <article className="space-y-4" aria-label={t("assessment.question.aria", { index: index + 1, total })}>
+    <article
+      className="space-y-4"
+      aria-label={t("assessment.question.aria", { index: index + 1, total })}
+    >
       <header className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex flex-wrap items-center gap-2 text-[13px] text-muted-foreground">
           <span className="font-semibold text-foreground">
@@ -92,7 +95,9 @@ export function QuestionRenderer({
       </div>
 
       {question.media
-        .filter((media) => media.purpose === "stimulus" || media.purpose === "question_illustration")
+        .filter(
+          (media) => media.purpose === "stimulus" || media.purpose === "question_illustration",
+        )
         .map((media) => (
           <AssessmentMediaView key={media.id} media={media} />
         ))}

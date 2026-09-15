@@ -72,7 +72,9 @@ export function AssessmentResults({
         </div>
 
         <p className="mt-3 text-[13px] text-muted-foreground">
-          {t("assessment.result.submittedAt", { date: formatDate(result.submittedAt.slice(0, 10)) })}
+          {t("assessment.result.submittedAt", {
+            date: formatDate(result.submittedAt.slice(0, 10)),
+          })}
           {!result.includeInStats && ` · ${t("assessment.result.notInAverages")}`}
         </p>
       </section>

@@ -11,11 +11,7 @@ import { useI18n } from "@/lib/i18n/provider";
 import { track } from "@/lib/telemetry";
 import { getAssessmentApi, requestAbandonCleanup } from "@/lib/assessment/api";
 import { createDefaultConfig, totalQuestions } from "@/lib/assessment/config";
-import {
-  assessmentReducer,
-  createSession,
-  isEphemeral,
-} from "@/lib/assessment/lifecycle";
+import { assessmentReducer, createSession, isEphemeral } from "@/lib/assessment/lifecycle";
 import {
   installPreviewAdapterInDevelopment,
   isPreviewAdapterEnabled,
@@ -75,7 +71,7 @@ export function PreviewDataNotice() {
   );
 }
 
-export function BackendUnavailableNotice({ onRetry }: { onRetry?: () => void  | undefined}) {
+export function BackendUnavailableNotice({ onRetry }: { onRetry?: () => void | undefined }) {
   const { t } = useI18n();
   return (
     <div
@@ -384,10 +380,7 @@ export function AssessmentModePanel({
     return (
       <div className="space-y-3">
         <PreviewDataNotice />
-        <AssessmentResults
-          result={session.result}
-          onClose={() => dispatch({ type: "reset" })}
-        />
+        <AssessmentResults result={session.result} onClose={() => dispatch({ type: "reset" })} />
       </div>
     );
   }
@@ -436,14 +429,14 @@ export function AssessmentModePanel({
           topics={context.topics}
         />
       ) : (
-      <AssessmentSetup
-        config={config}
-        onChange={setConfig}
-        onGenerate={() => void startGeneration()}
-        materials={context.materials}
-        topics={context.topics}
-        learningGoals={context.learningGoals}
-      />
+        <AssessmentSetup
+          config={config}
+          onChange={setConfig}
+          onGenerate={() => void startGeneration()}
+          materials={context.materials}
+          topics={context.topics}
+          learningGoals={context.learningGoals}
+        />
       )}
     </div>
   );

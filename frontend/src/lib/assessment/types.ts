@@ -32,7 +32,9 @@ export const contentBlockSchema = z.discriminatedUnion("kind", [
       style: inlineStyleSchema.optional(),
     })
     .strict(),
-  z.object({ kind: z.literal("math"), latex: z.string(), display: z.boolean().optional() }).strict(),
+  z
+    .object({ kind: z.literal("math"), latex: z.string(), display: z.boolean().optional() })
+    .strict(),
   z
     .object({ kind: z.literal("chemistry"), latex: z.string(), display: z.boolean().optional() })
     .strict(),
@@ -288,7 +290,11 @@ export const studentAnswerSchema = z.discriminatedUnion("type", [
     })
     .strict(),
   z
-    .object({ type: z.literal("true_false"), questionId: z.string(), value: z.boolean().nullable() })
+    .object({
+      type: z.literal("true_false"),
+      questionId: z.string(),
+      value: z.boolean().nullable(),
+    })
     .strict(),
   z.object({ type: z.literal("short_answer"), questionId: z.string(), text: z.string() }).strict(),
   z
@@ -385,8 +391,7 @@ export interface QuestionResult {
   /** Why relevant distractors are wrong, keyed by option id. */
   optionExplanations?: Record<string, RichContent> | undefined;
   rubricFeedback?:
-    | Array<{ criterionId: string; description: string; awarded: number; max: number }>
-    | undefined;
+    Array<{ criterionId: string; description: string; awarded: number; max: number }> | undefined;
   sources?: SourceReference[] | undefined;
 }
 

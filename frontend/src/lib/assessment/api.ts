@@ -20,14 +20,10 @@ import type {
 import type { GenerationPhase } from "./lifecycle";
 
 export type AssessmentApiFailure =
-  | "backend_unavailable"
-  | "not_implemented"
-  | "invalid_payload"
-  | "cancelled";
+  "backend_unavailable" | "not_implemented" | "invalid_payload" | "cancelled";
 
 export type AssessmentApiResult<T> =
-  | { ok: true; data: T }
-  | { ok: false; failure: AssessmentApiFailure };
+  { ok: true; data: T } | { ok: false; failure: AssessmentApiFailure };
 
 export interface GenerationJob {
   jobId: string;
@@ -119,7 +115,10 @@ export function getAssessmentApi(): AssessmentApi {
  * FUTURE BACKEND / CODEX: cleanup must delete generated questions, question
  * metadata, answer keys and attempt configuration, and terminate generation.
  */
-export function requestAbandonCleanup(reference: { jobId?: string | undefined; attemptId?: string  | undefined}): void {
+export function requestAbandonCleanup(reference: {
+  jobId?: string | undefined;
+  attemptId?: string | undefined;
+}): void {
   if (!reference.jobId && !reference.attemptId) return;
   void activeApi.abandonAssessment(reference).catch(() => undefined);
 }

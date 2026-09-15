@@ -77,7 +77,9 @@ export function SubmissionReview({
                     {t("assessment.navigator.questionN", { index: index + 1 })}
                   </span>
                   <span className="text-[13px] text-muted-foreground">
-                    {answered ? t("assessment.navigator.answered") : t("assessment.navigator.unanswered")}
+                    {answered
+                      ? t("assessment.navigator.answered")
+                      : t("assessment.navigator.unanswered")}
                     {marked ? ` · ${t("assessment.navigator.marked")}` : ""}
                   </span>
                 </button>

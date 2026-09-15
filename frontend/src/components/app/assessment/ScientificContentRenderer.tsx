@@ -51,7 +51,9 @@ export function ScientificExpression({
   );
 }
 
-function styleClass(block: Extract<ContentBlock, { style?: unknown  | undefined}>): string | undefined {
+function styleClass(
+  block: Extract<ContentBlock, { style?: unknown | undefined }>,
+): string | undefined {
   const style = "style" in block ? block.style : undefined;
   if (!style) return undefined;
   return cn(style.italic && "italic", style.monospace && "font-mono");
@@ -86,9 +88,11 @@ function Block({
     case "chemistry":
       return (
         <ScientificExpression
-          latex={block.latex.startsWith("\\ce") || block.latex.startsWith("\\pu")
-            ? block.latex
-            : `\\ce{${block.latex}}`}
+          latex={
+            block.latex.startsWith("\\ce") || block.latex.startsWith("\\pu")
+              ? block.latex
+              : `\\ce{${block.latex}}`
+          }
           display={block.display ?? false}
         />
       );
@@ -166,10 +170,7 @@ function Block({
   }
 }
 
-export type MediaRenderer = (
-  mediaId: string,
-  description?: string | undefined,
-) => React.ReactNode;
+export type MediaRenderer = (mediaId: string, description?: string | undefined) => React.ReactNode;
 
 export function ScientificContentRenderer({
   content,

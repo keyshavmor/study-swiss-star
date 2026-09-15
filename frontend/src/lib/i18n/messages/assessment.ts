@@ -247,7 +247,8 @@ export const assessment = {
     "assessment.mode.quickCheck.intro": "Eine Frage, sofort, auf deinem Schulniveau.",
     "assessment.mode.practice.intro":
       "Entspanntes Üben mit Rückmeldung, während du die Fragen bearbeitest.",
-    "assessment.mode.quiz.intro": "Ein konfiguriertes, bewertetes Quiz mit vollständiger Auswertung.",
+    "assessment.mode.quiz.intro":
+      "Ein konfiguriertes, bewertetes Quiz mit vollständiger Auswertung.",
     "assessment.mode.mockExam.intro":
       "Eine ernsthafte KI-generierte Probeprüfung. Dies ist keine offizielle Schulprüfung.",
 
@@ -519,8 +520,7 @@ export const assessment = {
     "assessment.setup.minutes": "{count} Min.",
     "assessment.setup.custom": "Eigeni Ziit",
     "assessment.setup.customMinutes": "Minute",
-    "assessment.setup.timeNotice":
-      "Das isch di Ziit fuer di Pruefig, nid di Ziit fuers Erstelle.",
+    "assessment.setup.timeNotice": "Das isch di Ziit fuer di Pruefig, nid di Ziit fuers Erstelle.",
     "assessment.setup.advanced": "Erwiterti Iistellige",
     "assessment.setup.immediateFeedback": "Rueckmeldig nach jedere Frag zeige",
     "assessment.setup.includeInStats": "Das Resultat i mini Fachdurchschnitt ufnaeh",
@@ -748,8 +748,7 @@ export const assessment = {
     "assessment.setup.minutes": "{count} мин",
     "assessment.setup.custom": "Своё значение",
     "assessment.setup.customMinutes": "Минуты",
-    "assessment.setup.timeNotice":
-      "Это время на выполнение задания, а не время его подготовки.",
+    "assessment.setup.timeNotice": "Это время на выполнение задания, а не время его подготовки.",
     "assessment.setup.advanced": "Дополнительные настройки",
     "assessment.setup.immediateFeedback": "Показывать разбор после каждого вопроса",
     "assessment.setup.includeInStats": "Учитывать результат в моих средних оценках",
@@ -775,8 +774,7 @@ export const assessment = {
     "assessment.setup.error.examNeedsTime": "Для пробного экзамена нужно указать время.",
 
     "assessment.generation.heading": "Готовим твоё задание",
-    "assessment.generation.duration":
-      "Это может занять до 10 минут. Не закрывай эту страницу.",
+    "assessment.generation.duration": "Это может занять до 10 минут. Не закрывай эту страницу.",
     "assessment.generation.timerNotice": "Таймер начнётся только когда ты нажмёшь «Начать».",
     "assessment.generation.cancel": "Отменить подготовку",
     "assessment.generation.phase.queued": "В очереди",
@@ -979,8 +977,7 @@ export const assessment = {
     "assessment.setup.minutes": "{count} min",
     "assessment.setup.custom": "Personalizado",
     "assessment.setup.customMinutes": "Minutos",
-    "assessment.setup.timeNotice":
-      "Es el tiempo para la evaluación, no el tiempo de preparación.",
+    "assessment.setup.timeNotice": "Es el tiempo para la evaluación, no el tiempo de preparación.",
     "assessment.setup.advanced": "Ajustes avanzados",
     "assessment.setup.immediateFeedback": "Mostrar comentarios tras cada pregunta",
     "assessment.setup.includeInStats": "Incluir este resultado en mis promedios",
@@ -1209,8 +1206,7 @@ export const assessment = {
     "assessment.setup.minutes": "{count} min",
     "assessment.setup.custom": "Personnalisé",
     "assessment.setup.customMinutes": "Minutes",
-    "assessment.setup.timeNotice":
-      "C'est le temps pour l'évaluation, pas le temps de préparation.",
+    "assessment.setup.timeNotice": "C'est le temps pour l'évaluation, pas le temps de préparation.",
     "assessment.setup.advanced": "Réglages avancés",
     "assessment.setup.immediateFeedback": "Afficher un retour après chaque question",
     "assessment.setup.includeInStats": "Inclure ce résultat dans mes moyennes",
@@ -1441,8 +1437,7 @@ export const assessment = {
     "assessment.setup.minutes": "{count} min",
     "assessment.setup.custom": "Personalizzato",
     "assessment.setup.customMinutes": "Minuti",
-    "assessment.setup.timeNotice":
-      "È il tempo per la verifica, non il tempo per prepararla.",
+    "assessment.setup.timeNotice": "È il tempo per la verifica, non il tempo per prepararla.",
     "assessment.setup.advanced": "Impostazioni avanzate",
     "assessment.setup.immediateFeedback": "Mostra il riscontro dopo ogni domanda",
     "assessment.setup.includeInStats": "Includi questo risultato nelle mie medie",

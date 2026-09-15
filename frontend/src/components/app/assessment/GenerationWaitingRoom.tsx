@@ -36,9 +36,7 @@ export function GenerationWaitingRoom({
         {t("assessment.generation.timerNotice")}
       </p>
       {/* A phase is shown only when the backend actually reports one. */}
-      {phase && (
-        <p className="mt-3 text-[13.5px] font-medium">{t(PHASE_LABEL_KEY[phase])}</p>
-      )}
+      {phase && <p className="mt-3 text-[13.5px] font-medium">{t(PHASE_LABEL_KEY[phase])}</p>}
       <Button variant="secondary" className="mt-5" onClick={onCancel}>
         {t("assessment.generation.cancel")}
       </Button>
@@ -103,7 +101,10 @@ export function GradingPending({
       aria-live="polite"
     >
       {!failed && (
-        <Loader2 className="mx-auto h-7 w-7 animate-spin text-muted-foreground" aria-hidden="true" />
+        <Loader2
+          className="mx-auto h-7 w-7 animate-spin text-muted-foreground"
+          aria-hidden="true"
+        />
       )}
       <h3 className="mt-3 text-[18px] font-semibold tracking-tight">
         {failed ? t("assessment.grading.failedHeading") : t("assessment.grading.heading")}

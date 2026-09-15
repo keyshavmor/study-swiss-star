@@ -91,9 +91,10 @@ export function MathAnswerInput({
   }, [value]);
 
   function insert(latex: string) {
-    const field = fieldRef.current as unknown as
-      | { executeCommand?: (cmd: [string | undefined, string]) => void; value: string }
-      | null;
+    const field = fieldRef.current as unknown as {
+      executeCommand?: (cmd: [string | undefined, string]) => void;
+      value: string;
+    } | null;
     if (field?.executeCommand) {
       field.executeCommand(["insert", latex]);
       onChange(field.value);
@@ -147,7 +148,11 @@ export function MathAnswerInput({
         </div>
       )}
 
-      <div className="flex flex-wrap gap-1.5" role="group" aria-label={t("assessment.math.palette")}>
+      <div
+        className="flex flex-wrap gap-1.5"
+        role="group"
+        aria-label={t("assessment.math.palette")}
+      >
         {PALETTE.map((entry) => (
           <Button
             key={entry.label}

@@ -7,10 +7,7 @@
  * grades.
  */
 import { useI18n } from "@/lib/i18n/provider";
-import {
-  MIN_OBSERVATIONS_FOR_MASTERY,
-  type MasteryEntry,
-} from "@/lib/assessment/types";
+import { MIN_OBSERVATIONS_FOR_MASTERY, type MasteryEntry } from "@/lib/assessment/types";
 import { cn } from "@/lib/utils";
 
 const DIMENSION_LABEL_KEY = {

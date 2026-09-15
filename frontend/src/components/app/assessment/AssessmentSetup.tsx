@@ -87,7 +87,9 @@ export function SourceScopePicker({
       </RadioGroup>
       {value !== "web" && materials.length > 0 && (
         <div className="rounded-[14px] bg-surface-2 p-3">
-          <p className="text-[13px] text-muted-foreground">{t("assessment.setup.narrowMaterials")}</p>
+          <p className="text-[13px] text-muted-foreground">
+            {t("assessment.setup.narrowMaterials")}
+          </p>
           <ul className="mt-2 space-y-1.5">
             {materials.map((material) => (
               <li key={material.id} className="flex items-start gap-2.5">
@@ -291,7 +293,9 @@ export function AssessmentSetup({
         </div>
         {learningGoals.length > 0 && (
           <fieldset>
-            <legend className="text-[14px] font-medium">{t("assessment.setup.learningGoals")}</legend>
+            <legend className="text-[14px] font-medium">
+              {t("assessment.setup.learningGoals")}
+            </legend>
             <ul className="mt-2 space-y-1.5">
               {learningGoals.map((goal) => (
                 <li key={goal.id} className="flex items-start gap-2.5">
@@ -387,10 +391,7 @@ export function AssessmentSetup({
             label={t("assessment.setup.review.difficulty")}
             value={t(DIFFICULTY_LABEL_KEY[config.difficulty])}
           />
-          <Row
-            label={t("assessment.setup.review.questions")}
-            value={String(total)}
-          />
+          <Row label={t("assessment.setup.review.questions")} value={String(total)} />
           <Row
             label={t("assessment.setup.review.time")}
             value={

@@ -62,7 +62,9 @@ export function QuickCheckSetup({
                 list="quick-topics"
                 value={config.topic ?? ""}
                 placeholder={t("assessment.setup.topicAny")}
-                onChange={(event) => onChange({ ...config, topic: event.target.value || undefined })}
+                onChange={(event) =>
+                  onChange({ ...config, topic: event.target.value || undefined })
+                }
               />
               <datalist id="quick-topics">
                 {topics.map((topic) => (
