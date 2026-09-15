@@ -400,7 +400,7 @@ export interface AssessmentResult {
   percentage: number;
   /** Only present when the backend supplies a Swiss grade. Never derived here. */
   swissGrade: number | null;
-  timeTakenSeconds: number | null
+  timeTakenSeconds: number | null;
   submittedAt: string;
   gradedAt: string | null;
   byQuestionType: Array<{ type: QuestionType; awarded: number; max: number }>;
