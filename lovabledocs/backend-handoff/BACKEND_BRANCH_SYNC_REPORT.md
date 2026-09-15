@@ -1,6 +1,6 @@
 # Backend Branch Reconciliation Report
 
-Status: IMPLEMENTATION COMPLETE — PRODUCTION APPROVAL PENDING
+Status: IMPLEMENTATION COMPLETE — HOSTED STAGING BLOCKED BY PROJECT PLAN
 
 Last verified: 2026-09-15 (Europe/Zurich)
 
@@ -113,6 +113,12 @@ Read-only inspection confirmed the project is healthy on Postgres 17.6.1.166; al
   paths outside the queue row's user prefix. These source changes are not deployed.
 - No production mutation occurred. Applying the grant/index migration was rejected as too broad
   without explicit approval, so no alternate or partial write was attempted.
+- Production approval was subsequently granted. Creating the approved disposable Supabase branch
+  was rejected because hosted Branching requires Pro; no branch was created and no hourly charge
+  began. A disposable local PostgreSQL 17 harness then verified the exact migration SQL, grants,
+  indexes, path checks, composite ownership, and column-specific `ON DELETE SET NULL`. Its container,
+  image, and temporary files were deleted after the test. This syntax/constraint test does not replace
+  hosted RLS, Auth, Storage, and Edge Function testing.
 
 ### Deliberately deferred product work
 
@@ -143,8 +149,9 @@ Read-only inspection confirmed the project is healthy on Postgres 17.6.1.166; al
 | `python -m ruff check backend tests/backend tests/e2e` | PASS |
 | `python -m ruff format --check backend tests/backend tests/e2e` | PASS — 49 files |
 | Edge Function syntax build (`bun build`, external imports) | PASS — all six functions |
+| Disposable PostgreSQL 17 migration harness | PASS — exact migration, grants, four indexes, path constraints, composite owner FK, and column-specific delete behavior; container/image/test files deleted |
 | Supabase security/performance advisors + read-only catalog checks | PASS WITH RECORDED FINDINGS |
-| `supabase test db` for `supabase/tests/rls_isolation.sql` | NOT RUN — Supabase CLI/local stack absent; test was expanded for Assistant/retention ownership and must run on a disposable branch after the pending schema migration |
+| Hosted branch + `supabase test db` for `supabase/tests/rls_isolation.sql` | BLOCKED — branch creation returned `PaymentRequiredException` because the organization is not on Pro; no branch was created |
 | Authenticated two-user live CRUD/Storage test | NOT RUN — no disposable production identities; local/static isolation and live catalog were verified |
 
 The copied repository virtual environment contained an editable path to the other clone. Verification
@@ -153,8 +160,9 @@ therefore used clean temporary locked environments at `/tmp/alim-backend-venv` a
 
 ## Readiness
 
-**NOT READY FOR PRODUCTION DEPLOYMENT.** The local branch is ready for review, but production
-approval is required for both:
+**NOT READY FOR PRODUCTION DEPLOYMENT.** The local branch is ready for review and production
+approval was granted, but the required hosted staging environment could not be created on the
+organization's current plan. Production remains unchanged. The outstanding deployment consists of:
 
 1. staging and applying the grant/index migration, whose broad grant revocations can affect live
    Data API clients; and
@@ -162,7 +170,7 @@ approval is required for both:
    `media-retention-cleanup`) and re-fetching them to prove source/live
    parity.
 
-After approval, run disposable-user cross-account RLS/Storage tests in a non-production branch,
-deploy/apply, re-run both advisor classes, re-fetch function sources, and record the resulting live
-migration/function versions. Until then, the live project remains unchanged and the repository
-truthfully marks these two artifacts as pending.
+After hosted staging becomes available—or the owner explicitly waives that condition—run
+disposable-user cross-account RLS/Storage tests, deploy/apply, re-run both advisor classes, re-fetch
+function sources, and record the resulting live migration/function versions. Until then, the live
+project remains unchanged and the repository truthfully marks these artifacts as pending.
