@@ -345,11 +345,11 @@ finding; the absence of `unindexed_foreign_keys` warnings depends on them remain
   code `captcha_failed`. This is the reproduced blocker: production Auth requires CAPTCHA, while
   the prior frontend sent no challenge token. The rejected signup did not return a user or session.
 - CURRENT FRONTEND repair: email signup, email sign-in and password-reset request now render the
-  configured Turnstile/hCaptcha widget, require its one-time token, pass `options.captchaToken`,
+  configured hCaptcha widget, require its one-time token, pass `options.captchaToken`,
   clear it after each attempt and never persist or log it. Missing public widget configuration
   fails closed with localized copy instead of sending a guaranteed-to-fail request.
-- MANUAL BLOCKER: add `VITE_AUTH_CAPTCHA_PROVIDER` (`turnstile` or `hcaptcha`) and the matching
-  public `VITE_AUTH_CAPTCHA_SITE_KEY` to the frontend deployment configuration. Confirm the same
+- MANUAL BLOCKER (updated): hCaptcha is now configured as the provider. Add the separate
+  public `VITE_AUTH_CAPTCHA_SITE_KEY` to both environment contexts. Confirm the same
   provider's private secret and allowed app hostnames in the production Auth dashboard. The site
   key is public; the secret must never enter source or a `VITE_*` variable.
 - Email confirmation is enabled (`mailer_autoconfirm=false`) in the public production settings, so
@@ -376,7 +376,25 @@ finding; the absence of `unindexed_foreign_keys` warnings depends on them remain
   `captcha_failed`. No account was created.
 - CONCLUSION: the env mismatch was a real defect and is fixed, but it was not the cause of the
   password-Auth failure. The remaining blocker is unchanged and manual: production Auth CAPTCHA
-  enforcement with no public provider/site key available to this environment. End-to-end signup and
+  enforcement with no public sitekey available to this environment (hCaptcha provider now confirmed). End-to-end signup and
   sign-in therefore remain **NOT PASS**; a headless script cannot solve a CAPTCHA challenge, so the
   final confirmation must be a browser attempt once `VITE_AUTH_CAPTCHA_PROVIDER` and
   `VITE_AUTH_CAPTCHA_SITE_KEY` are configured to match the production Auth CAPTCHA secret.
+
+
+## 2026-09-15 — confirmed hCaptcha provider; public sitekey missing
+
+CURRENT FRONTEND: both environment contexts select `hcaptcha`; canonical production Supabase
+public settings are aligned, including the root browser-facing entries which had drifted.
+No retired project reference remains in active frontend source or Vite configuration.
+The official React hCaptcha widget handles verification, expiration, errors and reset after each
+auth attempt. Email login, username-login v3, signup and password reset all require the token.
+Raw Auth errors are not logged. Tokens stay in React state and are never persisted or telemetered.
+
+MANUAL BLOCKER: **SITEKEY_MISSING**. Accessible environment/public configuration contains no real
+public hCaptcha sitekey. The operator must supply the PUBLIC sitekey, not the secret. The secret
+belongs only in Supabase Auth > Bot and Abuse Protection, per the
+[official guide](https://supabase.com/docs/guides/auth/auth-captcha).
+No production signup, login, session, row-creation or cleanup PASS is claimed this pass; no new
+throwaway account was created. Previously observed email confirmation requirements still apply,
+but were not independently re-tested in this pass. Security Advisor is not claimed to be zero.

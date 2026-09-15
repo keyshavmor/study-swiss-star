@@ -277,8 +277,7 @@ export function AuthForm() {
           properties: { method: identifier.includes("@") ? "email" : "username" },
         },
       );
-      // Raw provider errors are English: log them, show localized copy.
-      if (!localizedMessage(err)) console.error("auth failed", err);
+      // Never log raw Auth errors: provider payloads may contain sensitive request data.
       toast.error(localizedMessage(err) ?? t("auth.authenticationFailed"));
     } finally {
       setIsLoading(false);
