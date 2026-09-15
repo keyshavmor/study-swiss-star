@@ -21,14 +21,18 @@ reset.
 - **Live result, 2026-09-15:** production email/password requests without a CAPTCHA token return
   HTTP 400 / stable code `captcha_failed`. This was reproduced directly with the same
   `@supabase/supabase-js` calls as the app. The rejected signup created no user.
-- **Frontend repair:** email sign-in, signup and reset now fail closed until the configured
-  Turnstile or hCaptcha widget returns a token, then pass it as `options.captchaToken`. The token is
-  React state only: it is cleared after every attempt and is never persisted, logged or sent to
-  telemetry. Username login remains on its server-side v2 endpoint and does not use the browser
-  CAPTCHA.
-- **Public configuration required:** `VITE_AUTH_CAPTCHA_PROVIDER` (`turnstile` or `hcaptcha`) and
-  `VITE_AUTH_CAPTCHA_SITE_KEY`. The matching private CAPTCHA secret stays only in the production
-  Auth dashboard; it must never be placed in a `VITE_*` variable.
+- **Frontend repair:** all four password flows (email sign-in, username sign-in v3, signup,
+  and password reset) require a one-time hCaptcha token. Email Auth uses `captchaToken`;
+  username-login sends `captcha_token`. Tokens remain in React state only and are cleared
+  after every attempt; `@hcaptcha/react-hcaptcha` receives the public sitekey, sets the token
+  through `onVerify`, and calls `resetCaptcha()` after each request. Expiry and errors clear it.
+- **Confirmed provider:** `VITE_AUTH_CAPTCHA_PROVIDER=hcaptcha` in root and frontend environment
+  configuration. **SITEKEY_MISSING:** no real public `VITE_AUTH_CAPTCHA_SITE_KEY` was found in
+  accessible environment/public configuration. Missing configuration fails closed.
+- **Official guidance:** https://supabase.com/docs/guides/auth/auth-captcha — the hCaptcha secret
+  belongs only in production Supabase Auth > Bot and Abuse Protection. The separate public
+  sitekey belongs in both frontend environment contexts. Never substitute the secret for it;
+  never put the secret in source, environment files, documentation, logs, tests, or telemetry.
 - **Sign-up:** `auth.signUp` sends the normalized username plus `account_type_prefill`,
   `date_of_birth_prefill`, and `guardian_email_prefill`; these are metadata hints only. The four
   legal checkboxes remain explicit and are never pre-accepted. The redirect is the public app
@@ -94,10 +98,10 @@ the Lovable-managed project. They remain manual operator tasks:
 - SMTP / mail sender configuration.
 - Password policy: minimum length and leaked-password protection.
 - Auth rate limits.
-- CAPTCHA provider/secret setup and allowed hostnames. The provider and private secret are not
-  exposed by the public settings endpoint. The frontend public provider/site-key variables are
-  currently absent from the Lovable-managed environment, so email sign-in/signup/reset must show
-  the localized configuration error instead of sending another guaranteed-to-fail request.
+- hCaptcha is confirmed by the operator. Its secret configuration and allowed hostnames remain
+  external checks. Supply the separate PUBLIC sitekey for both environment contexts; then solve
+  the challenge in the preview to test production signup, confirmation, email/username login,
+  sessions and sign-out. No new live auth PASS is claimed while the sitekey is missing.
 - OAuth provider enablement and client credentials (Google linking, GitHub, LinkedIn, Spotify), and
   whether manual identity linking is allowed.
 

@@ -1,43 +1,9 @@
 import { useEffect, useRef } from "react";
-import { getAuthCaptchaConfig, type AuthCaptchaProvider } from "@/lib/auth-captcha";
+import HCaptcha from "@hcaptcha/react-hcaptcha";
+import { getAuthCaptchaConfig } from "@/lib/auth-captcha";
 import { useI18n } from "@/lib/i18n/provider";
 
-interface CaptchaApi {
-  render: (
-    container: HTMLElement,
-    options: {
-      sitekey: string;
-      callback: (token: string) => void;
-      "expired-callback": () => void;
-      "error-callback": () => void;
-      theme: "auto";
-    },
-  ) => string | number;
-  remove?: (widgetId: string | number) => void;
-}
-
-declare global {
-  interface Window {
-    turnstile?: CaptchaApi;
-    hcaptcha?: CaptchaApi;
-  }
-}
-
-const SCRIPT_IDS: Record<AuthCaptchaProvider, string> = {
-  turnstile: "alim-auth-turnstile",
-  hcaptcha: "alim-auth-hcaptcha",
-};
-
-const SCRIPT_URLS: Record<AuthCaptchaProvider, string> = {
-  turnstile: "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit",
-  hcaptcha: "https://js.hcaptcha.com/1/api.js?render=explicit",
-};
-
 const AUTH_CAPTCHA_CONFIG = getAuthCaptchaConfig();
-
-function providerApi(provider: AuthCaptchaProvider): CaptchaApi | undefined {
-  return provider === "turnstile" ? window.turnstile : window.hcaptcha;
-}
 
 export function AuthCaptcha({
   onToken,
@@ -47,57 +13,16 @@ export function AuthCaptcha({
   resetNonce: number;
 }) {
   const { t } = useI18n();
-  const containerRef = useRef<HTMLDivElement>(null);
+  const captchaRef = useRef<HCaptcha>(null);
   const onTokenRef = useRef(onToken);
-  const config = AUTH_CAPTCHA_CONFIG;
-  const provider = config?.provider;
-  const siteKey = config?.siteKey;
-
   onTokenRef.current = onToken;
 
   useEffect(() => {
     onTokenRef.current(null);
-    if (!provider || !siteKey || !containerRef.current) return;
+    captchaRef.current?.resetCaptcha();
+  }, [resetNonce]);
 
-    let disposed = false;
-    let widgetId: string | number | undefined;
-    const render = () => {
-      const api = providerApi(provider);
-      const container = containerRef.current;
-      if (disposed || !api || !container) return;
-      container.replaceChildren();
-      widgetId = api.render(container, {
-        sitekey: siteKey,
-        callback: (token) => onTokenRef.current(token),
-        "expired-callback": () => onTokenRef.current(null),
-        "error-callback": () => onTokenRef.current(null),
-        theme: "auto",
-      });
-    };
-
-    const scriptId = SCRIPT_IDS[provider];
-    const existing = document.getElementById(scriptId) as HTMLScriptElement | null;
-    if (providerApi(provider)) render();
-    else if (existing) existing.addEventListener("load", render, { once: true });
-    else {
-      const script = document.createElement("script");
-      script.id = scriptId;
-      script.src = SCRIPT_URLS[provider];
-      script.async = true;
-      script.defer = true;
-      script.addEventListener("load", render, { once: true });
-      document.head.appendChild(script);
-    }
-
-    return () => {
-      disposed = true;
-      const api = providerApi(provider);
-      if (widgetId !== undefined) api?.remove?.(widgetId);
-      existing?.removeEventListener("load", render);
-    };
-  }, [provider, resetNonce, siteKey]);
-
-  if (!config) {
+  if (!AUTH_CAPTCHA_CONFIG || AUTH_CAPTCHA_CONFIG.provider !== "hcaptcha") {
     return (
       <p role="alert" className="text-[13px] text-destructive">
         {t("auth.captchaUnavailable")}
@@ -105,5 +30,19 @@ export function AuthCaptcha({
     );
   }
 
-  return <div ref={containerRef} className="min-h-[65px] overflow-hidden" />;
+  return (
+    <div className="min-h-[65px] overflow-hidden">
+      <HCaptcha
+        ref={captchaRef}
+        sitekey={AUTH_CAPTCHA_CONFIG.siteKey}
+        size="compact"
+        reCaptchaCompat={false}
+        sentry={false}
+        onVerify={(token) => onTokenRef.current(token)}
+        onExpire={() => onTokenRef.current(null)}
+        onChalExpired={() => onTokenRef.current(null)}
+        onError={() => onTokenRef.current(null)}
+      />
+    </div>
+  );
 }

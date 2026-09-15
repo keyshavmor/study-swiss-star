@@ -1,5 +1,5 @@
 /** Public configuration for the production Auth CAPTCHA widget. */
-export type AuthCaptchaProvider = "turnstile" | "hcaptcha";
+export type AuthCaptchaProvider = "hcaptcha";
 
 export interface AuthCaptchaConfig {
   provider: AuthCaptchaProvider;
@@ -16,7 +16,7 @@ export function resolveAuthCaptchaConfig(values: {
 }): AuthCaptchaConfig | null {
   const provider = values.provider?.trim().toLowerCase();
   const siteKey = values.siteKey?.trim();
-  if ((provider !== "turnstile" && provider !== "hcaptcha") || !siteKey) return null;
+  if (provider !== "hcaptcha" || !siteKey) return null;
   return { provider, siteKey };
 }
 
