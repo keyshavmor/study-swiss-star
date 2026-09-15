@@ -25,6 +25,8 @@ import { Route as AuthenticatedAssistantIndexRouteImport } from './routes/_authe
 import { Route as AuthenticatedAssistantThreadIdRouteImport } from './routes/_authenticated/assistant.$threadId'
 import { Route as AuthenticatedChatIndexRouteImport } from './routes/_authenticated/chat.index'
 import { Route as AuthenticatedChatThreadIdRouteImport } from './routes/_authenticated/chat.$threadId'
+import { Route as AuthenticatedOnboardingLanguageRouteImport } from './routes/_authenticated/onboarding.language'
+import { Route as AuthenticatedOnboardingModelRouteImport } from './routes/_authenticated/onboarding.model'
 import { Route as AuthenticatedSchoolIndexRouteImport } from './routes/_authenticated/school.index'
 import { Route as AuthenticatedSchoolSubjectRouteImport } from './routes/_authenticated/school.$subject'
 
@@ -110,6 +112,18 @@ const AuthenticatedChatThreadIdRoute =
     path: '/chat/$threadId',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedOnboardingLanguageRoute =
+  AuthenticatedOnboardingLanguageRouteImport.update({
+    id: '/onboarding/language',
+    path: '/onboarding/language',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedOnboardingModelRoute =
+  AuthenticatedOnboardingModelRouteImport.update({
+    id: '/onboarding/model',
+    path: '/onboarding/model',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedSchoolIndexRoute =
   AuthenticatedSchoolIndexRouteImport.update({
     id: '/school/',
@@ -137,6 +151,8 @@ export interface FileRoutesByFullPath {
   '/auth/update-password': typeof AuthUpdatePasswordRoute
   '/assistant/$threadId': typeof AuthenticatedAssistantThreadIdRoute
   '/chat/$threadId': typeof AuthenticatedChatThreadIdRoute
+  '/onboarding/language': typeof AuthenticatedOnboardingLanguageRoute
+  '/onboarding/model': typeof AuthenticatedOnboardingModelRoute
   '/school/$subject': typeof AuthenticatedSchoolSubjectRoute
   '/assistant/': typeof AuthenticatedAssistantIndexRoute
   '/chat/': typeof AuthenticatedChatIndexRoute
@@ -156,6 +172,8 @@ export interface FileRoutesByTo {
   '/auth/update-password': typeof AuthUpdatePasswordRoute
   '/assistant/$threadId': typeof AuthenticatedAssistantThreadIdRoute
   '/chat/$threadId': typeof AuthenticatedChatThreadIdRoute
+  '/onboarding/language': typeof AuthenticatedOnboardingLanguageRoute
+  '/onboarding/model': typeof AuthenticatedOnboardingModelRoute
   '/school/$subject': typeof AuthenticatedSchoolSubjectRoute
   '/assistant': typeof AuthenticatedAssistantIndexRoute
   '/chat': typeof AuthenticatedChatIndexRoute
@@ -177,6 +195,8 @@ export interface FileRoutesById {
   '/auth/update-password': typeof AuthUpdatePasswordRoute
   '/_authenticated/assistant/$threadId': typeof AuthenticatedAssistantThreadIdRoute
   '/_authenticated/chat/$threadId': typeof AuthenticatedChatThreadIdRoute
+  '/_authenticated/onboarding/language': typeof AuthenticatedOnboardingLanguageRoute
+  '/_authenticated/onboarding/model': typeof AuthenticatedOnboardingModelRoute
   '/_authenticated/school/$subject': typeof AuthenticatedSchoolSubjectRoute
   '/_authenticated/assistant/': typeof AuthenticatedAssistantIndexRoute
   '/_authenticated/chat/': typeof AuthenticatedChatIndexRoute
@@ -198,6 +218,8 @@ export interface FileRouteTypes {
     | '/auth/update-password'
     | '/assistant/$threadId'
     | '/chat/$threadId'
+    | '/onboarding/language'
+    | '/onboarding/model'
     | '/school/$subject'
     | '/assistant/'
     | '/chat/'
@@ -217,6 +239,8 @@ export interface FileRouteTypes {
     | '/auth/update-password'
     | '/assistant/$threadId'
     | '/chat/$threadId'
+    | '/onboarding/language'
+    | '/onboarding/model'
     | '/school/$subject'
     | '/assistant'
     | '/chat'
@@ -237,6 +261,8 @@ export interface FileRouteTypes {
     | '/auth/update-password'
     | '/_authenticated/assistant/$threadId'
     | '/_authenticated/chat/$threadId'
+    | '/_authenticated/onboarding/language'
+    | '/_authenticated/onboarding/model'
     | '/_authenticated/school/$subject'
     | '/_authenticated/assistant/'
     | '/_authenticated/chat/'
@@ -364,6 +390,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedChatThreadIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/onboarding/language': {
+      id: '/_authenticated/onboarding/language'
+      path: '/onboarding/language'
+      fullPath: '/onboarding/language'
+      preLoaderRoute: typeof AuthenticatedOnboardingLanguageRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/onboarding/model': {
+      id: '/_authenticated/onboarding/model'
+      path: '/onboarding/model'
+      fullPath: '/onboarding/model'
+      preLoaderRoute: typeof AuthenticatedOnboardingModelRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/school/': {
       id: '/_authenticated/school/'
       path: '/school'
@@ -391,6 +431,8 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedStatsRoute: typeof AuthenticatedStatsRoute
   AuthenticatedAssistantThreadIdRoute: typeof AuthenticatedAssistantThreadIdRoute
   AuthenticatedChatThreadIdRoute: typeof AuthenticatedChatThreadIdRoute
+  AuthenticatedOnboardingLanguageRoute: typeof AuthenticatedOnboardingLanguageRoute
+  AuthenticatedOnboardingModelRoute: typeof AuthenticatedOnboardingModelRoute
   AuthenticatedSchoolSubjectRoute: typeof AuthenticatedSchoolSubjectRoute
   AuthenticatedAssistantIndexRoute: typeof AuthenticatedAssistantIndexRoute
   AuthenticatedChatIndexRoute: typeof AuthenticatedChatIndexRoute
@@ -407,6 +449,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedStatsRoute: AuthenticatedStatsRoute,
   AuthenticatedAssistantThreadIdRoute: AuthenticatedAssistantThreadIdRoute,
   AuthenticatedChatThreadIdRoute: AuthenticatedChatThreadIdRoute,
+  AuthenticatedOnboardingLanguageRoute: AuthenticatedOnboardingLanguageRoute,
+  AuthenticatedOnboardingModelRoute: AuthenticatedOnboardingModelRoute,
   AuthenticatedSchoolSubjectRoute: AuthenticatedSchoolSubjectRoute,
   AuthenticatedAssistantIndexRoute: AuthenticatedAssistantIndexRoute,
   AuthenticatedChatIndexRoute: AuthenticatedChatIndexRoute,

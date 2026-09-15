@@ -52,7 +52,7 @@ async function callBackend(
         // verified Supabase session before this adapter is called.
         "X-Student-Id": init.studentId,
       },
-      body: init.body === undefined ? undefined : JSON.stringify(init.body),
+      ...(init.body === undefined ? {} : { body: JSON.stringify(init.body) }),
       signal: controller.signal,
     });
     if (!response.ok) return null;
