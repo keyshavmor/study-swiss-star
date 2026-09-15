@@ -334,7 +334,7 @@ FK-covering indexes above, purely because they have not yet accumulated query us
 required foreign-key-covering indexes must NOT be dropped on the basis of a current `unused_index`
 finding; the absence of `unindexed_foreign_keys` warnings depends on them remaining in place.
 
-## 2026-09-15 — urgent production authentication smoke test
+## HISTORICAL (superseded 2026-09-15, see "CAPTCHA removed" below) — urgent production authentication smoke test
 
 - The frontend build remains pinned to the canonical production project URL and matching public
   key. A direct `@supabase/supabase-js` probe reached that project successfully.
@@ -362,6 +362,8 @@ finding; the absence of `unindexed_foreign_keys` warnings depends on them remain
 
 ## Repository environment wiring corrected (2026-09-15)
 
+(CAPTCHA statements in this section are HISTORICAL; see "CAPTCHA removed" below.)
+
 - CURRENT FRONTEND: the repository-root `.env` still targeted the retired Lovable-managed project
   instead of authoritative production `ucacmeadsufiedxrgqit`. All six Supabase entries
   (`SUPABASE_PROJECT_ID`, `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY` and the `VITE_` equivalents)
@@ -382,7 +384,7 @@ finding; the absence of `unindexed_foreign_keys` warnings depends on them remain
   `VITE_AUTH_CAPTCHA_SITE_KEY` are configured to match the production Auth CAPTCHA secret.
 
 
-## 2026-09-15 — confirmed hCaptcha provider; public sitekey missing
+## HISTORICAL (superseded 2026-09-15, see "CAPTCHA removed" below) — confirmed hCaptcha provider; public sitekey missing
 
 CURRENT FRONTEND: both environment contexts select `hcaptcha`; canonical production Supabase
 public settings are aligned, including the root browser-facing entries which had drifted.
@@ -398,3 +400,32 @@ belongs only in Supabase Auth > Bot and Abuse Protection, per the
 No production signup, login, session, row-creation or cleanup PASS is claimed this pass; no new
 throwaway account was created. Previously observed email confirmation requirements still apply,
 but were not independently re-tested in this pass. Security Advisor is not claimed to be zero.
+
+## 2026-09-15 — CAPTCHA removed as an authentication dependency (CURRENT)
+
+CURRENT FRONTEND: the operator no longer uses hCaptcha. All CAPTCHA code, UI, tests and
+environment configuration are removed:
+
+- No CAPTCHA widget in any auth mode (signup, email sign-in, username sign-in, password reset);
+  no `captchaToken`, no `captcha_token`, no `captcha_required` / `captcha_failed` user flow and no
+  fail-closed configuration message.
+- `AuthCaptcha.tsx`, `auth-captcha.ts` and the CAPTCHA-only tests are deleted, and
+  `@hcaptcha/react-hcaptcha` is removed from dependencies.
+- `VITE_AUTH_CAPTCHA_PROVIDER` and `VITE_AUTH_CAPTCHA_SITE_KEY` are removed from the root and
+  frontend env files. The canonical production Supabase URL / project id / public publishable key
+  wiring is unchanged.
+- Email sign-in uses `signInWithPassword({ email, password })`; signup uses
+  `signUp({ email, password, options: { emailRedirectTo, data } })` with the existing username
+  validation/availability preflight and confirm-email handling; reset uses
+  `resetPasswordForEmail(email, { redirectTo })`; `username-login` receives ONLY
+  `{ username, password }` (v4).
+- A challenge-shaped stable code (`captcha_failed`) now maps to the generic localized auth error;
+  raw provider payloads are never shown, logged or telemetered (the OAuth `console.error` of the
+  raw provider error was also removed).
+
+MANUAL RUNTIME PREREQUISITE (NOT INDEPENDENTLY VERIFIED): production Supabase Auth > Bot and Abuse
+Protection must be **disabled**. While it is enabled, Supabase rejects tokenless password signup,
+sign-in and recovery with HTTP 400 / `captcha_failed` (reproduced live earlier this day). Because
+that setting lives outside Lovable source and was not re-verified, **live production auth is NOT
+declared PASS** in this pass; unit tests alone are not treated as evidence. Security Advisor is
+still not claimed to be zero.
