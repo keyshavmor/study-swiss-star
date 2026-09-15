@@ -1,4 +1,5 @@
 /** Pre-submission review drawer and the quit-assessment confirmation. */
+import { useState } from "react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -165,16 +166,7 @@ export function QuitAssessmentDialog({
   );
 }
 
+/** Local open/close state shared by both confirmation dialogs. */
 function useOpenState() {
-  // Small local helper so both dialogs stay self-contained.
-  const [open, setOpen] = useStateBoolean();
-  return [open, setOpen] as const;
+  return useState(false);
 }
-
-function useStateBoolean() {
-  const state = useReactState(false);
-  return state;
-}
-
-// Imported at the bottom to keep the component list readable.
-import { useState as useReactState } from "react";
