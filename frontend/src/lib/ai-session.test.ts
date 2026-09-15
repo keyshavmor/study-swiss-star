@@ -25,13 +25,8 @@ const listeners: unknown[] = [];
   constructor(public type: string) {}
 };
 
-const {
-  clearAiSession,
-  markAiReady,
-  markNonAi,
-  modelGateRequired,
-  readAiSession,
-} = await import("./ai-session");
+const { clearAiSession, markAiReady, markNonAi, modelGateRequired, readAiSession } =
+  await import("./ai-session");
 
 describe("ai session state", () => {
   beforeEach(() => clearAiSession());

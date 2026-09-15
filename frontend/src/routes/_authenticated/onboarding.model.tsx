@@ -103,11 +103,7 @@ function ModelOnboardingPage() {
         </div>
 
         <div className="mt-6 flex flex-wrap justify-center gap-2">
-          <Button
-            size="lg"
-            disabled={ai.status !== "ready"}
-            onClick={() => void continueToApp()}
-          >
+          <Button size="lg" disabled={ai.status !== "ready"} onClick={() => void continueToApp()}>
             {t("onboarding.model.continueToApp")}
           </Button>
           <Button

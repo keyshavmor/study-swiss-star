@@ -74,9 +74,8 @@ export function AuthForm() {
 
   // Enter the startup flow rather than jumping straight to Home.
   const goHome = async () => {
-    const { resolveStartupDestination, invalidateStartupCache } = await import(
-      "@/lib/startup-flow"
-    );
+    const { resolveStartupDestination, invalidateStartupCache } =
+      await import("@/lib/startup-flow");
     invalidateStartupCache();
     await navigate({ to: await resolveStartupDestination(), replace: true });
   };

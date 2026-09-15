@@ -26,7 +26,8 @@ export const onboarding = {
     /* ------------------------------------------------- readiness panel --- */
     "model.label": "Local model",
     "model.placeholder": "Select a model",
-    "model.catalogFallback": "Showing the built-in model list because the catalogue is unavailable.",
+    "model.catalogFallback":
+      "Showing the built-in model list because the catalogue is unavailable.",
     "model.checkPrepare": "Check / prepare model",
     "model.retry": "Retry",
     "model.chooseAnother": "Choose another model",
@@ -120,7 +121,8 @@ export const onboarding = {
     "onboarding.language.hint": "Dies wird deine Standardsprache auf jedem Gerät.",
     "onboarding.language.continue": "Weiter",
     "onboarding.language.saving": "Wird gespeichert…",
-    "onboarding.language.saveError": "Sprache konnte nicht gespeichert werden. Bitte versuche es erneut.",
+    "onboarding.language.saveError":
+      "Sprache konnte nicht gespeichert werden. Bitte versuche es erneut.",
     "onboarding.language.selected": "Ausgewählt",
 
     "onboarding.model.title": "Bereite deine Lern-KI vor",
@@ -133,7 +135,8 @@ export const onboarding = {
 
     "model.label": "Lokales Modell",
     "model.placeholder": "Modell auswählen",
-    "model.catalogFallback": "Zeigt die integrierte Modellliste, da der Katalog nicht verfügbar ist.",
+    "model.catalogFallback":
+      "Zeigt die integrierte Modellliste, da der Katalog nicht verfügbar ist.",
     "model.checkPrepare": "Modell prüfen / vorbereiten",
     "model.retry": "Erneut versuchen",
     "model.chooseAnother": "Anderes Modell wählen",
@@ -154,7 +157,8 @@ export const onboarding = {
     "model.state.backend_unavailable": "Das lokale KI-Backend ist nicht verfügbar",
 
     "model.presentOnDisk": "Bereits auf diesem Gerät heruntergeladen",
-    "model.sharedDownload": "Nutzt einen vorhandenen Download — die Modelldatei wird nicht dupliziert.",
+    "model.sharedDownload":
+      "Nutzt einen vorhandenen Download — die Modelldatei wird nicht dupliziert.",
     "model.downloadInProgress": "Für dieses Modell läuft bereits ein Download.",
     "model.activeUsers": "Aktive Nutzer: {count}",
 
@@ -224,7 +228,8 @@ export const onboarding = {
     "onboarding.language.hint": "Das wird dini Standardsprach uf jedem Gerät.",
     "onboarding.language.continue": "Wiiter",
     "onboarding.language.saving": "Wird gspeicheret…",
-    "onboarding.language.saveError": "Sprach het nid chönne gspeicheret werde. Bitte versuechs nomol.",
+    "onboarding.language.saveError":
+      "Sprach het nid chönne gspeicheret werde. Bitte versuechs nomol.",
     "onboarding.language.selected": "Usgwählt",
 
     "onboarding.model.title": "Bereit dini Lern-KI vor",
@@ -441,11 +446,13 @@ export const onboarding = {
     "onboarding.model.continueToApp": "Continuar a la aplicación",
     "onboarding.model.continueWithoutAi": "Continuar sin IA",
     "onboarding.model.logout": "Cerrar sesión",
-    "onboarding.model.sessionNote": "La disponibilidad de la IA se comprueba una vez por sesión del navegador.",
+    "onboarding.model.sessionNote":
+      "La disponibilidad de la IA se comprueba una vez por sesión del navegador.",
 
     "model.label": "Modelo local",
     "model.placeholder": "Selecciona un modelo",
-    "model.catalogFallback": "Se muestra la lista de modelos integrada porque el catálogo no está disponible.",
+    "model.catalogFallback":
+      "Se muestra la lista de modelos integrada porque el catálogo no está disponible.",
     "model.checkPrepare": "Comprobar / preparar modelo",
     "model.retry": "Reintentar",
     "model.chooseAnother": "Elegir otro modelo",
@@ -466,7 +473,8 @@ export const onboarding = {
     "model.state.backend_unavailable": "El backend local de IA no está disponible",
 
     "model.presentOnDisk": "Ya descargado en este equipo",
-    "model.sharedDownload": "Se comparte una descarga existente — el archivo del modelo no se duplica.",
+    "model.sharedDownload":
+      "Se comparte una descarga existente — el archivo del modelo no se duplica.",
     "model.downloadInProgress": "Ya hay una descarga en curso para este modelo.",
     "model.activeUsers": "Usuarios activos: {count}",
 
@@ -490,7 +498,8 @@ export const onboarding = {
     "model.reason.insufficient_gpu_vram": "No hay suficiente memoria de GPU libre.",
     "model.reason.insufficient_ram": "No hay suficiente memoria del sistema libre.",
     "model.reason.model_load_failed": "No se pudo cargar el modelo.",
-    "model.reason.model_process_limit": "El backend ya está ejecutando demasiados procesos de modelos.",
+    "model.reason.model_process_limit":
+      "El backend ya está ejecutando demasiados procesos de modelos.",
     "model.reason.unknown": "El backend informó de un problema desconocido.",
 
     "model.warning.cannotStart": "La IA no puede iniciarse de forma segura ahora mismo",
@@ -522,7 +531,8 @@ export const onboarding = {
       "Cuando el almacenamiento de la plataforma alcanza el 90% de uso, se eliminan los materiales de estudio y los archivos adjuntos de chat más antiguos de todas las cuentas hasta aproximadamente el 80% de uso. Esto se ejecuta automáticamente y no se puede desactivar.",
     "settings.storage.capacity.excluded":
       "Las fotos de perfil, tu cuenta y tus preferencias nunca se eliminan con esta limpieza.",
-    "settings.storage.capacity.warning": "El almacenamiento de la plataforma está al {percent}% de uso",
+    "settings.storage.capacity.warning":
+      "El almacenamiento de la plataforma está al {percent}% de uso",
     "settings.storage.capacity.warningBody":
       "La limpieza de los archivos más antiguos de todas las cuentas se habilita al 90% de uso y apunta al 80%.",
     "settings.storage.capacity.manual": "Ejecutar limpieza de capacidad ahora",
@@ -545,11 +555,13 @@ export const onboarding = {
     "onboarding.model.continueToApp": "Continuer vers l'application",
     "onboarding.model.continueWithoutAi": "Continuer sans IA",
     "onboarding.model.logout": "Se déconnecter",
-    "onboarding.model.sessionNote": "La disponibilité de l'IA est vérifiée une fois par session de navigateur.",
+    "onboarding.model.sessionNote":
+      "La disponibilité de l'IA est vérifiée une fois par session de navigateur.",
 
     "model.label": "Modèle local",
     "model.placeholder": "Sélectionner un modèle",
-    "model.catalogFallback": "Affichage de la liste de modèles intégrée car le catalogue n'est pas disponible.",
+    "model.catalogFallback":
+      "Affichage de la liste de modèles intégrée car le catalogue n'est pas disponible.",
     "model.checkPrepare": "Vérifier / préparer le modèle",
     "model.retry": "Réessayer",
     "model.chooseAnother": "Choisir un autre modèle",
@@ -570,7 +582,8 @@ export const onboarding = {
     "model.state.backend_unavailable": "Le backend d'IA local n'est pas disponible",
 
     "model.presentOnDisk": "Déjà téléchargé sur cet appareil",
-    "model.sharedDownload": "Partage d'un téléchargement existant — le fichier du modèle n'est pas dupliqué.",
+    "model.sharedDownload":
+      "Partage d'un téléchargement existant — le fichier du modèle n'est pas dupliqué.",
     "model.downloadInProgress": "Un téléchargement pour ce modèle est déjà en cours.",
     "model.activeUsers": "Utilisateurs actifs : {count}",
 
@@ -649,11 +662,13 @@ export const onboarding = {
     "onboarding.model.continueToApp": "Continua verso l'app",
     "onboarding.model.continueWithoutAi": "Continua senza IA",
     "onboarding.model.logout": "Esci",
-    "onboarding.model.sessionNote": "La disponibilità dell'IA viene verificata una volta per sessione del browser.",
+    "onboarding.model.sessionNote":
+      "La disponibilità dell'IA viene verificata una volta per sessione del browser.",
 
     "model.label": "Modello locale",
     "model.placeholder": "Seleziona un modello",
-    "model.catalogFallback": "Viene mostrato l'elenco di modelli integrato perché il catalogo non è disponibile.",
+    "model.catalogFallback":
+      "Viene mostrato l'elenco di modelli integrato perché il catalogo non è disponibile.",
     "model.checkPrepare": "Verifica / prepara il modello",
     "model.retry": "Riprova",
     "model.chooseAnother": "Scegli un altro modello",
@@ -674,7 +689,8 @@ export const onboarding = {
     "model.state.backend_unavailable": "Il backend IA locale non è disponibile",
 
     "model.presentOnDisk": "Già scaricato su questo dispositivo",
-    "model.sharedDownload": "Condivisione di un download esistente — il file del modello non viene duplicato.",
+    "model.sharedDownload":
+      "Condivisione di un download esistente — il file del modello non viene duplicato.",
     "model.downloadInProgress": "Un download per questo modello è già in corso.",
     "model.activeUsers": "Utenti attivi: {count}",
 
@@ -730,7 +746,8 @@ export const onboarding = {
       "Quando l'archiviazione della piattaforma raggiunge il 90% di utilizzo, i materiali di studio e gli allegati della chat più vecchi di tutti gli account vengono rimossi fino a circa l'80% di utilizzo. Questo avviene automaticamente e non può essere disattivato.",
     "settings.storage.capacity.excluded":
       "Le immagini del profilo, il tuo account e le tue preferenze non vengono mai rimossi da questa pulizia.",
-    "settings.storage.capacity.warning": "L'archiviazione della piattaforma è al {percent}% di utilizzo",
+    "settings.storage.capacity.warning":
+      "L'archiviazione della piattaforma è al {percent}% di utilizzo",
     "settings.storage.capacity.warningBody":
       "La pulizia dei file più vecchi su tutti gli account diventa possibile al 90% di utilizzo e punta all'80%.",
     "settings.storage.capacity.manual": "Esegui ora la pulizia della capacità",

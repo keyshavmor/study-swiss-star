@@ -44,7 +44,10 @@ async function readPolicy(supabase: SupabaseLike): Promise<AiRuntimePolicy> {
       ready_storage_free_percent: pick("ready_storage_free_percent", 30),
       check_active_users: flag("check_active_users", true),
       deduplicate_model_downloads: flag("deduplicate_model_downloads", true),
-      allow_parallel_per_user_model_processes: flag("allow_parallel_per_user_model_processes", true),
+      allow_parallel_per_user_model_processes: flag(
+        "allow_parallel_per_user_model_processes",
+        true,
+      ),
     };
   } catch {
     return DEFAULT_AI_RUNTIME_POLICY;

@@ -129,7 +129,10 @@ export function isBlockingReason(value: unknown): value is ModelBlockingReason {
 /** Terminal states: polling must stop. */
 export function isTerminalState(state: ModelPrepareState): boolean {
   return (
-    state === "ready" || state === "failed" || state === "blocked" || state === "backend_unavailable"
+    state === "ready" ||
+    state === "failed" ||
+    state === "blocked" ||
+    state === "backend_unavailable"
   );
 }
 
@@ -137,7 +140,8 @@ export function isTerminalState(state: ModelPrepareState): boolean {
  * Semantic surface used by the UI. GREEN ready, AMBER retryable/queued,
  * ORANGE resource pressure, RED blocked/failed/unavailable.
  */
-export type ModelStatusTone = "neutral" | "progress" | "success" | "warning" | "degraded" | "danger";
+export type ModelStatusTone =
+  "neutral" | "progress" | "success" | "warning" | "degraded" | "danger";
 
 export function toneForStatus(status: ModelPreparationStatus): ModelStatusTone {
   switch (status.state) {

@@ -24,7 +24,9 @@ describe("model catalog", () => {
 
   it("prefers the Supabase catalog", async () => {
     response = {
-      data: [{ model_id: "Qwen/Qwen3.8-27B", display_name: "Qwen 27B", enabled: true, sort_order: 1 }],
+      data: [
+        { model_id: "Qwen/Qwen3.8-27B", display_name: "Qwen 27B", enabled: true, sort_order: 1 },
+      ],
       error: null,
     };
     const result = await fetchModelCatalog();

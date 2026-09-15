@@ -41,9 +41,7 @@ export async function languageOnboardingCompleted(): Promise<boolean> {
 }
 
 export type StartupDestination =
-  | typeof LANGUAGE_ONBOARDING_PATH
-  | typeof MODEL_ONBOARDING_PATH
-  | typeof HOME_PATH;
+  typeof LANGUAGE_ONBOARDING_PATH | typeof MODEL_ONBOARDING_PATH | typeof HOME_PATH;
 
 /** Where an authenticated user belongs right now. */
 export async function resolveStartupDestination(): Promise<StartupDestination> {

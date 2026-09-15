@@ -120,7 +120,9 @@ function ResourceCard({
         )}
       >
         {known
-          ? t("model.resource.free", { percent: formatNumber(percent, { maximumFractionDigits: 0 }) })
+          ? t("model.resource.free", {
+              percent: formatNumber(percent, { maximumFractionDigits: 0 }),
+            })
           : t("model.resource.unknown")}
       </p>
       {measurement.free_bytes !== null && measurement.total_bytes !== null && (
@@ -278,7 +280,12 @@ export function ModelReadinessPanel({
       status.state === "backend_unavailable");
 
   const floors = useMemo(
-    () => status?.runtime_floors ?? { gpu_free_percent: 30, ram_free_percent: 25, storage_free_percent: 30 },
+    () =>
+      status?.runtime_floors ?? {
+        gpu_free_percent: 30,
+        ram_free_percent: 25,
+        storage_free_percent: 30,
+      },
     [status],
   );
 
@@ -320,9 +327,7 @@ export function ModelReadinessPanel({
         <div className="min-w-[220px] space-y-1">
           <p className={cn("text-[16px] font-semibold", TONE_TEXT[tone])}>{phaseLabel}</p>
           {status?.progress_percent === null && running && (
-            <p className="text-[13px] text-muted-foreground">
-              {t("model.progress.indeterminate")}
-            </p>
+            <p className="text-[13px] text-muted-foreground">{t("model.progress.indeterminate")}</p>
           )}
           {status?.model_present_on_disk === true && (
             <p className="text-[13px] text-muted-foreground">{t("model.presentOnDisk")}</p>

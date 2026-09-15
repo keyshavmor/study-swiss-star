@@ -34,7 +34,6 @@ export type AiRuntimePolicyRow = {
   allow_parallel_per_user_model_processes: boolean;
 };
 
-
 export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "14.5";

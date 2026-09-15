@@ -61,9 +61,10 @@ const FALLBACK: AiAvailabilityValue = {
 
 export function AiAvailabilityProvider({ children }: { children: ReactNode }) {
   const [transient, setTransient] = useState<"preparing" | "unavailable" | null>(null);
-  const [session, setSession] = useState<{ mode: "ai-ready" | "non-ai"; modelId: string | null } | null>(
-    null,
-  );
+  const [session, setSession] = useState<{
+    mode: "ai-ready" | "non-ai";
+    modelId: string | null;
+  } | null>(null);
 
   const sync = useCallback(() => {
     const current = readAiSession();

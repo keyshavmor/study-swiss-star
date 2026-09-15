@@ -19,9 +19,7 @@ export function AiUnavailableNotice({ compact = false }: { compact?: boolean }) 
   if (ai.aiEnabled || ai.status === "preparing") return null;
 
   if (compact) {
-    return (
-      <p className="text-[13px] text-muted-foreground">{t("ai.unavailable.short")}</p>
-    );
+    return <p className="text-[13px] text-muted-foreground">{t("ai.unavailable.short")}</p>;
   }
 
   return (
