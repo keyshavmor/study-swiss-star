@@ -253,3 +253,35 @@ before DB rows, caller-only, no target-user-id parameter accepted). See
 no claim of GDPR or any other regulatory certification; lawful basis, DPAs, records of processing,
 breach procedures, jurisdictional guardian-consent rules and cookie/ePrivacy analysis are
 organisational decisions outside what frontend code can establish.
+
+## 2026-09-15 — live-schema mismatch corrective pass (Lovable-managed frontend only)
+
+Verified against production Supabase project `ucacmeadsufiedxrgqit` on 2026-09-15. These edits
+exist in the Lovable-managed project state only; no claim is made that they are on any GitHub
+branch, and no backend/Python code was touched.
+
+| # | Stale assumption (before) | Live truth (now consumed) |
+| - | - | - |
+| 1 | `peer_conversations.last_message_at`, `kind` | Columns do not exist. Lists sort by `updated_at`; type is `conversation_type`. |
+| 2 | `peer_messages.sender_id`, `safety_verdict` | Live columns are `sender_user_id`, `moderation_status`, `moderation_event_id`. |
+| 3 | `peer_message_attachments.owner_id`, `scan_status` | Live column is `owner_user_id`; there is no `scan_status` — pending state derives from the parent message's `moderation_status`. |
+| 4 | `get_or_create_direct_peer_conversation` returns a string | Returns a ROW SET (`conversation_id, peer_user_id, peer_username, peer_preferred_name`); the frontend extracts `conversation_id` and caches the peer label. |
+| 5 | `mark_peer_conversation_read` returns an id | Returns `void`. |
+| 6 | Flat health columns (`object_storage_used_bytes`, …) | `get_user_visible_supabase_health()` returns one JSON object with nested `object_storage`, `database`, `bandwidth`, `realtime`, `edge_functions` groups. Missing keys render "Not exposed", never `0`. |
+| 7 | Ad-hoc data-summary counts | `get_my_data_summary()` returns exactly `peer_messages, peer_attachments, peer_attachment_bytes, assistant_messages, assistant_attachments, assistant_attachment_bytes, study_chat_messages, documents, document_bytes, planner_events, feedback_items`. |
+| 8 | `user_legal_consents.document_kind` | Live columns: `document_type, document_version, accepted_at, withdrawn_at, consent_source, created_at`. |
+| 9 | `complete_account_compliance_onboarding` returns void/text | Returns JSONB. |
+| 10 | Raw provider `error.message` shown in auth UI | `frontend/src/lib/auth-errors.ts` maps stable Supabase `code`/HTTP status to localized copy in all seven languages; raw messages are never displayed. Username login stays generic and never reveals the account email. |
+| 11 | Signup assumed an immediate session | Signup inspects `data.session`: session → `resolveStartupDestination()`; no session → localized confirm-email state, back to sign-in. |
+| 12 | `/auth/update-password` assumed a valid link and `/home` | Requires a recovery/auth session, shows a localized invalid/expired-link state otherwise, and after update invalidates startup state and routes via `resolveStartupDestination()`. |
+| 13 | Signed-out telemetry could call `activity-log` for any event | Only the six whitelisted anonymous pre-session auth events are sent; identifiers, credentials, tokens and raw form values are stripped. |
+
+Production migration `harden_auth_peer_rpcs_and_signup_defaults` is live: the auth trigger creates
+username, default preferences and an empty `account_compliance` row, and signup role/DOB/guardian
+values remain auth-metadata prefills until validated on `/onboarding/compliance` (legal checkboxes
+are never auto-accepted).
+
+**NOT VERIFIABLE FROM HERE:** external Supabase Auth dashboard settings — email confirmation
+on/off, redirect/site URL allow-list, password minimum length and leaked-password protection,
+rate-limit values, SMTP sender, and OAuth provider client credentials. These must be confirmed by a
+human with project console access.

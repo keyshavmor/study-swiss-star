@@ -1,6 +1,6 @@
 Document status: CURRENT
-Generated from: current Lovable project · GitHub main (keyshavmor/study-swiss-star) · live Supabase project ucacmeadsufiedxrgqit
-Last verified: 2026-09-14 (UTC)
+Generated from: current Lovable-managed project state · live Supabase project ucacmeadsufiedxrgqit (these Lovable-only edits are NOT claimed to be on any GitHub branch)
+Production Supabase verified: 2026-09-15 (UTC)
 Frontend commit: e0ef3464557d4786d214accb0d1bf44082ae3466
 
 # Database schema
@@ -272,8 +272,15 @@ allowed; explicit/graphic/instructional/glorifying content unsuitable for minors
 
 **Peer messaging (CURRENT SUPABASE reads; sends are EXPECTED LOCAL BACKEND CONTRACT):** exact
 username discovery only (`find_peer_by_exact_username`, no directory);
-`get_or_create_direct_peer_conversation`, `mark_peer_conversation_read`; tables
-`peer_conversations`, `peer_conversation_members`, `peer_messages`, `peer_message_attachments`,
+`get_or_create_direct_peer_conversation(p_username)` (returns a ROW SET of
+`conversation_id, peer_user_id, peer_username, peer_preferred_name` — NOT a bare id string) and
+`mark_peer_conversation_read(p_conversation_id)` (returns `void`); tables
+`peer_conversations` (`id, conversation_type, created_by, direct_key, title, created_at,
+updated_at` — there is NO `kind` and NO `last_message_at`; lists sort by `updated_at`),
+`peer_conversation_members` (`conversation_id, user_id, member_role, joined_at, last_read_at,
+muted, left_at`), `peer_messages` (`sender_user_id`, `moderation_status`, `moderation_event_id` —
+there is NO `sender_id` and NO `safety_verdict`), `peer_message_attachments` (`owner_user_id`,
+with NO `scan_status` column: openability follows the parent message's `moderation_status`),
 `peer_message_notifications`, all RLS-scoped by membership. Direct client writes to messages and
 attachments are intentionally disabled — only the local backend, after an `allow` verdict, may
 persist them via `sendPeerMessage`. Attachments: private bucket `peer-message-attachments`, hard
@@ -303,8 +310,22 @@ temporary local artifacts when the browser closes mid-flight is **not implemente
 this repository. See `sequences/RELEASE_MY_MODEL.mmd`,
 `sequences/SIGNOUT_RUNTIME_RELEASE_LEASE_TTL_FALLBACK.mmd`.
 
-**Data rights (CURRENT SUPABASE):** `get_user_visible_supabase_health()` (unsupported quotas
-reported as `not_exposed_by_sql`, never invented), `get_my_data_summary()`, and the JWT-protected
+**Data rights (CURRENT SUPABASE, verified 2026-09-15):** `get_user_visible_supabase_health()`
+returns ONE JSON object with the nested groups `object_storage{used_bytes, quota_bytes,
+remaining_bytes, used_percent, cleanup_trigger_used_percent, cleanup_target_used_percent}`,
+`database{used_bytes, quota_bytes, used_percent}`, `bandwidth{used_bytes, quota_bytes,
+used_percent, status}`, `realtime{usage, quota, status}` and `edge_functions{usage, quota,
+status}`; an absent group/key or a `not_exposed_by_sql` status renders as "Not exposed" and is
+NEVER coerced to 0. `get_my_data_summary()` returns ONE JSON object with exactly
+`peer_messages, peer_attachments, peer_attachment_bytes, assistant_messages,
+assistant_attachments, assistant_attachment_bytes, study_chat_messages, documents, document_bytes,
+planner_events, feedback_items`. `user_legal_consents` uses `document_type, document_version,
+accepted_at, withdrawn_at, consent_source, created_at` (there is NO `document_kind`), and
+`complete_account_compliance_onboarding(...)` returns JSONB. The migration
+`harden_auth_peer_rpcs_and_signup_defaults` is live: the auth trigger creates the username,
+default preferences and an empty `account_compliance` row, while signup role/DOB/guardian values
+remain auth-metadata prefills (`account_type_prefill`, `date_of_birth_prefill`,
+`guardian_email_prefill`) until validated on `/onboarding/compliance`. Also the JWT-protected
 Edge Function `delete-my-data` (`range | all_content | delete_account`, Storage objects deleted
 before DB rows, caller-only, no target-user-id parameter accepted). See
 `sequences/DELETE_MY_DATA_RANGE.mmd`, `sequences/DELETE_MY_DATA_ALL_CONTENT_KEEP_ACCOUNT.mmd`,

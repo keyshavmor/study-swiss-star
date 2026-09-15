@@ -90,7 +90,7 @@ call `useI18n()`.
 
 ## Which components/routes use which helper (verified with `rg`)
 
-Verified 2026-09-14 by `rg -n "format(Date|Time|Weekday|Month|Number)"` across
+Verified 2026-09-15 by `rg -n "format(Date|Time|Weekday|Month|Number)"` across
 `frontend/src`:
 
 | Helper | Used in |
