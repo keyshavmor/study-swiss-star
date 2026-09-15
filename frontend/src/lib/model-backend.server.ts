@@ -37,9 +37,9 @@ function timeoutMs(): number {
   return Number(process.env["ALIM_MODEL_BACKEND_TIMEOUT_MS"] ?? 15_000);
 }
 
-async function callBackend(
+export async function callBackend(
   path: string,
-  init: { method: "GET" | "POST"; body?: unknown; studentId: string },
+  init: { method: "GET" | "POST"; body?: unknown; accessToken: string; studentId: string },
 ): Promise<unknown | null> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs());
@@ -48,8 +48,11 @@ async function callBackend(
       method: init.method,
       headers: {
         "Content-Type": "application/json",
-        // Context hint only. Authorization is established server-side from the
-        // verified Supabase session before this adapter is called.
+        // AUTHORIZATION BOUNDARY: the caller's verified Supabase access token is
+        // forwarded server-to-server. It is never logged, persisted or sent to
+        // telemetry, and no service-role key is used here.
+        Authorization: `Bearer ${init.accessToken}`,
+        // Context / cross-check only — never an authentication mechanism.
         "X-Student-Id": init.studentId,
       },
       ...(init.body === undefined ? {} : { body: JSON.stringify(init.body) }),
@@ -152,12 +155,14 @@ export function normaliseStatus(
 
 /** Starts or joins preparation of `modelId`. */
 export async function prepareModelOnBackend(input: {
+  accessToken: string;
   studentId: string;
   modelId: string;
   policy: AiRuntimePolicy;
 }): Promise<ModelPreparationStatus> {
   const payload = await callBackend(MODEL_BACKEND_ENDPOINTS.prepare, {
     method: "POST",
+    accessToken: input.accessToken,
     studentId: input.studentId,
     body: {
       model_id: input.modelId,
@@ -179,7 +184,7 @@ export async function prepareModelOnBackend(input: {
     // Backward compatibility: fall back to the older readiness probe.
     const legacy = await callBackend(
       `${MODEL_BACKEND_ENDPOINTS.status}?model_id=${encodeURIComponent(input.modelId)}`,
-      { method: "GET", studentId: input.studentId },
+      { method: "GET", accessToken: input.accessToken, studentId: input.studentId },
     );
     return normaliseStatus(legacy, input.modelId, input.policy);
   }
@@ -188,6 +193,7 @@ export async function prepareModelOnBackend(input: {
 
 /** Polls one preparation operation. */
 export async function pollModelOperationOnBackend(input: {
+  accessToken: string;
   studentId: string;
   modelId: string;
   operationId: string;
@@ -195,7 +201,7 @@ export async function pollModelOperationOnBackend(input: {
 }): Promise<ModelPreparationStatus> {
   const payload = await callBackend(
     `${MODEL_BACKEND_ENDPOINTS.operation}/${encodeURIComponent(input.operationId)}`,
-    { method: "GET", studentId: input.studentId },
+    { method: "GET", accessToken: input.accessToken, studentId: input.studentId },
   );
   return normaliseStatus(payload, input.modelId, input.policy);
 }
