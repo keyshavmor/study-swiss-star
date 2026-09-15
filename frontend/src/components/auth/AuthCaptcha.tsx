@@ -50,22 +50,24 @@ export function AuthCaptcha({
   const containerRef = useRef<HTMLDivElement>(null);
   const onTokenRef = useRef(onToken);
   const config = AUTH_CAPTCHA_CONFIG;
+  const provider = config?.provider;
+  const siteKey = config?.siteKey;
 
   onTokenRef.current = onToken;
 
   useEffect(() => {
     onTokenRef.current(null);
-    if (!config || !containerRef.current) return;
+    if (!provider || !siteKey || !containerRef.current) return;
 
     let disposed = false;
     let widgetId: string | number | undefined;
     const render = () => {
-      const api = providerApi(config.provider);
+      const api = providerApi(provider);
       const container = containerRef.current;
       if (disposed || !api || !container) return;
       container.replaceChildren();
       widgetId = api.render(container, {
-        sitekey: config.siteKey,
+        sitekey: siteKey,
         callback: (token) => onTokenRef.current(token),
         "expired-callback": () => onTokenRef.current(null),
         "error-callback": () => onTokenRef.current(null),
@@ -73,14 +75,14 @@ export function AuthCaptcha({
       });
     };
 
-    const scriptId = SCRIPT_IDS[config.provider];
+    const scriptId = SCRIPT_IDS[provider];
     const existing = document.getElementById(scriptId) as HTMLScriptElement | null;
-    if (providerApi(config.provider)) render();
+    if (providerApi(provider)) render();
     else if (existing) existing.addEventListener("load", render, { once: true });
     else {
       const script = document.createElement("script");
       script.id = scriptId;
-      script.src = SCRIPT_URLS[config.provider];
+      script.src = SCRIPT_URLS[provider];
       script.async = true;
       script.defer = true;
       script.addEventListener("load", render, { once: true });
@@ -89,11 +91,11 @@ export function AuthCaptcha({
 
     return () => {
       disposed = true;
-      const api = providerApi(config.provider);
+      const api = providerApi(provider);
       if (widgetId !== undefined) api?.remove?.(widgetId);
       existing?.removeEventListener("load", render);
     };
-  }, [config?.provider, config?.siteKey, resetNonce]);
+  }, [provider, resetNonce, siteKey]);
 
   if (!config) {
     return (
