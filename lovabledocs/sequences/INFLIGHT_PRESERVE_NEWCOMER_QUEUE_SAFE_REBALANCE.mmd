@@ -1,0 +1,17 @@
+%% Status: EXPECTED LOCAL BACKEND CONTRACT
+%% Source: frontend/src/lib/system-admission.types.ts (preserve_inflight_requests, queue_new_allocations_while_rebalancing)
+sequenceDiagram
+    participant ExistingUser as Existing user (in-flight request)
+    participant NewUser as New user (admission check)
+    participant Backend as EXPECTED local backend
+
+    ExistingUser->>Backend: active generation request in progress
+    NewUser->>Backend: admission check while system is rebalancing
+    Backend->>Backend: rebalance_in_progress = true
+    Backend->>Backend: preserve_inflight_requests = true → ExistingUser's request is NOT interrupted
+    Backend->>Backend: queue_new_allocations_while_rebalancing = true
+    Backend-->>NewUser: state = queued, queue_position, queue_size
+    Backend-->>ExistingUser: request completes normally
+    Backend->>Backend: rebalance completes → capacity re-evaluated
+    Backend-->>NewUser: next check may return admitted
+    Note over Backend: BACKEND TODO FOR CODEX: real queueing/rebalancing engine not implemented in this repo.

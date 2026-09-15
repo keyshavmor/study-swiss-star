@@ -19,14 +19,24 @@ import { Route as AuthenticatedPlannerRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedStatsRouteImport } from './routes/_authenticated/stats'
+import { Route as AuthenticatedSystemHealthRouteImport } from './routes/_authenticated/system-health'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
 import { Route as AuthUpdatePasswordRouteImport } from './routes/auth.update-password'
+import { Route as LegalAcceptableUseRouteImport } from './routes/legal.acceptable-use'
+import { Route as LegalChildSafetyRouteImport } from './routes/legal.child-safety'
+import { Route as LegalPrivacyRouteImport } from './routes/legal.privacy'
+import { Route as LegalTermsRouteImport } from './routes/legal.terms'
+import { Route as AuthenticatedAccountSuspendedRouteImport } from './routes/_authenticated/account.suspended'
 import { Route as AuthenticatedAssistantIndexRouteImport } from './routes/_authenticated/assistant.index'
 import { Route as AuthenticatedAssistantThreadIdRouteImport } from './routes/_authenticated/assistant.$threadId'
 import { Route as AuthenticatedChatIndexRouteImport } from './routes/_authenticated/chat.index'
 import { Route as AuthenticatedChatThreadIdRouteImport } from './routes/_authenticated/chat.$threadId'
+import { Route as AuthenticatedMessagesIndexRouteImport } from './routes/_authenticated/messages.index'
+import { Route as AuthenticatedMessagesConversationIdRouteImport } from './routes/_authenticated/messages.$conversationId'
+import { Route as AuthenticatedOnboardingComplianceRouteImport } from './routes/_authenticated/onboarding.compliance'
 import { Route as AuthenticatedOnboardingLanguageRouteImport } from './routes/_authenticated/onboarding.language'
 import { Route as AuthenticatedOnboardingModelRouteImport } from './routes/_authenticated/onboarding.model'
+import { Route as AuthenticatedOnboardingSystemAdmissionRouteImport } from './routes/_authenticated/onboarding.system-admission'
 import { Route as AuthenticatedSchoolIndexRouteImport } from './routes/_authenticated/school.index'
 import { Route as AuthenticatedSchoolSubjectRouteImport } from './routes/_authenticated/school.$subject'
 
@@ -79,6 +89,12 @@ const AuthenticatedStatsRoute = AuthenticatedStatsRouteImport.update({
   path: '/stats',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedSystemHealthRoute =
+  AuthenticatedSystemHealthRouteImport.update({
+    id: '/system-health',
+    path: '/system-health',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const ApiChatRoute = ApiChatRouteImport.update({
   id: '/api/chat',
   path: '/api/chat',
@@ -89,6 +105,32 @@ const AuthUpdatePasswordRoute = AuthUpdatePasswordRouteImport.update({
   path: '/update-password',
   getParentRoute: () => AuthRoute,
 } as any)
+const LegalAcceptableUseRoute = LegalAcceptableUseRouteImport.update({
+  id: '/legal/acceptable-use',
+  path: '/legal/acceptable-use',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LegalChildSafetyRoute = LegalChildSafetyRouteImport.update({
+  id: '/legal/child-safety',
+  path: '/legal/child-safety',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LegalPrivacyRoute = LegalPrivacyRouteImport.update({
+  id: '/legal/privacy',
+  path: '/legal/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LegalTermsRoute = LegalTermsRouteImport.update({
+  id: '/legal/terms',
+  path: '/legal/terms',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedAccountSuspendedRoute =
+  AuthenticatedAccountSuspendedRouteImport.update({
+    id: '/account/suspended',
+    path: '/account/suspended',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAssistantIndexRoute =
   AuthenticatedAssistantIndexRouteImport.update({
     id: '/assistant/',
@@ -112,6 +154,24 @@ const AuthenticatedChatThreadIdRoute =
     path: '/chat/$threadId',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedMessagesIndexRoute =
+  AuthenticatedMessagesIndexRouteImport.update({
+    id: '/messages/',
+    path: '/messages/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedMessagesConversationIdRoute =
+  AuthenticatedMessagesConversationIdRouteImport.update({
+    id: '/messages/$conversationId',
+    path: '/messages/$conversationId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedOnboardingComplianceRoute =
+  AuthenticatedOnboardingComplianceRouteImport.update({
+    id: '/onboarding/compliance',
+    path: '/onboarding/compliance',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedOnboardingLanguageRoute =
   AuthenticatedOnboardingLanguageRouteImport.update({
     id: '/onboarding/language',
@@ -122,6 +182,12 @@ const AuthenticatedOnboardingModelRoute =
   AuthenticatedOnboardingModelRouteImport.update({
     id: '/onboarding/model',
     path: '/onboarding/model',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedOnboardingSystemAdmissionRoute =
+  AuthenticatedOnboardingSystemAdmissionRouteImport.update({
+    id: '/onboarding/system-admission',
+    path: '/onboarding/system-admission',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedSchoolIndexRoute =
@@ -147,15 +213,25 @@ export interface FileRoutesByFullPath {
   '/profile': typeof AuthenticatedProfileRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/stats': typeof AuthenticatedStatsRoute
+  '/system-health': typeof AuthenticatedSystemHealthRoute
   '/api/chat': typeof ApiChatRoute
   '/auth/update-password': typeof AuthUpdatePasswordRoute
+  '/legal/acceptable-use': typeof LegalAcceptableUseRoute
+  '/legal/child-safety': typeof LegalChildSafetyRoute
+  '/legal/privacy': typeof LegalPrivacyRoute
+  '/legal/terms': typeof LegalTermsRoute
+  '/account/suspended': typeof AuthenticatedAccountSuspendedRoute
   '/assistant/$threadId': typeof AuthenticatedAssistantThreadIdRoute
   '/chat/$threadId': typeof AuthenticatedChatThreadIdRoute
+  '/messages/$conversationId': typeof AuthenticatedMessagesConversationIdRoute
+  '/onboarding/compliance': typeof AuthenticatedOnboardingComplianceRoute
   '/onboarding/language': typeof AuthenticatedOnboardingLanguageRoute
   '/onboarding/model': typeof AuthenticatedOnboardingModelRoute
+  '/onboarding/system-admission': typeof AuthenticatedOnboardingSystemAdmissionRoute
   '/school/$subject': typeof AuthenticatedSchoolSubjectRoute
   '/assistant/': typeof AuthenticatedAssistantIndexRoute
   '/chat/': typeof AuthenticatedChatIndexRoute
+  '/messages/': typeof AuthenticatedMessagesIndexRoute
   '/school/': typeof AuthenticatedSchoolIndexRoute
 }
 export interface FileRoutesByTo {
@@ -168,15 +244,25 @@ export interface FileRoutesByTo {
   '/profile': typeof AuthenticatedProfileRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/stats': typeof AuthenticatedStatsRoute
+  '/system-health': typeof AuthenticatedSystemHealthRoute
   '/api/chat': typeof ApiChatRoute
   '/auth/update-password': typeof AuthUpdatePasswordRoute
+  '/legal/acceptable-use': typeof LegalAcceptableUseRoute
+  '/legal/child-safety': typeof LegalChildSafetyRoute
+  '/legal/privacy': typeof LegalPrivacyRoute
+  '/legal/terms': typeof LegalTermsRoute
+  '/account/suspended': typeof AuthenticatedAccountSuspendedRoute
   '/assistant/$threadId': typeof AuthenticatedAssistantThreadIdRoute
   '/chat/$threadId': typeof AuthenticatedChatThreadIdRoute
+  '/messages/$conversationId': typeof AuthenticatedMessagesConversationIdRoute
+  '/onboarding/compliance': typeof AuthenticatedOnboardingComplianceRoute
   '/onboarding/language': typeof AuthenticatedOnboardingLanguageRoute
   '/onboarding/model': typeof AuthenticatedOnboardingModelRoute
+  '/onboarding/system-admission': typeof AuthenticatedOnboardingSystemAdmissionRoute
   '/school/$subject': typeof AuthenticatedSchoolSubjectRoute
   '/assistant': typeof AuthenticatedAssistantIndexRoute
   '/chat': typeof AuthenticatedChatIndexRoute
+  '/messages': typeof AuthenticatedMessagesIndexRoute
   '/school': typeof AuthenticatedSchoolIndexRoute
 }
 export interface FileRoutesById {
@@ -191,15 +277,25 @@ export interface FileRoutesById {
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/stats': typeof AuthenticatedStatsRoute
+  '/_authenticated/system-health': typeof AuthenticatedSystemHealthRoute
   '/api/chat': typeof ApiChatRoute
   '/auth/update-password': typeof AuthUpdatePasswordRoute
+  '/legal/acceptable-use': typeof LegalAcceptableUseRoute
+  '/legal/child-safety': typeof LegalChildSafetyRoute
+  '/legal/privacy': typeof LegalPrivacyRoute
+  '/legal/terms': typeof LegalTermsRoute
+  '/_authenticated/account/suspended': typeof AuthenticatedAccountSuspendedRoute
   '/_authenticated/assistant/$threadId': typeof AuthenticatedAssistantThreadIdRoute
   '/_authenticated/chat/$threadId': typeof AuthenticatedChatThreadIdRoute
+  '/_authenticated/messages/$conversationId': typeof AuthenticatedMessagesConversationIdRoute
+  '/_authenticated/onboarding/compliance': typeof AuthenticatedOnboardingComplianceRoute
   '/_authenticated/onboarding/language': typeof AuthenticatedOnboardingLanguageRoute
   '/_authenticated/onboarding/model': typeof AuthenticatedOnboardingModelRoute
+  '/_authenticated/onboarding/system-admission': typeof AuthenticatedOnboardingSystemAdmissionRoute
   '/_authenticated/school/$subject': typeof AuthenticatedSchoolSubjectRoute
   '/_authenticated/assistant/': typeof AuthenticatedAssistantIndexRoute
   '/_authenticated/chat/': typeof AuthenticatedChatIndexRoute
+  '/_authenticated/messages/': typeof AuthenticatedMessagesIndexRoute
   '/_authenticated/school/': typeof AuthenticatedSchoolIndexRoute
 }
 export interface FileRouteTypes {
@@ -214,15 +310,25 @@ export interface FileRouteTypes {
     | '/profile'
     | '/settings'
     | '/stats'
+    | '/system-health'
     | '/api/chat'
     | '/auth/update-password'
+    | '/legal/acceptable-use'
+    | '/legal/child-safety'
+    | '/legal/privacy'
+    | '/legal/terms'
+    | '/account/suspended'
     | '/assistant/$threadId'
     | '/chat/$threadId'
+    | '/messages/$conversationId'
+    | '/onboarding/compliance'
     | '/onboarding/language'
     | '/onboarding/model'
+    | '/onboarding/system-admission'
     | '/school/$subject'
     | '/assistant/'
     | '/chat/'
+    | '/messages/'
     | '/school/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -235,15 +341,25 @@ export interface FileRouteTypes {
     | '/profile'
     | '/settings'
     | '/stats'
+    | '/system-health'
     | '/api/chat'
     | '/auth/update-password'
+    | '/legal/acceptable-use'
+    | '/legal/child-safety'
+    | '/legal/privacy'
+    | '/legal/terms'
+    | '/account/suspended'
     | '/assistant/$threadId'
     | '/chat/$threadId'
+    | '/messages/$conversationId'
+    | '/onboarding/compliance'
     | '/onboarding/language'
     | '/onboarding/model'
+    | '/onboarding/system-admission'
     | '/school/$subject'
     | '/assistant'
     | '/chat'
+    | '/messages'
     | '/school'
   id:
     | '__root__'
@@ -257,15 +373,25 @@ export interface FileRouteTypes {
     | '/_authenticated/profile'
     | '/_authenticated/settings'
     | '/_authenticated/stats'
+    | '/_authenticated/system-health'
     | '/api/chat'
     | '/auth/update-password'
+    | '/legal/acceptable-use'
+    | '/legal/child-safety'
+    | '/legal/privacy'
+    | '/legal/terms'
+    | '/_authenticated/account/suspended'
     | '/_authenticated/assistant/$threadId'
     | '/_authenticated/chat/$threadId'
+    | '/_authenticated/messages/$conversationId'
+    | '/_authenticated/onboarding/compliance'
     | '/_authenticated/onboarding/language'
     | '/_authenticated/onboarding/model'
+    | '/_authenticated/onboarding/system-admission'
     | '/_authenticated/school/$subject'
     | '/_authenticated/assistant/'
     | '/_authenticated/chat/'
+    | '/_authenticated/messages/'
     | '/_authenticated/school/'
   fileRoutesById: FileRoutesById
 }
@@ -274,6 +400,10 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRouteWithChildren
   ApiChatRoute: typeof ApiChatRoute
+  LegalAcceptableUseRoute: typeof LegalAcceptableUseRoute
+  LegalChildSafetyRoute: typeof LegalChildSafetyRoute
+  LegalPrivacyRoute: typeof LegalPrivacyRoute
+  LegalTermsRoute: typeof LegalTermsRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -348,6 +478,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedStatsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/system-health': {
+      id: '/_authenticated/system-health'
+      path: '/system-health'
+      fullPath: '/system-health'
+      preLoaderRoute: typeof AuthenticatedSystemHealthRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/api/chat': {
       id: '/api/chat'
       path: '/api/chat'
@@ -361,6 +498,41 @@ declare module '@tanstack/react-router' {
       fullPath: '/auth/update-password'
       preLoaderRoute: typeof AuthUpdatePasswordRouteImport
       parentRoute: typeof AuthRoute
+    }
+    '/legal/acceptable-use': {
+      id: '/legal/acceptable-use'
+      path: '/legal/acceptable-use'
+      fullPath: '/legal/acceptable-use'
+      preLoaderRoute: typeof LegalAcceptableUseRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/legal/child-safety': {
+      id: '/legal/child-safety'
+      path: '/legal/child-safety'
+      fullPath: '/legal/child-safety'
+      preLoaderRoute: typeof LegalChildSafetyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/legal/privacy': {
+      id: '/legal/privacy'
+      path: '/legal/privacy'
+      fullPath: '/legal/privacy'
+      preLoaderRoute: typeof LegalPrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/legal/terms': {
+      id: '/legal/terms'
+      path: '/legal/terms'
+      fullPath: '/legal/terms'
+      preLoaderRoute: typeof LegalTermsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/account/suspended': {
+      id: '/_authenticated/account/suspended'
+      path: '/account/suspended'
+      fullPath: '/account/suspended'
+      preLoaderRoute: typeof AuthenticatedAccountSuspendedRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/assistant/': {
       id: '/_authenticated/assistant/'
@@ -390,6 +562,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedChatThreadIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/messages/': {
+      id: '/_authenticated/messages/'
+      path: '/messages'
+      fullPath: '/messages/'
+      preLoaderRoute: typeof AuthenticatedMessagesIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/messages/$conversationId': {
+      id: '/_authenticated/messages/$conversationId'
+      path: '/messages/$conversationId'
+      fullPath: '/messages/$conversationId'
+      preLoaderRoute: typeof AuthenticatedMessagesConversationIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/onboarding/compliance': {
+      id: '/_authenticated/onboarding/compliance'
+      path: '/onboarding/compliance'
+      fullPath: '/onboarding/compliance'
+      preLoaderRoute: typeof AuthenticatedOnboardingComplianceRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/onboarding/language': {
       id: '/_authenticated/onboarding/language'
       path: '/onboarding/language'
@@ -402,6 +595,13 @@ declare module '@tanstack/react-router' {
       path: '/onboarding/model'
       fullPath: '/onboarding/model'
       preLoaderRoute: typeof AuthenticatedOnboardingModelRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/onboarding/system-admission': {
+      id: '/_authenticated/onboarding/system-admission'
+      path: '/onboarding/system-admission'
+      fullPath: '/onboarding/system-admission'
+      preLoaderRoute: typeof AuthenticatedOnboardingSystemAdmissionRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/school/': {
@@ -429,13 +629,19 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
   AuthenticatedStatsRoute: typeof AuthenticatedStatsRoute
+  AuthenticatedSystemHealthRoute: typeof AuthenticatedSystemHealthRoute
+  AuthenticatedAccountSuspendedRoute: typeof AuthenticatedAccountSuspendedRoute
   AuthenticatedAssistantThreadIdRoute: typeof AuthenticatedAssistantThreadIdRoute
   AuthenticatedChatThreadIdRoute: typeof AuthenticatedChatThreadIdRoute
+  AuthenticatedMessagesConversationIdRoute: typeof AuthenticatedMessagesConversationIdRoute
+  AuthenticatedOnboardingComplianceRoute: typeof AuthenticatedOnboardingComplianceRoute
   AuthenticatedOnboardingLanguageRoute: typeof AuthenticatedOnboardingLanguageRoute
   AuthenticatedOnboardingModelRoute: typeof AuthenticatedOnboardingModelRoute
+  AuthenticatedOnboardingSystemAdmissionRoute: typeof AuthenticatedOnboardingSystemAdmissionRoute
   AuthenticatedSchoolSubjectRoute: typeof AuthenticatedSchoolSubjectRoute
   AuthenticatedAssistantIndexRoute: typeof AuthenticatedAssistantIndexRoute
   AuthenticatedChatIndexRoute: typeof AuthenticatedChatIndexRoute
+  AuthenticatedMessagesIndexRoute: typeof AuthenticatedMessagesIndexRoute
   AuthenticatedSchoolIndexRoute: typeof AuthenticatedSchoolIndexRoute
 }
 
@@ -447,13 +653,22 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedProfileRoute: AuthenticatedProfileRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
   AuthenticatedStatsRoute: AuthenticatedStatsRoute,
+  AuthenticatedSystemHealthRoute: AuthenticatedSystemHealthRoute,
+  AuthenticatedAccountSuspendedRoute: AuthenticatedAccountSuspendedRoute,
   AuthenticatedAssistantThreadIdRoute: AuthenticatedAssistantThreadIdRoute,
   AuthenticatedChatThreadIdRoute: AuthenticatedChatThreadIdRoute,
+  AuthenticatedMessagesConversationIdRoute:
+    AuthenticatedMessagesConversationIdRoute,
+  AuthenticatedOnboardingComplianceRoute:
+    AuthenticatedOnboardingComplianceRoute,
   AuthenticatedOnboardingLanguageRoute: AuthenticatedOnboardingLanguageRoute,
   AuthenticatedOnboardingModelRoute: AuthenticatedOnboardingModelRoute,
+  AuthenticatedOnboardingSystemAdmissionRoute:
+    AuthenticatedOnboardingSystemAdmissionRoute,
   AuthenticatedSchoolSubjectRoute: AuthenticatedSchoolSubjectRoute,
   AuthenticatedAssistantIndexRoute: AuthenticatedAssistantIndexRoute,
   AuthenticatedChatIndexRoute: AuthenticatedChatIndexRoute,
+  AuthenticatedMessagesIndexRoute: AuthenticatedMessagesIndexRoute,
   AuthenticatedSchoolIndexRoute: AuthenticatedSchoolIndexRoute,
 }
 
@@ -475,6 +690,10 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRouteWithChildren,
   ApiChatRoute: ApiChatRoute,
+  LegalAcceptableUseRoute: LegalAcceptableUseRoute,
+  LegalChildSafetyRoute: LegalChildSafetyRoute,
+  LegalPrivacyRoute: LegalPrivacyRoute,
+  LegalTermsRoute: LegalTermsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

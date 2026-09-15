@@ -1,5 +1,6 @@
 /** Alim application component for study, planning, profile, or navigation workflows. */
 import { Link, useNavigate, useRouter, useRouterState } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 
 import { GraduationCap, LogOut, Menu, Settings, User } from "lucide-react";
 import { useState } from "react";
@@ -7,6 +8,8 @@ import { NotificationCenter } from "@/components/app/NotificationCenter";
 import { LiveClock } from "@/components/app/LiveClock";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { LanguageMenu } from "@/components/app/LanguageMenu";
+import { Badge } from "@/components/ui/badge";
+import { fetchUnreadCount } from "@/lib/peer-messaging";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -31,6 +34,8 @@ const NAV = [
   { to: "/assistant", key: "nav.assistant" },
   { to: "/stats", key: "nav.stats" },
   { to: "/help", key: "nav.help" },
+  { to: "/messages", key: "nav.messages" },
+  { to: "/system-health", key: "nav.systemHealth" },
   { to: "/feedback", key: "nav.feedback" },
 ] as const;
 
@@ -40,6 +45,11 @@ export function AppHeader() {
   const { profile } = useAppData();
   const { t } = useI18n();
   const displayName = profile.preferredName || profile.fullName || t("nav.yourProfile");
+  const { data: unreadCount = 0 } = useQuery({
+    queryKey: ["peer-unread-count"],
+    queryFn: fetchUnreadCount,
+    refetchInterval: 30000,
+  });
 
   const isActive = (to: string) => pathname === to || pathname.startsWith(`${to}/`);
 
@@ -83,13 +93,22 @@ export function AppHeader() {
                     to={item.to}
                     onClick={() => setOpen(false)}
                     className={cn(
-                      "rounded-xl px-4 py-3 text-[16px] font-medium transition-colors",
+                      "flex items-center gap-2 rounded-xl px-4 py-3 text-[16px] font-medium transition-colors",
                       isActive(item.to)
                         ? "bg-thread-active text-foreground"
                         : "text-muted-foreground hover:bg-hover hover:text-foreground",
                     )}
                   >
                     {t(item.key)}
+                    {item.to === "/messages" && unreadCount > 0 && (
+                      <Badge
+                        variant="destructive"
+                        className="ml-auto"
+                        aria-label={t("nav.messagesUnread", { count: unreadCount })}
+                      >
+                        {unreadCount}
+                      </Badge>
+                    )}
                   </Link>
                 ))}
                 <Link
@@ -129,13 +148,22 @@ export function AppHeader() {
                 key={item.to}
                 to={item.to}
                 className={cn(
-                  "whitespace-nowrap rounded-full px-3 py-2 text-[14.5px] font-medium transition-colors duration-200 xl:px-4",
+                  "flex items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-2 text-[14.5px] font-medium transition-colors duration-200 xl:px-4",
                   isActive(item.to)
                     ? "bg-thread-active text-foreground"
                     : "text-muted-foreground hover:bg-hover hover:text-foreground",
                 )}
               >
                 {t(item.key)}
+                {item.to === "/messages" && unreadCount > 0 && (
+                  <Badge
+                    variant="destructive"
+                    className="px-1.5 py-0 text-[11px]"
+                    aria-label={t("nav.messagesUnread", { count: unreadCount })}
+                  >
+                    {unreadCount}
+                  </Badge>
+                )}
               </Link>
             ))}
           </nav>

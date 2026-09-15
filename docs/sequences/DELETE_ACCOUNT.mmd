@@ -1,0 +1,19 @@
+%% Status: CURRENT SUPABASE
+%% Source: frontend/src/lib/system-health.ts, Edge Function delete-my-data mode=delete_account
+sequenceDiagram
+    participant User
+    participant UI as data-rights settings screen
+    participant Fn as requestMyDataDeletion({mode:"delete_account"})
+    participant Edge as Edge Function delete-my-data
+    participant Storage as Storage buckets
+    participant DB as all caller rows
+    participant Auth as Supabase Auth user record
+
+    User->>UI: confirm account deletion (irreversible warning shown)
+    UI->>Fn: requestMyDataDeletion(mode="delete_account")
+    Fn->>Edge: functions.invoke("delete-my-data")
+    Edge->>Storage: delete caller-owned objects
+    Edge->>DB: delete caller content + account_compliance/profile rows
+    Edge->>Auth: remove auth user (caller only, verified JWT)
+    Edge-->>Fn: { account_deleted:true }
+    Fn-->>UI: signed out, account no longer exists

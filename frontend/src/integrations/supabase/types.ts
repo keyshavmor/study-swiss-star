@@ -34,6 +34,76 @@ export type AiRuntimePolicyRow = {
   allow_parallel_per_user_model_processes: boolean;
 };
 
+/** CURRENT SUPABASE: `public.account_compliance.account_type`. */
+export type AccountType = "unknown" | "student" | "teacher";
+
+/** CURRENT SUPABASE: `public.account_compliance.account_status`. */
+export type AccountStatus = "active" | "suspended_pending_review" | "deletion_pending";
+
+/** CURRENT SUPABASE: consent document kinds recorded in `user_legal_consents`. */
+export type LegalDocumentKind = "terms" | "privacy" | "acceptable_use" | "child_safety";
+
+/**
+ * CURRENT SUPABASE: return shape of `public.get_system_admission_policy()`.
+ * Policy/config ONLY — the actual measurements and active-user count remain
+ * EXPECTED LOCAL BACKEND authority.
+ */
+export type SystemAdmissionPolicyRow = {
+  max_active_users: number;
+  login_gpu_free_percent: number;
+  login_ram_free_percent: number;
+  login_storage_free_percent: number;
+  max_gpu_used_percent: number;
+  max_ram_used_percent: number;
+  max_storage_used_percent: number;
+  automatic_model_rebalancing: boolean;
+  preserve_inflight_requests: boolean;
+  queue_new_allocations_while_rebalancing: boolean;
+  recommend_model_from_system_health: boolean;
+};
+
+/**
+ * CURRENT SUPABASE: return shape of `public.get_user_visible_supabase_health()`.
+ * Metrics that SQL cannot authoritatively expose are null with
+ * `*_status: "not_exposed_by_sql"` — never fabricate them.
+ */
+export type SupabaseHealthRow = {
+  object_storage_used_bytes: number | null;
+  object_storage_quota_bytes: number | null;
+  object_storage_remaining_bytes: number | null;
+  object_storage_used_percent: number | null;
+  object_storage_cleanup_trigger_percent: number | null;
+  object_storage_cleanup_target_percent: number | null;
+  database_used_bytes: number | null;
+  database_quota_bytes: number | null;
+  database_used_percent: number | null;
+  bandwidth_status: string | null;
+  realtime_status: string | null;
+  edge_functions_status: string | null;
+};
+
+/** CURRENT SUPABASE: return shape of `public.get_my_data_summary()`. */
+export type MyDataSummaryRow = {
+  ai_thread_count: number | null;
+  ai_message_count: number | null;
+  peer_conversation_count: number | null;
+  peer_message_count: number | null;
+  attachment_count: number | null;
+  attachment_bytes: number | null;
+  document_count: number | null;
+  document_bytes: number | null;
+};
+
+/**
+ * CURRENT SUPABASE: return shape of `public.find_peer_by_exact_username()`.
+ * Data minimisation: no email, date of birth or guardian details are exposed.
+ */
+export type PeerDirectoryRow = {
+  user_id: string;
+  username: string;
+  preferred_name: string | null;
+};
+
 export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "14.5";
@@ -413,6 +483,186 @@ export type Database = {
         };
         Relationships: [];
       };
+      /**
+       * CURRENT SUPABASE: per-user compliance/safety state. The user may SELECT
+       * their own row; there is no client write path (the RPC owns writes).
+       */
+      account_compliance: {
+        Row: {
+          user_id: string;
+          account_type: AccountType;
+          date_of_birth: string | null;
+          guardian_email: string | null;
+          guardian_contact_verified_at: string | null;
+          compliance_onboarding_completed: boolean;
+          safety_intro_acknowledged_at: string | null;
+          account_status: AccountStatus;
+          safety_strike_count: number;
+          suspended_at: string | null;
+          suspension_reason_code: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      /** CURRENT SUPABASE: versioned consent records; own-row SELECT only. */
+      user_legal_consents: {
+        Row: {
+          id: string;
+          user_id: string;
+          document_kind: LegalDocumentKind;
+          document_version: string;
+          accepted_at: string;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      /**
+       * CURRENT SUPABASE: bounded safety audit metadata. NEVER stores raw
+       * offending content — only category/reason codes and a content hash.
+       */
+      moderation_events: {
+        Row: {
+          id: string;
+          user_id: string;
+          surface: string;
+          verdict: string;
+          category_code: string | null;
+          reason_code: string | null;
+          content_hash: string | null;
+          strike_number: number | null;
+          review_status: string;
+          created_at: string;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      /** CURRENT SUPABASE: admin-only guardian notification review queue. */
+      guardian_notification_queue: {
+        Row: {
+          id: string;
+          user_id: string;
+          guardian_email: string | null;
+          reason_code: string | null;
+          review_status: string;
+          created_at: string;
+          reviewed_at: string | null;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      peer_conversations: {
+        Row: {
+          id: string;
+          kind: string;
+          created_by: string;
+          created_at: string;
+          updated_at: string;
+          last_message_at: string | null;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      peer_conversation_members: {
+        Row: {
+          conversation_id: string;
+          user_id: string;
+          joined_at: string;
+          last_read_at: string | null;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [
+          {
+            foreignKeyName: "peer_conversation_members_conversation_id_fkey";
+            columns: ["conversation_id"];
+            isOneToOne: false;
+            referencedRelation: "peer_conversations";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      /**
+       * CURRENT SUPABASE: readable by conversation members. Direct client
+       * INSERT/UPDATE is intentionally disabled until the future local safety
+       * backend returns an allow verdict — do not work around this.
+       */
+      peer_messages: {
+        Row: {
+          id: string;
+          conversation_id: string;
+          sender_id: string;
+          body: string;
+          safety_verdict: string | null;
+          created_at: string;
+          edited_at: string | null;
+          deleted_at: string | null;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [
+          {
+            foreignKeyName: "peer_messages_conversation_id_fkey";
+            columns: ["conversation_id"];
+            isOneToOne: false;
+            referencedRelation: "peer_conversations";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      peer_message_attachments: {
+        Row: {
+          id: string;
+          message_id: string;
+          conversation_id: string;
+          owner_id: string;
+          storage_bucket: string;
+          object_path: string;
+          file_name: string;
+          mime_type: string;
+          byte_size: number;
+          scan_status: string;
+          created_at: string;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [
+          {
+            foreignKeyName: "peer_message_attachments_message_id_fkey";
+            columns: ["message_id"];
+            isOneToOne: false;
+            referencedRelation: "peer_messages";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      peer_message_notifications: {
+        Row: {
+          id: string;
+          user_id: string;
+          conversation_id: string;
+          message_id: string;
+          read_at: string | null;
+          created_at: string;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [
+          {
+            foreignKeyName: "peer_message_notifications_conversation_id_fkey";
+            columns: ["conversation_id"];
+            isOneToOne: false;
+            referencedRelation: "peer_conversations";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
     };
     Views: {
       [_ in never]: never;
@@ -425,6 +675,42 @@ export type Database = {
       get_ai_runtime_policy: {
         Args: Record<string, never>;
         Returns: AiRuntimePolicyRow[];
+      };
+      get_system_admission_policy: {
+        Args: Record<string, never>;
+        Returns: SystemAdmissionPolicyRow[];
+      };
+      get_user_visible_supabase_health: {
+        Args: Record<string, never>;
+        Returns: SupabaseHealthRow[];
+      };
+      get_my_data_summary: {
+        Args: Record<string, never>;
+        Returns: MyDataSummaryRow[];
+      };
+      complete_account_compliance_onboarding: {
+        Args: {
+          p_account_type: string;
+          p_date_of_birth: string;
+          p_guardian_email: string | null;
+          p_terms_version: string;
+          p_privacy_version: string;
+          p_acceptable_use_version: string;
+          p_safety_version: string;
+        };
+        Returns: boolean;
+      };
+      find_peer_by_exact_username: {
+        Args: { p_username: string };
+        Returns: PeerDirectoryRow[];
+      };
+      get_or_create_direct_peer_conversation: {
+        Args: { p_username: string };
+        Returns: string;
+      };
+      mark_peer_conversation_read: {
+        Args: { p_conversation_id: string };
+        Returns: boolean;
       };
     };
 

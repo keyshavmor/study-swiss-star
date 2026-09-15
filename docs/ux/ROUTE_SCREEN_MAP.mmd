@@ -89,8 +89,79 @@ flowchart LR
   classDef backendUnknown fill:#fdf1d0,stroke:#a67c00,color:#333;
   class ASSISTTHREAD,ASSISTIDX,CONTEXTBACKEND backendUnknown
 
+
+  subgraph ONBOARDING["Onboarding / admission (new)"]
+    ONBCOMPLIANCE["/onboarding/compliance<br/>ComplianceOnboarding"]
+    ONBADMISSION["/onboarding/system-admission<br/>SystemAdmissionGate"]
+  end
+  subgraph LEGALROUTES["Legal document routes (new)"]
+    LEGALTERMS["/legal/terms"]
+    LEGALPRIVACY["/legal/privacy"]
+    LEGALAUP["/legal/acceptable-use"]
+    LEGALCHILD["/legal/child-safety"]
+  end
+  SUSPENDED["/account/suspended<br/>AccountSuspendedPage"]
+
+  subgraph MESSAGINGROUTES["Peer messaging (new)"]
+    MSGLIST["/messages<br/>ConversationList"]
+    MSGTHREAD["/messages/$conversationId<br/>MessageThread"]
+  end
+  SYSHEALTH["/system-health<br/>SystemHealthPanel"]
+
+  ROOT --> ONBOARDING
+  ROOT --> LEGALROUTES
+  GATE --> SUSPENDED
+  GATE --> MESSAGINGROUTES
+  GATE --> SYSHEALTH
+  ONBCOMPLIANCE --> ONBADMISSION
+  ONBADMISSION --> HOME
+  MSGLIST --> MSGTHREAD
+
+  subgraph SUPABASE_SVC2["Supabase (compliance/safety/messaging — this pass)"]
+    ACCTCOMPLIANCE[("public.account_compliance")]
+    LEGALCONSENTS[("public.user_legal_consents")]
+    MODEVENTS[("public.moderation_events")]
+    GUARDIANQ[("public.guardian_notification_queue")]
+    PEERTBLS[("public.peer_conversations / peer_conversation_members /<br/>peer_messages / peer_message_attachments / peer_message_notifications")]
+    RPCCOMPLIANCE["RPC: complete_account_compliance_onboarding"]
+    RPCPEERFIND["RPC: find_peer_by_exact_username"]
+    RPCPEERCONV["RPC: get_or_create_direct_peer_conversation"]
+    RPCPEERREAD["RPC: mark_peer_conversation_read"]
+    RPCHEALTH["RPC: get_user_visible_supabase_health"]
+    RPCDATASUM["RPC: get_my_data_summary"]
+    RPCADMISSIONPOLICY["RPC: get_system_admission_policy"]
+    EDGEFN_DELETEDATA["Edge Fn: delete-my-data"]
+    BUCKETATTACH["Storage: peer-message-attachments (private)"]
+  end
+
+  ONBCOMPLIANCE --> ACCTCOMPLIANCE
+  ONBCOMPLIANCE --> RPCCOMPLIANCE
+  ONBCOMPLIANCE --> LEGALCONSENTS
+  GATE --> ACCTCOMPLIANCE
+  ONBADMISSION --> RPCADMISSIONPOLICY
+  ONBADMISSION -.->|"EXPECTED LOCAL BACKEND CONTRACT"| LOCALADMISSION["/api/system/admission/check"]
+  SYSHEALTH -.->|"EXPECTED LOCAL BACKEND CONTRACT"| LOCALHEALTH["/api/system/health"]
+  MSGLIST --> RPCPEERFIND
+  MSGLIST --> RPCPEERCONV
+  MSGTHREAD --> PEERTBLS
+  MSGTHREAD --> RPCPEERREAD
+  MSGTHREAD --> BUCKETATTACH
+  MSGTHREAD -.->|"EXPECTED LOCAL BACKEND CONTRACT"| LOCALPEERSEND["/api/peer-messaging/send"]
+  MSGTHREAD -.->|"EXPECTED LOCAL BACKEND CONTRACT"| LOCALATTACHSCAN["/api/safety/attachment-scan"]
+  APICHAT -.->|"EXPECTED LOCAL BACKEND CONTRACT"| LOCALMODERATE["/api/safety/moderate"]
+  APICHAT --> MODEVENTS
+  MODEVENTS --> GUARDIANQ
+  SETTINGS --> RPCHEALTH
+  SETTINGS --> RPCDATASUM
+  SETTINGS --> EDGEFN_DELETEDATA
+
+  classDef backendUnknown fill:#fdf1d0,stroke:#a67c00,color:#333;
+  class LOCALADMISSION,LOCALHEALTH,LOCALPEERSEND,LOCALATTACHSCAN,LOCALMODERATE backendUnknown
+
 %% Added this pass: see docs/sequences/POST_LOGIN_STARTUP.mmd and related new sequence
 %% diagrams for the authenticated startup flow (language onboarding once, per-session model
 %% gate, EXPECTED LOCAL BACKEND CONTRACT for model prepare/poll, CURRENT SUPABASE ai_model_catalog
 %% and get_ai_runtime_policy 50/50/50 admission + 30/25/30 runtime floors). auto_storage_cleanup
 %% user preference removed; storage cleanup is now a platform-wide cron (STORAGE_CAPACITY_CLEANUP.mmd).
+
+%% Added this pass: compliance onboarding, system admission gate, suspension, legal document routes, peer messaging surfaces and system health panel. See docs/sequences/STARTUP_COMPLIANCE_LANGUAGE_ADMISSION_MODEL_HOME.mmd, docs/sequences/PEER_CHAT_CREATION_BY_USERNAME.mmd, docs/sequences/SYSTEM_HEALTH_AGGREGATION.mmd and docs/contracts/BACKEND_GAP_MATRIX.md.

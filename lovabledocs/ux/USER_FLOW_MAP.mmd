@@ -80,8 +80,41 @@ flowchart TD
   ChatThread -.->|"Bearer token fetch"| ApiChat
   ApiChat -.->|"streams reply"| ChatThread
 
+
+  Welcome -->|"sign up success, first login"| Compliance["/onboarding/compliance<br/>ComplianceOnboarding (EXPECTED LOCAL BACKEND CONTRACT: none — CURRENT SUPABASE account_compliance)"]
+  Compliance -->|"complete_account_compliance_onboarding RPC"| LangOnboard2["/onboarding/language"]
+  LangOnboard2 --> SystemAdmission["/onboarding/system-admission<br/>alim.admission_session.v1 sessionStorage lease<br/>EXPECTED LOCAL BACKEND CONTRACT, fail-closed"]
+  SystemAdmission -->|"admitted"| Home
+  SystemAdmission -->|"denied or backend unavailable"| SystemAdmission
+
+  Suspended["/account/suspended<br/>account_status=suspended_pending_review"]
+  ProtectedGate -->|"suspended_pending_review outranks all other routes"| Suspended
+
+  LegalTerms["/legal/terms LegalDocumentPage"]
+  LegalPrivacy["/legal/privacy LegalDocumentPage"]
+  LegalAUP["/legal/acceptable-use LegalDocumentPage"]
+  LegalChildSafety["/legal/child-safety LegalDocumentPage"]
+  Welcome -.->|"footer / consent links"| LegalTerms
+  Welcome -.->|"footer / consent links"| LegalPrivacy
+  Welcome -.->|"footer / consent links"| LegalAUP
+  Welcome -.->|"footer / consent links"| LegalChildSafety
+  Compliance -.->|"consent copy links"| LegalTerms
+  Compliance -.->|"consent copy links"| LegalPrivacy
+
+  Messages["/messages<br/>ConversationList"] --> ProtectedGate
+  MessageThread["/messages/$conversationId<br/>MessageThread + MessageComposer"] --> ProtectedGate
+  AppHeaderNav --> Messages
+  Messages -->|"select existing conversation"| MessageThread
+  Messages -->|"NewConversationDialog: find_peer_by_exact_username"| MessageThread
+  MessageThread -->|"send, fail-closed until /api/peer-messaging/send exists"| MessageThread
+
+  SystemHealthRoute["/system-health<br/>SystemHealthPanel"] --> ProtectedGate
+  AppHeaderNav --> SystemHealthRoute
+
 %% Added this pass: see docs/sequences/POST_LOGIN_STARTUP.mmd and related new sequence
 %% diagrams for the authenticated startup flow (language onboarding once, per-session model
 %% gate, EXPECTED LOCAL BACKEND CONTRACT for model prepare/poll, CURRENT SUPABASE ai_model_catalog
 %% and get_ai_runtime_policy 50/50/50 admission + 30/25/30 runtime floors). auto_storage_cleanup
 %% user preference removed; storage cleanup is now a platform-wide cron (STORAGE_CAPACITY_CLEANUP.mmd).
+
+%% Added this pass: compliance onboarding, system admission gate, suspension, legal document routes, peer messaging surfaces and system health panel. See docs/sequences/STARTUP_COMPLIANCE_LANGUAGE_ADMISSION_MODEL_HOME.mmd, docs/sequences/PEER_CHAT_CREATION_BY_USERNAME.mmd, docs/sequences/SYSTEM_HEALTH_AGGREGATION.mmd and docs/contracts/BACKEND_GAP_MATRIX.md.

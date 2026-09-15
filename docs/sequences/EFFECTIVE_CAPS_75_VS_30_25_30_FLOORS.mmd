@@ -1,0 +1,15 @@
+%% Status: CURRENT SUPABASE (policy) + CURRENT FRONTEND (reconciliation)
+%% Source: frontend/src/lib/system-admission.types.ts (effectiveUtilisationCaps)
+sequenceDiagram
+    participant Policy as get_system_admission_policy()
+    participant Floors as AI_READY_FREE_FLOORS (gpu>=30 free, ram>=25 free, storage>=30 free)
+    participant Calc as effectiveUtilisationCaps()
+    participant Health as system health / admission checks
+
+    Policy-->>Calc: max_gpu_used_percent=75, max_ram_used_percent=75, max_storage_used_percent=75
+    Floors-->>Calc: gpu_free_percent=30, ram_free_percent=25, storage_free_percent=30
+    Calc->>Calc: gpu_used_cap = min(75, 100-30) = 70
+    Calc->>Calc: ram_used_cap = min(75, 100-25) = 75
+    Calc->>Calc: storage_used_cap = min(75, 100-30) = 70
+    Calc-->>Health: effective_caps { gpu:70, ram:75, storage:70 }
+    Note over Calc: The 75%-used ceiling is ADDITIONAL to the older floors, never weaker than them.

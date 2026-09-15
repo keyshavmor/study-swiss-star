@@ -106,6 +106,27 @@ export const Route = createFileRoute("/api/chat")({
           lastMessage?.role === "user"
             ? lastMessage.parts.map((part) => (part.type === "text" ? part.text : "")).join("")
             : "";
+        // CONTENT SAFETY GATE (fail closed). Every AI prompt needs an explicit
+        // allow verdict from the local safety backend before it is stored or
+        // sent for generation. BACKEND TODO FOR CODEX: until that backend
+        // exists this returns `safety_unavailable`, so nothing is processed.
+        if (lastMessage?.role === "user" && question.trim()) {
+          const { moderateContentOnBackend } = await import("@/lib/safety-backend.server");
+          const decision = await moderateContentOnBackend({
+            accessToken: request.headers.get("authorization")?.replace("Bearer ", "") ?? "",
+            studentId: userId,
+            surface: "ai_prompt",
+            text: question,
+          });
+          if (decision.verdict !== "allow") {
+            // Bounded machine-readable code only — never the offending content.
+            return new Response(`safety:${decision.verdict}`, {
+              status: decision.verdict === "safety_unavailable" ? 503 : 403,
+              headers: { "X-Safety-Verdict": decision.verdict },
+            });
+          }
+        }
+
         if (lastMessage && lastMessage.role === "user") {
           const { error: insertError } = await supabase.from("messages").insert({
             thread_id: threadId,
