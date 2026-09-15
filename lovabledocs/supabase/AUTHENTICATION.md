@@ -43,6 +43,13 @@ reset.
   `guardian_email_prefill`; these are metadata hints only. The four legal checkboxes remain
   explicit and are never pre-accepted. A returned session enters `resolveStartupDestination()`
   immediately; no session shows the localized email-confirmation state.
+- **Post-signup handoff (CURRENT FRONTEND):** when signup returns no session, the form switches to
+  sign-in and prefills the **email address**, never the username, and shows a persistent localized
+  `auth.confirmationPending` notice next to the identifier field (cleared when the identifier
+  changes or a session is established) in addition to the check-email toast. Rationale: a username
+  retry runs through `username-login` v4, which deliberately answers generic invalid credentials for
+  an unconfirmed account; the email path instead yields the localized `email_not_confirmed` state,
+  so a successful signup no longer looks broken. No Supabase security behavior changes.
 - **Password reset/update:** `auth.resetPasswordForEmail(email, { redirectTo })` — email only, no
   challenge token, localized errors retained. The public `/auth/update-password` route requires a
   valid recovery/auth session, then returns through `resolveStartupDestination()`.
