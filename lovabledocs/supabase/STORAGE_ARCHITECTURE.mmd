@@ -10,3 +10,5 @@ flowchart LR
   User -->|"own-prefix read"| Descriptors
   Cron["media-retention-cleanup"] --> Descriptors
   Cron --> Chat
+  Capacity["global storage cleanup<br/>cron every 5 minutes"] --> Chat
+  Capacity --> Materials

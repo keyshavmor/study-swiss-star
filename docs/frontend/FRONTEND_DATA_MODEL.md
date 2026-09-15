@@ -241,25 +241,25 @@ export type ReplyLanguagePolicy = "message_then_app" | "app_only";
 export interface UserPreferences {
   selected_qwen_model: string;
   app_language: LanguageCode;              // one of the 7 codes, see I18N_AND_LANGUAGE.md
+  language_onboarding_completed: boolean;
   assistant_reply_language_policy: ReplyLanguagePolicy;
   assistant_audio_enabled: boolean;
   assistant_audio_autoplay: boolean;
   exam_reminders: boolean;
   daily_study_summary: boolean;
   sound_effects: boolean;
-  auto_storage_cleanup: boolean;
 }
 
 export const DEFAULT_PREFERENCES: UserPreferences = {
   selected_qwen_model: QWEN_MODELS[0],
   app_language: DEFAULT_LANGUAGE, // "en"
+  language_onboarding_completed: false,
   assistant_reply_language_policy: "message_then_app",
   assistant_audio_enabled: true,
   assistant_audio_autoplay: false,
   exam_reminders: true,
   daily_study_summary: true,
   sound_effects: false,
-  auto_storage_cleanup: true,
 };
 
 export const AVATAR_BUCKET = "profile-avatars";

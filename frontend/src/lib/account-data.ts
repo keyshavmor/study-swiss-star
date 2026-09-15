@@ -44,6 +44,8 @@ export interface UserPreferences {
   selected_qwen_model: string;
   /** One of the seven approved application languages. */
   app_language: LanguageCode;
+  /** Tracks completion of the post-auth language onboarding flow. */
+  language_onboarding_completed: boolean;
   /**
    * Live Supabase default is `message_then_app`: a confidently detected message
    * language wins, otherwise the app language is used.
@@ -56,19 +58,18 @@ export interface UserPreferences {
   exam_reminders: boolean;
   daily_study_summary: boolean;
   sound_effects: boolean;
-  auto_storage_cleanup: boolean;
 }
 
 export const DEFAULT_PREFERENCES: UserPreferences = {
   selected_qwen_model: QWEN_MODELS[0],
   app_language: DEFAULT_LANGUAGE,
+  language_onboarding_completed: false,
   assistant_reply_language_policy: "message_then_app",
   assistant_audio_enabled: true,
   assistant_audio_autoplay: false,
   exam_reminders: true,
   daily_study_summary: true,
   sound_effects: false,
-  auto_storage_cleanup: true,
 };
 
 function asRecord(value: Json | null | undefined): Record<string, unknown> {
@@ -212,12 +213,12 @@ export async function fetchPreferences(): Promise<UserPreferences> {
       stored["app_language"] === undefined
         ? DEFAULT_LANGUAGE
         : normaliseLanguage(stored["app_language"]),
+    language_onboarding_completed: bool("language_onboarding_completed") as boolean,
     assistant_audio_enabled: bool("assistant_audio_enabled") as boolean,
     assistant_audio_autoplay: bool("assistant_audio_autoplay") as boolean,
     exam_reminders: bool("exam_reminders") as boolean,
     daily_study_summary: bool("daily_study_summary") as boolean,
     sound_effects: bool("sound_effects") as boolean,
-    auto_storage_cleanup: bool("auto_storage_cleanup") as boolean,
   };
 }
 

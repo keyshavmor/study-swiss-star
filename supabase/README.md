@@ -5,11 +5,13 @@ state, tutoring transcripts/context, Assistant history, telemetry, and media-ret
 FastAPI performs tutoring AI computation locally.
 
 - `migrations/` contains the exact historical SQL available in Git through
-  `20260914131340_cover_composite_foreign_keys.sql`.
+  `20260914131340_cover_composite_foreign_keys.sql` plus the two reconciliation migrations applied
+  as live versions `20260915105026` and `20260915105236`.
 - `LIVE_MIGRATION_HISTORY.md` records every live migration and explicitly identifies later SQL
   whose original source is not available in either authoritative clone.
-- `functions/` contains source fetched from each deployed Edge Function on 2026-09-15, plus the
-  reviewed telemetry-key hardening made during reconciliation.
+- `functions/` contains exact current source fetched from each deployed Edge Function on
+  2026-09-15. The three reconciliation targets were deployed and re-fetched at v2; the concurrently
+  deployed `storage-emergency-cleanup` v2 was preserved.
 - `config.toml` records each live function's `verify_jwt` mode.
 - `tests/rls_isolation.sql` is a local-database, rollback-only isolation test. Never run it against
   the linked production project.

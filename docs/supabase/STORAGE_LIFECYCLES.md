@@ -22,3 +22,11 @@ The invariant is descriptor first, deletion second:
 6. failures remain deferred with an `error_code`; successes become `deleted` with `deleted_at`.
 
 The function processes at most 100 ready rows per invocation. An active Vault-authenticated cron calls it every minute. There is currently no media-producing backend path, so the infrastructure has no active producer.
+
+## Global capacity cleanup
+
+An independent Vault-authenticated cron invokes `storage-emergency-cleanup` every five minutes.
+The live private policy starts cleanup at 90% used and targets 80% used. Cleanup is global rather
+than controlled by a per-user preference; authenticated users may also invoke the same guarded
+operation manually from Settings. The v2 function removes Storage objects first and then associated
+document/attachment metadata through supported APIs.

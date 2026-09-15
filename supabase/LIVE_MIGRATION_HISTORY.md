@@ -20,8 +20,13 @@ of synthetic migration files.
 | `20260914204647` | `schedule_media_retention_cleanup` | No; live cron catalog is authoritative |
 | `20260914211937` | `extend_supported_languages_swiss_german_italian` | No; live constraints are authoritative |
 | `20260914212346` | `language_defaults_and_reply_policy` | No; live defaults/constraints are authoritative |
-| `20260915115245` | `reconcile_least_privilege_fk_and_retention` | Pending local forward migration; **not applied** to the live project |
+| `20260915104658` | `post_auth_language_model_gate_and_capacity_cleanup_policy` | No; applied concurrently during reconciliation; live catalog is authoritative |
+| `20260915104721` | `language_onboarding_default_for_new_users` | No; applied concurrently during reconciliation; live default is authoritative |
+| `20260915104807` | `schedule_storage_capacity_cleanup` | No; applied concurrently during reconciliation; live cron catalog is authoritative |
+| `20260915104855` | `global_storage_cleanup_not_user_toggle` | No; applied concurrently during reconciliation; live function/defaults are authoritative |
+| `20260915105026` | `reconcile_least_privilege_fk_and_retention` | Yes; applied by this reconciliation |
+| `20260915105236` | `cover_media_retention_attachment_owner_fk` | Yes; applied by this reconciliation after advisor verification |
 
-The reconciliation deliberately does not fabricate the eight unavailable historical SQL bodies.
+The reconciliation deliberately does not fabricate the twelve unavailable historical SQL bodies.
 Before making future schema changes, first capture a reviewed schema diff into a new forward-only
 migration. Do not rename, reorder, or replay the entries above on the linked project.

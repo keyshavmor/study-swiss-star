@@ -703,12 +703,14 @@ type, points, and yields a grade). See **Grades** above for the full journey; th
   - `profile-avatars` Storage bucket upload/remove (`AVATAR_MAX_BYTES` 2 MiB) — CURRENT —
     SUPABASE.
   - `public.user_preferences` read/update (`preferences` jsonb: `selected_qwen_model`,
-    `app_language`, `assistant_reply_language_policy`, `assistant_audio_enabled`,
+    `app_language`, `language_onboarding_completed`, `assistant_reply_language_policy`, `assistant_audio_enabled`,
     `assistant_audio_autoplay`, `exam_reminders`, `daily_study_summary`, `sound_effects`,
-    `auto_storage_cleanup`) — CURRENT — SUPABASE.
+    with global storage cleanup deliberately excluded) — CURRENT — SUPABASE.
   - `get_storage_usage_status()` RPC (1 GiB quota; returns quota/used/remaining/percent/
     warning/emergency) — CURRENT — SUPABASE.
   - `storage-emergency-cleanup` Edge Function via `invokeEmergencyCleanup` — CURRENT — SUPABASE.
+  - Vault/cron also invokes global capacity cleanup every five minutes; no per-user cleanup toggle
+    controls this policy — CURRENT — SUPABASE.
   - `supabase.auth.updateUser` for email/password change (implied by `AccountSection`'s
     email/password fields).
 - **Backend interaction:** none — local model inference itself (llama.cpp/Qwen on port 8000) is

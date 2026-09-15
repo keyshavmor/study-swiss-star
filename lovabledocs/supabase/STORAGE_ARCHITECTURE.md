@@ -16,3 +16,7 @@ All buckets are private.
 User paths begin `<auth.uid()>/`; Storage policies compare the first folder segment. Upserts on the three owner-CRUD buckets have INSERT, SELECT, and UPDATE coverage.
 
 FastAPI downloads only `user-materials/<verified-user-id>/...` through the authenticated Storage endpoint with publishable key plus caller JWT. Temporary files are deleted after indexing. Google provider tokens and Calendar content never enter Storage.
+
+Global capacity cleanup runs every five minutes through a Vault-authenticated Edge Function. It
+starts at 90% used, targets 80% used, and removes eligible objects through the Storage API before
+deleting associated document/attachment metadata. It is not governed by a user preference.

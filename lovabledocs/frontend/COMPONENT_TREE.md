@@ -262,7 +262,7 @@ Conventions: "Backend calls" = the local Python context backend (`ALIM_CONTEXT_B
   - Side effects: `track()` for `settings_profile_saved`, `settings_avatar_updated`, `settings_avatar_removed`, `settings_email_change_requested`, `settings_password_changed`.
 - `PreferencesSections`:
   - Supabase calls: `fetchPreferences`/`savePreferences` (`user_preferences.preferences`).
-  - UI: `Switch` controls for `assistant_audio_enabled`, `assistant_audio_autoplay` (autoplay switch disabled/forced off when audio itself is off — `onCheckedChange` composition at source line ~446), plus other boolean preferences (`exam_reminders`, `daily_study_summary`, `sound_effects`, `auto_storage_cleanup`) and the `selected_qwen_model` selector.
+  - UI: `Switch` controls for `assistant_audio_enabled`, `assistant_audio_autoplay` (autoplay switch disabled/forced off when audio itself is off — `onCheckedChange` composition at source line ~446), plus other boolean preferences (`exam_reminders`, `daily_study_summary`, `sound_effects`) and the `selected_qwen_model` selector. Storage cleanup is a global scheduled policy, not a user toggle.
   - Side effects: `track()` per preference change.
 - `StorageSection`:
   - Supabase calls: `fetchStorageUsage()` (RPC `get_storage_usage_status`), `listStorageItems()` (`assistant_attachments` + defensive `documents` read), deletions via Storage API, `storage-emergency-cleanup` Edge Function trigger.

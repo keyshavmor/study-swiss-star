@@ -8,6 +8,33 @@ export type Database = {
   };
   public: {
     Tables: {
+      ai_model_catalog: {
+        Row: {
+          created_at: string;
+          display_name: string;
+          enabled: boolean;
+          model_id: string;
+          sort_order: number;
+          updated_at: string;
+        };
+        Insert: {
+          created_at?: string;
+          display_name: string;
+          enabled?: boolean;
+          model_id: string;
+          sort_order: number;
+          updated_at?: string;
+        };
+        Update: {
+          created_at?: string;
+          display_name?: string;
+          enabled?: boolean;
+          model_id?: string;
+          sort_order?: number;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       assessments: {
         Row: {
           academic_year: string;
@@ -593,11 +620,11 @@ export type Database = {
         };
         Relationships: [
           {
-            foreignKeyName: "media_retention_queue_attachment_id_fkey";
-            columns: ["attachment_id"];
+            foreignKeyName: "media_retention_queue_attachment_owner_fkey";
+            columns: ["attachment_id", "user_id"];
             isOneToOne: false;
             referencedRelation: "assistant_attachments";
-            referencedColumns: ["id"];
+            referencedColumns: ["id", "user_id"];
           },
         ];
       };
@@ -1302,6 +1329,20 @@ export type Database = {
         Args: { p_freed_bytes: number; p_run_token: string };
         Returns: undefined;
       };
+      get_ai_runtime_policy: {
+        Args: never;
+        Returns: {
+          allow_parallel_per_user_model_processes: boolean;
+          check_active_users: boolean;
+          deduplicate_model_downloads: boolean;
+          preflight_gpu_free_percent: number;
+          preflight_ram_free_percent: number;
+          preflight_storage_free_percent: number;
+          ready_gpu_free_percent: number;
+          ready_ram_free_percent: number;
+          ready_storage_free_percent: number;
+        }[];
+      };
       get_emergency_cleanup_candidates: {
         Args: { p_target_bytes: number };
         Returns: {
@@ -1325,6 +1366,10 @@ export type Database = {
           warning: boolean;
           warning_remaining_percent: number;
         }[];
+      };
+      verify_storage_capacity_cleanup_secret: {
+        Args: { p_secret: string };
+        Returns: boolean;
       };
     };
     Enums: {

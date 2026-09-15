@@ -1,7 +1,7 @@
 project_id = "ucacmeadsufiedxrgqit"
 
 [functions.storage-emergency-cleanup]
-verify_jwt = true
+verify_jwt = false
 
 # These public/custom-auth functions validate their own request shape or token.
 [functions.username-login]

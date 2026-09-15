@@ -1,5 +1,11 @@
 %% Status: CURRENT — live verified 2026-09-15
 erDiagram
+  AI_MODEL_CATALOG {
+    text model_id PK
+    text display_name
+    boolean enabled
+    integer sort_order
+  }
   AUTH_USERS ||--o| PROFILES : owns
   AUTH_USERS ||--o| USER_PREFERENCES : owns
   AUTH_USERS ||--o{ THREADS : owns
@@ -15,7 +21,7 @@ erDiagram
   ASSISTANT_THREADS ||--o{ ASSISTANT_MESSAGES : composite_owner
   ASSISTANT_THREADS ||--o{ ASSISTANT_ATTACHMENTS : composite_owner
   ASSISTANT_MESSAGES ||--o{ ASSISTANT_ATTACHMENTS : optional_composite_owner
-  ASSISTANT_ATTACHMENTS ||--o{ MEDIA_RETENTION_QUEUE : optional
+  ASSISTANT_ATTACHMENTS ||--o{ MEDIA_RETENTION_QUEUE : composite_owner_optional
   AUTH_USERS ||--o{ ASSESSMENTS : owns
   AUTH_USERS ||--o{ PLANNER_EVENTS : owns
   AUTH_USERS ||--o{ SCHOOL_LINKS : owns

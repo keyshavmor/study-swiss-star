@@ -7,6 +7,7 @@ Status: CURRENT — REASSESSED 2026-09-15
 | Subject chat + secure JWT | IMPLEMENTED | frontend adapter and `backend/app/main.py` |
 | Context/RAG/memory/web | IMPLEMENTED | `backend/app/context/` |
 | Local Qwen runtime | IMPLEMENTED | `backend/app/services/`, model/runtime modules |
+| Live AI model catalog/runtime policy | LIVE, NOT BACKEND-CONSUMED | Supabase exposes authenticated-read-only `ai_model_catalog` and guarded `get_ai_runtime_policy()`; the local FastAPI runtime still uses its existing environment/configuration path. Define startup/request authentication and failure fallback before wiring this production policy into the local service. |
 | Seven-language response contract | IMPLEMENTED | server detection + explicit FastAPI language |
 | Private material indexing | IMPLEMENTED, NOT UI-WIRED | FastAPI endpoints exist; current Materials UI has metadata only |
 | General Assistant persistence | IMPLEMENTED | `assistant_*` and `assistant-data.ts` |

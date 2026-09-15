@@ -8,6 +8,9 @@ flowchart TB
   TanStack -->|"caller JWT + RLS"| Data
   FastAPI["FastAPI request-scoped store"] -->|"caller JWT + publishable key"| Data
   FastAPI -->|"temporary material download"| Storage
-  Cron["pg_cron + Vault"] --> Cleanup["media-retention-cleanup"]
+  Cron["pg_cron + Vault"] --> Cleanup["media-retention-cleanup<br/>every minute"]
+  Cron --> Capacity["storage-emergency-cleanup<br/>every five minutes"]
   Cleanup --> Data
   Cleanup --> Storage
+  Capacity --> Data
+  Capacity --> Storage

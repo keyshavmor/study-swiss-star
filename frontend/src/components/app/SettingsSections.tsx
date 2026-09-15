@@ -394,11 +394,6 @@ export function PreferencesSections() {
     { key: "exam_reminders", label: t("settings.preferences.examReminders") },
     { key: "daily_study_summary", label: t("settings.preferences.dailyStudySummary") },
     { key: "sound_effects", label: t("settings.preferences.soundEffects") },
-    {
-      key: "auto_storage_cleanup",
-      label: t("settings.preferences.autoCleanup.label"),
-      hint: t("settings.preferences.autoCleanup.hint"),
-    },
   ];
 
   return (

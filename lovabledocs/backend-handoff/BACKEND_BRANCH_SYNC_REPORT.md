@@ -1,6 +1,6 @@
 # Backend Branch Reconciliation Report
 
-Status: IMPLEMENTATION COMPLETE — HOSTED STAGING BLOCKED BY PROJECT PLAN
+Status: IMPLEMENTATION AND AUTHORIZED PRODUCTION DEPLOYMENT COMPLETE
 
 Last verified: 2026-09-15 (Europe/Zurich)
 
@@ -89,36 +89,43 @@ Read-only inspection confirmed the project is healthy on Postgres 17.6.1.166; al
 
 ### Live Supabase reconciliation
 
-- Verified 15 applied migrations, 27/27 public tables with RLS and policies, six private buckets,
-  six active Edge Functions, one active Vault-authenticated every-minute cleanup cron job, relevant
-  constraints/FKs/indexes, Storage path policies, and Data API grants.
+- Final verification found 21 applied migrations, 28/28 public tables with RLS and policies, six
+  private buckets, six active Edge Functions, two active Vault-authenticated cleanup cron jobs,
+  relevant constraints/FKs/indexes, Storage path policies, and Data API grants.
 - Generated `frontend/src/integrations/supabase/types.ts` from the live project, then formatted it
   without changing its schema meaning.
-- Retrieved all six deployed Edge Function v1 sources and recorded each live `verify_jwt` value.
+- Retrieved all six deployed Edge Function sources and recorded each live version and `verify_jwt`
+  value. Reconciliation targets `activity-log`, `feedback-submit`, and `media-retention-cleanup` are
+  active at v2 with exact checked-in/deployed source parity.
 - Audited the Python `SupabaseContextStore`: every private read/write carries the verified user,
   cross-user requests fail before REST, composite ownership matches live FKs, and embeddings are
   serialized as JSON arrays for the live JSONB column.
 - Corrected the current-main retention helper from invalid `descriptor_ready` to the live
   `ready` status and made the non-empty descriptor path mandatory before enqueue.
-- Security advisor: one accepted warning for authenticated execution of the intentionally
-  `SECURITY DEFINER` storage-usage RPC. Its empty search path, authenticated-only ACL,
-  `auth.uid()` guard, and aggregate-only result were inspected.
-- Performance advisor: four missing covering FK indexes and 25 unused-index information notices.
-  The missing indexes, least-privilege grant corrections, and owner-bound media-retention paths/FK
-  are captured in the unapplied
-  `20260915115245_reconcile_least_privilege_fk_and_retention.sql`. Unused indexes were not removed
-  without representative production workload statistics.
-- The checked-in `activity-log` and `feedback-submit` source rejects secret/content/PII-shaped
+- Security advisor: two accepted warnings for authenticated execution of the intentionally
+  `SECURITY DEFINER` storage-usage and AI-runtime-policy RPCs. Both have empty search paths,
+  authenticated-only ACLs, `auth.uid()` guards, and bounded outputs from private policy tables.
+- Performance advisor: zero unindexed-foreign-key findings after the follow-up composite index.
+  Twenty-nine unused-index information notices were not acted on without representative workload
+  statistics.
+- The deployed `activity-log` and `feedback-submit` source rejects secret/content/PII-shaped
   property keys in addition to the browser sanitizer. The checked-in cleanup worker also refuses
-  paths outside the queue row's user prefix. These source changes are not deployed.
-- No production mutation occurred. Applying the grant/index migration was rejected as too broad
-  without explicit approval, so no alternate or partial write was attempted.
+  paths outside the queue row's user prefix.
 - Production approval was subsequently granted. Creating the approved disposable Supabase branch
   was rejected because hosted Branching requires Pro; no branch was created and no hourly charge
   began. A disposable local PostgreSQL 17 harness then verified the exact migration SQL, grants,
   indexes, path checks, composite ownership, and column-specific `ON DELETE SET NULL`. Its container,
   image, and temporary files were deleted after the test. This syntax/constraint test does not replace
   hosted RLS, Auth, Storage, and Edge Function testing.
+- The owner explicitly waived hosted staging and authorized direct production deployment based on
+  the successful local harness and live preflight. Migration `20260915105026` applied the reviewed
+  grant/retention changes. Advisor verification exposed that the retention FK needed a composite
+  rather than single-column covering index, so forward migration `20260915105236` corrected it;
+  the final advisor reports no unindexed FKs.
+- During deployment another actor applied four migrations (`20260915104658` through
+  `20260915104855`) and deployed `storage-emergency-cleanup` v2. Those changes added the read-only
+  `ai_model_catalog`, language-onboarding default, global storage cleanup policy, and five-minute
+  cron. They were inspected, preserved, typed, and documented rather than overwritten.
 
 ### Deliberately deferred product work
 
@@ -130,13 +137,16 @@ Read-only inspection confirmed the project is healthy on Postgres 17.6.1.166; al
   Materials UI has no approved upload/index interaction or list endpoint.
 - Quiz, mock exam, grading, study-plan generation, reminders, and daily summaries remain visible
   product gaps rather than fabricated backend behavior.
+- The concurrent `ai_model_catalog` and `get_ai_runtime_policy()` contract is live and documented,
+  but the local FastAPI runtime is not wired to it until service authentication and offline fallback
+  behavior are explicitly decided.
 
 ## Verification commands and results
 
 | Gate | Result |
 |---|---|
 | `bun install --frozen-lockfile` | PASS — 703 installs / 780 packages, no changes |
-| `bun test` | PASS — 21 tests covering auth routes/providers, logout cleanup, Assistant/feedback boundaries, speech fallback, Google token lifecycle/read-only mapping, telemetry, backend adapter, and seven-language policy |
+| `bun test` | PASS — 22 tests covering auth routes/providers, logout cleanup, Assistant/feedback boundaries, preference onboarding/global-cleanup compatibility, speech fallback, Google token lifecycle/read-only mapping, telemetry, backend adapter, and seven-language policy |
 | `bun run typecheck` | PASS |
 | `bun run lint` | PASS — 0 errors; 25 pre-existing Fast Refresh warnings |
 | `bun x prettier --check "src/**/*.{ts,tsx}" "scripts/**/*.ts" package.json tsconfig.json` | PASS — all matched files use Prettier style; `.env.example` is excluded because Prettier cannot infer its parser |
@@ -150,7 +160,10 @@ Read-only inspection confirmed the project is healthy on Postgres 17.6.1.166; al
 | `python -m ruff format --check backend tests/backend tests/e2e` | PASS — 49 files |
 | Edge Function syntax build (`bun build`, external imports) | PASS — all six functions |
 | Disposable PostgreSQL 17 migration harness | PASS — exact migration, grants, four indexes, path constraints, composite owner FK, and column-specific delete behavior; container/image/test files deleted |
-| Supabase security/performance advisors + read-only catalog checks | PASS WITH RECORDED FINDINGS |
+| Production catalog verification | PASS — 4/4 constraints, effective least-privilege grants, owner FK definition, 28 RLS-enabled public tables, zero incompatible retention rows |
+| Supabase security/performance advisors | PASS WITH TWO ACCEPTED SECURITY WARNINGS — zero unindexed FKs; 29 unused-index informational notices |
+| Edge deployment/source parity | PASS — three authorized functions active at v2; source bytes and JWT settings match repository |
+| Non-mutating Edge smoke requests | PASS — activity CORS 204, invalid telemetry 400, unauthenticated feedback 401, unauthenticated retention 401 |
 | Hosted branch + `supabase test db` for `supabase/tests/rls_isolation.sql` | BLOCKED — branch creation returned `PaymentRequiredException` because the organization is not on Pro; no branch was created |
 | Authenticated two-user live CRUD/Storage test | NOT RUN — no disposable production identities; local/static isolation and live catalog were verified |
 
@@ -160,17 +173,8 @@ therefore used clean temporary locked environments at `/tmp/alim-backend-venv` a
 
 ## Readiness
 
-**NOT READY FOR PRODUCTION DEPLOYMENT.** The local branch is ready for review and production
-approval was granted, but the required hosted staging environment could not be created on the
-organization's current plan. Production remains unchanged. The outstanding deployment consists of:
-
-1. staging and applying the grant/index migration, whose broad grant revocations can affect live
-   Data API clients; and
-2. deploying the three hardened Edge Function versions (`activity-log`, `feedback-submit`, and
-   `media-retention-cleanup`) and re-fetching them to prove source/live
-   parity.
-
-After hosted staging becomes available—or the owner explicitly waives that condition—run
-disposable-user cross-account RLS/Storage tests, deploy/apply, re-run both advisor classes, re-fetch
-function sources, and record the resulting live migration/function versions. Until then, the live
-project remains unchanged and the repository truthfully marks these artifacts as pending.
+**READY FOR REVIEW / MERGE PREPARATION.** The owner explicitly waived unavailable hosted staging,
+and the authorized production migration/function scope is deployed and verified. The remaining
+test limitation is the absence of disposable two-user hosted Auth/RLS/Storage identities; this is
+recorded rather than misrepresented as executed. No migration rollback or history rewrite is
+needed. Future work should preserve the concurrent runtime-policy/catalog/capacity-cleanup changes.

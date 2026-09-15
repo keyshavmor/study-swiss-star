@@ -5,7 +5,7 @@ flowchart TD
   ProfileData --> Acct["profiles table + profile-avatars bucket<br/>CURRENT - SUPABASE"]
   ProfileData --> Local["Browser storage for grades and planner"]
   Settings["/settings"] --> Account["Account: profile, email, password, avatar<br/>CURRENT - FRONTEND"]
-  Settings --> Toggles["Preference switches: exam_reminders, daily_study_summary,<br/>sound_effects, auto_storage_cleanup<br/>persisted in user_preferences"]
+  Settings --> Toggles["Preference switches: exam_reminders, daily_study_summary,<br/>sound_effects<br/>persisted in user_preferences"]
   Settings --> Audio["assistant_audio_enabled default true<br/>assistant_audio_autoplay default false<br/>persisted in user_preferences"]
   Settings --> Model["Local Qwen model selector (selected_qwen_model)<br/>persisted in user_preferences"]
   Settings --> Storage["Storage usage, filters and deletion<br/>CURRENT - FRONTEND"]

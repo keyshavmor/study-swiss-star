@@ -44,6 +44,14 @@ describe("current-main product contracts", () => {
     expect(retention).not.toContain("descriptor_ready");
   });
 
+  test("preferences preserve language onboarding and do not expose obsolete cleanup control", () => {
+    const account = source("lib/account-data.ts");
+    const settings = source("components/app/SettingsSections.tsx");
+    expect(account).toContain("language_onboarding_completed");
+    expect(account).not.toContain("auto_storage_cleanup");
+    expect(settings).not.toContain('key: "auto_storage_cleanup"');
+  });
+
   test("speech fails closed when the browser API is absent", () => {
     expect(speechSupported()).toBe(false);
     expect(speak({ text: "Hello", uiLanguage: "en" })).toBe("unsupported");

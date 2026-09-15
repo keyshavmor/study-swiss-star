@@ -50,3 +50,4 @@ alter table public.media_retention_queue
     foreign key (attachment_id, user_id)
     references public.assistant_attachments (id, user_id)
     on delete set null (attachment_id);
+

@@ -6,4 +6,8 @@ Supabase project `ucacmeadsufiedxrgqit` provides Auth, the RLS-protected Data AP
 
 Current frontend state ownership does not automatically follow table existence: assessments, planner events, school links, and related product state remain under browser key `asa.data.v2`. Chat, account/settings, feedback/telemetry, Assistant persistence, and Storage use Supabase according to their specific source modules.
 
+The live runtime also exposes an authenticated-read-only `ai_model_catalog` and guarded
+`get_ai_runtime_policy()` RPC. Vault-backed schedules invoke media retention every minute and global
+storage-capacity cleanup every five minutes. The latter is a system policy, not a user preference.
+
 See `docs/supabase/`, generated types, migrations, functions, and `supabase/tests/rls_isolation.sql`.
