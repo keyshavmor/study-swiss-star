@@ -160,8 +160,7 @@ export const system = {
     "admission.state.queued": "Du bist in der Warteschlange.",
     "admission.state.denied_capacity":
       "Es gibt zurzeit nicht genug freien Grafikspeicher, Arbeitsspeicher oder Festplattenplatz für eine neue Sitzung.",
-    "admission.state.denied_user_limit":
-      "Die maximale Anzahl Personen nutzt das System bereits.",
+    "admission.state.denied_user_limit": "Die maximale Anzahl Personen nutzt das System bereits.",
     "admission.state.backend_unavailable":
       "Der lokale Server ist nicht erreichbar, daher können wir keinen freien Platz bestätigen. Der Zugang bleibt geschlossen, bis er antwortet.",
     "admission.activeUsers": "Personen im System: {count} von {max}",
@@ -229,7 +228,8 @@ export const system = {
       "Gibt das Modell und den für deine Sitzung reservierten Speicher frei. Deine Sitzung läuft ohne KI weiter, bis du wieder ein Modell vorbereitest.",
     "systemHealth.release.action": "Mein KI-Modell freigeben",
     "systemHealth.release.working": "Wird freigegeben…",
-    "systemHealth.release.done": "Dein Modell wurde freigegeben. Diese Sitzung läuft ohne KI weiter.",
+    "systemHealth.release.done":
+      "Dein Modell wurde freigegeben. Diese Sitzung läuft ohne KI weiter.",
     "systemHealth.release.failed":
       "Der lokale Server hat die Freigabe nicht bestätigt. Es wurde nichts verändert.",
 
@@ -258,7 +258,8 @@ export const system = {
     "dataRights.confirm.proceed": "Endgültig löschen",
     "dataRights.working": "Wird gelöscht…",
     "dataRights.done": "Löschung abgeschlossen.",
-    "dataRights.failed": "Die Löschung konnte nicht abgeschlossen werden. Sonst wurde nichts verändert.",
+    "dataRights.failed":
+      "Die Löschung konnte nicht abgeschlossen werden. Sonst wurde nichts verändert.",
     "dataRights.retentionNote":
       "Minimale, anonymisierte Sicherheits- und Rechtsnachweise können aufbewahrt werden, wenn Gesetz oder ein Rechtsanspruch es verlangt. Wir können nicht versprechen, dass solche Nachweise verschwinden.",
     "dataRights.legalLinks": "Datenschutzhinweis und Richtlinien",
@@ -399,7 +400,8 @@ export const system = {
     "dataRights.confirm.proceed": "Ändgültig lösche",
     "dataRights.working": "Wird glöscht…",
     "dataRights.done": "Löschig fertig.",
-    "dataRights.failed": "D Löschig het nöd abgschlosse werde chöne. Suscht isch nüt veränderet worde.",
+    "dataRights.failed":
+      "D Löschig het nöd abgschlosse werde chöne. Suscht isch nüt veränderet worde.",
     "dataRights.retentionNote":
       "Minimali, anonymisierti Sicherheits- und Rechtsnachwiis chöi bhalte werde, wenn s Gsetz oder en Rechtsaaspruch das verlangt. Mir chöi nöd verspräche, dass sonigi Nachwiis verschwinded.",
     "dataRights.legalLinks": "Datenschutzhinwiis und Richtlinie",
@@ -560,8 +562,7 @@ export const system = {
     "settings.privacy.title": "Конфиденциальность и данные",
     "settings.privacy.body": "Посмотрите, что о вас хранится, и удалите это.",
     "settings.privacy.openSystemHealth": "Открыть управление данными",
-    "settings.privacy.legal":
-      "Условия, конфиденциальность, правила поведения и защита детей",
+    "settings.privacy.legal": "Условия, конфиденциальность, правила поведения и защита детей",
     "settings.compliance.title": "Ваши согласия",
     "settings.compliance.accountType": "Тип аккаунта",
     "settings.compliance.accountType.student": "Учащийся",
@@ -585,8 +586,7 @@ export const system = {
     "admission.state.queued": "Estás en la cola de espera.",
     "admission.state.denied_capacity":
       "Ahora mismo no hay suficiente memoria de gráficos, memoria del sistema ni espacio en disco para una nueva sesión.",
-    "admission.state.denied_user_limit":
-      "El número máximo de personas ya está usando el sistema.",
+    "admission.state.denied_user_limit": "El número máximo de personas ya está usando el sistema.",
     "admission.state.backend_unavailable":
       "No se puede contactar con el servidor local, así que no podemos confirmar un sitio libre. El acceso permanece cerrado hasta que responda.",
     "admission.activeUsers": "Personas usando el sistema: {count} de {max}",
@@ -693,8 +693,7 @@ export const system = {
     "settings.messaging.peerNotificationsHint":
       "Al desactivarlo se mantiene el contador de no leídos, pero se dejan de mostrar los avisos emergentes.",
     "settings.messaging.browserNotifications": "Mostrar notificaciones del navegador",
-    "settings.messaging.browserNotificationsHint":
-      "Tu navegador pedirá permiso cuando lo actives.",
+    "settings.messaging.browserNotificationsHint": "Tu navegador pedirá permiso cuando lo actives.",
     "settings.model.preferred": "Modelo preferido",
     "settings.model.assigned": "Asignado ahora",
     "settings.model.recommendation": "Recomendado por el sistema: {model}",
@@ -727,8 +726,7 @@ export const system = {
     "admission.state.queued": "Tu es dans la file d'attente.",
     "admission.state.denied_capacity":
       "Il n'y a pas assez de mémoire graphique, de mémoire système ou d'espace disque libre pour démarrer une nouvelle session.",
-    "admission.state.denied_user_limit":
-      "Le nombre maximal de personnes utilise déjà le système.",
+    "admission.state.denied_user_limit": "Le nombre maximal de personnes utilise déjà le système.",
     "admission.state.backend_unavailable":
       "Le serveur local est injoignable, nous ne pouvons donc pas confirmer une place libre. L'accès reste fermé jusqu'à sa réponse.",
     "admission.activeUsers": "Personnes sur le système : {count} sur {max}",
@@ -870,8 +868,7 @@ export const system = {
     "admission.state.queued": "Sei in coda.",
     "admission.state.denied_capacity":
       "Al momento non c'è abbastanza memoria grafica, memoria di sistema o spazio su disco per una nuova sessione.",
-    "admission.state.denied_user_limit":
-      "Il numero massimo di persone sta già usando il sistema.",
+    "admission.state.denied_user_limit": "Il numero massimo di persone sta già usando il sistema.",
     "admission.state.backend_unavailable":
       "Il server locale non è raggiungibile, quindi non possiamo confermare un posto libero. L'accesso resta chiuso finché non risponde.",
     "admission.activeUsers": "Persone nel sistema: {count} su {max}",
@@ -939,7 +936,8 @@ export const system = {
       "Libera il modello e la memoria riservati alla tua sessione. La sessione continua senza IA finché non prepari di nuovo un modello.",
     "systemHealth.release.action": "Rilascia il mio modello IA",
     "systemHealth.release.working": "Rilascio in corso…",
-    "systemHealth.release.done": "Il tuo modello è stato rilasciato. Questa sessione continua senza IA.",
+    "systemHealth.release.done":
+      "Il tuo modello è stato rilasciato. Questa sessione continua senza IA.",
     "systemHealth.release.failed":
       "Il server locale non ha confermato il rilascio. Non è stato modificato nulla.",
 
@@ -968,7 +966,8 @@ export const system = {
     "dataRights.confirm.proceed": "Elimina definitivamente",
     "dataRights.working": "Eliminazione…",
     "dataRights.done": "Eliminazione completata.",
-    "dataRights.failed": "Non è stato possibile completare l'eliminazione. Nient'altro è stato modificato.",
+    "dataRights.failed":
+      "Non è stato possibile completare l'eliminazione. Nient'altro è stato modificato.",
     "dataRights.retentionNote":
       "Registrazioni minime e anonimizzate di sicurezza e di rilevanza legale possono essere conservate dove la legge o una pretesa legale lo richiede. Non possiamo promettere che tali registrazioni scompaiano.",
     "dataRights.legalLinks": "Informativa sulla privacy e regole",
