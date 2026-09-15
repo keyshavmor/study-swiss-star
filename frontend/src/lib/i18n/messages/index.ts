@@ -4,6 +4,7 @@
  */
 import { LANGUAGE_CODES, type LanguageCode } from "../languages";
 
+import { assessment } from "./assessment";
 import { assistant } from "./assistant";
 import { auth } from "./auth";
 import { calendar } from "./calendar";
@@ -31,6 +32,7 @@ import { subject } from "./subject";
 import { system } from "./system";
 
 const AREAS = [
+  assessment,
   assistant,
   auth,
   calendar,
@@ -59,7 +61,8 @@ const AREAS = [
 ];
 
 /** English dictionary shape — the typed key set for the whole app. */
-export type EnglishDictionary = typeof assistant.en &
+export type EnglishDictionary = typeof assessment.en &
+  typeof assistant.en &
   typeof auth.en &
   typeof calendar.en &
   typeof chat.en &
