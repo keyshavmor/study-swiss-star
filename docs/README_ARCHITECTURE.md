@@ -219,3 +219,29 @@ before DB rows, caller-only, no target-user-id parameter accepted). See
 no claim of GDPR or any other regulatory certification; lawful basis, DPAs, records of processing,
 breach procedures, jurisdictional guardian-consent rules and cookie/ePrivacy analysis are
 organisational decisions outside what frontend code can establish.
+
+
+## New sequence diagrams (this pass): compliance, admission, safety, messaging
+
+- `sequences/SIGNUP_ROLE_GUARDIAN_CONSENT.mmd`
+- `sequences/STARTUP_COMPLIANCE_LANGUAGE_ADMISSION_MODEL_HOME.mmd`
+- `sequences/PEER_CHAT_CREATION_BY_USERNAME.mmd`
+- `sequences/PEER_MESSAGE_MODERATION_SEND_NOTIFY.mmd`
+- `sequences/FIRST_SAFETY_STRIKE.mmd`
+- `sequences/SECOND_STRIKE_SUSPENSION_GUARDIAN_REVIEW.mmd`
+- `sequences/ATTACHMENT_COMPRESS_SCAN_STORE.mmd`
+- `sequences/OFFLINE_MESSAGE_NEXT_LOGIN_UNREAD.mmd`
+- `sequences/ADMISSION_MAX10_LOGIN50_RULE.mmd`
+- `sequences/MODEL_LOAD_BALANCING_LIGHTER_ASSIGNMENT.mmd`
+- `sequences/INFLIGHT_PRESERVE_NEWCOMER_QUEUE_SAFE_REBALANCE.mmd`
+- `sequences/EFFECTIVE_CAPS_75_VS_30_25_30_FLOORS.mmd`
+- `sequences/SYSTEM_HEALTH_AGGREGATION.mmd`
+- `sequences/RELEASE_MY_MODEL.mmd`
+- `sequences/SIGNOUT_RUNTIME_RELEASE_LEASE_TTL_FALLBACK.mmd`
+- `sequences/DELETE_MY_DATA_RANGE.mmd`
+- `sequences/DELETE_MY_DATA_ALL_CONTENT_KEEP_ACCOUNT.mmd`
+- `sequences/DELETE_ACCOUNT.mmd`
+- `sequences/MESSAGING_STORAGE_RLS_BOUNDARIES.mmd`
+- `sequences/GDPR_PRIVACY_DATA_MAP_RIGHTS_WORKFLOW.mmd`
+
+See `legal/LEGAL_REVIEW_REQUIRED.md` for what these flows do NOT establish legally.

@@ -194,3 +194,34 @@ implemented in this repository.
     `user-materials`/`chat-attachments` down to ~80% used, cascading `documents` /
     `assistant_attachments` / `document_chunks`; auth, profiles, preferences and avatars are never
     touched. See `sequences/STORAGE_CAPACITY_CLEANUP.mmd`.
+
+## Additional acceptance criteria (this pass): admission, safety, messaging
+
+1. Never admit more than 10 concurrently active users (`max_active_users`).
+2. Login admission requires ALL of GPU/RAM/local-disk free% >= 50 at check time; otherwise
+   `denied_capacity` (retryable) or `denied_user_limit` (not retryable, at cap) — never fabricate
+   `admitted`.
+3. No new heavy allocation may be granted while any resource is below the 50/50/50 login floor.
+4. Global utilisation must never exceed the effective caps: GPU 70% used, RAM 75% used,
+   storage 70% used (the stricter of the 75%-used ceiling and the 30/25/30 free floors).
+5. In-flight requests are preserved during rebalancing (`preserve_inflight_requests`); new
+   allocations are queued, not rejected, while rebalancing is in progress
+   (`queue_new_allocations_while_rebalancing`).
+6. Model artifacts are shared globally — no duplicate per-user downloads of the same model.
+7. Preferred model (`preferred_model_id`) and assigned runtime model (`assigned_model_id`) are
+   tracked separately; assignment may downgrade to a lighter model with a `recommendation_reason_code`.
+8. `/api/system/model/recommendation` reflects current health (`recommend_from_system_health`).
+9. Runtime release (`/api/system/runtime/release`) must safely tear down only the caller's own
+   process/VRAM allocation, identified by the verified JWT + lease id, never another user's.
+10. A heartbeat/lease-expiry sweeper must reclaim abandoned sessions (browser closed without a
+    clean sign-out) without requiring the frontend to send an explicit release call.
+11. No raw unsafe content is ever written to logs, `moderation_events`, or telemetry — bounded
+    category codes and hashes only.
+12. The verified Supabase JWT is the sole authorization boundary for every local-backend call;
+    `X-Student-Id` is context/cross-check only and must never be trusted as authentication.
+13. Peer messages are persisted only after a `safety.verdict === "allow"` decision from
+    `/api/safety/moderate` (or the equivalent internal check inside `/api/peer-messaging/send`).
+14. Attachments are scanned via `/api/safety/attachment-scan` (or equivalent) before being written
+    to the `peer-message-attachments` bucket; nothing is stored on a non-`allow` verdict.
+15. `/api/system/health` must never expose another user's identity — only aggregate counts and the
+    caller's own `owned_by_me` GPU instance flags.
