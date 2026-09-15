@@ -140,7 +140,16 @@ pass). All buckets are **private**; none issue public URLs. See
   emergency threshold. The frontend does not decide what gets removed; "the backend function
   decides what to remove" (inline comment, same file). Implementation is deployed externally — see
   `EDGE_FUNCTIONS.md`.
-- **auto_storage_cleanup preference:** `user_preferences.preferences.auto_storage_cleanup` (default
-  `true`) is expected to gate whether emergency cleanup runs automatically vs. only on explicit user
-  action — enforcement point is BACKEND IMPLEMENTATION UNKNOWN beyond the frontend's own trigger
-  call.
+- **REMOVED — no per-user opt-out:** the `auto_storage_cleanup` preference key has been removed
+  from `user_preferences.preferences` (CURRENT SUPABASE). There is no per-user toggle for storage
+  cleanup any more; the global capacity cleanup described below is platform-wide and always on.
+
+## Global storage capacity cleanup — CURRENT SUPABASE
+
+See `docs/supabase/STORAGE_LIFECYCLES.md` ("Global storage capacity cleanup") and
+`docs/sequences/STORAGE_CAPACITY_CLEANUP.mmd` for the full mechanism: a 5-minute cron-scheduled,
+custom-authenticated Edge Function checks global Storage usage and, at or above 90% used, deletes
+the globally oldest eligible objects in `user-materials` and `chat-attachments` (plus their
+`documents` / `assistant_attachments` metadata rows, cascading `document_chunks`) down to roughly
+80% used. It is platform-wide, not per-user, and not user-disableable. Auth, `profiles`,
+`user_preferences` and `profile-avatars` are never cleanup targets.
