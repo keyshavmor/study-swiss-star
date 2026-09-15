@@ -18,6 +18,7 @@ import { materials } from "./materials";
 import { misc } from "./misc";
 import { nav } from "./nav";
 import { notifications } from "./notifications";
+import { onboarding } from "./onboarding";
 import { planner } from "./planner";
 import { profile } from "./profile";
 import { school } from "./school";
@@ -41,6 +42,7 @@ const AREAS = [
   misc,
   nav,
   notifications,
+  onboarding,
   planner,
   profile,
   school,
@@ -65,6 +67,7 @@ export type EnglishDictionary = typeof assistant.en &
   typeof misc.en &
   typeof nav.en &
   typeof notifications.en &
+  typeof onboarding.en &
   typeof planner.en &
   typeof profile.en &
   typeof school.en &
