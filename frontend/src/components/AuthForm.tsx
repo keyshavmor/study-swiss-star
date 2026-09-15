@@ -309,7 +309,10 @@ export function AuthForm() {
               value={identifier}
               onChange={(e) => {
                 setIdentifier(e.target.value);
-                if (pendingConfirmationEmail && e.target.value.trim() !== pendingConfirmationEmail) {
+                if (
+                  pendingConfirmationEmail &&
+                  e.target.value.trim() !== pendingConfirmationEmail
+                ) {
                   setPendingConfirmationEmail("");
                 }
               }}
