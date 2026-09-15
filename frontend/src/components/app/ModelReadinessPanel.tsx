@@ -138,7 +138,7 @@ function ResourceCard({
 const TONE_TEXT: Record<string, string> = {
   success: "text-success",
   warning: "text-warning",
-  degraded: "text-warning",
+  degraded: "text-degraded",
   danger: "text-destructive",
   progress: "text-primary",
   neutral: "text-muted-foreground",
@@ -147,7 +147,7 @@ const TONE_TEXT: Record<string, string> = {
 const TONE_STROKE: Record<string, string> = {
   success: "stroke-success",
   warning: "stroke-warning",
-  degraded: "stroke-warning",
+  degraded: "stroke-degraded",
   danger: "stroke-destructive",
   progress: "stroke-primary",
   neutral: "stroke-muted-foreground",
