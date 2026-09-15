@@ -35,7 +35,7 @@
 
 ## Current hCaptcha repair
 
-- [ ] Configure hCaptcha and audit public sitekey availability without exposing secrets.
-- [ ] Align widget lifecycle and preserve all password-flow token contracts; add regressions.
-- [ ] Synchronize docs and run available validation.
+- [x] Configure hCaptcha and audit public sitekey availability without exposing secrets: SITEKEY_MISSING.
+- [x] Align widget lifecycle and preserve all password-flow token contracts; add regressions.
+- [x] Synchronize docs; 111 tests passed, i18n complete, lint 0 errors / 28 warnings, automatic build OK. Formatting only flags generated .wrangler config; no standalone typecheck was run.
 - [ ] Real production auth smoke test (blocked until public sitekey and solved challenge are available).
