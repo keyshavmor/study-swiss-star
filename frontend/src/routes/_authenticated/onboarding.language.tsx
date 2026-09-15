@@ -152,6 +152,18 @@ function LanguageOnboardingPage() {
             {t("onboarding.language.saveError")}
           </p>
         )}
+        {loadFailed && (
+          <div className="mt-3 flex flex-col items-center gap-2 rounded-xl border border-destructive/40 bg-destructive/10 px-4 py-3 text-center">
+            <p className="flex items-center gap-2 text-[13px] font-medium text-destructive">
+              <AlertTriangle className="h-4 w-4" />
+              {t("onboarding.language.loadError")}
+            </p>
+            <Button variant="outline" size="sm" onClick={() => void refreshStatus()}>
+              {t("onboarding.language.retry")}
+            </Button>
+          </div>
+        )}
+
 
         <div className="mt-6 flex justify-center">
           <Button
