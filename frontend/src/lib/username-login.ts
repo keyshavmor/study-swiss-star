@@ -62,6 +62,8 @@ export function classifyUsernameLogin(
     };
   }
   if (data.error_code === "authentication_unavailable") return { kind: "unavailable" };
+  if (data.error_code === "captcha_required") return { kind: "captcha_required" };
+  if (data.error_code === "captcha_failed") return { kind: "captcha_failed" };
   if (data.error_code === "invalid_credentials") return { kind: "invalid_credentials" };
   if (data.access_token && data.refresh_token) {
     return {
