@@ -33,6 +33,18 @@ that product behaviour is not changed silently. Status labels follow
   before relying on column names, and must not trust the preview project.
 - **Recommended owner/action:** project owner — re-run a schema/RLS/bucket dump
   against `ucacmeadsufiedxrgqit` and attach it to `docs/supabase/SUPABASE_CURRENT_STATE.md`.
+- **CURRENT FRONTEND (resolved 2026-09-15):** the sandbox process environment
+  injected the preview project's `VITE_SUPABASE_*` / `SUPABASE_*` values, which
+  override `frontend/.env`, so the running app queried the preview schema and
+  `/onboarding/compliance` failed with PostgREST `PGRST205 … account_compliance`.
+  `frontend/vite.config.ts` now pins the canonical production project URL,
+  project id and *publishable* key via `vite.define` for both `import.meta.env`
+  and the server-side `process.env` reads. Only public values are inlined.
+- **BACKEND TODO FOR CODEX / owner:** `process.env['SUPABASE_SERVICE_ROLE_KEY']`
+  is still whatever the host injects and is NOT pinned; any privileged
+  server-side path must be given the canonical project's service key by the
+  deployment environment before it is used.
+
 
 ## 2. `X-Student-Id` is the only identity the local backend receives
 
