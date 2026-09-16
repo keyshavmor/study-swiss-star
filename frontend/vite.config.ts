@@ -15,6 +15,14 @@ const CANONICAL_SUPABASE_PROJECT_ID = "ucacmeadsufiedxrgqit";
 const CANONICAL_SUPABASE_URL = "https://ucacmeadsufiedxrgqit.supabase.co";
 const CANONICAL_SUPABASE_PUBLISHABLE_KEY = "sb_publishable_Gg-3CEDaQNptp1QvWsoSSA_eJCqlRM6";
 
+// `define` only rewrites dot access, so server code using bracket notation
+// (process.env["SUPABASE_URL"]) still read the injected sandbox project and
+// rejected production tokens. Pin the process environment as well.
+process.env["SUPABASE_URL"] = CANONICAL_SUPABASE_URL;
+process.env["SUPABASE_PUBLISHABLE_KEY"] = CANONICAL_SUPABASE_PUBLISHABLE_KEY;
+process.env["SUPABASE_ANON_KEY"] = CANONICAL_SUPABASE_PUBLISHABLE_KEY;
+process.env["SUPABASE_PROJECT_ID"] = CANONICAL_SUPABASE_PROJECT_ID;
+
 export default defineConfig({
   tanstackStart: {
     // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
@@ -39,6 +47,10 @@ export default defineConfig({
       "process.env.SUPABASE_URL": JSON.stringify(CANONICAL_SUPABASE_URL),
       "process.env.SUPABASE_PUBLISHABLE_KEY": JSON.stringify(CANONICAL_SUPABASE_PUBLISHABLE_KEY),
       "process.env.SUPABASE_PROJECT_ID": JSON.stringify(CANONICAL_SUPABASE_PROJECT_ID),
+      'process.env["SUPABASE_URL"]': JSON.stringify(CANONICAL_SUPABASE_URL),
+      'process.env["SUPABASE_PUBLISHABLE_KEY"]': JSON.stringify(CANONICAL_SUPABASE_PUBLISHABLE_KEY),
+      'process.env["SUPABASE_ANON_KEY"]': JSON.stringify(CANONICAL_SUPABASE_PUBLISHABLE_KEY),
+      'process.env["SUPABASE_PROJECT_ID"]': JSON.stringify(CANONICAL_SUPABASE_PROJECT_ID),
     },
   },
 });
