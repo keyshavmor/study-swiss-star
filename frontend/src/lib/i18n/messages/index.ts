@@ -8,6 +8,7 @@ import { assessment } from "./assessment";
 import { assistant } from "./assistant";
 import { auth } from "./auth";
 import { calendar } from "./calendar";
+import { capacity } from "./capacity";
 import { chat } from "./chat";
 import { common } from "./common";
 import { compliance } from "./compliance";
@@ -36,6 +37,7 @@ const AREAS = [
   assistant,
   auth,
   calendar,
+  capacity,
   chat,
   common,
   compliance,
@@ -65,6 +67,7 @@ export type EnglishDictionary = typeof assessment.en &
   typeof assistant.en &
   typeof auth.en &
   typeof calendar.en &
+  typeof capacity.en &
   typeof chat.en &
   typeof common.en &
   typeof compliance.en &

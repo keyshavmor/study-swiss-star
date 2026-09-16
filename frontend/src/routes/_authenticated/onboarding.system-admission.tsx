@@ -12,7 +12,7 @@ import { markAdmitted } from "@/lib/admission-session";
 import { effectiveUtilisationCaps } from "@/lib/system-admission.types";
 import type { AdmissionStatus } from "@/lib/system-admission.types";
 import { signOutCompletely } from "@/lib/sign-out";
-import { MODEL_ONBOARDING_PATH } from "@/lib/startup-flow";
+import { HOME_PATH, MODEL_ONBOARDING_PATH } from "@/lib/startup-flow";
 import { track, trackFailure } from "@/lib/telemetry";
 
 export const Route = createFileRoute("/_authenticated/onboarding/system-admission")({
@@ -173,11 +173,17 @@ function SystemAdmissionPage() {
             </div>
           )}
 
-          <p className="text-[12px] text-muted-foreground">{t("admission.failClosedNote")}</p>
+          <p className="text-[12px] text-muted-foreground">{t("admission.optionalNote")}</p>
 
           <div className="flex flex-wrap gap-2 pt-2">
             <Button onClick={() => void runCheck()} disabled={busy}>
               {t("admission.retry")}
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => void navigate({ to: HOME_PATH, replace: true })}
+            >
+              {t("onboarding.model.continueWithoutAi")}
             </Button>
             <Button variant="ghost" onClick={() => void handleLogout()}>
               {t("admission.signOut")}

@@ -153,3 +153,42 @@ Events only: `assessment_setup_opened`, `assessment_generation_requested`,
 `assessment_submitted`, `assessment_abandoned`, `assessment_grading_completed`,
 `assessment_grading_failed`, `assessment_results_opened`. Never question text,
 student answers, essay content, tokens, passwords or private material.
+
+## CORRECTIONS AND ADDITIONS (verified 2026-09-16)
+
+### Live Supabase assessment tables exist
+
+The authoritative production project already contains `quizzes`,
+`quiz_attempts`, `mock_exams`, `mock_exam_attempts`, `grading_results`,
+`assessments` and `study_plans`, all with RLS and user ownership. Earlier
+documentation claimed otherwise. The frontend contracts are therefore designed
+to REUSE and EXTEND those tables; no parallel assessment tables are introduced,
+and any future migration must be additive.
+
+### Ephemeral content cleanup now also covers sign-out
+
+`frontend/src/lib/assessment/api.ts` keeps the single pre-submission reference of
+the tab in memory (never localStorage) via `setActiveAssessmentReference()`.
+Cleanup is requested on:
+
+- route leave (component unmount),
+- `pagehide`,
+- explicit Quit assessment,
+- generation cancel,
+- sign-out (`lib/sign-out.ts` calls `abandonActiveAssessment()` while the bearer
+  token is still valid).
+
+Browser lifecycle events remain best-effort; the backend heartbeat/TTL sweeper is
+authoritative (FUTURE BACKEND / CODEX).
+
+### Per-user quota interaction
+
+Every durable assessment row a future backend writes on the user's behalf is
+subject to the live per-user combined 50 MB quota guard. See
+`docs/contracts/USER_QUOTA_CONTRACT.md`.
+
+### AI readiness is not an authentication gate
+
+The assessment modes report "AI backend unavailable" instead of blocking access.
+Signing in, `/home` and every non-AI area work without the local backend; see
+`docs/sequences/AUTH_STARTUP_HOME_VS_OPTIONAL_AI.mmd`.

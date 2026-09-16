@@ -38,6 +38,7 @@ const {
   LANGUAGE_ONBOARDING_PATH,
   MODEL_ONBOARDING_PATH,
   SUSPENDED_PATH,
+  aiSetupPending,
   complianceStateUnavailable,
   complianceStatus,
   invalidateStartupCache,
@@ -64,9 +65,11 @@ describe("authenticated startup flow", () => {
     await expect(resolveStartupDestination()).resolves.toBe(LANGUAGE_ONBOARDING_PATH);
   });
 
-  it("sends a returning user straight to the session model gate", async () => {
+  it("sends a returning user straight home even when AI setup is pending", async () => {
     prefs.language_onboarding_completed = true;
-    await expect(resolveStartupDestination()).resolves.toBe(MODEL_ONBOARDING_PATH);
+    gateRequired = true;
+    admissionRequired = true;
+    await expect(resolveStartupDestination()).resolves.toBe(HOME_PATH);
   });
 
   it("does not repeat language onboarding once the flag is true", async () => {
@@ -75,12 +78,14 @@ describe("authenticated startup flow", () => {
     await expect(resolveStartupDestination()).resolves.toBe(HOME_PATH);
   });
 
-  it("blocks a direct /home navigation until the model gate is passed", async () => {
+  it("never blocks /home because the local AI backend is absent", async () => {
     prefs.language_onboarding_completed = true;
-    await expect(startupRedirectFor("/home")).resolves.toBe(MODEL_ONBOARDING_PATH);
-    gateRequired = false;
-    invalidateStartupCache();
+    gateRequired = true;
+    admissionRequired = true;
     await expect(startupRedirectFor("/home")).resolves.toBeNull();
+    await expect(startupRedirectFor("/planner")).resolves.toBeNull();
+    await expect(startupRedirectFor("/messages")).resolves.toBeNull();
+    expect(aiSetupPending()).toBe(true);
   });
 
   it("never treats a failed preference read as completed language onboarding", async () => {
@@ -141,16 +146,22 @@ describe("authenticated startup flow", () => {
     await expect(startupRedirectFor(SUSPENDED_PATH)).resolves.toBeNull();
   });
 
-  /* ------------------------------------------------------------- admission */
+  /* --------------------------------------------- optional AI readiness --- */
 
-  it("requires system admission before the model gate", async () => {
+  it("treats system admission and model readiness as optional AI setup", async () => {
     prefs.language_onboarding_completed = true;
     admissionRequired = true;
-    await expect(resolveStartupDestination()).resolves.toBe(ADMISSION_ONBOARDING_PATH);
-    await expect(startupRedirectFor("/home")).resolves.toBe(ADMISSION_ONBOARDING_PATH);
+    gateRequired = true;
+    expect(aiSetupPending()).toBe(true);
+    await expect(resolveStartupDestination()).resolves.toBe(HOME_PATH);
+
+    admissionRequired = false;
+    gateRequired = false;
+    expect(aiSetupPending()).toBe(false);
+    await expect(resolveStartupDestination()).resolves.toBe(HOME_PATH);
   });
 
-  it("enforces the full order compliance → language → admission → model → home", async () => {
+  it("enforces the order compliance → language → home, with AI setup outside it", async () => {
     compliance.completed = false;
     admissionRequired = true;
     await expect(resolveStartupDestination()).resolves.toBe(COMPLIANCE_ONBOARDING_PATH);
@@ -161,12 +172,9 @@ describe("authenticated startup flow", () => {
 
     prefs.language_onboarding_completed = true;
     invalidateStartupCache();
-    await expect(resolveStartupDestination()).resolves.toBe(ADMISSION_ONBOARDING_PATH);
-
-    admissionRequired = false;
-    await expect(resolveStartupDestination()).resolves.toBe(MODEL_ONBOARDING_PATH);
-
-    gateRequired = false;
     await expect(resolveStartupDestination()).resolves.toBe(HOME_PATH);
+    // The AI setup routes stay reachable, they are just no longer forced.
+    expect(isStartupExempt(ADMISSION_ONBOARDING_PATH)).toBe(true);
+    expect(isStartupExempt(MODEL_ONBOARDING_PATH)).toBe(true);
   });
 });

@@ -69,5 +69,12 @@ model, score, status and provenance. Answer keys live in server-only storage
 that is not readable by the client role. RLS stays enabled with per-user
 isolation, no public buckets and no service-role key in any client path.
 
-These tables are not yet present in the authoritative production project, so no
-migration has been applied from the frontend side.
+CORRECTION (verified 2026-09-16): these tables ARE present in the authoritative
+production project — `quizzes`, `quiz_attempts`, `mock_exams`,
+`mock_exam_attempts`, `grading_results`, `assessments` and `study_plans` all
+exist with RLS and user ownership. An earlier version of this document claimed
+they did not exist; that claim was wrong. The remaining backend work is to
+REUSE and EXTEND those tables (columns / server-only answer-key storage), never
+to create parallel assessment tables. All user-owned rows are additionally
+subject to the per-user 50 MB quota guard
+(`docs/contracts/USER_QUOTA_CONTRACT.md`).

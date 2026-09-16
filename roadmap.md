@@ -39,3 +39,24 @@
 - [x] Align widget lifecycle and preserve all password-flow token contracts; add regressions.
 - [x] Synchronize docs; 111 tests passed, i18n complete, lint 0 errors / 28 warnings, automatic build OK. Formatting only flags generated .wrangler config; no standalone typecheck was run.
 - [ ] Real production auth smoke test (blocked until public sitekey and solved challenge are available).
+
+## 2026-09-16 corrective completion pass
+
+- [x] Auth/startup: local AI runtime removed as a login gate (`startup-flow.ts`,
+      language onboarding → `/home`, admission + model screens optional).
+- [x] Per-user combined 50 MB quota client, Settings card, upload preflight,
+      error mapping, generated types, tests.
+- [x] Local system capability + load-balancing-aware model recommendation
+      contract, server fn, adapter, panel (model onboarding + Settings), tests.
+- [x] Assessment: ephemeral cleanup extended to sign-out; audit of the original
+      spec against the code.
+- [x] Docs/diagrams: quota contract, capability contract, CODEX_BACKEND_HANDOFF,
+      3 new Mermaid diagrams, corrected live-schema claims, mirrored docs.
+
+## Blocked (FUTURE BACKEND / CODEX)
+
+- Local Python backend: hardware probe + recommendation, assessment generation
+  and grading, admission/health/heartbeat/release, safety moderation, peer send,
+  lease/attempt TTL sweeper.
+- Additive Supabase migration for assessment persistence + server-only answer
+  keys (must extend the existing live tables).

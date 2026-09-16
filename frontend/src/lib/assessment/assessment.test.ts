@@ -239,3 +239,21 @@ describe("production assessment adapter", () => {
     if (!response.ok) expect(response.failure).toBe("backend_unavailable");
   });
 });
+
+describe("ephemeral session cleanup on sign-out", () => {
+  it("abandons the active pre-submission reference and forgets it", async () => {
+    const { setActiveAssessmentReference, getActiveAssessmentReference, abandonActiveAssessment } =
+      await import("./api");
+
+    setActiveAssessmentReference({ jobId: "job-1" });
+    expect(getActiveAssessmentReference()).toEqual({ jobId: "job-1" });
+
+    abandonActiveAssessment();
+    expect(getActiveAssessmentReference()).toBeNull();
+
+    // An empty reference is never tracked, so sign-out cannot call the backend
+    // with nothing to clean up.
+    setActiveAssessmentReference({});
+    expect(getActiveAssessmentReference()).toBeNull();
+  });
+});

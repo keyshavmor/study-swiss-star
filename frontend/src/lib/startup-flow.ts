@@ -2,9 +2,13 @@
  * Authenticated startup flow resolution.
  *
  * SIGNED OUT → sign in → COMPLIANCE / SAFETY ONBOARDING (once, Supabase flag)
- * → LANGUAGE ONBOARDING (once, Supabase flag) → SYSTEM ADMISSION GATE (every
- * new browser session, local backend authority) → MODEL READINESS GATE (every
- * admitted browser session) → Home (AI-ready or non-AI).
+ * → LANGUAGE ONBOARDING (once, Supabase flag) → Home.
+ *
+ * AUTHENTICATION IS NEVER GATED ON THE LOCAL AI RUNTIME. The system admission
+ * gate and the model readiness gate are AI-readiness surfaces, not login
+ * requirements: a signed-in user always reaches `/home` and every non-AI
+ * product area, even when the future local backend is absent. `aiSetupPending()`
+ * only tells the UI whether the optional AI setup flow is still worth offering.
  *
  * A suspended account (`account_compliance.account_status =
  * 'suspended_pending_review'`) is routed to the suspended screen before every
@@ -116,20 +120,26 @@ export type StartupDestination =
   | typeof HOME_PATH;
 
 /**
- * Where an authenticated user belongs right now. While a flag is unknown the
- * user stays on the corresponding onboarding screen, which renders a localized
- * retry state — product routes stay unreachable.
+ * Where an authenticated user belongs right now. While a mandatory flag is
+ * unknown the user stays on the corresponding onboarding screen, which renders
+ * a localized retry state. AI readiness is deliberately NOT part of this
+ * decision: it can never keep a signed-in user out of the product.
  */
 export async function resolveStartupDestination(): Promise<StartupDestination> {
   const compliance = await complianceStatus();
   if (compliance === "suspended") return SUSPENDED_PATH;
   if (compliance !== "completed") return COMPLIANCE_ONBOARDING_PATH;
   if ((await languageOnboardingStatus()) !== "completed") return LANGUAGE_ONBOARDING_PATH;
-  // Admission FAILS CLOSED: without a lease from the local backend the session
-  // is not admitted and product routes stay unreachable.
-  if (admissionGateRequired()) return ADMISSION_ONBOARDING_PATH;
-  if (modelGateRequired()) return MODEL_ONBOARDING_PATH;
   return HOME_PATH;
+}
+
+/**
+ * True when this browser session has not yet completed the OPTIONAL AI setup
+ * flow (system admission + model readiness). Purely advisory: the UI may offer
+ * the AI setup screens, but product access never depends on it.
+ */
+export function aiSetupPending(): boolean {
+  return admissionGateRequired() || modelGateRequired();
 }
 
 /**

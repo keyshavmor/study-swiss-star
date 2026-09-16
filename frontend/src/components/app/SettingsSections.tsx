@@ -51,6 +51,7 @@ import {
 import { fetchLocalBackendHealth } from "@/lib/system.functions";
 import { fetchAccountCompliance, fetchLegalConsents } from "@/lib/compliance";
 import { toast } from "sonner";
+import { isQuotaExceededError } from "@/lib/user-quota";
 import { track, trackFailure } from "@/lib/telemetry";
 import { cn } from "@/lib/utils";
 import { useI18n } from "@/lib/i18n/provider";
@@ -145,7 +146,11 @@ export function AccountSection() {
       toast.success(t("settings.account.avatarUpdated"));
     } catch (err) {
       trackFailure("settings_avatar_update_failed", err, { feature: "settings" });
-      toast.error(t("settings.account.avatarUpdateError"));
+      toast.error(
+        isQuotaExceededError(err)
+          ? t("quota.exceededError")
+          : t("settings.account.avatarUpdateError"),
+      );
     }
     if (fileRef.current) fileRef.current.value = "";
   };
