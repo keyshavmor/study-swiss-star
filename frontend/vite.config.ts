@@ -47,10 +47,6 @@ export default defineConfig({
       "process.env.SUPABASE_URL": JSON.stringify(CANONICAL_SUPABASE_URL),
       "process.env.SUPABASE_PUBLISHABLE_KEY": JSON.stringify(CANONICAL_SUPABASE_PUBLISHABLE_KEY),
       "process.env.SUPABASE_PROJECT_ID": JSON.stringify(CANONICAL_SUPABASE_PROJECT_ID),
-      'process.env["SUPABASE_URL"]': JSON.stringify(CANONICAL_SUPABASE_URL),
-      'process.env["SUPABASE_PUBLISHABLE_KEY"]': JSON.stringify(CANONICAL_SUPABASE_PUBLISHABLE_KEY),
-      'process.env["SUPABASE_ANON_KEY"]': JSON.stringify(CANONICAL_SUPABASE_PUBLISHABLE_KEY),
-      'process.env["SUPABASE_PROJECT_ID"]': JSON.stringify(CANONICAL_SUPABASE_PROJECT_ID),
     },
   },
 });
