@@ -357,3 +357,24 @@ no longer raises any anon `SECURITY DEFINER` warning.
 no claim of GDPR or any other regulatory certification; lawful basis, DPAs, records of processing,
 breach procedures, jurisdictional guardian-consent rules and cookie/ePrivacy analysis are
 organisational decisions outside what frontend code can establish.
+
+## Per-user combined 50 MB quota (live: `add_per_user_combined_50mb_quota`)
+
+- Limit 52 428 800 bytes (50 MiB, shown as 50 MB) across database rows AND
+  Storage objects owned by one user.
+- Warning threshold 47 185 920 bytes (90 %).
+- `get_my_quota_status()` → JSON (`database_bytes`, `storage_bytes`,
+  `total_bytes`, `limit_bytes`, `warning_threshold_bytes`, `remaining_bytes`,
+  `usage_fraction`, `warning`, `at_limit`).
+- `can_allocate_my_quota(p_additional_bytes bigint)` → boolean preflight.
+- A trigger hard-guards inserts/updates on user-owned public tables;
+  user-writable Storage policies run the same preflight. Both raise
+  `user_data_quota_exceeded`.
+- Ownerless system assets are not user data and are never counted or deleted.
+
+Assessment tables present in the live schema: `quizzes`, `quiz_attempts`,
+`mock_exams`, `mock_exam_attempts`, `grading_results`, `assessments`,
+`study_plans` — RLS enabled, user-owned. Future assessment persistence extends
+these; it must not create parallel tables.
+
+Frontend contract: `docs/contracts/USER_QUOTA_CONTRACT.md`.

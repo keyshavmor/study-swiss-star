@@ -1,0 +1,45 @@
+%% Status: CURRENT FRONTEND + CURRENT SUPABASE
+%% Source: frontend/src/lib/startup-flow.ts, routes/index.tsx,
+%% routes/_authenticated/route.tsx, components/app/SystemCapabilityPanel.tsx
+%% RULE: the local AI runtime is NEVER an authentication gate.
+sequenceDiagram
+    participant User
+    participant Entry as "/" (sign in / sign up)
+    participant Supa as Supabase Auth
+    participant Flow as lib/startup-flow.ts
+    participant Compliance as account_compliance (Supabase)
+    participant Prefs as user_preferences (Supabase)
+    participant Home as /home + non-AI areas
+    participant AiSetup as OPTIONAL /onboarding/system-admission + /onboarding/model
+    participant Backend as FUTURE local AI backend
+
+    User->>Entry: sign up / sign in (email or username)
+    Entry->>Supa: signUp / signInWithPassword / username-login v4
+    Supa-->>Entry: session (or actionable localized error)
+    Entry->>Flow: resolveStartupDestination()
+    Flow->>Compliance: complianceStatus()
+    alt suspended_pending_review
+        Flow-->>Entry: /account/suspended
+    else compliance not completed / unknown
+        Flow-->>Entry: /onboarding/compliance
+    else completed
+        Flow->>Prefs: languageOnboardingStatus()
+        alt language not completed / unknown
+            Flow-->>Entry: /onboarding/language
+        else completed
+            Flow-->>Entry: /home
+        end
+    end
+    Entry->>Home: render product (chat history, planner, grades, materials, messages)
+
+    Note over Home,AiSetup: AI readiness is separate and optional
+    User->>AiSetup: open AI setup (from home notice or Settings)
+    AiSetup->>Backend: admission check / capability probe / model prepare
+    alt backend unavailable (expected today)
+        Backend-->>AiSetup: no answer
+        AiSetup-->>User: truthful unavailable state + "continue without AI"
+        AiSetup->>Home: navigate to /home (session stays valid)
+    else backend ready
+        Backend-->>AiSetup: lease + ready model
+        AiSetup->>Home: /home with AI features enabled
+    end

@@ -10,6 +10,8 @@ import {
   PrivacySection,
   StorageSection,
 } from "@/components/app/SettingsSections";
+import { SystemCapabilityPanel } from "@/components/app/SystemCapabilityPanel";
+import { UserQuotaCard } from "@/components/app/UserQuotaCard";
 import { useI18n } from "@/lib/i18n/provider";
 
 export const Route = createFileRoute("/_authenticated/settings")({
@@ -45,6 +47,8 @@ function SettingsPage() {
         <AccountSection />
         <PreferencesSections />
         <MessagingSection />
+        <SystemCapabilityPanel />
+        <UserQuotaCard />
         <StorageSection />
         <PrivacySection />
         <ComplianceSection />

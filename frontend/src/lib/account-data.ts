@@ -169,6 +169,13 @@ export async function uploadAvatar(file: File): Promise<string> {
   if (!file.type.startsWith("image/")) throw new Error("Please choose an image file.");
   if (file.size > AVATAR_MAX_BYTES) throw new Error("Profile pictures must be 2 MB or smaller.");
 
+  // Quota preflight so people get a friendly message instead of only a
+  // database/Storage rejection. The server stays authoritative.
+  const { preflightQuota, QUOTA_EXCEEDED_CODE } = await import("@/lib/user-quota");
+  if ((await preflightQuota(file.size)) === "quota_exceeded") {
+    throw new Error(QUOTA_EXCEEDED_CODE);
+  }
+
   const extension = file.name.split(".").pop()?.toLowerCase() || "jpg";
   const objectPath = `${userId}/avatar-${Date.now()}.${extension}`;
 

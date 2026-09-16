@@ -26,6 +26,14 @@ import { logActivity, trackFailure } from "@/lib/telemetry";
  */
 export async function signOutCompletely(): Promise<void> {
   const lease = readAdmissionSession();
+
+  // Ephemeral assessment content must be cleaned up before the token dies.
+  try {
+    const { abandonActiveAssessment } = await import("@/lib/assessment/api");
+    abandonActiveAssessment();
+  } catch {
+    /* best effort only */
+  }
   try {
     const { releaseMyRuntime } = await import("@/lib/system.functions");
     await releaseMyRuntime({ data: { leaseId: lease?.leaseId ?? null } });

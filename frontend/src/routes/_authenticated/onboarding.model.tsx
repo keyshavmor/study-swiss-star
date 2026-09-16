@@ -5,13 +5,13 @@ import { Cpu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { ModelReadinessPanel } from "@/components/app/ModelReadinessPanel";
+import { SystemCapabilityPanel } from "@/components/app/SystemCapabilityPanel";
 import { useI18n } from "@/lib/i18n/provider";
 import { DEFAULT_PREFERENCES, fetchPreferences } from "@/lib/account-data";
 import { useAiAvailability } from "@/lib/ai-availability";
 import { HOME_PATH } from "@/lib/startup-flow";
 import { signOutCompletely } from "@/lib/sign-out";
 import { track } from "@/lib/telemetry";
-import type { ModelPreparationStatus } from "@/lib/model-readiness.types";
 
 export const Route = createFileRoute("/_authenticated/onboarding/model")({
   head: () => ({
@@ -39,7 +39,6 @@ function ModelOnboardingPage() {
   const navigate = useNavigate();
   const ai = useAiAvailability();
   const [initialModel, setInitialModel] = useState<string | null>(null);
-  const [lastStatus, setLastStatus] = useState<ModelPreparationStatus | null>(null);
 
   useEffect(() => {
     void fetchPreferences()
@@ -54,13 +53,9 @@ function ModelOnboardingPage() {
     [ai],
   );
 
-  const handleUnavailable = useCallback(
-    (status: ModelPreparationStatus) => {
-      setLastStatus(status);
-      ai.setUnavailable();
-    },
-    [ai],
-  );
+  const handleUnavailable = useCallback(() => {
+    ai.setUnavailable();
+  }, [ai]);
 
   const continueWithoutAi = async () => {
     ai.setNonAi();
@@ -90,6 +85,18 @@ function ModelOnboardingPage() {
           </p>
         </div>
 
+        <div className="mb-5">
+          <SystemCapabilityPanel
+            preferredModelId={initialModel}
+            onReport={(report) => {
+              // The backend recommendation preselects the picker; hardware
+              // values are never inferred in the browser.
+              const recommended = report.recommendation.recommended_model_id;
+              if (recommended) setInitialModel(recommended);
+            }}
+          />
+        </div>
+
         <div className="app-card p-5 sm:p-6">
           {initialModel !== null && (
             <ModelReadinessPanel
@@ -103,15 +110,10 @@ function ModelOnboardingPage() {
         </div>
 
         <div className="mt-6 flex flex-wrap justify-center gap-2">
-          <Button size="lg" disabled={ai.status !== "ready"} onClick={() => void continueToApp()}>
+          <Button size="lg" onClick={() => void continueToApp()}>
             {t("onboarding.model.continueToApp")}
           </Button>
-          <Button
-            size="lg"
-            variant="outline"
-            onClick={() => void continueWithoutAi()}
-            disabled={lastStatus?.can_continue_without_ai === false}
-          >
+          <Button size="lg" variant="outline" onClick={() => void continueWithoutAi()}>
             {t("onboarding.model.continueWithoutAi")}
           </Button>
           <Button size="lg" variant="ghost" onClick={() => void signOutCompletely()}>

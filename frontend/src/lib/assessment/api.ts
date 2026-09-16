@@ -122,3 +122,27 @@ export function requestAbandonCleanup(reference: {
   if (!reference.jobId && !reference.attemptId) return;
   void activeApi.abandonAssessment(reference).catch(() => undefined);
 }
+
+/**
+ * The single pre-submission session reference of this tab, if any. Kept in
+ * memory only (never localStorage) so sign-out can request backend cleanup of
+ * ephemeral generated content.
+ */
+let activeReference: { jobId?: string | undefined; attemptId?: string | undefined } | null = null;
+
+export function setActiveAssessmentReference(
+  reference: { jobId?: string | undefined; attemptId?: string | undefined } | null,
+): void {
+  activeReference = reference && (reference.jobId || reference.attemptId) ? { ...reference } : null;
+}
+
+export function getActiveAssessmentReference() {
+  return activeReference;
+}
+
+/** Called on sign-out: abandon whatever ephemeral session is still open. */
+export function abandonActiveAssessment(): void {
+  if (!activeReference) return;
+  requestAbandonCleanup(activeReference);
+  activeReference = null;
+}

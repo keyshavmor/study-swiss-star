@@ -233,3 +233,26 @@ export const Route = createFileRoute("/_authenticated")({
 - `beforeLoad` calls `supabase.auth.getUser()`; any error or missing user redirects to `/`.
 - Every screen under `_authenticated/` (home, school, planner, stats, help, feedback, profile,
   settings, chat, assistant) inherits this gate via nested routing.
+
+## Startup gating correction (verified 2026-09-16)
+
+`resolveStartupDestination()` now considers ONLY:
+
+1. account suspension (`suspended_pending_review`) → `/account/suspended`
+2. compliance / safety onboarding not completed or unknown → `/onboarding/compliance`
+3. language onboarding not completed or unknown → `/onboarding/language`
+4. otherwise → `/home`
+
+The system admission gate and the model readiness gate were previously
+mandatory, fail-closed startup gates. Because the local AI backend is not
+running, that made a valid Supabase session look like a failed login. They are
+now OPTIONAL AI-readiness surfaces:
+
+- `aiSetupPending()` is advisory only and never redirects a product route;
+- `/onboarding/system-admission` and `/onboarding/model` stay reachable and both
+  offer "continue without AI", which lands on `/home`;
+- language onboarding completes into `/home`.
+
+Suspension, compliance rules and RLS are unchanged. Regression coverage:
+`frontend/src/lib/startup-flow.test.ts` (signed out, first-time, returning,
+backend unavailable, suspension, failed reads).

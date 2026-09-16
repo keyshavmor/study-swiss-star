@@ -9,7 +9,11 @@ import { useCallback, useEffect, useReducer, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useI18n } from "@/lib/i18n/provider";
 import { track } from "@/lib/telemetry";
-import { getAssessmentApi, requestAbandonCleanup } from "@/lib/assessment/api";
+import {
+  getAssessmentApi,
+  requestAbandonCleanup,
+  setActiveAssessmentReference,
+} from "@/lib/assessment/api";
 import { createDefaultConfig, totalQuestions } from "@/lib/assessment/config";
 import { assessmentReducer, createSession, isEphemeral } from "@/lib/assessment/lifecycle";
 import {
@@ -112,6 +116,16 @@ export function AssessmentModePanel({
   const [failure, setFailure] = useState<string | null>(null);
   const sessionRef = useRef(session);
   sessionRef.current = session;
+
+  // Keep the tab-level reference in sync so sign-out can clean up too.
+  useEffect(() => {
+    setActiveAssessmentReference(
+      isEphemeral(session.state)
+        ? { jobId: session.jobId ?? undefined, attemptId: session.attemptId ?? undefined }
+        : null,
+    );
+    return () => setActiveAssessmentReference(null);
+  }, [session.state, session.jobId, session.attemptId]);
 
   useEffect(() => {
     track({ event_name: "assessment_setup_opened", feature: "assessment", properties: { kind } });

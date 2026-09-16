@@ -8,11 +8,7 @@ import { cn } from "@/lib/utils";
 import { useI18n } from "@/lib/i18n/provider";
 import { LANGUAGES, type LanguageCode } from "@/lib/i18n/languages";
 import { savePreferences } from "@/lib/account-data";
-import {
-  invalidateStartupCache,
-  languageOnboardingStatus,
-  MODEL_ONBOARDING_PATH,
-} from "@/lib/startup-flow";
+import { invalidateStartupCache, languageOnboardingStatus, HOME_PATH } from "@/lib/startup-flow";
 import { track, trackFailure } from "@/lib/telemetry";
 
 export const Route = createFileRoute("/_authenticated/onboarding/language")({
@@ -50,7 +46,7 @@ function LanguageOnboardingPage() {
     invalidateStartupCache();
     const status = await languageOnboardingStatus();
     setLoadFailed(status === "unknown");
-    if (status === "completed") await navigate({ to: MODEL_ONBOARDING_PATH, replace: true });
+    if (status === "completed") await navigate({ to: HOME_PATH, replace: true });
   }, [navigate]);
 
   useEffect(() => {
@@ -75,7 +71,7 @@ function LanguageOnboardingPage() {
       });
       invalidateStartupCache();
       track({ event_name: "onboarding_language_confirmed", feature: "onboarding" });
-      await navigate({ to: MODEL_ONBOARDING_PATH, replace: true });
+      await navigate({ to: HOME_PATH, replace: true });
     } catch (err) {
       trackFailure("onboarding_language_save_failed", err, { feature: "onboarding" });
       setError(true);

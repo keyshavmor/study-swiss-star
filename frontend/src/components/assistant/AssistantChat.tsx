@@ -41,6 +41,7 @@ import {
   type AssistantThread,
 } from "@/lib/assistant-data";
 import { toast } from "sonner";
+import { isQuotaExceededError } from "@/lib/user-quota";
 import { track, trackFailure } from "@/lib/telemetry";
 import { useI18n } from "@/lib/i18n/provider";
 import { effectiveResponseLanguage } from "@/lib/i18n/detect";
@@ -237,7 +238,7 @@ export function AssistantChat({ threadId }: { threadId?: string }) {
       });
     } catch (err) {
       trackFailure("assistant_message_failed", err, { feature: "assistant" });
-      toast.error(t("assistant.sendFailed"));
+      toast.error(isQuotaExceededError(err) ? t("quota.exceededError") : t("assistant.sendFailed"));
     } finally {
       setSending(false);
     }

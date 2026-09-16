@@ -1,0 +1,26 @@
+%% Status: CURRENT FRONTEND (contract + UI) + FUTURE BACKEND / CODEX (probe)
+%% Source: frontend/src/lib/system-capability.types.ts,
+%% system-capability.server.ts, system-capability.functions.ts,
+%% components/app/SystemCapabilityPanel.tsx, components/app/ModelReadinessPanel.tsx
+sequenceDiagram
+    participant UI as SystemCapabilityPanel<br/>(model onboarding + Settings)
+    participant Fn as probeSystemCapability (server fn)
+    participant Adapter as system-capability.server.ts
+    participant Backend as FUTURE local backend probe
+    participant Picker as ModelReadinessPanel (model picker)
+
+    UI->>Fn: probe({ preferredModelId })
+    Fn->>Adapter: forward verified Supabase bearer JWT (server-to-server)
+    Adapter->>Backend: POST capability operation
+    alt unavailable / timeout / malformed
+        Backend-->>Adapter: no usable response
+        Adapter-->>UI: status=unavailable, backendConnected=false,<br/>all hardware fields null
+        UI-->>Picker: no recommendation; picker keeps saved preference
+        Note over UI: The browser NEVER infers GPU VRAM, RAM or free disk
+    else measured
+        Backend-->>Adapter: os, ram, gpus[], runtime storage,<br/>load balancing, recommendation, measured_at
+        Adapter->>Adapter: normalise; ready reports older than 10 min → stale
+        Adapter-->>UI: SystemCapabilityReport
+        UI-->>Picker: recommended_model_id preselects the picker
+        UI-->>UI: show alternatives, headroom, load-balancing mode, timestamp
+    end

@@ -449,3 +449,27 @@ Independently observed against production Supabase `ucacmeadsufiedxrgqit` on 202
 - The frontend still has no CAPTCHA dependency; no code changed in this documentation follow-up.
 
 Historical hCaptcha/CAPTCHA incidents above remain clearly marked HISTORICAL.
+
+## 2026-09-16 corrective completion pass
+
+1. **FIXED — AI runtime blocked authenticated product access.**
+   `startup-flow.ts` made the system admission lease and the model readiness gate
+   mandatory fail-closed startup gates, so a valid Supabase session could not
+   reach any product page while the local backend was absent. Both are now
+   optional AI-readiness surfaces; `aiSetupPending()` is advisory.
+2. **CORRECTED SCHEMA ASSUMPTION.** Earlier documents stated the live project had
+   no assessment tables. It does: `quizzes`, `quiz_attempts`, `mock_exams`,
+   `mock_exam_attempts`, `grading_results`, `assessments`, `study_plans`.
+   Documentation and contracts now say REUSE/EXTEND, never duplicate.
+3. **NEW LIVE MIGRATION recorded:** `add_per_user_combined_50mb_quota` with
+   `get_my_quota_status()` and `can_allocate_my_quota()`; frontend integration
+   documented in `docs/contracts/USER_QUOTA_CONTRACT.md`.
+4. **NEW CONTRACT:** local system capability probe + load-balancing-aware model
+   recommendation (`docs/contracts/SYSTEM_CAPABILITY_CONTRACT.md`). The probe
+   itself is FUTURE BACKEND / CODEX; the frontend never infers hardware values.
+5. **STALE DIAGRAMS:** `POST_LOGIN_STARTUP.mmd` and
+   `STARTUP_COMPLIANCE_LANGUAGE_ADMISSION_MODEL_HOME.mmd` describe the previous
+   mandatory-gate order and are superseded by
+   `AUTH_STARTUP_HOME_VS_OPTIONAL_AI.mmd`.
+6. Security advisor state unchanged: the intentional signed-in SECURITY DEFINER
+   application-RPC warnings remain; Security Advisor is NOT zero.

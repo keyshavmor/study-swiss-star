@@ -771,6 +771,19 @@ export type Database = {
         Args: { p_conversation_id: string };
         Returns: undefined;
       };
+      /**
+       * LIVE (migration `add_per_user_combined_50mb_quota`): returns ONE JSON
+       * object with the caller's combined database + Storage usage.
+       */
+      get_my_quota_status: {
+        Args: Record<string, never>;
+        Returns: Json;
+      };
+      /** Preflight for a planned write of `p_additional_bytes` bytes. */
+      can_allocate_my_quota: {
+        Args: { p_additional_bytes: number };
+        Returns: boolean;
+      };
     };
 
     Enums: {
