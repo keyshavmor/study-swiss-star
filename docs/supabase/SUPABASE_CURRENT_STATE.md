@@ -127,7 +127,7 @@ Supabase stores DURABLE PREFERENCES only, inside the existing
 `public.user_preferences.preferences` JSON — no DDL/migration was added for this
 flow:
 
-- `app_language` — default used to preselect the per-session language screen.
+- `app_language` — SAVED DEFAULT HINT only for the per-session language screen; it is never the session selection and never satisfies the decision.
 - `selected_qwen_model` — preferred model; never a statement about readiness.
 - `language_onboarding_completed` — LEGACY compatibility metadata, not a gate.
 
