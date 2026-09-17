@@ -58,6 +58,11 @@ export function AiBlockedNotice({ compact = false }: { compact?: boolean }) {
         <Button asChild size="sm" variant="outline">
           <Link to={MODEL_ONBOARDING_PATH}>{t("ai.blocked.retrySetup")}</Link>
         </Button>
+        {/* Informational path: go to a known non-AI route without touching
+            AI session readiness or issuing any AI request. */}
+        <Button asChild size="sm" variant="secondary">
+          <Link to="/home">{t("ai.blocked.useNonAiAction")}</Link>
+        </Button>
         <Button asChild size="sm" variant="ghost">
           <Link to="/settings">{t("ai.blocked.openSettings")}</Link>
         </Button>
