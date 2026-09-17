@@ -22,7 +22,7 @@ describe("onboarding route protection", () => {
   });
 
   it("redirects unauthenticated visitors away from the authenticated subtree", () => {
-    expect(authGate).toContain("/auth");
+    expect(authGate).toContain("throw redirect({ to: \"/\" })");
     expect(authGate).toMatch(/redirect/);
   });
 

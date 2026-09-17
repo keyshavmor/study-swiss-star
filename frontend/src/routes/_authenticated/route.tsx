@@ -10,8 +10,8 @@ export const Route = createFileRoute("/_authenticated")({
     const { data, error } = await supabase.auth.getUser();
     if (error || !data.user) throw redirect({ to: "/" });
 
-    // Language onboarding (once) and the per-session model readiness gate must
-    // not be bypassed by navigating straight to a product page.
+    // The per-session language and model decision gates must
+    // not be bypassed by navigating straight to a product or later onboarding page.
     const destination = await startupRedirectFor(location.pathname);
     if (destination) throw redirect({ to: destination, replace: true });
 
