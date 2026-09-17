@@ -119,3 +119,14 @@ prompt or answer text. Both cases are new UiError-shaped failures the caller mus
 no claim of GDPR or any other regulatory certification; lawful basis, DPAs, records of processing,
 breach procedures, jurisdictional guardian-consent rules and cookie/ePrivacy analysis are
 organisational decisions outside what frontend code can establish.
+
+## Post-login gate error handling (2026-09-17)
+
+| Situation | Behaviour |
+| --- | --- |
+| Language preference read fails | localized load notice + retry; the screen stays usable (choose or skip). Never silently completes or skips the decision |
+| Model backend unreachable / 404 / timeout / unparsable | `state=backend_unavailable` with localized reasons; only retry, change model, sign out, or explicit continue-without-AI |
+| Backend reports `blocked` / `failed` | localized `blocking_reasons` keys; normal continue stays disabled |
+| AI action attempted without an AI-ready session | no request is issued; one localized destructive notice with retry / Settings / non-AI paths |
+| Backend lost mid-generation or mid-grading | bounded `generation_failed` / `grading_failed` state or toast; never an endless spinner, never a route crash |
+| Direct navigation to a later onboarding screen | redirect to the decision that is actually due; no redirect loop |

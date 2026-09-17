@@ -166,13 +166,21 @@ Status labels: CURRENT FRONTEND / CURRENT SUPABASE where already true today; eve
 local backend below is **BACKEND TODO FOR CODEX** (EXPECTED LOCAL BACKEND CONTRACT), not yet
 implemented in this repository.
 
-1. **First login** → `/onboarding/language` (flag false/missing) → confirm language → `/onboarding/model`
-   → backend reports `ready` → `/home` in AI-ready mode. CURRENT FRONTEND routing + CURRENT SUPABASE
-   preference write already work; the `ready` response itself is BACKEND TODO FOR CODEX.
-2. **Existing user, new browser session** → language step skipped (`language_onboarding_completed`
-   already true) → model gate still required every new session → `ready` → `/home` AI-ready.
-3. **Backend unavailable** (404/timeout/network error) → `state=backend_unavailable` → user can
-   "Continue without AI" → `/home` renders fully, AI-dependent UI shows `AiUnavailableNotice`.
+1. **First login** → `/onboarding/language` (persisted `app_language` preselected) → select a
+   language or explicitly skip → `/onboarding/model` → backend reports `ready` → `/home` in AI-ready
+   mode. CURRENT FRONTEND routing + CURRENT SUPABASE preference write already work; the `ready`
+   response itself is BACKEND TODO FOR CODEX.
+2. **Existing user, new browser session** → the language decision is required AGAIN (per browser
+   session; the persisted language only preselects the tile) → then the model decision → `ready` →
+   `/home` AI-ready. `language_onboarding_completed` is legacy metadata and never skips the screen.
+2b. **Route order** → opening `/onboarding/model` directly with no language decision redirects to
+   `/onboarding/language`; product routes stay blocked until both session decisions exist. A
+   missing/failing backend never blocks authentication or non-AI use.
+3. **Backend unavailable** (404/timeout/network error) → `state=backend_unavailable` → the model
+   screen offers only retry/change model, sign out, or an EXPLICIT "Continue without AI"; the normal
+   continue stays disabled. After continuing without AI, `/home` renders fully and every AI action is
+   disabled with one localized red notice (`AiFeatureGate` / `AiBlockedNotice`) and issues no
+   request.
 4. **Model absent, resources ≥ 50/50/50** → backend starts a single global download (no per-user
    duplicate) — BACKEND TODO FOR CODEX, see `sequences/MODEL_DOWNLOAD_DEDUPLICATION.mmd`.
 5. **Two users request the same absent model concurrently** → exactly one artifact is written; the

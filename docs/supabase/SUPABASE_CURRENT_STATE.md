@@ -120,3 +120,17 @@ screen and `/onboarding/system-admission` is optional. `account_compliance.accou
 `/account/suspended`. Legal routes: `/legal/terms`, `/legal/privacy`,
 `/legal/acceptable-use`, `/legal/child-safety`. See
 `sequences/SIGNUP_ROLE_GUARDIAN_CONSENT.mmd`, `sequences/POST_LOGIN_STARTUP.mmd`.
+
+## Post-login gate state ownership (2026-09-17)
+
+Supabase stores DURABLE PREFERENCES only, inside the existing
+`public.user_preferences.preferences` JSON — no DDL/migration was added for this
+flow:
+
+- `app_language` — default used to preselect the per-session language screen.
+- `selected_qwen_model` — preferred model; never a statement about readiness.
+- `language_onboarding_completed` — LEGACY compatibility metadata, not a gate.
+
+Supabase never stores model/GPU/runtime readiness, admission leases or session
+decisions. Those live in `sessionStorage` (`alim.language_session.v1`,
+`alim.ai_session.v1`, `alim.admission_session.v1`) and are cleared on sign-out.

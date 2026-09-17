@@ -76,3 +76,18 @@ screen and `/onboarding/system-admission` is optional. `account_compliance.accou
 `/account/suspended`. Legal routes: `/legal/terms`, `/legal/privacy`,
 `/legal/acceptable-use`, `/legal/child-safety`. See
 `sequences/SIGNUP_ROLE_GUARDIAN_CONSENT.mmd`, `sequences/POST_LOGIN_STARTUP.mmd`.
+
+## Post-login gate dependencies (2026-09-17)
+
+- Supabase Auth has NO dependency on the local AI backend; sign-in, compliance,
+  the language decision and every non-AI feature work with the backend absent.
+- The language decision depends only on `sessionStorage` plus (optionally) the
+  durable `app_language` preference; a failed preference read never skips it.
+- The model decision depends on the REQUIRED FUTURE BACKEND for a `ready`
+  confirmation, but never for progress: the explicit continue-without-AI path
+  always exists.
+- AI features (chat, RAG, quiz/exam generation, grading) depend on an AI-ready
+  session; they are disabled centrally instead of failing at request time.
+- No user content, readiness data or hardware measurement is persisted for the
+  gate: only `app_language` and `selected_qwen_model` reach Supabase, and session
+  decisions are discarded on sign-out.

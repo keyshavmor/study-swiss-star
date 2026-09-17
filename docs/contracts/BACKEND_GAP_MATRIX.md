@@ -27,7 +27,7 @@ Frontend commit: e0ef3464557d4786d214accb0d1bf44082ae3466
 | Google Calendar backend requirements | YES (frontend calls Google directly) | PARTIAL (Supabase only brokers OAuth identity link) | N/A (backend not involved today) | N/A | None required unless a server-side Calendar proxy is later desired |
 | Telemetry / error integration | YES (`telemetry.ts` → `activity-log` Edge Function) | YES (`usage_events` table, `activity-logs` bucket) | YES (sanitised payload shape) | UNKNOWN (Edge Function internals not machine-verified) | Verify Edge Function persists exactly the sanitised shape |
 
-| System admission check (`/api/system/admission/check`) | YES (`SystemAdmissionGate`, `/onboarding/system-admission`) | PARTIAL (`get_system_admission_policy()` policy only) | YES (fail-closed contract documented) | UNKNOWN | Implement admission endpoint; until then frontend blocks all logins at the admission gate (fail-closed) |
+| System admission check (`/api/system/admission/check`) | OPTIONAL surface (`SystemAdmissionGate`, `/onboarding/system-admission`) — NOT a startup gate | PARTIAL (`get_system_admission_policy()` policy only) | YES (contract documented) | UNKNOWN | Implement admission endpoint. It NEVER blocks login: admission/capacity data is shown on the model decision screen, and a user without AI can always continue with non-AI features |
 | System health (`/api/system/health`) | YES (`SystemHealthPanel`, `/system-health`) | PARTIAL (`get_user_visible_supabase_health()` covers Supabase-only quotas) | YES | UNKNOWN | Implement health endpoint; until then `SystemHealthPanel` shows local/model health as unavailable |
 | Session heartbeat / runtime release (`/api/system/session/heartbeat`, `/api/system/runtime/release`) | YES (sign-out best-effort release call) | N/A | YES | UNKNOWN | Implement heartbeat + release; until then abandoned sessions are not reclaimed (see sign-out note below) |
 | Model recommendation (`/api/system/model/recommendation`) | YES (called during model-readiness gate) | N/A | YES | UNKNOWN | Implement recommendation endpoint; until then frontend falls back to last-known/manual model selection |
@@ -90,3 +90,13 @@ screen and `/onboarding/system-admission` is optional. `account_compliance.accou
 `/account/suspended`. Legal routes: `/legal/terms`, `/legal/privacy`,
 `/legal/acceptable-use`, `/legal/child-safety`. See
 `sequences/SIGNUP_ROLE_GUARDIAN_CONSENT.mmd`, `sequences/POST_LOGIN_STARTUP.mmd`.
+
+## Post-login gate gaps (2026-09-17)
+
+| Capability | Frontend today | Supabase today | Required future backend |
+| --- | --- | --- | --- |
+| Language decision per browser session | DONE (`alim.language_session.v1`, select or skip) | `app_language` durable default; `language_onboarding_completed` legacy only | none |
+| Model decision per browser session | DONE (`alim.ai_session.v1`; ready only on explicit backend confirmation) | `selected_qwen_model` preference only; readiness never stored | `/api/system/capability`, `/api/model/prepare`, `/api/model/operation` |
+| Route-order enforcement | DONE (`startupRedirectFor`: `/onboarding/model` → `/onboarding/language` when undecided) | n/a | none |
+| Non-AI mode guarding | DONE (`AiFeatureGate` / `useAiBlocked`, no request issued when blocked) | n/a | none |
+| Runtime release / lease TTL on sign-out | best-effort call only | n/a | heartbeat + lease TTL sweeper |

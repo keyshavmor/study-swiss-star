@@ -248,3 +248,18 @@ screen and `/onboarding/system-admission` is optional. `account_compliance.accou
 `/account/suspended`. Legal routes: `/legal/terms`, `/legal/privacy`,
 `/legal/acceptable-use`, `/legal/child-safety`. See
 `sequences/SIGNUP_ROLE_GUARDIAN_CONSENT.mmd`, `sequences/POST_LOGIN_STARTUP.mmd`.
+
+## Post-login gate scenarios (2026-09-17)
+
+| # | Scenario | Expected |
+| --- | --- | --- |
+| PG-1 | Fresh sign-in | `/onboarding/language` first, every browser session |
+| PG-2 | Direct navigation to `/onboarding/model` with no language decision | redirect to `/onboarding/language`, no loop |
+| PG-3 | AI decision present but no language decision | product routes still redirect to `/onboarding/language` |
+| PG-4 | Language decided (select or skip) | `/onboarding/model` reachable, product routes still blocked |
+| PG-5 | Backend never answers | model screen shows `backend_unavailable`; only retry / sign out / explicit continue-without-AI; non-AI product fully usable |
+| PG-6 | Backend answers `ready` + `can_continue_with_ai` | normal continue appears; AI actions enabled |
+| PG-7 | Persisted `selected_qwen_model` only | still counts as undecided; no AI until an explicit `ready` |
+| PG-8 | Page refresh mid-session | both decisions preserved (sessionStorage) |
+| PG-9 | Sign out, sign in again | both decisions required again |
+| PG-10 | Backend lost during an AI action | bounded failure state in the UI, no hang, app shell intact |
