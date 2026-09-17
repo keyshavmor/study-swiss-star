@@ -22,8 +22,20 @@ export function isRuntimeUnavailableFailure(failure: string | null | undefined):
   return failure === "backend_unavailable";
 }
 
+/**
+ * Exact server texts currently emitted by `routes/api/chat.ts` and
+ * `lib/context-backend.server.ts` are covered explicitly:
+ *   "Context backend is unavailable", "Context backend request timed out",
+ *   "Local Qwen backend unavailable", ContextBackendError code
+ *   `context_backend_unavailable`.
+ */
 const RUNTIME_LOSS_PATTERNS = [
   "backend_unavailable",
+  "context_backend_unavailable",
+  "context backend",
+  "backend is unavailable",
+  "backend unavailable",
+  "qwen",
   "model_not_loaded",
   "model_unavailable",
   "runtime_unavailable",
@@ -44,6 +56,7 @@ const RUNTIME_LOSS_PATTERNS = [
 
 const NON_RUNTIME_PATTERNS = [
   "safety",
+  "safety_unavailable",
   "moderation",
   "blocked",
   "invalid",
@@ -59,6 +72,24 @@ const NON_RUNTIME_PATTERNS = [
 /** HTTP statuses that mean the runtime/backend could not serve the request. */
 const RUNTIME_LOSS_STATUSES = new Set([502, 503, 504, 522, 524]);
 
+/** Prose from Errors, strings and plain `{ message }` server payloads. */
+function messageOf(error: unknown): string {
+  if (error instanceof Error) return `${error.name} ${error.message}`;
+  if (typeof error === "string") return error;
+  if (error && typeof error === "object") {
+    const candidate = (error as { message?: unknown }).message;
+    if (typeof candidate === "string") return candidate;
+  }
+  return "";
+}
+
+/** Stable error codes some server errors carry instead of prose. */
+function codeOf(error: unknown): string {
+  if (!error || typeof error !== "object") return "";
+  const candidate = (error as { code?: unknown }).code;
+  return typeof candidate === "string" ? candidate.toLowerCase() : "";
+}
+
 function statusOf(error: unknown): number | null {
   if (!error || typeof error !== "object") return null;
   const candidate =
@@ -72,18 +103,16 @@ function statusOf(error: unknown): number | null {
  * timed out, so the central AI gate must turn red before the next request.
  */
 export function isRuntimeUnavailableError(error: unknown): boolean {
+  const code = codeOf(error);
+  const message = messageOf(error).toLowerCase();
+
+  // Text/code wins over the status, so a fail-closed safety verdict served as
+  // 503 (`safety_unavailable`) is never mistaken for local runtime loss.
+  const haystack = `${code} ${message}`.trim();
+  if (haystack && NON_RUNTIME_PATTERNS.some((pattern) => haystack.includes(pattern))) return false;
+  if (haystack && RUNTIME_LOSS_PATTERNS.some((pattern) => haystack.includes(pattern))) return true;
+
   const status = statusOf(error);
   if (status !== null && RUNTIME_LOSS_STATUSES.has(status)) return true;
-  if (status !== null && status >= 400 && status < 500) return false;
-
-  const message = (
-    error instanceof Error
-      ? `${error.name} ${error.message}`
-      : typeof error === "string"
-        ? error
-        : ""
-  ).toLowerCase();
-  if (!message) return false;
-  if (NON_RUNTIME_PATTERNS.some((pattern) => message.includes(pattern))) return false;
-  return RUNTIME_LOSS_PATTERNS.some((pattern) => message.includes(pattern));
+  return false;
 }

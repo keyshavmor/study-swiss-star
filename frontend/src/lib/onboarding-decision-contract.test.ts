@@ -149,6 +149,43 @@ describe("mid-session runtime loss", () => {
     expect(isRuntimeUnavailableError(new Error("request timed out"))).toBe(true);
   });
 
+  it("recognises the exact texts emitted by the chat and context-backend code", () => {
+    for (const message of [
+      "Context backend is unavailable",
+      "Local Qwen backend unavailable",
+      "Context backend request timed out",
+    ]) {
+      expect(isRuntimeUnavailableError(new Error(message))).toBe(true);
+    }
+    expect(
+      isRuntimeUnavailableError({ message: "boom", code: "context_backend_unavailable" }),
+    ).toBe(true);
+  });
+
+  it("never treats a fail-closed safety verdict served as 503 as runtime loss", () => {
+    expect(isRuntimeUnavailableError({ status: 503, message: "safety_unavailable" })).toBe(false);
+    expect(isRuntimeUnavailableError({ status: 503, code: "safety_unavailable" })).toBe(false);
+  });
+
+  it("bounds grading failures instead of spinning forever", () => {
+    // Both grading polls must leave the grading state on failure.
+    expect(assessmentPanel).toContain("noteFailure(status.failure)");
+    expect(assessmentPanel).toContain("noteFailure(result.failure)");
+    const gradingFailures = assessmentPanel.match(
+      /dispatch\(\{ type: "grading_failed", errorKey: "assessment.unavailable.heading" \}\)/g,
+    );
+    expect(gradingFailures?.length).toBe(3);
+    expect(assessmentPanel).not.toContain("if (!active || !status.ok) return;");
+    expect(assessmentPanel).not.toContain("if (!active || !result.ok) return;");
+  });
+
+  it("keeps non-runtime assessment failures out of central AI state", () => {
+    for (const failure of ["invalid_payload", "not_implemented", "cancelled"]) {
+      expect(isRuntimeUnavailableFailure(failure)).toBe(false);
+    }
+    expect(isRuntimeUnavailableFailure("backend_unavailable")).toBe(true);
+  });
+
   it("ignores safety, validation, authorisation and cancellation errors", () => {
     expect(isRuntimeUnavailableError(new Error("safety_blocked"))).toBe(false);
     expect(isRuntimeUnavailableError(new Error("validation failed"))).toBe(false);

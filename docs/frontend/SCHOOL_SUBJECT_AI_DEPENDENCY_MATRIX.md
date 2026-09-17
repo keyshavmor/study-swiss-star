@@ -165,8 +165,16 @@ places that own capability probe, recommendation and preparation.
 (`StudyChat`), the assistant (`AssistantChat`) and `AssessmentModePanel`. Request
 failures that mean the local runtime is gone or timed out, and assessment
 `backend_unavailable` failures, call `setUnavailable()` on the central AI state so
-the red gate appears before the next request. Content-safety rejections,
-validation errors, authorisation errors and user cancellation never do.
+the red gate appears before the next request. It recognises the exact server
+texts in use today ("Context backend is unavailable", "Context backend request
+timed out", "Local Qwen backend unavailable", code `context_backend_unavailable`).
+Content-safety rejections (including a fail-closed `safety_unavailable` served as
+503), validation errors, authorisation errors, quota errors and user cancellation
+never do.
+
+Grading polling is bounded the same way: a failed `getGradingStatus` or
+`getResult` leaves the grading state with a visible failure instead of spinning,
+and only `backend_unavailable` downgrades central AI readiness.
 
 ### Durable vs session state
 
