@@ -131,6 +131,8 @@ describe("post-login language → model gate", () => {
 
   it("keeps onboarding, auth, legal and account routes reachable", async () => {
     await expect(startupRedirectFor(LANGUAGE_ONBOARDING_PATH)).resolves.toBeNull();
+    // The model screen is only reachable once the language decision exists.
+    markLanguageSelected("de");
     await expect(startupRedirectFor(MODEL_ONBOARDING_PATH)).resolves.toBeNull();
     await expect(startupRedirectFor("/legal/privacy")).resolves.toBeNull();
     await expect(startupRedirectFor("/account/suspended")).resolves.toBeNull();
