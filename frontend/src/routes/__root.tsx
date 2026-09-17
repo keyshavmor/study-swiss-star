@@ -46,9 +46,26 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   console.error(error);
   const { t } = useI18n();
   const router = useRouter();
+  // A stuck/undefined authenticated state must never trap the user: whenever a
+  // Supabase session exists, sign-out is offered next to retry/home.
+  const [hasSession, setHasSession] = useState(false);
   useEffect(() => {
     reportLovableError(error, { boundary: "tanstack_root_error_component" });
   }, [error]);
+  useEffect(() => {
+    let active = true;
+    void supabase.auth
+      .getSession()
+      .then(({ data }) => {
+        if (active) setHasSession(Boolean(data.session));
+      })
+      .catch(() => {
+        /* recovery UI must render even when the auth check fails */
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
@@ -73,6 +90,20 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
           >
             {t("common.goHome")}
           </a>
+          {hasSession && (
+            <button
+              onClick={() => {
+                void import("@/lib/sign-out")
+                  .then(({ signOutCompletely }) => signOutCompletely())
+                  .catch(() => {
+                    window.location.assign("/auth");
+                  });
+              }}
+              className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent"
+            >
+              {t("nav.signOut")}
+            </button>
+          )}
         </div>
       </div>
     </div>
