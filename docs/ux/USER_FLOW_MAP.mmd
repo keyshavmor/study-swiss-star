@@ -81,11 +81,13 @@ flowchart TD
   ApiChat -.->|"streams reply"| ChatThread
 
 
-  Welcome -->|"sign up success, first login"| Compliance["/onboarding/compliance<br/>ComplianceOnboarding (EXPECTED LOCAL BACKEND CONTRACT: none — CURRENT SUPABASE account_compliance)"]
-  Compliance -->|"complete_account_compliance_onboarding RPC"| LangOnboard2["/onboarding/language<br/>MANDATORY per-session decision: pick a language or explicit skip<br/>persists app_language (durable default only)"]
+  Welcome -->|"sign up success, first login"| LangOnboard2["/onboarding/language<br/>MANDATORY per-session decision: pick a language or explicit skip<br/>persists app_language (durable default only)"]
+  Compliance["/onboarding/compliance<br/>ComplianceOnboarding — shown AFTER the language and model decisions<br/>(EXPECTED LOCAL BACKEND CONTRACT: none — CURRENT SUPABASE account_compliance)"]
+  Compliance -->|"complete_account_compliance_onboarding RPC"| Home
   LangOnboard2 -->|"markLanguageSelected / markLanguageSkipped"| ModelGate2["/onboarding/model<br/>MANDATORY per-session decision<br/>capability probe + recommendation + prepare/poll<br/>REQUIRED FUTURE BACKEND"]
-  ModelGate2 -->|"backend confirms ready (only then)"| Home
-  ModelGate2 -->|"explicit Continue without AI"| Home
+  ModelGate2 -->|"backend confirms ready (only then)"| Compliance
+  ModelGate2 -->|"explicit Continue without AI"| Compliance
+  ModelGate2 -->|"both decisions made, compliance already completed"| Home
   ModelGate2 -->|"retry / change model / sign out"| ModelGate2
   DirectModel["manual navigation to /onboarding/model<br/>with no language decision"] -->|"startupRedirectFor() redirects"| LangOnboard2
   OptionalAdmission["/onboarding/system-admission (OPTIONAL, not a startup gate)"] -.-> ModelGate2

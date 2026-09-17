@@ -21,12 +21,10 @@ sequenceDiagram
     Entry->>Supa: signInWithPassword / username-login v4
     Supa-->>Entry: session (auth NEVER depends on the AI backend)
     Entry->>Flow: resolveStartupDestination()
-    Flow->>Comp: complianceStatus()
+    Flow->>Comp: complianceStatus() (suspension check only pre-empts)
     alt suspended
-        Flow-->>Entry: /account/suspended
-    else compliance not completed / unknown
-        Flow-->>Entry: /onboarding/compliance
-    else completed
+        Flow-->>Entry: /account/suspended (outranks everything)
+    else not suspended
         Flow->>LangS: languageDecisionRequired()
         alt no language decision this session
             Flow-->>Lang: /onboarding/language
@@ -35,7 +33,11 @@ sequenceDiagram
             alt no AI decision this session
                 Flow-->>Model: /onboarding/model
             else decided
-                Flow-->>Home: /home
+                alt compliance onboarding still required / unknown
+                    Flow-->>Entry: /onboarding/compliance (AFTER language + model)
+                else completed
+                    Flow-->>Home: /home
+                end
             end
         end
     end
@@ -58,7 +60,7 @@ sequenceDiagram
     alt backend confirms ready AND can_continue_with_ai
         Backend-->>Model: state = ready
         Model->>AiS: markAiReady(modelId)
-        Model-->>Home: "Continue to the app" (only now visible)
+        Model-->>Home: "Continue to the app" (only now enabled) →\n    compliance first if still required
     else not ready (unavailable, blocked, failed, no suitable model)
         Model-->>User: red state; forward paths = retry/change model, sign out,<br/>or explicit "Continue without AI"
         User->>Model: Continue without AI
