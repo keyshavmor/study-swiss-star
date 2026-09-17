@@ -828,9 +828,11 @@ decisions; a suspended account (`suspended_pending_review`) still outranks all
 of them.
 
 - Authentication and non-AI product areas never depend on the local AI backend.
-- `user_preferences.preferences.app_language` stays the durable default used to
-  preselect the language screen; `language_onboarding_completed` is kept only as
-  legacy compatibility metadata and is not a gate.
+- `user_preferences.preferences.app_language` is a SAVED DEFAULT VISUAL HINT
+  only. It never counts as the session selection: Continue on the language screen
+  stays disabled until the user clicks a language in this session, or the user
+  explicitly skips. `language_onboarding_completed` is kept only as legacy
+  compatibility metadata and is not a gate.
 - `selected_qwen_model` persists a *preference*; readiness comes only from an
   explicit backend `ready` state (`alim.ai_session.v1` in `sessionStorage`).
 - The decisions survive a refresh in the same session and are cleared on
