@@ -92,14 +92,7 @@ function statusOf(error: unknown): number | null {
  * timed out, so the central AI gate must turn red before the next request.
  */
 export function isRuntimeUnavailableError(error: unknown): boolean {
-  const status = statusOf(error);
-  if (status !== null && RUNTIME_LOSS_STATUSES.has(status)) return true;
-  if (status !== null && status >= 400 && status < 500) return false;
-
   const code = codeOf(error);
-  if (code && NON_RUNTIME_PATTERNS.some((pattern) => code.includes(pattern))) return false;
-  if (code && RUNTIME_LOSS_PATTERNS.some((pattern) => code.includes(pattern))) return true;
-
   const message = (
     error instanceof Error
       ? `${error.name} ${error.message}`
@@ -107,7 +100,14 @@ export function isRuntimeUnavailableError(error: unknown): boolean {
         ? error
         : ""
   ).toLowerCase();
-  if (!message) return false;
-  if (NON_RUNTIME_PATTERNS.some((pattern) => message.includes(pattern))) return false;
-  return RUNTIME_LOSS_PATTERNS.some((pattern) => message.includes(pattern));
+
+  // Text/code wins over the status, so a fail-closed safety verdict served as
+  // 503 (`safety_unavailable`) is never mistaken for local runtime loss.
+  const haystack = `${code} ${message}`.trim();
+  if (haystack && NON_RUNTIME_PATTERNS.some((pattern) => haystack.includes(pattern))) return false;
+  if (haystack && RUNTIME_LOSS_PATTERNS.some((pattern) => haystack.includes(pattern))) return true;
+
+  const status = statusOf(error);
+  if (status !== null && RUNTIME_LOSS_STATUSES.has(status)) return true;
+  return false;
 }
