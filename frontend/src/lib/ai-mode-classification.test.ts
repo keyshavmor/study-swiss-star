@@ -21,7 +21,14 @@ const statusBanner = read("../components/app/AiStatusBanner.tsx");
 
 describe("AI dependency classification", () => {
   it("classifies every AI-dependent subject mode", () => {
-    for (const mode of ["Chat", "Quick Check", "Knowledge Profile", "Quiz Mode", "Mock Exam", "Study Plan"] as const) {
+    for (const mode of [
+      "Chat",
+      "Quick Check",
+      "Knowledge Profile",
+      "Quiz Mode",
+      "Mock Exam",
+      "Study Plan",
+    ] as const) {
       expect(isAiDependentSubjectMode(mode)).toBe(true);
       expect(AI_DEPENDENT_SUBJECT_MODES).toContain(mode);
     }
@@ -61,9 +68,9 @@ describe("School page AI status", () => {
   });
 
   it("covers ready, preparing and blocked states", () => {
-    expect(statusBanner).toContain('ai.status.readyTitle');
-    expect(statusBanner).toContain('ai.status.preparingTitle');
-    expect(statusBanner).toContain('ai.status.blockedTitle');
+    expect(statusBanner).toContain("ai.status.readyTitle");
+    expect(statusBanner).toContain("ai.status.preparingTitle");
+    expect(statusBanner).toContain("ai.status.blockedTitle");
   });
 });
 

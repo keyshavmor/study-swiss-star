@@ -57,10 +57,7 @@ export function AiStatusBanner({ className }: { className?: string }) {
   return (
     <div
       role="status"
-      className={cn(
-        "rounded-[16px] border border-destructive/40 bg-destructive/10 p-4",
-        className,
-      )}
+      className={cn("rounded-[16px] border border-destructive/40 bg-destructive/10 p-4", className)}
     >
       <p className="flex items-center gap-2 text-[15px] font-semibold text-destructive">
         <AlertTriangle className="h-4 w-4 shrink-0" />

@@ -19,8 +19,10 @@ export const AI_DEPENDENT_SUBJECT_MODES = [
 ] as const satisfies readonly SubjectMode[];
 
 /** Modes backed only by Supabase / local data — always usable. */
-export const NON_AI_SUBJECT_MODES = ["Statistics", "Subject Tools"] as const satisfies
-  readonly SubjectMode[];
+export const NON_AI_SUBJECT_MODES = [
+  "Statistics",
+  "Subject Tools",
+] as const satisfies readonly SubjectMode[];
 
 export type AiDependentSubjectMode = (typeof AI_DEPENDENT_SUBJECT_MODES)[number];
 
@@ -32,8 +34,9 @@ export function isAiDependentSubjectMode(mode: SubjectMode): boolean {
  * Modes where stored, non-AI content stays readable while only the AI action
  * (refresh / analyse / generate) is blocked.
  */
-export const PARTIALLY_AI_DEPENDENT_SUBJECT_MODES = ["Knowledge Profile"] as const satisfies
-  readonly SubjectMode[];
+export const PARTIALLY_AI_DEPENDENT_SUBJECT_MODES = [
+  "Knowledge Profile",
+] as const satisfies readonly SubjectMode[];
 
 export function keepsReadOnlyContentWhenBlocked(mode: SubjectMode): boolean {
   return (PARTIALLY_AI_DEPENDENT_SUBJECT_MODES as readonly string[]).includes(mode);
