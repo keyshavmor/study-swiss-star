@@ -18,6 +18,7 @@ import { Button } from "@/components/ui/button";
 import { useAiAvailability } from "@/lib/ai-availability";
 import { useI18n } from "@/lib/i18n/provider";
 import { MODEL_ONBOARDING_PATH } from "@/lib/startup-flow";
+import { signOutCompletely } from "@/lib/sign-out";
 
 /** True when an AI request must not be issued right now. */
 export function useAiBlocked(): boolean {
