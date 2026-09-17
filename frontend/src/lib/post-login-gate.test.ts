@@ -151,9 +151,7 @@ describe("post-login language → model gate", () => {
 
   it("cannot bypass the language decision by opening /onboarding/model directly", async () => {
     // Fresh session, no language decision: the model screen itself redirects.
-    await expect(startupRedirectFor(MODEL_ONBOARDING_PATH)).resolves.toBe(
-      LANGUAGE_ONBOARDING_PATH,
-    );
+    await expect(startupRedirectFor(MODEL_ONBOARDING_PATH)).resolves.toBe(LANGUAGE_ONBOARDING_PATH);
     await expect(startupRedirectFor("/onboarding/system-admission")).resolves.toBe(
       LANGUAGE_ONBOARDING_PATH,
     );
@@ -165,9 +163,7 @@ describe("post-login language → model gate", () => {
     markNonAi();
     await expect(resolveStartupDestination()).resolves.toBe(LANGUAGE_ONBOARDING_PATH);
     await expect(startupRedirectFor("/home")).resolves.toBe(LANGUAGE_ONBOARDING_PATH);
-    await expect(startupRedirectFor(MODEL_ONBOARDING_PATH)).resolves.toBe(
-      LANGUAGE_ONBOARDING_PATH,
-    );
+    await expect(startupRedirectFor(MODEL_ONBOARDING_PATH)).resolves.toBe(LANGUAGE_ONBOARDING_PATH);
     clearAiSession();
     markAiReady("Qwen/Qwen3.8-27B");
     await expect(startupRedirectFor("/school/biology")).resolves.toBe(LANGUAGE_ONBOARDING_PATH);

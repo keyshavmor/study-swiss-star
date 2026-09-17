@@ -77,7 +77,6 @@ function onboardingStageRank(pathname: string): number | null {
   return ONBOARDING_STAGE_RANK[pathname] ?? 3;
 }
 
-
 // One successful read per browser session is enough; the flags only flip
 // through onboarding screens, which invalidate the cache themselves.
 // A FAILED read is never cached and never treated as "completed".
@@ -214,4 +213,3 @@ export async function startupRedirectFor(pathname: string): Promise<StartupDesti
   if (isStartupExempt(pathname)) return null;
   return destination === HOME_PATH ? null : destination;
 }
-
