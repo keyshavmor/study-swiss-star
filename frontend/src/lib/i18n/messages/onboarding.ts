@@ -108,6 +108,18 @@ export const onboarding = {
     "ai.blocked.openSettings": "Open Settings",
     "ai.blocked.useNonAiAction": "Use non-AI features",
     "ai.blocked.short": "AI is unavailable — this action is blocked.",
+    "ai.status.readyTitle": "AI is ready for this session",
+    "ai.status.readyModel": "Model in use: {model}",
+    "ai.status.preparingTitle": "AI model is still being prepared",
+    "ai.status.preparingBody":
+      "Wait for the readiness check to finish before starting an AI study tool.",
+    "ai.status.blockedTitle": "AI study tools are not ready",
+    "ai.status.blockedBody":
+      "AI-dependent study tools should not be used yet. Grades, statistics, materials and other features without AI keep working normally.",
+    "ai.status.openSetup": "Open AI model setup",
+    "ai.status.needsAi": "Needs AI",
+    "ai.status.aiOnlyPart":
+      "Only the AI analysis part of this screen is blocked. Saved information stays visible.",
     "ai.unavailable.title": "AI features are switched off",
     "ai.unavailable.body":
       "You are using the app without AI for this session. Study plans, chat and generated exercises are unavailable.",
@@ -237,6 +249,18 @@ export const onboarding = {
     "ai.blocked.openSettings": "Einstellungen öffnen",
     "ai.blocked.useNonAiAction": "Funktionen ohne KI nutzen",
     "ai.blocked.short": "KI nicht verfügbar — diese Aktion ist blockiert.",
+    "ai.status.readyTitle": "Die KI ist für diese Sitzung bereit",
+    "ai.status.readyModel": "Verwendetes Modell: {model}",
+    "ai.status.preparingTitle": "Das KI-Modell wird noch vorbereitet",
+    "ai.status.preparingBody":
+      "Warte, bis die Bereitschaftsprüfung fertig ist, bevor du ein KI-Lernwerkzeug startest.",
+    "ai.status.blockedTitle": "KI-Lernwerkzeuge sind nicht bereit",
+    "ai.status.blockedBody":
+      "KI-abhängige Lernwerkzeuge sollten noch nicht verwendet werden. Noten, Statistiken, Materialien und andere Funktionen ohne KI funktionieren normal weiter.",
+    "ai.status.openSetup": "KI-Modell-Einrichtung öffnen",
+    "ai.status.needsAi": "Braucht KI",
+    "ai.status.aiOnlyPart":
+      "Nur die KI-Analyse dieses Bereichs ist blockiert. Gespeicherte Informationen bleiben sichtbar.",
     "ai.unavailable.title": "KI-Funktionen sind ausgeschaltet",
     "ai.unavailable.body":
       "Du nutzt die App für diese Sitzung ohne KI. Lernpläne, Chat und generierte Übungen sind nicht verfügbar.",
@@ -362,6 +386,18 @@ export const onboarding = {
     "ai.blocked.openSettings": "Iistellige uufmache",
     "ai.blocked.useNonAiAction": "Funktione ohni KI nutze",
     "ai.blocked.short": "KI nöd verfüegbar — die Aktion isch blockiert.",
+    "ai.status.readyTitle": "D KI isch für die Sitzig parat",
+    "ai.status.readyModel": "Verwendets Modäll: {model}",
+    "ai.status.preparingTitle": "S KI-Modäll wird no vorbereitet",
+    "ai.status.preparingBody":
+      "Wart, bis d Prüefig fertig isch, bevor du es KI-Lernwerkzüg startisch.",
+    "ai.status.blockedTitle": "KI-Lernwerkzüg sind nöd parat",
+    "ai.status.blockedBody":
+      "KI-abhängigi Lernwerkzüg söll me no nöd bruche. Note, Statistike, Materialie und anderi Funktione ohni KI laufe normal wiiter.",
+    "ai.status.openSetup": "KI-Modäll-Iirichtig uufmache",
+    "ai.status.needsAi": "Bruucht KI",
+    "ai.status.aiOnlyPart":
+      "Nur d KI-Analyse vo dem Bereich isch blockiert. Gspeichereti Informatione blibe sichtbar.",
     "ai.unavailable.title": "D KI-Funktione sind usgschaltet",
     "ai.unavailable.body":
       "Du nutzisch d App für die Sitzig ohni KI. Lernpläni, Chat und generierti Übige sind nid verfüegbar.",
@@ -486,6 +522,18 @@ export const onboarding = {
     "ai.blocked.openSettings": "Открыть настройки",
     "ai.blocked.useNonAiAction": "Использовать функции без ИИ",
     "ai.blocked.short": "ИИ недоступен — действие заблокировано.",
+    "ai.status.readyTitle": "ИИ готов для этого сеанса",
+    "ai.status.readyModel": "Используемая модель: {model}",
+    "ai.status.preparingTitle": "Модель ИИ ещё готовится",
+    "ai.status.preparingBody":
+      "Дождитесь завершения проверки готовности, прежде чем запускать инструмент с ИИ.",
+    "ai.status.blockedTitle": "Учебные инструменты с ИИ не готовы",
+    "ai.status.blockedBody":
+      "Инструменты, зависящие от ИИ, пока использовать не следует. Оценки, статистика, материалы и другие функции без ИИ работают как обычно.",
+    "ai.status.openSetup": "Открыть настройку модели ИИ",
+    "ai.status.needsAi": "Нужен ИИ",
+    "ai.status.aiOnlyPart":
+      "Заблокирована только часть с анализом ИИ. Сохранённые данные остаются видимыми.",
     "ai.unavailable.title": "Функции ИИ отключены",
     "ai.unavailable.body":
       "Вы используете приложение без ИИ в этой сессии. Учебные планы, чат и сгенерированные упражнения недоступны.",
@@ -614,6 +662,18 @@ export const onboarding = {
     "ai.blocked.openSettings": "Abrir Ajustes",
     "ai.blocked.useNonAiAction": "Usar funciones sin IA",
     "ai.blocked.short": "IA no disponible: acción bloqueada.",
+    "ai.status.readyTitle": "La IA está lista para esta sesión",
+    "ai.status.readyModel": "Modelo en uso: {model}",
+    "ai.status.preparingTitle": "El modelo de IA aún se está preparando",
+    "ai.status.preparingBody":
+      "Espera a que termine la comprobación antes de iniciar una herramienta con IA.",
+    "ai.status.blockedTitle": "Las herramientas de estudio con IA no están listas",
+    "ai.status.blockedBody":
+      "Las herramientas que dependen de la IA aún no deben usarse. Las notas, las estadísticas, los materiales y otras funciones sin IA siguen funcionando con normalidad.",
+    "ai.status.openSetup": "Abrir la configuración del modelo de IA",
+    "ai.status.needsAi": "Necesita IA",
+    "ai.status.aiOnlyPart":
+      "Solo se bloquea la parte de análisis con IA. La información guardada sigue visible.",
     "ai.unavailable.title": "Las funciones de IA están desactivadas",
     "ai.unavailable.body":
       "Estás usando la aplicación sin IA en esta sesión. Los planes de estudio, el chat y los ejercicios generados no están disponibles.",
@@ -742,6 +802,18 @@ export const onboarding = {
     "ai.blocked.openSettings": "Ouvrir les réglages",
     "ai.blocked.useNonAiAction": "Utiliser les fonctions sans IA",
     "ai.blocked.short": "IA indisponible — action bloquée.",
+    "ai.status.readyTitle": "L'IA est prête pour cette session",
+    "ai.status.readyModel": "Modèle utilisé : {model}",
+    "ai.status.preparingTitle": "Le modèle d'IA est encore en préparation",
+    "ai.status.preparingBody":
+      "Attendez la fin de la vérification avant de lancer un outil avec IA.",
+    "ai.status.blockedTitle": "Les outils d'étude avec IA ne sont pas prêts",
+    "ai.status.blockedBody":
+      "Les outils qui dépendent de l'IA ne doivent pas encore être utilisés. Les notes, les statistiques, les documents et les autres fonctions sans IA continuent de fonctionner normalement.",
+    "ai.status.openSetup": "Ouvrir la configuration du modèle d'IA",
+    "ai.status.needsAi": "Nécessite l'IA",
+    "ai.status.aiOnlyPart":
+      "Seule la partie analyse par IA est bloquée. Les informations enregistrées restent visibles.",
     "ai.unavailable.title": "Les fonctionnalités d'IA sont désactivées",
     "ai.unavailable.body":
       "Vous utilisez l'application sans IA pour cette session. Les plans d'étude, le chat et les exercices générés ne sont pas disponibles.",
@@ -869,6 +941,18 @@ export const onboarding = {
     "ai.blocked.openSettings": "Apri le impostazioni",
     "ai.blocked.useNonAiAction": "Usa le funzioni senza IA",
     "ai.blocked.short": "IA non disponibile: azione bloccata.",
+    "ai.status.readyTitle": "L'IA è pronta per questa sessione",
+    "ai.status.readyModel": "Modello in uso: {model}",
+    "ai.status.preparingTitle": "Il modello di IA è ancora in preparazione",
+    "ai.status.preparingBody":
+      "Attendi la fine del controllo prima di avviare uno strumento con IA.",
+    "ai.status.blockedTitle": "Gli strumenti di studio con IA non sono pronti",
+    "ai.status.blockedBody":
+      "Gli strumenti che dipendono dall'IA non dovrebbero ancora essere usati. Voti, statistiche, materiali e altre funzioni senza IA continuano a funzionare normalmente.",
+    "ai.status.openSetup": "Apri la configurazione del modello di IA",
+    "ai.status.needsAi": "Richiede IA",
+    "ai.status.aiOnlyPart":
+      "È bloccata solo la parte di analisi con IA. Le informazioni salvate restano visibili.",
     "ai.unavailable.title": "Le funzionalità IA sono disattivate",
     "ai.unavailable.body":
       "Stai usando l'app senza IA per questa sessione. Piani di studio, chat ed esercizi generati non sono disponibili.",

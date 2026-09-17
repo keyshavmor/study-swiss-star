@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import { useI18n } from "@/lib/i18n/provider";
 import type { TranslationKey } from "@/lib/i18n/messages";
 import { AcademicYearSelector } from "@/components/app/AcademicYearSelector";
+import { AiStatusBanner } from "@/components/app/AiStatusBanner";
 import { AppShell, PageHeading } from "@/components/app/AppShell";
 import { PageNav } from "@/components/app/Breadcrumbs";
 import { AssessmentDialog } from "@/components/app/AssessmentDialog";
@@ -160,6 +161,10 @@ function SchoolPage() {
           </div>
         }
       />
+
+      {/* Compact AI readiness state: students enter AI-dependent subject tools
+          from here. Rendering this never issues an AI request. */}
+      <AiStatusBanner className="mb-5" />
 
       <div className="mb-5">
         <AcademicYearSelector />
