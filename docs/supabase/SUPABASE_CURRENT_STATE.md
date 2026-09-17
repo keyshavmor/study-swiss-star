@@ -134,6 +134,36 @@ flow:
 Supabase never stores model/GPU/runtime readiness, admission leases or session
 decisions. Those live in `sessionStorage` (`alim.language_session.v1`,
 `alim.ai_session.v1`, `alim.admission_session.v1`) and are cleared on sign-out.
+## CURRENT SUPABASE — live security hardening applied (2026-09-17, external)
+
+The following was applied externally to the live production project (NOT from
+Lovable and NOT from this frontend repository):
+
+- **Live migration `20260917223625` `harden_user_facing_security_definer_rpcs`:**
+  revoked `PUBLIC`/`anon` `EXECUTE` from the user-facing privileged RPC set;
+  converted `get_my_data_summary()` to `SECURITY INVOKER`; set an
+  empty/non-user-writable `search_path` on the quota RPCs
+  (`get_my_quota_status()`, `can_allocate_my_quota(bigint)`).
+- **Live migration `20260917223810` `move_privileged_rpc_implementations_out_of_public`:**
+  moved the remaining 10 `SECURITY DEFINER` implementations into the
+  non-exposed schema `api_privileged`. The public RPC names/signatures remain
+  stable as `SECURITY INVOKER` wrappers; `api_privileged` has no `anon`
+  `USAGE`; `authenticated`/`service_role` have only the intended
+  `USAGE`/`EXECUTE` required by the wrappers; all public wrappers use an empty
+  `search_path` and have no `anon` `EXECUTE`.
+- **Post-migration authenticated smoke tests PASS** for quota status/preflight,
+  runtime policy, admission policy, storage status, user-visible health, data
+  summary and peer lookup.
+- **Security Advisor:** the Supabase Security Advisor no longer reports any
+  public `SECURITY DEFINER` executable warnings.
+- **Two project-level Auth advisories REMAIN open:** leaked-password protection
+  is disabled, and the MFA options are insufficient. These are Supabase Auth
+  project settings — NOT database or frontend settings — and still require
+  Supabase Auth project configuration. They were NOT changed from Lovable and
+  are NOT resolved.
+
+No user UUIDs are recorded in this repository's documentation.
+
 ## CURRENT SUPABASE — security hardening requirements (2026-09-17)
 
 Database-side rules that apply to every exposed SECURITY DEFINER RPC in this

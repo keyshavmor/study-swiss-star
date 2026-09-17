@@ -284,9 +284,12 @@ In addition to `harden_auth_peer_rpcs_and_signup_defaults`, these migrations are
   `peer_message_notifications(conversation_id)`, `peer_message_notifications(message_id)`,
   `peer_messages(moderation_event_id)`.
 
-**Security Advisor is NOT claimed to be at zero warnings.** It still reports the intentionally
-callable signed-in `SECURITY DEFINER` application RPCs. There is NO anon `SECURITY DEFINER` warning
-any more.
+**Security Advisor — SUPERSEDED 2026-09-17.** The statement above (intentional signed-in
+`SECURITY DEFINER` application-RPC warnings remaining) was superseded by the external live
+hardening recorded in "2026-09-17 — external live security hardening (CURRENT)" below: the
+Security Advisor no longer reports any public `SECURITY DEFINER` executable warnings. Only the
+two project-level Auth advisories (leaked-password protection, insufficient MFA options) remain,
+and those are Supabase Auth project settings, not database/frontend settings.
 
 **Performance Advisor state.** The Supabase Performance Advisor now reports **ZERO
 `unindexed_foreign_keys` findings** — the `cover_peer_and_guardian_foreign_keys` migration above
@@ -360,7 +363,7 @@ belongs only in Supabase Auth > Bot and Abuse Protection, per the
 [official guide](https://supabase.com/docs/guides/auth/auth-captcha).
 No production signup, login, session, row-creation or cleanup PASS is claimed this pass; no new
 throwaway account was created. Previously observed email confirmation requirements still apply,
-but were not independently re-tested in this pass. Security Advisor is not claimed to be zero.
+but were not independently re-tested in this pass. (Security Advisor state as of that date; superseded by the 2026-09-17 external hardening below.)
 
 ## 2026-09-15 — CAPTCHA removed as an authentication dependency (CURRENT)
 
@@ -393,7 +396,7 @@ confirmed account in the smoke test and is **NOT declared PASS** from signup alo
 Bot/Abuse Protection is enabled or disabled in the dashboard is not independently verified from
 here; historically, while it was enabled, tokenless signup/sign-in/recovery returned HTTP 400
 `captcha_failed` (see the historical entries above). Unit tests alone are not treated as evidence.
-Security Advisor is still not claimed to be zero.
+(Security Advisor state as of that date; superseded by the 2026-09-17 external hardening below.)
 
 ## 2026-09-15 — live production signup observed succeeding without CAPTCHA (CURRENT)
 
@@ -432,8 +435,10 @@ Historical hCaptcha/CAPTCHA incidents above remain clearly marked HISTORICAL.
    `STARTUP_COMPLIANCE_LANGUAGE_ADMISSION_MODEL_HOME.mmd` describe the previous
    mandatory-gate order and are superseded by
    `AUTH_STARTUP_HOME_VS_OPTIONAL_AI.mmd`.
-6. Security advisor state unchanged: the intentional signed-in SECURITY DEFINER
-   application-RPC warnings remain; Security Advisor is NOT zero.
+6. Security advisor state — SUPERSEDED 2026-09-17: the intentional signed-in
+   SECURITY DEFINER application-RPC warnings described here were resolved by the
+   external live hardening recorded below; only the two Auth-project advisories
+   (leaked-password protection, MFA options) remain open.
 
 
 ## Post-login gate — CURRENT (2026-09-17)
@@ -467,3 +472,33 @@ of them.
 
 Full contract: `docs/backend-handoff/POST_LOGIN_LANGUAGE_MODEL_GATE_HANDOFF.md`;
 sequence: `docs/sequences/POST_LOGIN_STARTUP.mmd`.
+
+## 2026-09-17 — external live security hardening (CURRENT)
+
+Applied externally to the production Supabase project (NOT from Lovable, NOT from
+this frontend repository; no frontend/backend code changed):
+
+- **Live migration `20260917223625` `harden_user_facing_security_definer_rpcs`:**
+  revoked `PUBLIC`/`anon` `EXECUTE` from the user-facing privileged RPC set;
+  converted `get_my_data_summary()` to `SECURITY INVOKER`; set an
+  empty/non-user-writable `search_path` on the quota RPCs.
+- **Live migration `20260917223810` `move_privileged_rpc_implementations_out_of_public`:**
+  moved the remaining 10 `SECURITY DEFINER` implementations into the non-exposed
+  schema `api_privileged`. Public RPC names/signatures remain stable as
+  `SECURITY INVOKER` wrappers; `api_privileged` has no `anon` `USAGE`;
+  `authenticated`/`service_role` have only the intended `USAGE`/`EXECUTE`
+  required by the wrappers; all public wrappers use an empty `search_path` and
+  have no `anon` `EXECUTE`.
+- **Post-migration authenticated smoke tests PASS** for quota status/preflight,
+  runtime policy, admission policy, storage status, user-visible health, data
+  summary and peer lookup.
+- **Security Advisor** no longer reports any public `SECURITY DEFINER`
+  executable warnings. Earlier statements in this file that the advisor is
+  "not zero" because of those warnings are superseded.
+- **Two project-level Auth advisories REMAIN open and unresolved:**
+  leaked-password protection disabled and insufficient MFA options. These are
+  Supabase Auth project settings — NOT database or frontend settings — still
+  requiring Supabase Auth project configuration; they were NOT changed from
+  Lovable.
+
+No user UUIDs are recorded in documentation.
