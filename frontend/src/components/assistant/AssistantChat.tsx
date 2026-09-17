@@ -24,6 +24,7 @@ import {
   X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { AiBlockedNotice, useAiBlocked } from "@/components/app/AiFeatureGate";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
@@ -91,6 +92,7 @@ function AttachmentChip({
 
 export function AssistantChat({ threadId }: { threadId?: string }) {
   const { t, language, formatDate } = useI18n();
+  const aiBlocked = useAiBlocked();
   const navigate = useNavigate();
   const [threads, setThreads] = useState<AssistantThread[]>([]);
   const [messages, setMessages] = useState<AssistantMessage[]>([]);
@@ -203,6 +205,8 @@ export function AssistantChat({ threadId }: { threadId?: string }) {
   const handleSend = async () => {
     const content = text.trim();
     if (!content && files.length === 0) return;
+    // No AI request may leave the browser without a backend-confirmed model.
+    if (aiBlocked) return;
     setSending(true);
     // FUTURE BACKEND / CODEX: send { ui_language, message_language } so the model answers in
     // message_language when it is confidently one of the seven supported languages; otherwise
@@ -459,6 +463,11 @@ export function AssistantChat({ threadId }: { threadId?: string }) {
               ))}
             </div>
           )}
+          {aiBlocked && (
+            <div className="mb-3">
+              <AiBlockedNotice />
+            </div>
+          )}
           <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-end gap-2">
             <input
               ref={fileInputRef}
@@ -486,6 +495,7 @@ export function AssistantChat({ threadId }: { threadId?: string }) {
                   void handleSend();
                 }
               }}
+              disabled={aiBlocked}
               placeholder={t("assistant.composerPlaceholder")}
               rows={1}
               className="max-h-40 min-h-[44px] resize-none"
@@ -494,7 +504,7 @@ export function AssistantChat({ threadId }: { threadId?: string }) {
               size="icon"
               aria-label={t("assistant.sendAria")}
               onClick={() => void handleSend()}
-              disabled={sending || (!text.trim() && files.length === 0)}
+              disabled={aiBlocked || sending || (!text.trim() && files.length === 0)}
             >
               {sending ? (
                 <Loader2 className="h-[18px] w-[18px] animate-spin" />

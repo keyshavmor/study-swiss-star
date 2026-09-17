@@ -33,6 +33,7 @@ import {
   PromptInputTextarea,
 } from "@/components/ai-elements/prompt-input";
 import { Shimmer } from "@/components/ai-elements/shimmer";
+import { AiBlockedNotice, useAiBlocked } from "@/components/app/AiFeatureGate";
 import { SourceSnippetList } from "@/components/app/SourceSnippetList";
 import { GraduationCap, Plus, LogOut, Volume2, Square } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -54,6 +55,8 @@ interface StudyChatProps {
 
 export function StudyChat({ threadId }: StudyChatProps) {
   const { t, language, formatDate } = useI18n();
+  // Centralized AI guard: no model confirmed ready → no AI request is issued.
+  const aiBlocked = useAiBlocked();
   const routeParams = useParams({ strict: false });
   const activeThreadId = threadId ?? routeParams?.threadId;
   const navigate = useNavigate();
@@ -450,11 +453,16 @@ export function StudyChat({ threadId }: StudyChatProps) {
 
         <div className="border-t border-border bg-surface px-5 py-4 lg:px-8">
           <div className="mx-auto w-full max-w-3xl">
+            {aiBlocked && (
+              <div className="mb-3">
+                <AiBlockedNotice />
+              </div>
+            )}
             <PromptInput
               className="rounded-[18px] border-border bg-input-background shadow-none"
               onSubmit={(message) => {
                 const value = message.text.trim();
-                if (!value) return;
+                if (!value || aiBlocked) return;
                 track({ event_name: "chat_message_sent", feature: "chat" });
                 // FUTURE BACKEND / CODEX: send { ui_language, message_language } so the model
                 // answers in message_language when it is confidently one of the seven supported
@@ -467,10 +475,10 @@ export function StudyChat({ threadId }: StudyChatProps) {
               <PromptInputTextarea
                 placeholder={t("chat.composerPlaceholder")}
                 className="min-h-[76px] resize-none text-[15px]"
-                disabled={isLoading}
+                disabled={isLoading || aiBlocked}
               />
               <PromptInputFooter className="justify-end border-0">
-                <PromptInputSubmit status={chat.status} disabled={isLoading} />
+                <PromptInputSubmit status={chat.status} disabled={isLoading || aiBlocked} />
               </PromptInputFooter>
             </PromptInput>
           </div>

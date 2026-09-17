@@ -1,14 +1,27 @@
 /**
- * Authenticated startup flow resolution.
+ * Authenticated startup flow resolution (CURRENT FRONTEND).
  *
- * SIGNED OUT → sign in → COMPLIANCE / SAFETY ONBOARDING (once, Supabase flag)
- * → LANGUAGE ONBOARDING (once, Supabase flag) → Home.
+ * Canonical post-login sequence:
+ *   Supabase Auth success
+ *     → COMPLIANCE / SAFETY ONBOARDING (once, durable Supabase flag)
+ *     → LANGUAGE DECISION (per browser session: select or explicit skip)
+ *     → MODEL DECISION (per browser session: backend-confirmed ready, or an
+ *       explicit "continue without AI")
+ *     → Home / product.
  *
- * AUTHENTICATION IS NEVER GATED ON THE LOCAL AI RUNTIME. The system admission
- * gate and the model readiness gate are AI-readiness surfaces, not login
- * requirements: a signed-in user always reaches `/home` and every non-AI
- * product area, even when the future local backend is absent. `aiSetupPending()`
- * only tells the UI whether the optional AI setup flow is still worth offering.
+ * AUTHENTICATION IS NEVER GATED ON THE LOCAL AI RUNTIME. The model screen is a
+ * mandatory DECISION gate, not an availability gate: when the local backend is
+ * absent the user can always choose "continue without AI" and use the whole
+ * non-AI product. The frontend enters AI-ready mode only after an explicit
+ * backend `ready` confirmation for the selected model.
+ *
+ * Both gates are sessionStorage-scoped, so a refresh inside the same
+ * authenticated browser session keeps the decisions, while a fresh sign-in after
+ * sign-out asks again.
+ *
+ * The durable Supabase flag `language_onboarding_completed` is LEGACY profile
+ * metadata. It is still written for compatibility but it no longer decides
+ * whether the language screen appears.
  *
  * A suspended account (`account_compliance.account_status =
  * 'suspended_pending_review'`) is routed to the suspended screen before every
@@ -17,6 +30,7 @@
 import { fetchPreferences } from "@/lib/account-data";
 import { fetchAccountCompliance } from "@/lib/compliance";
 import { modelGateRequired } from "@/lib/ai-session";
+import { languageDecisionRequired } from "@/lib/language-session";
 import { admissionGateRequired } from "@/lib/admission-session";
 
 export const COMPLIANCE_ONBOARDING_PATH = "/onboarding/compliance";
@@ -88,11 +102,11 @@ export async function complianceStatus(): Promise<ComplianceStatus> {
 }
 
 /**
- * Resolves the persisted language-onboarding flag.
+ * Resolves the LEGACY persisted language-onboarding flag.
  *
- * A transient Supabase read failure yields `"unknown"` — it must NEVER be
- * treated as completed, otherwise a first-time user could skip the required
- * language screen.
+ * Kept for compatibility and documentation only: the language screen is now
+ * gated per browser session by `languageDecisionRequired()`, so a transient
+ * read failure can no longer hide or force the screen.
  */
 export async function languageOnboardingStatus(): Promise<LanguageOnboardingStatus> {
   if (languageFlagCache !== null) return languageFlagCache ? "completed" : "required";
@@ -120,26 +134,35 @@ export type StartupDestination =
   | typeof HOME_PATH;
 
 /**
- * Where an authenticated user belongs right now. While a mandatory flag is
- * unknown the user stays on the corresponding onboarding screen, which renders
- * a localized retry state. AI readiness is deliberately NOT part of this
- * decision: it can never keep a signed-in user out of the product.
+ * Where an authenticated user belongs right now:
+ * suspended → compliance → language decision → model decision → home.
+ *
+ * The model step is reached even when the local backend is unavailable, because
+ * the user still has to make an explicit AI decision for the session. There is
+ * NO separate mandatory system-admission screen in the user-facing flow; system
+ * capability, admission and recommendation information is shown on the model
+ * screen itself.
  */
 export async function resolveStartupDestination(): Promise<StartupDestination> {
   const compliance = await complianceStatus();
   if (compliance === "suspended") return SUSPENDED_PATH;
   if (compliance !== "completed") return COMPLIANCE_ONBOARDING_PATH;
-  if ((await languageOnboardingStatus()) !== "completed") return LANGUAGE_ONBOARDING_PATH;
+  if (languageDecisionRequired()) return LANGUAGE_ONBOARDING_PATH;
+  if (modelGateRequired()) return MODEL_ONBOARDING_PATH;
   return HOME_PATH;
 }
 
 /**
- * True when this browser session has not yet completed the OPTIONAL AI setup
- * flow (system admission + model readiness). Purely advisory: the UI may offer
- * the AI setup screens, but product access never depends on it.
+ * True when this browser session has not yet recorded an AI decision. Advisory
+ * only: used by AI surfaces and Settings to offer the setup flow again.
  */
 export function aiSetupPending(): boolean {
-  return admissionGateRequired() || modelGateRequired();
+  return modelGateRequired();
+}
+
+/** Advisory: the optional backend admission lease is still missing. */
+export function admissionSetupPending(): boolean {
+  return admissionGateRequired();
 }
 
 /**

@@ -3,7 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { AppShell, PageHeading } from "@/components/app/AppShell";
 import { PageNav } from "@/components/app/Breadcrumbs";
 import { AssistantChat } from "@/components/assistant/AssistantChat";
-import { AiUnavailableNotice } from "@/components/app/AiUnavailableNotice";
+import { AiBlockedNotice } from "@/components/app/AiFeatureGate";
 import { useI18n } from "@/lib/i18n/provider";
 
 export const Route = createFileRoute("/_authenticated/assistant/")({
@@ -38,7 +38,7 @@ function AssistantIndexPage() {
         ]}
       />
       <PageHeading title={t("assistant.pageTitle")} description={t("assistant.pageDescription")} />
-      <AiUnavailableNotice />
+      <AiBlockedNotice />
       <AssistantChat />
     </AppShell>
   );

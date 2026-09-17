@@ -1,7 +1,7 @@
 /** TanStack route module defining one Alim screen or local API boundary. */
 import { createFileRoute } from "@tanstack/react-router";
 import { StudyChat } from "@/components/StudyChat";
-import { AiUnavailableNotice } from "@/components/app/AiUnavailableNotice";
+import { AiBlockedNotice } from "@/components/app/AiFeatureGate";
 
 export const Route = createFileRoute("/_authenticated/chat/$threadId")({
   head: ({ params }) => ({
@@ -22,7 +22,7 @@ function ThreadPage() {
   return (
     <>
       <div className="mx-auto w-full max-w-3xl px-4 pt-4 empty:hidden">
-        <AiUnavailableNotice />
+        <AiBlockedNotice />
       </div>
       <StudyChat threadId={threadId} />
     </>

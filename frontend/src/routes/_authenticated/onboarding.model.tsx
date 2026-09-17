@@ -1,7 +1,7 @@
 /** TanStack route module defining one Alim screen or local API boundary. */
 import { useCallback, useEffect, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { Cpu } from "lucide-react";
+import { AlertTriangle, Cpu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { ModelReadinessPanel } from "@/components/app/ModelReadinessPanel";
@@ -48,6 +48,7 @@ function ModelOnboardingPage() {
 
   const handleReady = useCallback(
     (modelId: string) => {
+      // ONLY an explicit backend `ready` confirmation may unlock AI features.
       ai.setReady(modelId);
     },
     [ai],
@@ -64,6 +65,7 @@ function ModelOnboardingPage() {
   };
 
   const continueToApp = async () => {
+    if (!ai.aiEnabled) return;
     await navigate({ to: HOME_PATH, replace: true });
   };
 
@@ -109,10 +111,26 @@ function ModelOnboardingPage() {
           )}
         </div>
 
+        {!ai.aiEnabled && ai.status !== "preparing" && (
+          <div
+            role="status"
+            className="mt-5 rounded-[16px] border border-destructive/40 bg-destructive/10 p-4"
+          >
+            <p className="flex items-center gap-2 text-[15px] font-semibold text-destructive">
+              <AlertTriangle className="h-4 w-4" />
+              {t("onboarding.model.notReadyTitle")}
+            </p>
+            <p className="mt-1 text-[14px] text-foreground">{t("onboarding.model.notReadyBody")}</p>
+          </div>
+        )}
+
         <div className="mt-6 flex flex-wrap justify-center gap-2">
-          <Button size="lg" onClick={() => void continueToApp()}>
-            {t("onboarding.model.continueToApp")}
-          </Button>
+          {/* Normal continue exists only after a backend ready confirmation. */}
+          {ai.aiEnabled && (
+            <Button size="lg" onClick={() => void continueToApp()}>
+              {t("onboarding.model.continueToApp")}
+            </Button>
+          )}
           <Button size="lg" variant="outline" onClick={() => void continueWithoutAi()}>
             {t("onboarding.model.continueWithoutAi")}
           </Button>

@@ -1,35 +1,36 @@
-%% Status: CURRENT FRONTEND + CURRENT SUPABASE
+%% Status: CURRENT FRONTEND + CURRENT SUPABASE (2026-09-17)
+%% The language screen is a PER-SESSION decision, not a once-only onboarding.
 %% Source: frontend/src/routes/_authenticated/onboarding.language.tsx,
-%% frontend/src/lib/account-data.ts, frontend/src/lib/startup-flow.ts
+%% frontend/src/lib/language-session.ts, frontend/src/lib/account-data.ts
 sequenceDiagram
     participant User
     participant Page as onboarding.language.tsx
     participant I18n as I18nProvider (setLanguage)
-    participant Save as lib/account-data.ts savePreferences
-    participant DB as user_preferences (Supabase)
-    participant Flow as lib/startup-flow.ts
+    participant DB as user_preferences.preferences (Supabase)
+    participant LangS as sessionStorage<br/>alim.language_session.v1
+    participant Model as /onboarding/model
 
-    Page->>Flow: languageOnboardingStatus() on mount
-    Flow->>DB: read user_preferences
-    alt preference read fails (status "unknown")
-        Flow-->>Page: "unknown" (never cached, never treated as completed)
-        Page-->>User: localized load error + "Try again" (stays on the language screen)
+    Page->>DB: fetchPreferences() → app_language (default/preselection)
+    alt read fails
+        DB-->>Page: error
+        Page-->>User: localized load notice + "Try again"<br/>(screen stays usable: choose or skip)
     else read succeeds
-        Flow-->>Page: "required" or "completed"
+        DB-->>Page: app_language highlighted as "Your saved default"
     end
 
-    User->>Page: pick a language tile
-    Page->>I18n: setLanguage(code) (immediate UI switch, app_language cached locally too)
-    User->>Page: click "Continue"
-    Page->>Save: savePreferences({ app_language, language_onboarding_completed: true })
-    Save->>DB: upsert merged preferences JSON (onConflict user_id)
-    alt save fails
-        DB-->>Save: error
-        Save-->>Page: throws
-        Page-->>User: inline save error, stays on page
-    else save succeeds
-        DB-->>Save: ok
-        Save-->>Page: merged preferences
-        Page->>Flow: invalidateStartupCache()
-        Page-->>User: navigate to /onboarding/model (replace)
+    alt user picks a language
+        User->>Page: select tile
+        Page->>I18n: setLanguage(code) (UI switches immediately)
+        User->>Page: Continue
+        Page->>DB: savePreferences({ app_language, language_onboarding_completed: true })
+        Note over DB: language_onboarding_completed is LEGACY metadata,<br/>NOT the session gate
+        Page->>LangS: markLanguageSelected(code)
+        Page-->>Model: navigate /onboarding/model (replace)
+    else user skips
+        User->>Page: "Skip language selection"
+        Page->>LangS: markLanguageSkipped(persisted/current language)
+        Page-->>Model: navigate /onboarding/model (replace)
+    else user signs out
+        User->>Page: Sign out
+        Page->>LangS: cleared with every other session gate
     end
