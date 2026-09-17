@@ -106,6 +106,7 @@ export const onboarding = {
     "ai.blocked.useNonAi": "Everything that does not need AI keeps working normally.",
     "ai.blocked.retrySetup": "Retry model setup",
     "ai.blocked.openSettings": "Open Settings",
+    "ai.blocked.useNonAiAction": "Use non-AI features",
     "ai.blocked.short": "AI is unavailable — this action is blocked.",
     "ai.unavailable.title": "AI features are switched off",
     "ai.unavailable.body":
@@ -234,6 +235,7 @@ export const onboarding = {
     "ai.blocked.useNonAi": "Alles, was keine KI braucht, funktioniert weiterhin normal.",
     "ai.blocked.retrySetup": "Modell-Einrichtung erneut versuchen",
     "ai.blocked.openSettings": "Einstellungen öffnen",
+    "ai.blocked.useNonAiAction": "Funktionen ohne KI nutzen",
     "ai.blocked.short": "KI nicht verfügbar — diese Aktion ist blockiert.",
     "ai.unavailable.title": "KI-Funktionen sind ausgeschaltet",
     "ai.unavailable.body":
@@ -358,6 +360,7 @@ export const onboarding = {
     "ai.blocked.useNonAi": "Alles ohni KI funktioniert wiiterhin normal.",
     "ai.blocked.retrySetup": "Modell-Iirichtig nomal probiere",
     "ai.blocked.openSettings": "Iistellige uufmache",
+    "ai.blocked.useNonAiAction": "Funktione ohni KI nutze",
     "ai.blocked.short": "KI nöd verfüegbar — die Aktion isch blockiert.",
     "ai.unavailable.title": "D KI-Funktione sind usgschaltet",
     "ai.unavailable.body":
@@ -481,6 +484,7 @@ export const onboarding = {
     "ai.blocked.useNonAi": "Всё, что не требует ИИ, продолжает работать как обычно.",
     "ai.blocked.retrySetup": "Повторить настройку модели",
     "ai.blocked.openSettings": "Открыть настройки",
+    "ai.blocked.useNonAiAction": "Использовать функции без ИИ",
     "ai.blocked.short": "ИИ недоступен — действие заблокировано.",
     "ai.unavailable.title": "Функции ИИ отключены",
     "ai.unavailable.body":
@@ -608,6 +612,7 @@ export const onboarding = {
     "ai.blocked.useNonAi": "Todo lo que no necesita IA sigue funcionando con normalidad.",
     "ai.blocked.retrySetup": "Reintentar la configuración del modelo",
     "ai.blocked.openSettings": "Abrir Ajustes",
+    "ai.blocked.useNonAiAction": "Usar funciones sin IA",
     "ai.blocked.short": "IA no disponible: acción bloqueada.",
     "ai.unavailable.title": "Las funciones de IA están desactivadas",
     "ai.unavailable.body":
@@ -735,6 +740,7 @@ export const onboarding = {
     "ai.blocked.useNonAi": "Tout ce qui ne nécessite pas d'IA continue de fonctionner normalement.",
     "ai.blocked.retrySetup": "Réessayer la configuration du modèle",
     "ai.blocked.openSettings": "Ouvrir les réglages",
+    "ai.blocked.useNonAiAction": "Utiliser les fonctions sans IA",
     "ai.blocked.short": "IA indisponible — action bloquée.",
     "ai.unavailable.title": "Les fonctionnalités d'IA sont désactivées",
     "ai.unavailable.body":
@@ -861,6 +867,7 @@ export const onboarding = {
     "ai.blocked.useNonAi": "Tutto ciò che non richiede l'IA continua a funzionare normalmente.",
     "ai.blocked.retrySetup": "Riprova la configurazione del modello",
     "ai.blocked.openSettings": "Apri le impostazioni",
+    "ai.blocked.useNonAiAction": "Usa le funzioni senza IA",
     "ai.blocked.short": "IA non disponibile: azione bloccata.",
     "ai.unavailable.title": "Le funzionalità IA sono disattivate",
     "ai.unavailable.body":
