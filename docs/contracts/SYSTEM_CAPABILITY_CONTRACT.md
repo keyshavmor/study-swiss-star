@@ -27,6 +27,9 @@ fields stay `null` until the local backend reports a measured value.
   where `fit` is `{ model_id, estimated_bytes, headroom_fraction, reason_code }`
 - `measuredAt`, `measurementSource` (`local_backend_probe | local_backend_cache | none`),
   `measurementQuality` (`measured | partial | unknown`)
+- `activeUserCount` (`active_user_count`): nullable count of users currently
+  attached to the local backend. Authoritative backend value only — the browser
+  never counts users. Rendered by `SystemCapabilityPanel` when present.
 - `messageCode`: stable code the UI localizes
 
 A `ready` report older than `CAPABILITY_STALE_AFTER_MS` (10 minutes) is
@@ -39,9 +42,14 @@ Operation: **probe system capability**. Client abstraction:
 adapter → local backend operation currently referenced as
 `/api/system/capability` (POST).
 
-- Input: `{ preferred_model_id: string | null }`, plus the caller's verified
+- Input: `{ preferred_model_id: string | null, model_catalog: string[] }`, plus
+  the caller's verified
   Supabase bearer JWT forwarded server-to-server and an `X-Student-Id` context
-  header (context only, never an authorization boundary).
+  header (context only, never an authorization boundary). `model_catalog` is the
+  enabled `public.ai_model_catalog` list, read server-side as the signed-in user
+  (RLS applies). A failed catalogue read degrades to an empty array and never
+  implies readiness. BACKEND TODO FOR CODEX: the recommendation must stay inside
+  the forwarded catalogue.
 - Output: the report shape above in snake_case.
 - Any 404, timeout, network error or unparsable payload maps to
   `unavailableCapabilityReport()` — status `unavailable`, `backendConnected:
@@ -51,8 +59,15 @@ adapter → local backend operation currently referenced as
 
 - `frontend/src/components/app/SystemCapabilityPanel.tsx`
   - System-compatibility preflight ABOVE the model picker on
-    `/onboarding/model`; the returned `recommended_model_id` preselects the
-    picker, and hardware values are only shown when measured.
+    `/onboarding/model`; the returned `recommended_model_id` is ADVISORY: it
+    preselects the picker only while the user has not chosen a model manually,
+    never overrides a manual selection and never means "ready". Hardware values,
+    including `active_user_count`, are shown only when measured.
+  - Sequencing on `/onboarding/model`: durable `selected_qwen_model` is read
+    first, then the probe runs with it as `preferred_model_id`, then the advisory
+    recommendation may preselect the picker, and only an explicit user action
+    starts `POST /api/model/prepare`. Preparation is never auto-started from a
+    persisted preference.
   - The same panel in Settings, with a recheck action, status and timestamp.
 - When the backend is absent the panel says so plainly and states that the app
   can be used without AI.
