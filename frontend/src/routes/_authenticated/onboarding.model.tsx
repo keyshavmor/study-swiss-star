@@ -116,13 +116,14 @@ function ModelOnboardingPage() {
                 // Advisory only. Hardware values are never inferred in the
                 // browser and a recommendation never means "ready".
                 setRecommendedModel(report.recommendation.recommended_model_id);
+                setInitialProbeResolved(true);
               }}
             />
           )}
         </div>
 
         <div className="app-card p-5 sm:p-6">
-          {preferredModel !== null && (
+          {preferredModel !== null && initialProbeResolved ? (
             <ModelReadinessPanel
               initialModelId={preferredModel}
               recommendedModelId={recommendedModel}
@@ -130,6 +131,10 @@ function ModelOnboardingPage() {
               onPreparing={ai.setPreparing}
               onUnavailable={handleUnavailable}
             />
+          ) : (
+            <p aria-live="polite" className="text-[14px] text-muted-foreground">
+              {t("capability.status.pending")}
+            </p>
           )}
         </div>
 
