@@ -49,6 +49,35 @@ export function isStartupExempt(pathname: string): boolean {
   );
 }
 
+/**
+ * Ordered stages of the post-login flow. Onboarding screens are exempt from the
+ * product gate, but they are NOT exempt from their own ordering: a later screen
+ * may never be opened by hand before the earlier decision exists. Without this,
+ * a signed-in user could navigate straight to `/onboarding/model`, pick
+ * "continue without AI" and enter the product with no language decision.
+ */
+const ONBOARDING_STAGE_RANK: Record<string, number> = {
+  [COMPLIANCE_ONBOARDING_PATH]: 1,
+  [LANGUAGE_ONBOARDING_PATH]: 2,
+  [ADMISSION_ONBOARDING_PATH]: 3,
+  [MODEL_ONBOARDING_PATH]: 3,
+};
+
+const DESTINATION_STAGE_RANK: Record<string, number> = {
+  [COMPLIANCE_ONBOARDING_PATH]: 1,
+  [LANGUAGE_ONBOARDING_PATH]: 2,
+  [MODEL_ONBOARDING_PATH]: 3,
+  [HOME_PATH]: 4,
+};
+
+function onboardingStageRank(pathname: string): number | null {
+  if (!(pathname === "/onboarding" || pathname.startsWith("/onboarding/"))) return null;
+  // Unknown/future onboarding screens are treated as the last stage, so they can
+  // never be used to skip an earlier decision.
+  return ONBOARDING_STAGE_RANK[pathname] ?? 3;
+}
+
+
 // One successful read per browser session is enough; the flags only flip
 // through onboarding screens, which invalidate the cache themselves.
 // A FAILED read is never cached and never treated as "completed".
