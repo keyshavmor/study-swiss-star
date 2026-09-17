@@ -202,6 +202,16 @@ export async function startupRedirectFor(pathname: string): Promise<StartupDesti
   const destination = await resolveStartupDestination();
   // The suspended screen outranks every exemption except itself.
   if (destination === SUSPENDED_PATH) return pathname === SUSPENDED_PATH ? null : SUSPENDED_PATH;
+
+  const stage = onboardingStageRank(pathname);
+  if (stage !== null) {
+    const required = DESTINATION_STAGE_RANK[destination] ?? 4;
+    // An earlier or current onboarding screen is always allowed (no loops); a
+    // LATER screen is pushed back to the decision that is actually due.
+    return stage > required ? destination : null;
+  }
+
   if (isStartupExempt(pathname)) return null;
   return destination === HOME_PATH ? null : destination;
 }
+
