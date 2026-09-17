@@ -160,10 +160,42 @@ Supabase list as fallback.
 
 ### 3.3 Prepare / load — `POST /api/model/prepare`
 
-Request: `{ model_id, admission_policy, runtime_floors, student_id }`
+Headers (exactly what `frontend/src/lib/model-backend.server.ts` sends):
+
+```
+Content-Type: application/json
+Authorization: Bearer <caller Supabase access token>   // the ONLY authorization boundary
+X-Student-Id: <auth.users.id>                          // context / cross-check only, NEVER auth
+```
+
+There is NO `student_id` field in the JSON body. The student is a header/context
+value derived server-side from the verified token.
+
+Request body (exact field names):
+
+```json
+{
+  "model_id": "string",
+  "admission_policy": {
+    "gpu_free_percent": 50,
+    "ram_free_percent": 50,
+    "storage_free_percent": 50
+  },
+  "runtime_floors": {
+    "gpu_free_percent": 30,
+    "ram_free_percent": 25,
+    "storage_free_percent": 30
+  },
+  "deduplicate_downloads": true,
+  "report_active_users": true
+}
+```
+
 Response: `ModelPreparationStatus` (below), optionally with `operation_id`.
 
 ### 3.4 Progress polling — `GET /api/model/operation/{operation_id}`
+
+Same headers as `prepare`; no request body.
 
 Response: the same `ModelPreparationStatus`.
 
