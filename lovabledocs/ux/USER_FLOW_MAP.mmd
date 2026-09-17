@@ -82,10 +82,13 @@ flowchart TD
 
 
   Welcome -->|"sign up success, first login"| Compliance["/onboarding/compliance<br/>ComplianceOnboarding (EXPECTED LOCAL BACKEND CONTRACT: none — CURRENT SUPABASE account_compliance)"]
-  Compliance -->|"complete_account_compliance_onboarding RPC"| LangOnboard2["/onboarding/language"]
-  LangOnboard2 --> SystemAdmission["/onboarding/system-admission<br/>alim.admission_session.v1 sessionStorage lease<br/>EXPECTED LOCAL BACKEND CONTRACT, fail-closed"]
-  SystemAdmission -->|"admitted"| Home
-  SystemAdmission -->|"denied or backend unavailable"| SystemAdmission
+  Compliance -->|"complete_account_compliance_onboarding RPC"| LangOnboard2["/onboarding/language<br/>MANDATORY per-session decision: pick a language or explicit skip<br/>persists app_language (durable default only)"]
+  LangOnboard2 -->|"markLanguageSelected / markLanguageSkipped"| ModelGate2["/onboarding/model<br/>MANDATORY per-session decision<br/>capability probe + recommendation + prepare/poll<br/>REQUIRED FUTURE BACKEND"]
+  ModelGate2 -->|"backend confirms ready (only then)"| Home
+  ModelGate2 -->|"explicit Continue without AI"| Home
+  ModelGate2 -->|"retry / change model / sign out"| ModelGate2
+  DirectModel["manual navigation to /onboarding/model<br/>with no language decision"] -->|"startupRedirectFor() redirects"| LangOnboard2
+  OptionalAdmission["/onboarding/system-admission (OPTIONAL, not a startup gate)"] -.-> ModelGate2
 
   Suspended["/account/suspended<br/>account_status=suspended_pending_review"]
   ProtectedGate -->|"suspended_pending_review outranks all other routes"| Suspended
@@ -111,10 +114,18 @@ flowchart TD
   SystemHealthRoute["/system-health<br/>SystemHealthPanel"] --> ProtectedGate
   AppHeaderNav --> SystemHealthRoute
 
-%% Added this pass: see docs/sequences/POST_LOGIN_STARTUP.mmd and related new sequence
-%% diagrams for the authenticated startup flow (language onboarding once, per-session model
-%% gate, EXPECTED LOCAL BACKEND CONTRACT for model prepare/poll, CURRENT SUPABASE ai_model_catalog
-%% and get_ai_runtime_policy 50/50/50 admission + 30/25/30 runtime floors). auto_storage_cleanup
-%% user preference removed; storage cleanup is now a platform-wide cron (STORAGE_CAPACITY_CLEANUP.mmd).
+%% CURRENT (2026-09-17): the authenticated startup flow is auth → PER-SESSION
+%% language decision (select or explicit skip) → PER-SESSION model decision
+%% (backend-confirmed ready, or explicit continue-without-AI) → product. Language
+%% onboarding is NOT once-per-account; language_onboarding_completed is legacy
+%% metadata only. There is NO mandatory system-admission screen between them, and
+%% /onboarding/model redirects to /onboarding/language while that decision is
+%% missing. Canonical: docs/sequences/POST_LOGIN_STARTUP.mmd. Model/GPU readiness
+%% lives in sessionStorage only, never in Supabase. auto_storage_cleanup user
+%% preference removed; cleanup is a platform-wide cron (STORAGE_CAPACITY_CLEANUP.mmd).
 
-%% Added this pass: compliance onboarding, system admission gate, suspension, legal document routes, peer messaging surfaces and system health panel. See docs/sequences/STARTUP_COMPLIANCE_LANGUAGE_ADMISSION_MODEL_HOME.mmd, docs/sequences/PEER_CHAT_CREATION_BY_USERNAME.mmd, docs/sequences/SYSTEM_HEALTH_AGGREGATION.mmd and docs/contracts/BACKEND_GAP_MATRIX.md.
+%% Compliance onboarding, suspension, legal document routes, peer messaging and the
+%% system health panel: see docs/sequences/PEER_CHAT_CREATION_BY_USERNAME.mmd,
+%% docs/sequences/SYSTEM_HEALTH_AGGREGATION.mmd and docs/contracts/BACKEND_GAP_MATRIX.md.
+%% The system-admission screen is OPTIONAL and no longer part of the startup order
+%% (capability/admission/recommendation data is rendered on the model screen).

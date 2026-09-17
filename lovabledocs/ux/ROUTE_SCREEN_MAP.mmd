@@ -90,10 +90,16 @@ flowchart LR
   class ASSISTTHREAD,ASSISTIDX,CONTEXTBACKEND backendUnknown
 
 
-  subgraph ONBOARDING["Onboarding / admission (new)"]
-    ONBCOMPLIANCE["/onboarding/compliance<br/>ComplianceOnboarding"]
-    ONBADMISSION["/onboarding/system-admission<br/>SystemAdmissionGate"]
+  subgraph ONBOARDING["Post-login gate (CURRENT 2026-09-17) — strict order"]
+    ONBCOMPLIANCE["/onboarding/compliance<br/>ComplianceOnboarding (durable, once)"]
+    ONBLANG["/onboarding/language<br/>MANDATORY per-session decision:<br/>select a language or explicit skip"]
+    ONBMODEL["/onboarding/model<br/>MANDATORY per-session decision:<br/>backend-confirmed ready OR explicit continue-without-AI"]
+    ONBADMISSION["/onboarding/system-admission<br/>SystemAdmissionGate (OPTIONAL, not a startup gate)"]
   end
+  ONBCOMPLIANCE --> ONBLANG
+  ONBLANG --> ONBMODEL
+  ONBMODEL -->|"only after an explicit decision"| HOME["/home"]
+  ONBMODEL -.->|"no language decision yet:<br/>startupRedirectFor() sends the user back"| ONBLANG
   subgraph LEGALROUTES["Legal document routes (new)"]
     LEGALTERMS["/legal/terms"]
     LEGALPRIVACY["/legal/privacy"]
@@ -158,10 +164,18 @@ flowchart LR
   classDef backendUnknown fill:#fdf1d0,stroke:#a67c00,color:#333;
   class LOCALADMISSION,LOCALHEALTH,LOCALPEERSEND,LOCALATTACHSCAN,LOCALMODERATE backendUnknown
 
-%% Added this pass: see docs/sequences/POST_LOGIN_STARTUP.mmd and related new sequence
-%% diagrams for the authenticated startup flow (language onboarding once, per-session model
-%% gate, EXPECTED LOCAL BACKEND CONTRACT for model prepare/poll, CURRENT SUPABASE ai_model_catalog
-%% and get_ai_runtime_policy 50/50/50 admission + 30/25/30 runtime floors). auto_storage_cleanup
-%% user preference removed; storage cleanup is now a platform-wide cron (STORAGE_CAPACITY_CLEANUP.mmd).
+%% CURRENT (2026-09-17): the authenticated startup flow is auth → PER-SESSION
+%% language decision (select or explicit skip) → PER-SESSION model decision
+%% (backend-confirmed ready, or explicit continue-without-AI) → product. Language
+%% onboarding is NOT once-per-account; language_onboarding_completed is legacy
+%% metadata only. There is NO mandatory system-admission screen between them, and
+%% /onboarding/model redirects to /onboarding/language while that decision is
+%% missing. Canonical: docs/sequences/POST_LOGIN_STARTUP.mmd. Model/GPU readiness
+%% lives in sessionStorage only, never in Supabase. auto_storage_cleanup user
+%% preference removed; cleanup is a platform-wide cron (STORAGE_CAPACITY_CLEANUP.mmd).
 
-%% Added this pass: compliance onboarding, system admission gate, suspension, legal document routes, peer messaging surfaces and system health panel. See docs/sequences/STARTUP_COMPLIANCE_LANGUAGE_ADMISSION_MODEL_HOME.mmd, docs/sequences/PEER_CHAT_CREATION_BY_USERNAME.mmd, docs/sequences/SYSTEM_HEALTH_AGGREGATION.mmd and docs/contracts/BACKEND_GAP_MATRIX.md.
+%% Compliance onboarding, suspension, legal document routes, peer messaging and the
+%% system health panel: see docs/sequences/PEER_CHAT_CREATION_BY_USERNAME.mmd,
+%% docs/sequences/SYSTEM_HEALTH_AGGREGATION.mmd and docs/contracts/BACKEND_GAP_MATRIX.md.
+%% The system-admission screen is OPTIONAL and no longer part of the startup order
+%% (capability/admission/recommendation data is rendered on the model screen).

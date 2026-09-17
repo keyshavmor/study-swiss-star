@@ -131,6 +131,8 @@ describe("post-login language → model gate", () => {
 
   it("keeps onboarding, auth, legal and account routes reachable", async () => {
     await expect(startupRedirectFor(LANGUAGE_ONBOARDING_PATH)).resolves.toBeNull();
+    // The model screen is only reachable once the language decision exists.
+    markLanguageSelected("de");
     await expect(startupRedirectFor(MODEL_ONBOARDING_PATH)).resolves.toBeNull();
     await expect(startupRedirectFor("/legal/privacy")).resolves.toBeNull();
     await expect(startupRedirectFor("/account/suspended")).resolves.toBeNull();
@@ -145,5 +147,32 @@ describe("post-login language → model gate", () => {
     // Only an explicit backend ready confirmation unlocks the app with AI.
     markAiReady("Qwen/Qwen3.8-27B");
     await expect(resolveStartupDestination()).resolves.toBe(HOME_PATH);
+  });
+
+  it("cannot bypass the language decision by opening /onboarding/model directly", async () => {
+    // Fresh session, no language decision: the model screen itself redirects.
+    await expect(startupRedirectFor(MODEL_ONBOARDING_PATH)).resolves.toBe(LANGUAGE_ONBOARDING_PATH);
+    await expect(startupRedirectFor("/onboarding/system-admission")).resolves.toBe(
+      LANGUAGE_ONBOARDING_PATH,
+    );
+    // The language screen stays reachable (no redirect loop).
+    await expect(startupRedirectFor(LANGUAGE_ONBOARDING_PATH)).resolves.toBeNull();
+  });
+
+  it("still routes to language when an AI decision was set without a language decision", async () => {
+    markNonAi();
+    await expect(resolveStartupDestination()).resolves.toBe(LANGUAGE_ONBOARDING_PATH);
+    await expect(startupRedirectFor("/home")).resolves.toBe(LANGUAGE_ONBOARDING_PATH);
+    await expect(startupRedirectFor(MODEL_ONBOARDING_PATH)).resolves.toBe(LANGUAGE_ONBOARDING_PATH);
+    clearAiSession();
+    markAiReady("Qwen/Qwen3.8-27B");
+    await expect(startupRedirectFor("/school/biology")).resolves.toBe(LANGUAGE_ONBOARDING_PATH);
+  });
+
+  it("opens the model screen once the language decision exists", async () => {
+    markLanguageSkipped("de");
+    await expect(startupRedirectFor(MODEL_ONBOARDING_PATH)).resolves.toBeNull();
+    // Revisiting the language screen afterwards is still allowed.
+    await expect(startupRedirectFor(LANGUAGE_ONBOARDING_PATH)).resolves.toBeNull();
   });
 });
