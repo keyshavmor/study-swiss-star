@@ -24,6 +24,9 @@ import {
   type AssessmentContext,
 } from "@/components/app/assessment/AssessmentModePanel";
 import { KnowledgeProfile } from "@/components/app/assessment/KnowledgeProfile";
+import { AiStatusBanner } from "@/components/app/AiStatusBanner";
+import { AiBlockedNotice, useAiBlocked } from "@/components/app/AiFeatureGate";
+import { isAiDependentSubjectMode } from "@/lib/ai-mode-classification";
 import { LEARNING_GOALS } from "@/lib/mock/materials";
 import { useI18n } from "@/lib/i18n/provider";
 import { EmptyState } from "@/components/app/States";
@@ -89,6 +92,9 @@ function SubjectDashboard() {
   const [mode, setMode] = useState<SubjectMode>("Chat");
   const [quizVariant, setQuizVariant] = useState<QuizVariant>("practice");
   const { assessments, materials, events } = useAppData();
+  /** Single readiness truth: no second AI state is invented here. */
+  const aiBlocked = useAiBlocked();
+  const modeNeedsAi = isAiDependentSubjectMode(mode);
   const active = (components.length ? getSubject(activeSlug) : subject) ?? subject;
   const combined = summariseSubjectView(assessments, subject);
   const grades = summariseSubject(assessments, active.slug);
