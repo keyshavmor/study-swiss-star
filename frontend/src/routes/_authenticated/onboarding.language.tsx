@@ -7,8 +7,10 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { cn } from "@/lib/utils";
 import { useI18n } from "@/lib/i18n/provider";
 import { LANGUAGES, type LanguageCode } from "@/lib/i18n/languages";
-import { savePreferences } from "@/lib/account-data";
-import { invalidateStartupCache, languageOnboardingStatus, HOME_PATH } from "@/lib/startup-flow";
+import { savePreferences, fetchPreferences } from "@/lib/account-data";
+import { markLanguageSelected, markLanguageSkipped } from "@/lib/language-session";
+import { invalidateStartupCache, MODEL_ONBOARDING_PATH } from "@/lib/startup-flow";
+import { signOutCompletely } from "@/lib/sign-out";
 import { track, trackFailure } from "@/lib/telemetry";
 
 export const Route = createFileRoute("/_authenticated/onboarding/language")({
@@ -17,12 +19,12 @@ export const Route = createFileRoute("/_authenticated/onboarding/language")({
       { title: "Choose your language — Alim's Study Assistant" },
       {
         name: "description",
-        content: "Pick the default language for your study assistant before you start.",
+        content: "Pick the language for this study session before you continue.",
       },
       { property: "og:title", content: "Choose your language — Alim's Study Assistant" },
       {
         property: "og:description",
-        content: "Set the default language for your Swiss Gymnasium study assistant.",
+        content: "Set the language for your Swiss Gymnasium study session.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -32,52 +34,72 @@ export const Route = createFileRoute("/_authenticated/onboarding/language")({
 });
 
 function LanguageOnboardingPage() {
-  const { t, setLanguage } = useI18n();
+  const { t, language, setLanguage } = useI18n();
   const navigate = useNavigate();
   const [selected, setSelected] = useState<LanguageCode | null>(null);
+  const [persisted, setPersisted] = useState<LanguageCode | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(false);
   const [loadFailed, setLoadFailed] = useState(false);
 
-  // A failed preference read must not silently skip this screen: show a
-  // localized retry state instead, and move on only once the persisted flag is
-  // actually read as completed.
-  const refreshStatus = useCallback(async () => {
+  // The durable Supabase app_language is the DEFAULT/preselection only. A failed
+  // read never blocks this screen: the user can still choose or skip.
+  const loadPersisted = useCallback(async () => {
     invalidateStartupCache();
-    const status = await languageOnboardingStatus();
-    setLoadFailed(status === "unknown");
-    if (status === "completed") await navigate({ to: HOME_PATH, replace: true });
-  }, [navigate]);
+    try {
+      const prefs = await fetchPreferences();
+      const stored = prefs.app_language as LanguageCode | null | undefined;
+      const known = LANGUAGES.some((entry) => entry.code === stored);
+      setPersisted(known ? (stored as LanguageCode) : null);
+      setLoadFailed(false);
+    } catch {
+      setPersisted(null);
+      setLoadFailed(true);
+    }
+  }, []);
 
   useEffect(() => {
-    void refreshStatus();
-  }, [refreshStatus]);
+    void loadPersisted();
+  }, [loadPersisted]);
+
+  const highlighted: LanguageCode | null = selected ?? persisted ?? (language as LanguageCode);
 
   const choose = (code: LanguageCode) => {
     setSelected(code);
     setError(false);
-    // Switches the whole onboarding UI immediately and persists app_language.
+    // Switches the whole onboarding UI immediately and caches app_language.
     setLanguage(code);
   };
 
   const handleContinue = async () => {
-    if (!selected) return;
+    const target = selected ?? highlighted;
+    if (!target) return;
     setSaving(true);
     setError(false);
     try {
       await savePreferences({
-        app_language: selected,
+        app_language: target,
+        // LEGACY profile metadata; the session decision below is the gate.
         language_onboarding_completed: true,
       });
       invalidateStartupCache();
+      markLanguageSelected(target);
       track({ event_name: "onboarding_language_confirmed", feature: "onboarding" });
-      await navigate({ to: HOME_PATH, replace: true });
+      await navigate({ to: MODEL_ONBOARDING_PATH, replace: true });
     } catch (err) {
       trackFailure("onboarding_language_save_failed", err, { feature: "onboarding" });
       setError(true);
     } finally {
       setSaving(false);
     }
+  };
+
+  // Skipping keeps the persisted/current language and still records the
+  // session-scoped decision, so the model screen cannot be bypassed.
+  const handleSkip = async () => {
+    markLanguageSkipped(persisted ?? (language as LanguageCode) ?? null);
+    track({ event_name: "onboarding_language_skipped", feature: "onboarding" });
+    await navigate({ to: MODEL_ONBOARDING_PATH, replace: true });
   };
 
   return (
@@ -100,7 +122,8 @@ function LanguageOnboardingPage() {
 
         <div className="app-card grid gap-2 p-4 sm:grid-cols-2">
           {LANGUAGES.map((entry) => {
-            const active = selected ? selected === entry.code : false;
+            const active = highlighted === entry.code;
+            const isDefault = persisted === entry.code;
             return (
               <button
                 key={entry.code}
@@ -123,7 +146,7 @@ function LanguageOnboardingPage() {
                       {entry.nativeName}
                     </span>
                     <span className="block text-[12px] text-muted-foreground">
-                      {entry.englishName}
+                      {isDefault ? t("onboarding.language.savedDefault") : entry.englishName}
                     </span>
                   </span>
                 </span>
@@ -141,6 +164,9 @@ function LanguageOnboardingPage() {
         <p className="mt-4 text-center text-[13px] text-muted-foreground">
           {t("onboarding.language.hint")}
         </p>
+        <p className="mt-1 text-center text-[12px] text-muted-foreground">
+          {t("onboarding.language.sessionNote")}
+        </p>
         {error && (
           <p className="mt-2 text-center text-[13px] text-destructive">
             {t("onboarding.language.saveError")}
@@ -152,20 +178,26 @@ function LanguageOnboardingPage() {
               <AlertTriangle className="h-4 w-4" />
               {t("onboarding.language.loadError")}
             </p>
-            <Button variant="outline" size="sm" onClick={() => void refreshStatus()}>
+            <Button variant="outline" size="sm" onClick={() => void loadPersisted()}>
               {t("onboarding.language.retry")}
             </Button>
           </div>
         )}
 
-        <div className="mt-6 flex justify-center">
+        <div className="mt-6 flex flex-wrap justify-center gap-2">
           <Button
             size="lg"
-            disabled={!selected || saving}
+            disabled={!highlighted || saving}
             onClick={() => void handleContinue()}
             aria-label={t("onboarding.language.continue")}
           >
             {saving ? t("onboarding.language.saving") : t("onboarding.language.continue")}
+          </Button>
+          <Button size="lg" variant="outline" onClick={() => void handleSkip()}>
+            {t("onboarding.language.skip")}
+          </Button>
+          <Button size="lg" variant="ghost" onClick={() => void signOutCompletely()}>
+            {t("onboarding.language.signOut")}
           </Button>
         </div>
       </div>

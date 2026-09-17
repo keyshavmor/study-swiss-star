@@ -1,45 +1,31 @@
-%% Status: CURRENT FRONTEND + CURRENT SUPABASE
-%% Source: frontend/src/lib/startup-flow.ts, routes/index.tsx,
-%% routes/_authenticated/route.tsx, components/app/SystemCapabilityPanel.tsx
-%% RULE: the local AI runtime is NEVER an authentication gate.
+%% Status: CURRENT FRONTEND + CURRENT SUPABASE (2026-09-17)
+%% RULE: the local AI runtime is NEVER an authentication gate — but the model
+%% screen IS a mandatory per-session DECISION gate (ready, or explicit non-AI).
+%% Canonical detail: docs/sequences/POST_LOGIN_STARTUP.mmd
+%% Source: frontend/src/lib/startup-flow.ts, lib/language-session.ts,
+%% lib/ai-session.ts, components/app/AiFeatureGate.tsx
 sequenceDiagram
     participant User
-    participant Entry as "/" (sign in / sign up)
     participant Supa as Supabase Auth
     participant Flow as lib/startup-flow.ts
-    participant Compliance as account_compliance (Supabase)
-    participant Prefs as user_preferences (Supabase)
+    participant Lang as /onboarding/language (session decision)
+    participant Model as /onboarding/model (session decision)
+    participant Backend as REQUIRED FUTURE BACKEND
     participant Home as /home + non-AI areas
-    participant AiSetup as OPTIONAL /onboarding/system-admission + /onboarding/model
-    participant Backend as FUTURE local AI backend
+    participant AiFeat as AI features (chat, assessments, grading)
 
-    User->>Entry: sign up / sign in (email or username)
-    Entry->>Supa: signUp / signInWithPassword / username-login v4
-    Supa-->>Entry: session (or actionable localized error)
-    Entry->>Flow: resolveStartupDestination()
-    Flow->>Compliance: complianceStatus()
-    alt suspended_pending_review
-        Flow-->>Entry: /account/suspended
-    else compliance not completed / unknown
-        Flow-->>Entry: /onboarding/compliance
-    else completed
-        Flow->>Prefs: languageOnboardingStatus()
-        alt language not completed / unknown
-            Flow-->>Entry: /onboarding/language
-        else completed
-            Flow-->>Entry: /home
-        end
-    end
-    Entry->>Home: render product (chat history, planner, grades, materials, messages)
-
-    Note over Home,AiSetup: AI readiness is separate and optional
-    User->>AiSetup: open AI setup (from home notice or Settings)
-    AiSetup->>Backend: admission check / capability probe / model prepare
-    alt backend unavailable (expected today)
-        Backend-->>AiSetup: no answer
-        AiSetup-->>User: truthful unavailable state + "continue without AI"
-        AiSetup->>Home: navigate to /home (session stays valid)
-    else backend ready
-        Backend-->>AiSetup: lease + ready model
-        AiSetup->>Home: /home with AI features enabled
+    User->>Supa: sign in
+    Supa-->>Flow: session — authentication complete, AI irrelevant here
+    Flow-->>Lang: language decision required this session
+    Lang-->>Model: selected or skipped
+    Model->>Backend: probe + prepare
+    alt backend confirms ready
+        Backend-->>Model: ready
+        Model-->>Home: AI-ready session
+        Home->>AiFeat: AI actions enabled
+    else backend unavailable / blocked / failed
+        Backend-->>Model: no ready confirmation
+        User->>Model: explicit "Continue without AI" (or retry / sign out)
+        Model-->>Home: non-AI session — full product access
+        Home->>AiFeat: every AI action disabled with one red notice<br/>+ retry model setup / Settings link
     end

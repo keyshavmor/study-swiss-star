@@ -473,3 +473,30 @@ Historical hCaptcha/CAPTCHA incidents above remain clearly marked HISTORICAL.
    `AUTH_STARTUP_HOME_VS_OPTIONAL_AI.mmd`.
 6. Security advisor state unchanged: the intentional signed-in SECURITY DEFINER
    application-RPC warnings remain; Security Advisor is NOT zero.
+
+
+## Post-login gate — CURRENT (2026-09-17)
+
+Supersedes any statement earlier in this file that language onboarding is a
+once-per-account step or that model setup is optional/advisory.
+
+Canonical order after Supabase Auth succeeds:
+compliance (durable, once) → **language decision for this browser session**
+(select a language or explicit skip) → **model decision for this browser
+session** (backend-confirmed `ready`, or an explicit "Continue without AI") →
+`/home` and the rest of the product.
+
+- Authentication and non-AI product areas never depend on the local AI backend.
+- `user_preferences.preferences.app_language` stays the durable default used to
+  preselect the language screen; `language_onboarding_completed` is kept only as
+  legacy compatibility metadata and is not a gate.
+- `selected_qwen_model` persists a *preference*; readiness comes only from an
+  explicit backend `ready` state (`alim.ai_session.v1` in `sessionStorage`).
+- The decisions survive a refresh in the same session and are cleared on
+  sign-out; direct navigation to a protected route re-runs the same gate.
+- AI actions are centrally guarded (`AiFeatureGate` / `useAiBlocked`): blocked
+  actions issue no request and show one localized red notice with retry,
+  Settings and non-AI paths.
+
+Full contract: `docs/backend-handoff/POST_LOGIN_LANGUAGE_MODEL_GATE_HANDOFF.md`;
+sequence: `docs/sequences/POST_LOGIN_STARTUP.mmd`.

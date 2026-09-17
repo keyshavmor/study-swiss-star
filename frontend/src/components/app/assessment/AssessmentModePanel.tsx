@@ -7,6 +7,7 @@
  */
 import { useCallback, useEffect, useReducer, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { AiBlockedNotice, useAiBlocked } from "@/components/app/AiFeatureGate";
 import { useI18n } from "@/lib/i18n/provider";
 import { track } from "@/lib/telemetry";
 import {
@@ -101,6 +102,9 @@ export function AssessmentModePanel({
   context: AssessmentContext;
 }) {
   const { t } = useI18n();
+  // Generation and grading are AI actions: they must never be attempted while
+  // the session has no backend-confirmed ready model.
+  const aiBlocked = useAiBlocked() && !isPreviewAdapterEnabled();
   const [config, setConfig] = useState<AssessmentConfig>(() =>
     createDefaultConfig({
       kind,
@@ -156,6 +160,7 @@ export function AssessmentModePanel({
   /* --------------------------------------------------------- generation */
 
   const startGeneration = useCallback(async () => {
+    if (aiBlocked) return;
     setFailure(null);
     dispatch({ type: "configure", config });
     dispatch({ type: "request_generation" });
@@ -171,7 +176,7 @@ export function AssessmentModePanel({
       return;
     }
     dispatch({ type: "generation_accepted", jobId: response.data.jobId });
-  }, [config, kind]);
+  }, [aiBlocked, config, kind]);
 
   // Poll generation status while a job is running.
   useEffect(() => {
@@ -434,7 +439,9 @@ export function AssessmentModePanel({
         </p>
       )}
       <p className="text-[14.5px] text-muted-foreground">{t(KIND_INTRO_KEY[kind])}</p>
-      {kind === "quick_check" ? (
+      {aiBlocked ? (
+        <AiBlockedNotice />
+      ) : kind === "quick_check" ? (
         <QuickCheckSetup
           config={config}
           onChange={setConfig}

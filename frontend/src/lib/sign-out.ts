@@ -4,6 +4,7 @@ import { clearGoogleAccess } from "@/lib/google-calendar";
 import { clearAiSession } from "@/lib/ai-session";
 import { clearAdmissionSession, readAdmissionSession } from "@/lib/admission-session";
 import { clearMessagingSessionState } from "@/lib/messaging-session";
+import { clearLanguageSession } from "@/lib/language-session";
 import { invalidateStartupCache } from "@/lib/startup-flow";
 import { logActivity, trackFailure } from "@/lib/telemetry";
 
@@ -16,7 +17,8 @@ import { logActivity, trackFailure } from "@/lib/telemetry";
  *    the bearer token is still valid. A failure never blocks sign-out.
  * 2. Telemetry (still attributable).
  * 3. Supabase sign-out.
- * 4. Clear AI session, admission lease, Google provider token, transient
+ * 4. Clear the session-scoped language decision, AI session, admission lease,
+ *    Google provider token, transient
  *    messaging notification state and any object URLs.
  *
  * BACKEND TODO FOR CODEX: because a browser can be closed mid-flight, the local
@@ -52,6 +54,7 @@ export async function signOutCompletely(): Promise<void> {
     clearGoogleAccess();
     // Per-session gates and cached onboarding flags must not survive sign-out.
     clearAiSession();
+    clearLanguageSession();
     clearAdmissionSession();
     clearMessagingSessionState();
     invalidateStartupCache();

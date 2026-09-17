@@ -18,9 +18,16 @@ export const onboarding = {
     "onboarding.language.retry": "Try again",
 
     /* ------------------------------------------------- model onboarding --- */
+    "onboarding.language.skip": "Skip language selection",
+    "onboarding.language.signOut": "Sign out",
+    "onboarding.language.savedDefault": "Your saved default",
+    "onboarding.language.sessionNote": "You confirm your language once per sign-in.",
     "onboarding.model.title": "Prepare your study AI",
     "onboarding.model.subtitle":
       "Choose the local model for this session. We check with the local backend before enabling AI.",
+    "onboarding.model.notReadyTitle": "AI is not ready in this session",
+    "onboarding.model.notReadyBody":
+      "The local AI backend has not confirmed a ready model. You can retry, choose another model, continue without AI, or sign out.",
     "onboarding.model.continueToApp": "Continue to the app",
     "onboarding.model.continueWithoutAi": "Continue without AI",
     "onboarding.model.logout": "Log out",
@@ -91,6 +98,15 @@ export const onboarding = {
 
     /* ------------------------------------------------------- AI / no-AI --- */
     "ai.nonAi.badge": "Non-AI mode",
+    "ai.blocked.title": "AI is unavailable right now",
+    "ai.blocked.bodyNonAi":
+      "You chose to continue without AI in this session, so AI answers, generated assessments and grading are switched off.",
+    "ai.blocked.bodyUnavailable":
+      "The local AI backend has not confirmed a ready model, so this AI action cannot run.",
+    "ai.blocked.useNonAi": "Everything that does not need AI keeps working normally.",
+    "ai.blocked.retrySetup": "Retry model setup",
+    "ai.blocked.openSettings": "Open Settings",
+    "ai.blocked.short": "AI is unavailable — this action is blocked.",
     "ai.unavailable.title": "AI features are switched off",
     "ai.unavailable.body":
       "You are using the app without AI for this session. Study plans, chat and generated exercises are unavailable.",
@@ -131,9 +147,16 @@ export const onboarding = {
       "Wir konnten deine gespeicherten Einstellungen nicht laden. Prüfe deine Verbindung und versuche es erneut.",
     "onboarding.language.retry": "Erneut versuchen",
 
+    "onboarding.language.skip": "Sprachauswahl überspringen",
+    "onboarding.language.signOut": "Abmelden",
+    "onboarding.language.savedDefault": "Deine gespeicherte Standardsprache",
+    "onboarding.language.sessionNote": "Du bestätigst deine Sprache einmal pro Anmeldung.",
     "onboarding.model.title": "Bereite deine Lern-KI vor",
     "onboarding.model.subtitle":
       "Wähle das lokale Modell für diese Sitzung. Wir prüfen mit dem lokalen Backend, bevor die KI aktiviert wird.",
+    "onboarding.model.notReadyTitle": "Die KI ist in dieser Sitzung nicht bereit",
+    "onboarding.model.notReadyBody":
+      "Das lokale KI-Backend hat kein bereites Modell bestätigt. Du kannst es erneut versuchen, ein anderes Modell wählen, ohne KI fortfahren oder dich abmelden.",
     "onboarding.model.continueToApp": "Weiter zur App",
     "onboarding.model.continueWithoutAi": "Ohne KI fortfahren",
     "onboarding.model.logout": "Abmelden",
@@ -203,6 +226,15 @@ export const onboarding = {
     "model.saved": "Modellwahl gespeichert",
 
     "ai.nonAi.badge": "Modus ohne KI",
+    "ai.blocked.title": "Die KI ist gerade nicht verfügbar",
+    "ai.blocked.bodyNonAi":
+      "Du hast in dieser Sitzung ohne KI fortgefahren, daher sind KI-Antworten, generierte Prüfungen und Bewertungen ausgeschaltet.",
+    "ai.blocked.bodyUnavailable":
+      "Das lokale KI-Backend hat kein bereites Modell bestätigt, daher kann diese KI-Aktion nicht ausgeführt werden.",
+    "ai.blocked.useNonAi": "Alles, was keine KI braucht, funktioniert weiterhin normal.",
+    "ai.blocked.retrySetup": "Modell-Einrichtung erneut versuchen",
+    "ai.blocked.openSettings": "Einstellungen öffnen",
+    "ai.blocked.short": "KI nicht verfügbar — diese Aktion ist blockiert.",
     "ai.unavailable.title": "KI-Funktionen sind ausgeschaltet",
     "ai.unavailable.body":
       "Du nutzt die App für diese Sitzung ohne KI. Lernpläne, Chat und generierte Übungen sind nicht verfügbar.",
@@ -241,9 +273,16 @@ export const onboarding = {
       "Mir hei dini gspeicherete Iistellige nid chöne lade. Prüef dini Verbindig und versuech s nomal.",
     "onboarding.language.retry": "Nomal versueche",
 
+    "onboarding.language.skip": "Sprachuswahl überspringe",
+    "onboarding.language.signOut": "Abmelde",
+    "onboarding.language.savedDefault": "Dini gspeicherti Standardsprach",
+    "onboarding.language.sessionNote": "Du bestätigsch dini Sprach einisch pro Anmeldig.",
     "onboarding.model.title": "Bereit dini Lern-KI vor",
     "onboarding.model.subtitle":
       "Wähl s lokale Modell für die Sitzig. Mir überprüefed's mit em lokale Backend, bevor d KI aktiviert wird.",
+    "onboarding.model.notReadyTitle": "D KI isch i dere Sitzig nöd parat",
+    "onboarding.model.notReadyBody":
+      "S lokale KI-Backend hät kes parats Modell bestätigt. Du chasch nomal probiere, es anders Modell wähle, ohni KI wiitermache oder di abmelde.",
     "onboarding.model.continueToApp": "Wiiter zur App",
     "onboarding.model.continueWithoutAi": "Ohni KI wiitermache",
     "onboarding.model.logout": "Abmelde",
@@ -311,6 +350,15 @@ export const onboarding = {
     "model.saved": "Modellwahl gspeicheret",
 
     "ai.nonAi.badge": "Modus ohni KI",
+    "ai.blocked.title": "D KI isch grad nöd verfüegbar",
+    "ai.blocked.bodyNonAi":
+      "Du hesch i dere Sitzig ohni KI wiitergmacht, drum sind KI-Antworte, generierti Prüefige und Bewertige us.",
+    "ai.blocked.bodyUnavailable":
+      "S lokale KI-Backend hät kes parats Modell bestätigt, drum cha die KI-Aktion nöd laufe.",
+    "ai.blocked.useNonAi": "Alles ohni KI funktioniert wiiterhin normal.",
+    "ai.blocked.retrySetup": "Modell-Iirichtig nomal probiere",
+    "ai.blocked.openSettings": "Iistellige uufmache",
+    "ai.blocked.short": "KI nöd verfüegbar — die Aktion isch blockiert.",
     "ai.unavailable.title": "D KI-Funktione sind usgschaltet",
     "ai.unavailable.body":
       "Du nutzisch d App für die Sitzig ohni KI. Lernpläni, Chat und generierti Übige sind nid verfüegbar.",
@@ -348,9 +396,16 @@ export const onboarding = {
       "Не удалось загрузить сохранённые настройки. Проверьте подключение и попробуйте снова.",
     "onboarding.language.retry": "Попробовать снова",
 
+    "onboarding.language.skip": "Пропустить выбор языка",
+    "onboarding.language.signOut": "Выйти",
+    "onboarding.language.savedDefault": "Ваш сохранённый язык по умолчанию",
+    "onboarding.language.sessionNote": "Язык подтверждается один раз при каждом входе.",
     "onboarding.model.title": "Подготовьте свой учебный ИИ",
     "onboarding.model.subtitle":
       "Выберите локальную модель для этой сессии. Мы проверяем это через локальный бэкенд перед включением ИИ.",
+    "onboarding.model.notReadyTitle": "ИИ не готов в этой сессии",
+    "onboarding.model.notReadyBody":
+      "Локальный ИИ-бэкенд не подтвердил готовую модель. Можно повторить попытку, выбрать другую модель, продолжить без ИИ или выйти.",
     "onboarding.model.continueToApp": "Перейти в приложение",
     "onboarding.model.continueWithoutAi": "Продолжить без ИИ",
     "onboarding.model.logout": "Выйти",
@@ -418,6 +473,15 @@ export const onboarding = {
     "model.saved": "Выбор модели сохранён",
 
     "ai.nonAi.badge": "Режим без ИИ",
+    "ai.blocked.title": "ИИ сейчас недоступен",
+    "ai.blocked.bodyNonAi":
+      "В этой сессии вы продолжили без ИИ, поэтому ответы ИИ, генерация заданий и проверка отключены.",
+    "ai.blocked.bodyUnavailable":
+      "Локальный ИИ-бэкенд не подтвердил готовую модель, поэтому это действие ИИ невозможно.",
+    "ai.blocked.useNonAi": "Всё, что не требует ИИ, продолжает работать как обычно.",
+    "ai.blocked.retrySetup": "Повторить настройку модели",
+    "ai.blocked.openSettings": "Открыть настройки",
+    "ai.blocked.short": "ИИ недоступен — действие заблокировано.",
     "ai.unavailable.title": "Функции ИИ отключены",
     "ai.unavailable.body":
       "Вы используете приложение без ИИ в этой сессии. Учебные планы, чат и сгенерированные упражнения недоступны.",
@@ -455,9 +519,16 @@ export const onboarding = {
       "No pudimos cargar tus ajustes guardados. Comprueba tu conexión e inténtalo de nuevo.",
     "onboarding.language.retry": "Intentar de nuevo",
 
+    "onboarding.language.skip": "Omitir la selección de idioma",
+    "onboarding.language.signOut": "Cerrar sesión",
+    "onboarding.language.savedDefault": "Tu idioma guardado por defecto",
+    "onboarding.language.sessionNote": "Confirmas tu idioma una vez por inicio de sesión.",
     "onboarding.model.title": "Prepara tu IA de estudio",
     "onboarding.model.subtitle":
       "Elige el modelo local para esta sesión. Lo comprobamos con el backend local antes de activar la IA.",
+    "onboarding.model.notReadyTitle": "La IA no está lista en esta sesión",
+    "onboarding.model.notReadyBody":
+      "El backend de IA local no ha confirmado un modelo listo. Puedes reintentar, elegir otro modelo, continuar sin IA o cerrar sesión.",
     "onboarding.model.continueToApp": "Continuar a la aplicación",
     "onboarding.model.continueWithoutAi": "Continuar sin IA",
     "onboarding.model.logout": "Cerrar sesión",
@@ -529,6 +600,15 @@ export const onboarding = {
     "model.saved": "Elección de modelo guardada",
 
     "ai.nonAi.badge": "Modo sin IA",
+    "ai.blocked.title": "La IA no está disponible ahora",
+    "ai.blocked.bodyNonAi":
+      "Elegiste continuar sin IA en esta sesión, así que las respuestas de IA, las evaluaciones generadas y la corrección están desactivadas.",
+    "ai.blocked.bodyUnavailable":
+      "El backend de IA local no ha confirmado un modelo listo, así que esta acción de IA no puede ejecutarse.",
+    "ai.blocked.useNonAi": "Todo lo que no necesita IA sigue funcionando con normalidad.",
+    "ai.blocked.retrySetup": "Reintentar la configuración del modelo",
+    "ai.blocked.openSettings": "Abrir Ajustes",
+    "ai.blocked.short": "IA no disponible: acción bloqueada.",
     "ai.unavailable.title": "Las funciones de IA están desactivadas",
     "ai.unavailable.body":
       "Estás usando la aplicación sin IA en esta sesión. Los planes de estudio, el chat y los ejercicios generados no están disponibles.",
@@ -567,9 +647,16 @@ export const onboarding = {
       "Nous n'avons pas pu charger vos réglages enregistrés. Vérifiez votre connexion et réessayez.",
     "onboarding.language.retry": "Réessayer",
 
+    "onboarding.language.skip": "Ignorer le choix de la langue",
+    "onboarding.language.signOut": "Se déconnecter",
+    "onboarding.language.savedDefault": "Votre langue enregistrée par défaut",
+    "onboarding.language.sessionNote": "Vous confirmez votre langue une fois par connexion.",
     "onboarding.model.title": "Préparez votre IA d'étude",
     "onboarding.model.subtitle":
       "Choisissez le modèle local pour cette session. Nous vérifions auprès du backend local avant d'activer l'IA.",
+    "onboarding.model.notReadyTitle": "L'IA n'est pas prête dans cette session",
+    "onboarding.model.notReadyBody":
+      "Le backend IA local n'a confirmé aucun modèle prêt. Vous pouvez réessayer, choisir un autre modèle, continuer sans IA ou vous déconnecter.",
     "onboarding.model.continueToApp": "Continuer vers l'application",
     "onboarding.model.continueWithoutAi": "Continuer sans IA",
     "onboarding.model.logout": "Se déconnecter",
@@ -640,6 +727,15 @@ export const onboarding = {
     "model.saved": "Choix de modèle enregistré",
 
     "ai.nonAi.badge": "Mode sans IA",
+    "ai.blocked.title": "L'IA n'est pas disponible pour le moment",
+    "ai.blocked.bodyNonAi":
+      "Vous avez choisi de continuer sans IA dans cette session : les réponses IA, les évaluations générées et la correction sont désactivées.",
+    "ai.blocked.bodyUnavailable":
+      "Le backend IA local n'a confirmé aucun modèle prêt, cette action IA ne peut donc pas être exécutée.",
+    "ai.blocked.useNonAi": "Tout ce qui ne nécessite pas d'IA continue de fonctionner normalement.",
+    "ai.blocked.retrySetup": "Réessayer la configuration du modèle",
+    "ai.blocked.openSettings": "Ouvrir les réglages",
+    "ai.blocked.short": "IA indisponible — action bloquée.",
     "ai.unavailable.title": "Les fonctionnalités d'IA sont désactivées",
     "ai.unavailable.body":
       "Vous utilisez l'application sans IA pour cette session. Les plans d'étude, le chat et les exercices générés ne sont pas disponibles.",
@@ -677,9 +773,16 @@ export const onboarding = {
       "Non è stato possibile caricare le tue impostazioni salvate. Controlla la connessione e riprova.",
     "onboarding.language.retry": "Riprova",
 
+    "onboarding.language.skip": "Salta la scelta della lingua",
+    "onboarding.language.signOut": "Esci",
+    "onboarding.language.savedDefault": "La tua lingua predefinita salvata",
+    "onboarding.language.sessionNote": "Confermi la lingua una volta per ogni accesso.",
     "onboarding.model.title": "Prepara la tua IA di studio",
     "onboarding.model.subtitle":
       "Scegli il modello locale per questa sessione. Verifichiamo con il backend locale prima di attivare l'IA.",
+    "onboarding.model.notReadyTitle": "L'IA non è pronta in questa sessione",
+    "onboarding.model.notReadyBody":
+      "Il backend IA locale non ha confermato un modello pronto. Puoi riprovare, scegliere un altro modello, continuare senza IA o uscire.",
     "onboarding.model.continueToApp": "Continua verso l'app",
     "onboarding.model.continueWithoutAi": "Continua senza IA",
     "onboarding.model.logout": "Esci",
@@ -750,6 +853,15 @@ export const onboarding = {
     "model.saved": "Scelta del modello salvata",
 
     "ai.nonAi.badge": "Modalità senza IA",
+    "ai.blocked.title": "L'IA non è disponibile in questo momento",
+    "ai.blocked.bodyNonAi":
+      "In questa sessione hai scelto di continuare senza IA, quindi risposte IA, verifiche generate e correzione sono disattivate.",
+    "ai.blocked.bodyUnavailable":
+      "Il backend IA locale non ha confermato un modello pronto, quindi questa azione IA non può essere eseguita.",
+    "ai.blocked.useNonAi": "Tutto ciò che non richiede l'IA continua a funzionare normalmente.",
+    "ai.blocked.retrySetup": "Riprova la configurazione del modello",
+    "ai.blocked.openSettings": "Apri le impostazioni",
+    "ai.blocked.short": "IA non disponibile: azione bloccata.",
     "ai.unavailable.title": "Le funzionalità IA sono disattivate",
     "ai.unavailable.body":
       "Stai usando l'app senza IA per questa sessione. Piani di studio, chat ed esercizi generati non sono disponibili.",
