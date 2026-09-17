@@ -19,7 +19,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import {
   invalidateStartupCache,
-  LANGUAGE_ONBOARDING_PATH,
+  resolveStartupDestination,
   SUSPENDED_PATH,
 } from "@/lib/startup-flow";
 import { track, trackFailure } from "@/lib/telemetry";
@@ -91,7 +91,7 @@ function ComplianceOnboardingPage() {
 
       const compliance = await fetchAccountCompliance();
       if (compliance?.complianceOnboardingCompleted) {
-        await navigate({ to: LANGUAGE_ONBOARDING_PATH, replace: true });
+        await navigate({ to: await resolveStartupDestination(), replace: true });
         return;
       }
       if (compliance?.accountStatus === "suspended_pending_review") {
@@ -139,7 +139,7 @@ function ComplianceOnboardingPage() {
       const confirmed = await fetchAccountCompliance();
       if (confirmed?.complianceOnboardingCompleted) {
         track({ event_name: "compliance_onboarding_completed", feature: "onboarding" });
-        await navigate({ to: LANGUAGE_ONBOARDING_PATH, replace: true });
+        await navigate({ to: await resolveStartupDestination(), replace: true });
         return;
       }
       setSaveFailed(true);
