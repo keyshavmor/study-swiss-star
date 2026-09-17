@@ -62,4 +62,13 @@ describe("recovery surfaces expose sign out", () => {
     expect(gate).toContain("nav.signOut");
     expect(gate).toContain("ai.blocked.retrySetup");
   });
+
+  it("renders an explicit non-AI action that navigates to /home without AI side effects", () => {
+    const gate = read("../components/app/AiFeatureGate.tsx");
+    expect(gate).toContain("ai.blocked.useNonAiAction");
+    expect(gate).toContain('<Link to="/home">');
+    // The non-AI path must not mark readiness or trigger any AI call.
+    expect(gate).not.toContain("markAiReady");
+    expect(gate).not.toContain("prepareModel");
+  });
 });
