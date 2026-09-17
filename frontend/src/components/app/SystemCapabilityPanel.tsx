@@ -118,6 +118,12 @@ export function SystemCapabilityPanel({ preferredModelId = null, onReport }: Pro
                 : formatBytes(report.runtimeStorage.available_bytes)
             }
           />
+          {report.activeUserCount !== null && (
+            <Row
+              label={t("capability.activeUsers", { count: report.activeUserCount })}
+              value=""
+            />
+          )}
           <Row
             label={t("capability.balancing")}
             value={t(
