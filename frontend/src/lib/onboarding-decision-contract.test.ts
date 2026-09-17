@@ -29,6 +29,10 @@ const capabilityFn = read("./system-capability.functions.ts");
 const statusBanner = read("../components/app/AiStatusBanner.tsx");
 const studyChat = read("../components/StudyChat.tsx");
 const assessmentPanel = read("../components/app/assessment/AssessmentModePanel.tsx");
+const assistantChat = read("../components/assistant/AssistantChat.tsx");
+const aiSession = read("./ai-session.ts");
+const modelFunctions = read("./model-readiness.functions.ts");
+const catalog = read("./ai-model-catalog.ts");
 
 describe("language screen requires an explicit decision", () => {
   it("disables Continue until the user selects a language in this session", () => {
@@ -158,9 +162,46 @@ describe("mid-session runtime loss", () => {
     expect(studyChat).toContain("ai.setUnavailable()");
   });
 
+  it("downgrades central AI availability from assistant runtime loss only", () => {
+    expect(assistantChat).toContain("isRuntimeUnavailableError(err)");
+    expect(assistantChat).toContain("isQuotaExceededError(err)");
+    expect(assistantChat).toContain("ai.setUnavailable()");
+  });
+
   it("downgrades central AI availability from assessment backend_unavailable only", () => {
     expect(assessmentPanel).toContain("isRuntimeUnavailableFailure(failure)");
     expect(assessmentPanel).toContain("ai.setUnavailable()");
     expect(assessmentPanel).toContain("noteFailure(response.failure)");
+  });
+});
+
+describe("Supabase contract verification (CURRENT SUPABASE)", () => {
+  it("keeps app_language and selected_qwen_model as durable preferences only", () => {
+    expect(languageRoute).toContain("app_language: target");
+    expect(readinessPanel).toContain("savePreferences({ selected_qwen_model: next })");
+    expect(readinessPanel).not.toContain("markAiReady");
+  });
+
+  it("keeps language_onboarding_completed as legacy metadata, not the gate", () => {
+    expect(languageRoute).toContain("language_onboarding_completed: true");
+    expect(read("./startup-flow.ts")).toContain("LEGACY");
+    expect(read("./startup-flow.ts")).toContain("languageDecisionRequired");
+  });
+
+  it("reads the selectable catalogue from ai_model_catalog with a local fallback", () => {
+    expect(catalog).toContain('from("ai_model_catalog")');
+    expect(catalog).toContain("FALLBACK_MODEL_CHOICES");
+  });
+
+  it("reads runtime thresholds from get_ai_runtime_policy", () => {
+    expect(modelFunctions).toContain("get_ai_runtime_policy");
+  });
+
+  it("never stores runtime or model readiness in Supabase", () => {
+    expect(aiSession).not.toContain("savePreferences");
+    expect(aiSession).toContain("sessionStorage");
+    for (const source of [readinessPanel, capabilityPanel, capabilityFn]) {
+      expect(source).not.toContain("model_ready");
+    }
   });
 });
