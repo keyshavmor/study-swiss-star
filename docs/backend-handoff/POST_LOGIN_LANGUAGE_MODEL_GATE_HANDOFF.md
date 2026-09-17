@@ -9,13 +9,19 @@ No Python/local-backend code was written or changed in this task.
 
 ```
 Supabase Auth success
-  → compliance/safety onboarding (once, durable Supabase flag)
-  → SESSION language decision  (select a language OR explicit skip)
+  → suspended-account interception (safety/account control; pre-empts everything)
+  → SESSION language decision  (explicit selection OR explicit skip)
   → MODEL screen: backend system probe + recommendation + prepare/load
        ├─ backend confirms READY for the selected model → AI-ready session
        └─ explicit "Continue without AI"                → non-AI session
+  → compliance/safety onboarding IF still required (once, durable Supabase flag)
   → /home and the rest of the product
 ```
+
+This is the order implemented by `resolveStartupDestination()` in
+`frontend/src/lib/startup-flow.ts`. Ordinary compliance onboarding comes AFTER
+the language and model decisions, never before them. Only a suspended account
+is intercepted earlier.
 
 Facts that the backend must not contradict:
 
@@ -27,12 +33,21 @@ Facts that the backend must not contradict:
 - The frontend switches to AI-ready **only** on an explicit backend `ready`
   state for the selected model. A persisted `selected_qwen_model` preference is
   never proof of readiness.
+- The language decision is per browser session, **never once per account**. A
+  persisted `app_language` is rendered as a saved default hint only: Continue
+  stays disabled until the user clicks a language in this session, or the user
+  explicitly skips. `language_onboarding_completed` is legacy metadata and never
+  gates the screen.
+- Neither persisted preference marks a session decision as complete.
+- Model preparation is never auto-started from a persisted preference: the
+  capability report and the ADVISORY recommendation are shown first, and the user
+  presses prepare.
 
 ## 2. Session vs durable state
 
 | State | Owner | Storage |
 | --- | --- | --- |
-| `app_language` (default/preselection) | Supabase | `user_preferences.preferences.app_language` |
+| `app_language` (SAVED DEFAULT HINT only) | Supabase | `user_preferences.preferences.app_language` |
 | `selected_qwen_model` (preferred model) | Supabase | `user_preferences.preferences.selected_qwen_model` |
 | `language_onboarding_completed` | Supabase | LEGACY profile metadata only — **not** a gate |
 | Language decision for this session | Frontend | `sessionStorage` `alim.language_session.v1` |
@@ -51,34 +66,90 @@ authorization boundary. No service-role key is ever involved.
 
 ### 3.1 System capability probe — `POST /api/system/capability`
 
-Request: `{ model_catalog?: string[], preferred_model_id?: string | null }`
-
-Response (all hardware fields nullable; the browser never measures them):
+Request body (exactly what `probeSystemCapabilityOnBackend` sends):
 
 ```json
 {
-  "status": "ready|pending|unavailable|stale|error",
-  "backend_connected": true,
-  "measured_at": "2026-09-17T20:00:00Z",
-  "measurement_source": "nvidia-smi+psutil",
-  "os": "linux|macos|unknown",
-  "active_user_count": 3,
-  "cpu": { "ram_total_bytes": 0, "ram_free_bytes": 0, "free_percent": 0 },
-  "gpus": [{ "name": "", "vram_total_bytes": 0, "vram_free_bytes": 0, "backend": "cuda|metal|rocm|cpu" }],
-  "storage": { "total_bytes": 0, "free_bytes": 0, "free_percent": 0 },
-  "load_balancing": { "state": "gpu_only|cpu_gpu_split|unified_memory|unknown", "spare_capacity": 0.0, "constraints": [] },
-  "recommendation": {
-    "recommended_model_id": "Qwen/Qwen3.8-27B",
-    "alternatives": ["…"],
-    "rationale": "…",
-    "estimated_headroom_percent": 12,
-    "warnings": []
-  }
+  "preferred_model_id": "Qwen/Qwen3.8-27B",
+  "model_catalog": ["Qwen/Qwen3.8-27B", "…"]
 }
 ```
 
-Unreachable / 404 / timeout / unparsable ⇒ the frontend renders
-`backend unavailable — cannot recommend`. It never fabricates values.
+Headers: `Authorization: Bearer <verified Supabase JWT>`,
+`X-Student-Id: <uuid>` (context only), `Content-Type: application/json`.
+`model_catalog` is the enabled `public.ai_model_catalog` list read server-side as
+the signed-in user; the recommendation MUST stay inside it. An empty array means
+the catalogue read failed and must not be treated as "no models".
+
+Response — snake_case field names exactly as normalised by
+`frontend/src/lib/system-capability.server.ts` (all hardware fields nullable; the
+browser never measures them):
+
+```json
+{
+  "status": "pending|ready|unavailable|stale|error",
+  "message_code": "backend_unavailable",
+  "os": "macOS|Linux|unknown",
+  "active_user_count": 3,
+  "ram": { "total_bytes": 0, "available_bytes": 0 },
+  "gpus": [
+    {
+      "gpu_id": "gpu-0",
+      "name": "NVIDIA RTX 4090",
+      "vram_total_bytes": 0,
+      "vram_available_bytes": 0,
+      "accelerator": "cuda|rocm|metal|cpu",
+      "unified_memory": false
+    }
+  ],
+  "runtime_storage": { "total_bytes": 0, "available_bytes": 0 },
+  "load_balancing": {
+    "mode": "gpu_only|cpu_gpu_split|unified_memory|cpu_only|unknown",
+    "spare_capacity": 1,
+    "active_model_processes": 1,
+    "constraint_codes": []
+  },
+  "recommendation": {
+    "recommended_model_id": "Qwen/Qwen3.8-27B",
+    "alternatives": [
+      {
+        "model_id": "…",
+        "estimated_bytes": 0,
+        "headroom_fraction": 0.12,
+        "reason_code": "fits_gpu"
+      }
+    ],
+    "rationale_codes": [],
+    "fit": {
+      "model_id": "Qwen/Qwen3.8-27B",
+      "estimated_bytes": 0,
+      "headroom_fraction": 0.12,
+      "reason_code": "fits_gpu"
+    },
+    "warning_codes": []
+  },
+  "measured_at": "2026-09-17T20:00:00Z",
+  "measurement_source": "local_backend_probe|local_backend_cache|none",
+  "measurement_quality": "measured|partial|unknown"
+}
+```
+
+Field rules the backend must respect:
+
+- `status: "unavailable"`, an unknown `status`, a non-JSON body, a non-2xx
+  response, a timeout or a connection failure all resolve to the frontend's
+  truthful unavailable report (`backend_connected: false`, every hardware field
+  null, `message_code` preserved when present).
+- `recommendation` is ADVISORY. It preselects the picker only while the user has
+  not chosen manually, and never implies readiness.
+- `active_user_count` is authoritative backend truth; omit it (null) rather than
+  estimating.
+- A `ready` report older than 10 minutes is presented as `stale` by the
+  frontend (`CAPABILITY_STALE_AFTER_MS`).
+- `rationale_codes`, `warning_codes`, `constraint_codes` and `reason_code` are
+  stable machine codes; the frontend localizes them. Never free text.
+- There is no `cpu`, `storage` or `state` field in this contract; use `ram`,
+  `runtime_storage` and `status`.
 
 ### 3.2 Model catalogue
 
@@ -122,10 +193,16 @@ unlocks AI in the frontend.
 `download_failed`, `insufficient_storage`, `insufficient_gpu_vram`,
 `insufficient_ram`, `model_load_failed`, `model_process_limit`, `unknown`.
 
-### 3.5 Release — `POST /api/system/release`
+### 3.5 Release — `POST /api/system/runtime/release`
 
-Best-effort on sign-out with the optional lease id. Because browsers can close
-mid-flight, the backend still needs a heartbeat/lease TTL sweeper. **Not
+Best-effort on sign-out with the optional lease id, sent while the Supabase
+bearer is still valid. Release failure must never block sign-out.
+
+### 3.6 Heartbeat — `POST /api/system/session/heartbeat`
+
+Keeps the caller's lease alive. Because a browser or process can die without
+notifying anything, the backend MUST also implement a lease/TTL sweeper that
+reclaims runtime for sessions that stopped heart-beating. **Neither is
 implemented today.**
 
 ## 4. Frontend behaviour in non-AI mode (already implemented)

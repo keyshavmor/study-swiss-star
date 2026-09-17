@@ -59,7 +59,7 @@ Direct URL navigation cannot skip an earlier stage (`lib/startup-flow.ts`,
 
 ## 5. Supabase contract (CURRENT SUPABASE)
 
-- `user_preferences.preferences.app_language` — durable default/preselection.
+- `user_preferences.preferences.app_language` — durable SAVED DEFAULT HINT (never counts as the session selection).
 - `user_preferences.preferences.selected_qwen_model` — durable **preference**.
 - `user_preferences.preferences.language_onboarding_completed` — legacy
   compatibility metadata; never gates the per-session language screen.

@@ -4,7 +4,7 @@ flowchart TD
   Cache --> Render["Render with cached or default English language"]
   Boot --> AuthCheck{"Signed in?"}
   AuthCheck -->|No| WelcomeLocal["Localise welcome/auth screen from cache"]
-  AuthCheck -->|Yes| Load["Load user_preferences.preferences.app_language<br/>DURABLE DEFAULT: preselects the per-session language screen"]
+  AuthCheck -->|Yes| Load["Load user_preferences.preferences.app_language<br/>DURABLE SAVED DEFAULT HINT only:<br/>never counts as the session selection"]
   Load --> Decide["/onboarding/language: MANDATORY per-session decision<br/>select a language (persisted) or explicit skip (keeps the default)<br/>alim.language_session.v1, cleared on sign-out"]
   Decide --> NextGate["then /onboarding/model (mandatory session decision)"]
   Load --> Valid{"Value is one of en de gsw ru es fr it?"}

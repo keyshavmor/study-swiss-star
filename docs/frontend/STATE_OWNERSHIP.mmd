@@ -31,7 +31,7 @@ flowchart LR
   end
   subgraph PG["Supabase PostgreSQL"]
     G1["profiles.username"]
-    G2["user_preferences.preferences<br/>DURABLE PREFERENCES ONLY: app_language (default/preselection),<br/>selected_qwen_model (preferred, not readiness),<br/>language_onboarding_completed (LEGACY metadata)"]
+    G2["user_preferences.preferences<br/>DURABLE PREFERENCES ONLY: app_language (SAVED DEFAULT HINT (never counts as the session selection)),<br/>selected_qwen_model (preferred, not readiness),<br/>language_onboarding_completed (LEGACY metadata)"]
     G3["threads / messages"]
     G4["assistant_threads / assistant_messages / assistant_attachments"]
     G5["feedback"]
@@ -89,7 +89,7 @@ flowchart LR
   E2 -.->|"reconciled against"| J3
   E4 -.->|"cleared on sign-out"| F1
   E5 -.->|"cleared on sign-out"| F1
-  G2 -.->|"preselects only, never implies readiness"| E5
+  G2 -.->|"saved defaults/hints only: never a completed session decision, never readiness"| E5
   C5 -.->|"polls"| J4
   G13 --> H7
 

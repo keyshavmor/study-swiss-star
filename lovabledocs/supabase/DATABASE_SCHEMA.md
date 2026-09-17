@@ -244,7 +244,7 @@ once, CURRENT SUPABASE `account_compliance`) → `/home`.
   capability, admission and recommendation data are shown on the model screen.
   `/onboarding/system-admission` remains an optional diagnostics surface.
 - Model preparation (`/api/system/capability`, `/api/model/prepare`,
-  `/api/model/operation`, `/api/system/release`) is REQUIRED FUTURE BACKEND
+  `/api/model/operation`, `/api/system/runtime/release`) is REQUIRED FUTURE BACKEND
   (BACKEND TODO FOR CODEX). Unreachable / 404 / timeout / unparsable ⇒
   `backend_unavailable`, shown truthfully; no values are fabricated.
 - Resource policy: 50/50/50 admission, 30/25/30 runtime floors — CURRENT SUPABASE
