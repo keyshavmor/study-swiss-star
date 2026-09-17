@@ -34,6 +34,8 @@ import {
 } from "@/components/ai-elements/prompt-input";
 import { Shimmer } from "@/components/ai-elements/shimmer";
 import { AiBlockedNotice, useAiBlocked } from "@/components/app/AiFeatureGate";
+import { useAiAvailability } from "@/lib/ai-availability";
+import { isRuntimeUnavailableError } from "@/lib/ai-runtime-errors";
 import { SourceSnippetList } from "@/components/app/SourceSnippetList";
 import { GraduationCap, Plus, LogOut, Volume2, Square } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -58,6 +60,7 @@ export function StudyChat({ threadId }: StudyChatProps) {
   const { t, language, formatDate } = useI18n();
   // Centralized AI guard: no model confirmed ready → no AI request is issued.
   const aiBlocked = useAiBlocked();
+  const ai = useAiAvailability();
   const routeParams = useParams({ strict: false });
   const activeThreadId = threadId ?? routeParams?.threadId;
   const navigate = useNavigate();
@@ -134,6 +137,10 @@ export function StudyChat({ threadId }: StudyChatProps) {
     }),
     onError: (err) => {
       trackFailure("chat_message_failed", err, { feature: "chat" });
+      // Mid-session runtime loss (local backend/model gone or timed out) turns
+      // the central AI gate red so the next request is blocked before it is
+      // attempted. Safety rejections and validation errors never do this.
+      if (isRuntimeUnavailableError(err)) ai.setUnavailable();
       toast.error(t("chat.sendFailed"));
     },
     onFinish: ({ message }) => {

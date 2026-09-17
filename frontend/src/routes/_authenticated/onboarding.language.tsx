@@ -62,7 +62,9 @@ function LanguageOnboardingPage() {
     void loadPersisted();
   }, [loadPersisted]);
 
-  const highlighted: LanguageCode | null = selected ?? persisted ?? (language as LanguageCode);
+  // The saved app_language is only a VISUAL default hint. It is never treated
+  // as this session's decision: Continue stays disabled until the user clicks
+  // a language in this session, and Skip records an explicit skip instead.
 
   const choose = (code: LanguageCode) => {
     setSelected(code);
@@ -72,7 +74,8 @@ function LanguageOnboardingPage() {
   };
 
   const handleContinue = async () => {
-    const target = selected ?? highlighted;
+    const target = selected;
+    // Explicit choice required — a persisted default can never confirm for the user.
     if (!target) return;
     setSaving(true);
     setError(false);
@@ -102,6 +105,17 @@ function LanguageOnboardingPage() {
     await navigate({ to: MODEL_ONBOARDING_PATH, replace: true });
   };
 
+  // Deterministic recovery: runtime release is best-effort, but the user always
+  // lands back on the public auth landing page even when it fails.
+  const handleSignOut = async () => {
+    try {
+      await signOutCompletely();
+    } catch {
+      /* best-effort runtime release / Supabase sign-out */
+    }
+    await navigate({ to: "/", replace: true });
+  };
+
   return (
     <div className="flex min-h-screen flex-col items-center justify-center px-6 py-12">
       <div className="absolute right-6 top-6">
@@ -122,7 +136,7 @@ function LanguageOnboardingPage() {
 
         <div className="app-card grid gap-2 p-4 sm:grid-cols-2">
           {LANGUAGES.map((entry) => {
-            const active = highlighted === entry.code;
+            const active = selected === entry.code;
             const isDefault = persisted === entry.code;
             return (
               <button
@@ -167,6 +181,11 @@ function LanguageOnboardingPage() {
         <p className="mt-1 text-center text-[12px] text-muted-foreground">
           {t("onboarding.language.sessionNote")}
         </p>
+        {selected === null && (
+          <p className="mt-1 text-center text-[13px] text-muted-foreground">
+            {t("onboarding.language.mustChoose")}
+          </p>
+        )}
         {error && (
           <p className="mt-2 text-center text-[13px] text-destructive">
             {t("onboarding.language.saveError")}
@@ -187,7 +206,7 @@ function LanguageOnboardingPage() {
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           <Button
             size="lg"
-            disabled={!highlighted || saving}
+            disabled={selected === null || saving}
             onClick={() => void handleContinue()}
             aria-label={t("onboarding.language.continue")}
           >
@@ -196,7 +215,7 @@ function LanguageOnboardingPage() {
           <Button size="lg" variant="outline" onClick={() => void handleSkip()}>
             {t("onboarding.language.skip")}
           </Button>
-          <Button size="lg" variant="ghost" onClick={() => void signOutCompletely()}>
+          <Button size="lg" variant="ghost" onClick={() => void handleSignOut()}>
             {t("onboarding.language.signOut")}
           </Button>
         </div>

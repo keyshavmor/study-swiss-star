@@ -103,6 +103,7 @@ export function normaliseCapabilityPayload(payload: unknown): SystemCapabilityRe
 
   const report: SystemCapabilityReport = {
     status,
+    activeUserCount: num(r["active_user_count"]),
     backendConnected: true,
     os: osValue === "macOS" || osValue === "Linux" ? osValue : "unknown",
     ram: { total_bytes: num(ram["total_bytes"]), available_bytes: num(ram["available_bytes"]) },
@@ -150,6 +151,8 @@ export async function probeSystemCapabilityOnBackend(input: {
   accessToken: string;
   studentId: string;
   preferredModelId: string | null;
+  /** Enabled frontend catalogue; the recommendation must stay inside it. */
+  modelCatalog: string[];
 }): Promise<SystemCapabilityReport> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), localBackendTimeoutMs());
@@ -161,7 +164,10 @@ export async function probeSystemCapabilityOnBackend(input: {
         Authorization: `Bearer ${input.accessToken}`,
         "X-Student-Id": input.studentId,
       },
-      body: JSON.stringify({ preferred_model_id: input.preferredModelId }),
+      body: JSON.stringify({
+        preferred_model_id: input.preferredModelId,
+        model_catalog: input.modelCatalog,
+      }),
       signal: controller.signal,
     });
     if (!response.ok) return unavailableCapabilityReport();

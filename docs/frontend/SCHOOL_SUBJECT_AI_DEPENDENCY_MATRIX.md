@@ -68,15 +68,20 @@ Direct URL navigation cannot skip an earlier stage (`lib/startup-flow.ts`,
 
 ## 6. FUTURE CODEX BACKEND — still not implemented
 
-1. `GET /system/capability` — OS, active users, RAM/GPU VRAM/storage totals and
-   availability, load-balancing mode, recommendation + alternatives, `measured_at`.
-2. `POST /model/prepare` and `GET /model/operations/{operation_id}` — states
+1. `POST /api/system/capability` — request body `{ preferred_model_id, model_catalog }`;
+   response carries `os`, nullable `active_user_count`, RAM / GPU VRAM / runtime
+   storage totals and availability, `load_balancing`, an ADVISORY
+   `recommendation` (`recommended_model_id` + `alternatives`, constrained to the
+   forwarded `model_catalog`) and `measured_at`. The recommendation is advisory
+   only: it preselects the picker and never means "ready".
+2. `POST /api/model/prepare` and `GET /api/model/operation/{operation_id}` — states
    `checking_backend, checking_resources, checking_model, queued, downloading,
    downloaded, loading, ready, blocked, failed, backend_unavailable`, nullable
    `progress_percent`, `can_continue_with_ai`, `can_continue_without_ai`,
    `retryable`, `blocking_reasons`.
-3. `POST /runtime/release` — best-effort release on sign-out, plus a
-   lease/heartbeat/TTL sweeper because a browser or process death cannot notify.
+3. `POST /api/system/runtime/release` — best-effort release on sign-out, plus
+   `POST /api/system/session/heartbeat` and a lease/TTL sweeper, because a
+   browser or process death cannot notify the backend.
 4. Assessment generation and grading, study-plan generation, safety moderation.
 
 Acceptance criteria for Codex: every AI-feature request must be rejected unless
@@ -113,4 +118,135 @@ sequenceDiagram
         School-->>U: green banner + model id
         Subject-->>U: AI modes enabled
     end
+```
+
+## 8. Control-level contract (CURRENT FRONTEND)
+
+### Language screen `/onboarding/language`
+
+| Control | Enabled when | Effect | Failure behaviour |
+| --- | --- | --- | --- |
+| Language button (×7) | always | sets the SESSION selection and switches the UI language immediately | none |
+| Continue | a language was clicked in THIS session | writes `app_language` + legacy `language_onboarding_completed`, marks the session decision `selected`, routes to `/onboarding/model` | save error shown inline, decision not recorded, retry possible |
+| Skip language selection | always | marks the session decision `skipped` (no language is pretended to be chosen), routes to `/onboarding/model` | never blocked by Supabase |
+| Retry (load failure) | preference read failed | re-reads the saved default | Skip and Sign out stay available |
+| Sign out | always | best-effort runtime release → Supabase `signOut({ scope: 'local' })` → session state cleared → replace to `/` | release failure never traps the user |
+
+A saved `app_language` is rendered as "your saved default" only. It never counts
+as the session decision and never enables Continue.
+
+### Model screen `/onboarding/model`
+
+| Control | Enabled when | Effect | Failure behaviour |
+| --- | --- | --- | --- |
+| System check / Re-check | always | `POST /api/system/capability` via authenticated server fn with `preferred_model_id` + `model_catalog` | unavailable report shown truthfully; no hardware value is guessed |
+| Model picker | catalogue loaded and no check running | marks the selection MANUAL and persists `selected_qwen_model` as a preference | save error inline; preference never implies readiness |
+| Check / prepare model | a model is selected and no check running | `POST /api/model/prepare` then bounded polling of `GET /api/model/operation/{id}` (max 400 polls) | terminal `blocked` / `failed` / `backend_unavailable` states render red with reason codes |
+| Continue to the app | backend reported `state=ready` AND `can_continue_with_ai=true` | enters AI-ready session mode | never rendered otherwise |
+| Continue without AI | always | records session non-AI mode | product stays fully usable without AI |
+| Sign out | always | as above, then replace to `/` | release failure never traps the user |
+
+Preparation is NEVER auto-started from a persisted preference: the capability
+report and the advisory recommendation are visible before any download begins. A
+recommendation arriving after mount preselects the picker only while the user has
+not chosen manually.
+
+### School / Subject AI status and recovery
+
+`AiStatusBanner` is read-only: rendering it probes nothing and downloads nothing.
+Blocked state states plainly that non-AI features (grades, statistics, materials,
+planning) remain usable and offers "Open AI model setup" → `/onboarding/model`,
+"Open Settings" and "Sign out". The canonical setup page and Settings are the only
+places that own capability probe, recommendation and preparation.
+
+### Mid-session runtime loss
+
+`lib/ai-runtime-errors.ts` is the single recogniser. Chat request failures that
+mean the local runtime is gone or timed out, and assessment
+`backend_unavailable` failures, call `setUnavailable()` on the central AI state so
+the red gate appears before the next request. Content-safety rejections,
+validation errors, authorisation errors and user cancellation never do.
+
+### Durable vs session state
+
+| State | Where | Lifetime |
+| --- | --- | --- |
+| `app_language`, `selected_qwen_model`, `language_onboarding_completed` | Supabase `user_preferences.preferences` | durable, preferences only |
+| language decision (`selected` / `skipped`) | sessionStorage | authenticated browser session; cleared on sign-out |
+| AI decision (`ai-ready` / `non-ai`) + model id | sessionStorage | authenticated browser session; cleared on sign-out |
+| GPU / VRAM / RAM / storage / `active_user_count` / model readiness | FUTURE backend runtime only | never stored in Supabase |
+
+## 9. Sequences (CURRENT FRONTEND + FUTURE BACKEND)
+
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant FE as Frontend
+    participant SB as Supabase
+    participant BE as FUTURE local backend
+    U->>FE: sign in
+    FE->>SB: auth (independent of the AI runtime)
+    FE->>U: language decision (select or skip)
+    FE->>SB: save app_language (only when selected)
+    FE->>SB: read selected_qwen_model + ai_model_catalog
+    FE->>BE: POST /api/system/capability {preferred_model_id, model_catalog}
+    BE-->>FE: report + ADVISORY recommendation (or unavailable)
+    U->>FE: confirm/change model, press prepare
+    FE->>BE: POST /api/model/prepare
+    loop bounded polling
+        FE->>BE: GET /api/model/operation/{id}
+    end
+    BE-->>FE: state=ready, can_continue_with_ai=true
+    FE->>U: Continue to the app (AI enabled)
+```
+
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant FE as Frontend
+    participant BE as FUTURE local backend
+    FE->>BE: POST /api/system/capability
+    BE--xFE: 404 / timeout / no process
+    FE->>U: red "not ready" + Retry / Continue without AI / Sign out
+    U->>FE: Continue without AI
+    FE->>U: full non-AI product (grades, statistics, materials, planning)
+```
+
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant Subject as /school/$subject
+    participant BE as FUTURE local backend
+    U->>Subject: open Quick Check / Quiz / Mock Exam / Chat / Study Plan
+    Subject->>Subject: useAiBlocked()
+    Subject->>U: red blocked notice, no enabled start action, no request issued
+    U->>Subject: non-AI mode (Statistics, grade history, materials)
+    Subject->>U: works unchanged
+```
+
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant FE as Frontend
+    participant BE as FUTURE local backend
+    U->>FE: send chat message / generate assessment
+    FE->>BE: AI request
+    BE--xFE: runtime gone / timeout / backend_unavailable
+    FE->>FE: isRuntimeUnavailableError → setUnavailable()
+    FE->>U: bounded error + red gate before the next request
+```
+
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant FE as Frontend
+    participant BE as FUTURE local backend
+    participant SB as Supabase
+    U->>FE: Sign out (any authenticated or recovery screen)
+    FE->>BE: POST /api/system/runtime/release (bearer still valid, best effort)
+    BE-->>FE: ok / unreachable (either way continue)
+    FE->>SB: signOut({ scope: 'local' })
+    FE->>FE: clear language + AI + admission session state
+    FE->>U: replace to /
+    Note over BE: BACKEND TODO: heartbeat + lease TTL sweeper, because a browser<br/>or process death can never notify the backend
 ```

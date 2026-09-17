@@ -78,6 +78,11 @@ export interface ModelRecommendation {
 
 export interface SystemCapabilityReport {
   status: CapabilityStatus;
+  /**
+   * Authoritative number of users currently attached to the local backend.
+   * Null whenever the backend did not report it — never counted in the browser.
+   */
+  activeUserCount: number | null;
   /** False whenever no local backend answered — the UI must say so plainly. */
   backendConnected: boolean;
   os: HostOs;
@@ -122,6 +127,7 @@ export function unavailableCapabilityReport(
 ): SystemCapabilityReport {
   return {
     status: "unavailable",
+    activeUserCount: null,
     backendConnected: false,
     os: "unknown",
     ram: { total_bytes: null, available_bytes: null },

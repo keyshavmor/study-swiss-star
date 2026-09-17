@@ -22,9 +22,28 @@ export const probeSystemCapability = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }): Promise<SystemCapabilityReport> => {
     const { probeSystemCapabilityOnBackend } = await import("@/lib/system-capability.server");
+
+    // CURRENT SUPABASE: the enabled catalogue is read as the signed-in user
+    // (RLS applies) and forwarded so the backend recommendation stays inside
+    // it. A failed read degrades to an empty list and never implies readiness.
+    let modelCatalog: string[] = [];
+    try {
+      const { data: rows } = await context.supabase
+        .from("ai_model_catalog")
+        .select("model_id, enabled, sort_order")
+        .eq("enabled", true)
+        .order("sort_order", { ascending: true });
+      modelCatalog = (rows ?? [])
+        .map((row) => row.model_id)
+        .filter((id): id is string => typeof id === "string" && id.length > 0);
+    } catch {
+      modelCatalog = [];
+    }
+
     return probeSystemCapabilityOnBackend({
       accessToken: callerAccessToken(),
       studentId: context.userId,
       preferredModelId: data.preferredModelId ?? null,
+      modelCatalog,
     });
   });

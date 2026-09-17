@@ -22,6 +22,7 @@ import {
   resolveStartupDestination,
   SUSPENDED_PATH,
 } from "@/lib/startup-flow";
+import { signOutCompletely } from "@/lib/sign-out";
 import { track, trackFailure } from "@/lib/telemetry";
 
 export const Route = createFileRoute("/_authenticated/onboarding/compliance")({
@@ -110,6 +111,18 @@ function ComplianceOnboardingPage() {
     void refresh();
   }, [refresh]);
 
+  // Every authenticated screen — including the checking and load-failed states
+  // below — must offer a way out. Runtime release is best-effort; the landing on
+  // the public auth page is deterministic.
+  const handleSignOut = async () => {
+    try {
+      await signOutCompletely();
+    } catch {
+      /* never trap the user on the compliance screen */
+    }
+    await navigate({ to: "/", replace: true });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const validationErrors = validateComplianceInput({
@@ -153,8 +166,11 @@ function ComplianceOnboardingPage() {
 
   if (checking) {
     return (
-      <div className="flex min-h-screen items-center justify-center px-6 py-12">
+      <div className="flex min-h-screen flex-col items-center justify-center gap-4 px-6 py-12">
         <p className="text-[14px] text-muted-foreground">{t("compliance.saving")}</p>
+        <Button variant="ghost" size="sm" onClick={() => void handleSignOut()}>
+          {t("nav.signOut")}
+        </Button>
       </div>
     );
   }
@@ -170,9 +186,14 @@ function ComplianceOnboardingPage() {
             <AlertTriangle className="h-4 w-4" />
             {t("compliance.error.loadFailed")}
           </p>
-          <Button variant="outline" size="sm" className="mt-4" onClick={() => void refresh()}>
-            {t("compliance.retry")}
-          </Button>
+          <div className="mt-4 flex flex-wrap justify-center gap-2">
+            <Button variant="outline" size="sm" onClick={() => void refresh()}>
+              {t("compliance.retry")}
+            </Button>
+            <Button variant="ghost" size="sm" onClick={() => void handleSignOut()}>
+              {t("nav.signOut")}
+            </Button>
+          </div>
         </div>
       </div>
     );
@@ -332,6 +353,16 @@ function ComplianceOnboardingPage() {
 
           <Button type="submit" size="lg" className="w-full" disabled={saving}>
             {saving ? t("compliance.saving") : t("compliance.submit")}
+          </Button>
+          {/* Deterministic exit from the normal compliance state as well. */}
+          <Button
+            type="button"
+            size="lg"
+            variant="ghost"
+            className="w-full"
+            onClick={() => void handleSignOut()}
+          >
+            {t("nav.signOut")}
           </Button>
         </form>
       </div>

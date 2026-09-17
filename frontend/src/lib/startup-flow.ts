@@ -1,12 +1,16 @@
 /**
  * Authenticated startup flow resolution (CURRENT FRONTEND).
  *
- * Canonical post-login sequence:
+ * Canonical post-login sequence — this is the ACTUAL implemented order in
+ * `resolveStartupDestination()` below:
  *   Supabase Auth success
- *     → COMPLIANCE / SAFETY ONBOARDING (once, durable Supabase flag)
- *     → LANGUAGE DECISION (per browser session: select or explicit skip)
+ *     → SUSPENDED-ACCOUNT INTERCEPTION (safety/account control, pre-empts all)
+ *     → LANGUAGE DECISION (per browser session: explicit selection or explicit
+ *       skip; the durable app_language is only a default hint)
  *     → MODEL DECISION (per browser session: backend-confirmed ready, or an
  *       explicit "continue without AI")
+ *     → COMPLIANCE / SAFETY ONBOARDING if still required (once, durable
+ *       Supabase flag) — AFTER language and model, never before
  *     → Home / product.
  *
  * AUTHENTICATION IS NEVER GATED ON THE LOCAL AI RUNTIME. The model screen is a

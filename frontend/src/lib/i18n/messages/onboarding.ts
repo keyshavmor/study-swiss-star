@@ -117,6 +117,9 @@ export const onboarding = {
     "ai.status.blockedBody":
       "AI-dependent study tools should not be used yet. Grades, statistics, materials and other features without AI keep working normally.",
     "ai.status.openSetup": "Open AI model setup",
+    "onboarding.language.mustChoose": "Choose a language to continue, or skip language selection.",
+    "ai.status.nonAiNote":
+      "All non-AI features stay usable: grades, statistics, materials and planning.",
     "ai.status.needsAi": "Needs AI",
     "ai.status.aiOnlyPart":
       "Only the AI analysis part of this screen is blocked. Saved information stays visible.",
@@ -258,6 +261,10 @@ export const onboarding = {
     "ai.status.blockedBody":
       "KI-abhängige Lernwerkzeuge sollten noch nicht verwendet werden. Noten, Statistiken, Materialien und andere Funktionen ohne KI funktionieren normal weiter.",
     "ai.status.openSetup": "KI-Modell-Einrichtung öffnen",
+    "onboarding.language.mustChoose":
+      "Wähle eine Sprache, um fortzufahren, oder überspringe die Sprachauswahl.",
+    "ai.status.nonAiNote":
+      "Alle Funktionen ohne KI bleiben nutzbar: Noten, Statistiken, Materialien und Planung.",
     "ai.status.needsAi": "Braucht KI",
     "ai.status.aiOnlyPart":
       "Nur die KI-Analyse dieses Bereichs ist blockiert. Gespeicherte Informationen bleiben sichtbar.",
@@ -395,6 +402,10 @@ export const onboarding = {
     "ai.status.blockedBody":
       "KI-abhängigi Lernwerkzüg söll me no nöd bruche. Note, Statistike, Materialie und anderi Funktione ohni KI laufe normal wiiter.",
     "ai.status.openSetup": "KI-Modäll-Iirichtig uufmache",
+    "onboarding.language.mustChoose":
+      "Wähl e Sprach zum witerfahre oder überspring die Sprachuuswahl.",
+    "ai.status.nonAiNote":
+      "Alli Funktione ohni KI blibe nutzbar: Note, Statistike, Material und Planig.",
     "ai.status.needsAi": "Bruucht KI",
     "ai.status.aiOnlyPart":
       "Nur d KI-Analyse vo dem Bereich isch blockiert. Gspeichereti Informatione blibe sichtbar.",
@@ -531,6 +542,10 @@ export const onboarding = {
     "ai.status.blockedBody":
       "Инструменты, зависящие от ИИ, пока использовать не следует. Оценки, статистика, материалы и другие функции без ИИ работают как обычно.",
     "ai.status.openSetup": "Открыть настройку модели ИИ",
+    "onboarding.language.mustChoose":
+      "Выберите язык, чтобы продолжить, или пропустите выбор языка.",
+    "ai.status.nonAiNote":
+      "Все функции без ИИ остаются доступными: оценки, статистика, материалы и планирование.",
     "ai.status.needsAi": "Нужен ИИ",
     "ai.status.aiOnlyPart":
       "Заблокирована только часть с анализом ИИ. Сохранённые данные остаются видимыми.",
@@ -671,6 +686,10 @@ export const onboarding = {
     "ai.status.blockedBody":
       "Las herramientas que dependen de la IA aún no deben usarse. Las notas, las estadísticas, los materiales y otras funciones sin IA siguen funcionando con normalidad.",
     "ai.status.openSetup": "Abrir la configuración del modelo de IA",
+    "onboarding.language.mustChoose":
+      "Elige un idioma para continuar o salta la selección de idioma.",
+    "ai.status.nonAiNote":
+      "Todas las funciones sin IA siguen disponibles: notas, estadísticas, materiales y planificación.",
     "ai.status.needsAi": "Necesita IA",
     "ai.status.aiOnlyPart":
       "Solo se bloquea la parte de análisis con IA. La información guardada sigue visible.",
@@ -811,6 +830,10 @@ export const onboarding = {
     "ai.status.blockedBody":
       "Les outils qui dépendent de l'IA ne doivent pas encore être utilisés. Les notes, les statistiques, les documents et les autres fonctions sans IA continuent de fonctionner normalement.",
     "ai.status.openSetup": "Ouvrir la configuration du modèle d'IA",
+    "onboarding.language.mustChoose":
+      "Choisis une langue pour continuer ou passe la sélection de la langue.",
+    "ai.status.nonAiNote":
+      "Toutes les fonctions sans IA restent utilisables : notes, statistiques, documents et planification.",
     "ai.status.needsAi": "Nécessite l'IA",
     "ai.status.aiOnlyPart":
       "Seule la partie analyse par IA est bloquée. Les informations enregistrées restent visibles.",
@@ -950,6 +973,10 @@ export const onboarding = {
     "ai.status.blockedBody":
       "Gli strumenti che dipendono dall'IA non dovrebbero ancora essere usati. Voti, statistiche, materiali e altre funzioni senza IA continuano a funzionare normalmente.",
     "ai.status.openSetup": "Apri la configurazione del modello di IA",
+    "onboarding.language.mustChoose":
+      "Scegli una lingua per continuare oppure salta la selezione della lingua.",
+    "ai.status.nonAiNote":
+      "Tutte le funzioni senza IA restano utilizzabili: voti, statistiche, materiali e pianificazione.",
     "ai.status.needsAi": "Richiede IA",
     "ai.status.aiOnlyPart":
       "È bloccata solo la parte di analisi con IA. Le informazioni salvate restano visibili.",
