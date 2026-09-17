@@ -10,7 +10,7 @@ sequenceDiagram
     participant LangS as sessionStorage<br/>alim.language_session.v1
     participant Model as /onboarding/model
 
-    Page->>DB: fetchPreferences() → app_language (default/preselection)
+    Page->>DB: fetchPreferences() → app_language (SAVED DEFAULT HINT (never counts as the session selection))
     alt read fails
         DB-->>Page: error
         Page-->>User: localized load notice + "Try again"<br/>(screen stays usable: choose or skip)

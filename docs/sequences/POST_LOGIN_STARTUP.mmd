@@ -42,7 +42,7 @@ sequenceDiagram
         end
     end
 
-    Note over Lang: persisted app_language is preselected (default only)
+    Note over Lang: persisted app_language is only a SAVED DEFAULT HINT; Continue is disabled until an explicit click, or the user skips
     User->>Lang: pick a language → persist app_language
     User->>Lang: OR "Skip language selection" (keeps current language)
     Lang->>LangS: markLanguageSelected / markLanguageSkipped
