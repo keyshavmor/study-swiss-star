@@ -37,6 +37,7 @@ import { AiBlockedNotice, useAiBlocked } from "@/components/app/AiFeatureGate";
 import { SourceSnippetList } from "@/components/app/SourceSnippetList";
 import { GraduationCap, Plus, LogOut, Volume2, Square } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { signOutCompletely } from "@/lib/sign-out";
 import { useAcademicYear } from "@/lib/store/academic-year";
 import type { ContextResponseMetadata } from "@/lib/context-backend.types";
 import { toast } from "sonner";
