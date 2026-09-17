@@ -201,8 +201,9 @@ export function StudyChat({ threadId }: StudyChatProps) {
   };
 
   const handleSignOut = async () => {
-    await supabase.auth.signOut();
-    navigate({ to: "/auth" });
+    // Single sign-out path: best-effort runtime release, local-scope Supabase
+    // sign-out, then all session-scoped state cleared.
+    await signOutCompletely();
   };
 
   const handleToggleSpeech = (messageId: string, text: string) => {
