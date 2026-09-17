@@ -472,3 +472,33 @@ of them.
 
 Full contract: `docs/backend-handoff/POST_LOGIN_LANGUAGE_MODEL_GATE_HANDOFF.md`;
 sequence: `docs/sequences/POST_LOGIN_STARTUP.mmd`.
+
+## 2026-09-17 — external live security hardening (CURRENT)
+
+Applied externally to the production Supabase project (NOT from Lovable, NOT from
+this frontend repository; no frontend/backend code changed):
+
+- **Live migration `20260917223625` `harden_user_facing_security_definer_rpcs`:**
+  revoked `PUBLIC`/`anon` `EXECUTE` from the user-facing privileged RPC set;
+  converted `get_my_data_summary()` to `SECURITY INVOKER`; set an
+  empty/non-user-writable `search_path` on the quota RPCs.
+- **Live migration `20260917223810` `move_privileged_rpc_implementations_out_of_public`:**
+  moved the remaining 10 `SECURITY DEFINER` implementations into the non-exposed
+  schema `api_privileged`. Public RPC names/signatures remain stable as
+  `SECURITY INVOKER` wrappers; `api_privileged` has no `anon` `USAGE`;
+  `authenticated`/`service_role` have only the intended `USAGE`/`EXECUTE`
+  required by the wrappers; all public wrappers use an empty `search_path` and
+  have no `anon` `EXECUTE`.
+- **Post-migration authenticated smoke tests PASS** for quota status/preflight,
+  runtime policy, admission policy, storage status, user-visible health, data
+  summary and peer lookup.
+- **Security Advisor** no longer reports any public `SECURITY DEFINER`
+  executable warnings. Earlier statements in this file that the advisor is
+  "not zero" because of those warnings are superseded.
+- **Two project-level Auth advisories REMAIN open and unresolved:**
+  leaked-password protection disabled and insufficient MFA options. These are
+  Supabase Auth project settings — NOT database or frontend settings — still
+  requiring Supabase Auth project configuration; they were NOT changed from
+  Lovable.
+
+No user UUIDs are recorded in documentation.
