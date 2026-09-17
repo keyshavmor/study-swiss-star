@@ -25,7 +25,7 @@ sequenceDiagram
       Auth->>Cloud: signUp with options.data.username
     end
     Cloud-->>Auth: Session and access token
-    Auth->>Cloud: Load user_preferences.preferences.app_language (durable DEFAULT / preselection)
+    Auth->>Cloud: Load user_preferences.preferences.app_language (durable SAVED DEFAULT HINT only)
     Auth-->>Student: Navigate to /onboarding/language (MANDATORY per-session decision),<br/>then /onboarding/model (MANDATORY per-session decision), then /home.<br/>Authentication itself never waits on the local AI backend.
   else Valid session
     Cloud-->>Gate: User

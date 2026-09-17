@@ -166,12 +166,12 @@ Status labels: CURRENT FRONTEND / CURRENT SUPABASE where already true today; eve
 local backend below is **BACKEND TODO FOR CODEX** (EXPECTED LOCAL BACKEND CONTRACT), not yet
 implemented in this repository.
 
-1. **First login** → `/onboarding/language` (persisted `app_language` preselected) → select a
+1. **First login** → `/onboarding/language` (persisted `app_language` shown as a SAVED DEFAULT HINT only; Continue stays disabled until the user clicks a language this session) → select a
    language or explicitly skip → `/onboarding/model` → backend reports `ready` → `/home` in AI-ready
    mode. CURRENT FRONTEND routing + CURRENT SUPABASE preference write already work; the `ready`
    response itself is BACKEND TODO FOR CODEX.
 2. **Existing user, new browser session** → the language decision is required AGAIN (per browser
-   session; the persisted language only preselects the tile) → then the model decision → `ready` →
+   session; the persisted language is only a saved default hint and never counts as chosen) → then the model decision → `ready` →
    `/home` AI-ready. `language_onboarding_completed` is legacy metadata and never skips the screen.
 2b. **Route order** → opening `/onboarding/model` directly with no language decision redirects to
    `/onboarding/language`; product routes stay blocked until both session decisions exist. A
