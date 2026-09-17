@@ -156,8 +156,15 @@ const TONE_STROKE: Record<string, string> = {
 };
 
 export interface ModelReadinessPanelProps {
-  /** Preferred model from Supabase preferences. */
+  /** Preferred model from Supabase preferences (durable preference only). */
   initialModelId: string;
+  /**
+   * Advisory model id from the backend capability report. It may arrive AFTER
+   * this panel mounted, so it is synced into the picker — but only while the
+   * user has not chosen a model manually. A recommendation never implies
+   * readiness and never clobbers a manual selection.
+   */
+  recommendedModelId?: string | null;
   /** Called whenever the backend confirms readiness. */
   onReady?: (modelId: string) => void;
   /** Called when a check ends without AI being available. */
@@ -170,6 +177,7 @@ export interface ModelReadinessPanelProps {
 
 export function ModelReadinessPanel({
   initialModelId,
+  recommendedModelId = null,
   onReady,
   onUnavailable,
   onPreparing,
@@ -187,11 +195,21 @@ export function ModelReadinessPanel({
   const [saveError, setSaveError] = useState(false);
   const cancelled = useRef(false);
   const started = useRef(false);
+  /** Set as soon as the user picks a model themselves. */
+  const manuallyChosen = useRef(false);
+
+  // A late recommendation preselects the picker; a manual choice always wins.
+  useEffect(() => {
+    if (!recommendedModelId || manuallyChosen.current) return;
+    setModelId(recommendedModelId);
+    setStatus(null);
+  }, [recommendedModelId]);
 
   useEffect(() => {
     void fetchModelCatalog().then((result) => {
       setChoices(result.choices);
       setUsedFallback(result.usedFallback);
+      if (manuallyChosen.current) return;
       setModelId((current) =>
         result.choices.some((choice) => choice.modelId === current)
           ? current
@@ -256,6 +274,7 @@ export function ModelReadinessPanel({
   }, [autoStart, modelId, runCheck]);
 
   const handleModelChange = async (next: string) => {
+    manuallyChosen.current = true;
     setModelId(next);
     setStatus(null);
     setSaveError(false);

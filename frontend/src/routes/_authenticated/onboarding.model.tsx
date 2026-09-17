@@ -38,12 +38,17 @@ function ModelOnboardingPage() {
   const { t } = useI18n();
   const navigate = useNavigate();
   const ai = useAiAvailability();
-  const [initialModel, setInitialModel] = useState<string | null>(null);
+  // SEQUENCE: durable preferred model → capability probe (with that model as
+  // input) → advisory recommendation preselects the picker → the user explicitly
+  // presses check/prepare. Preparation is NEVER auto-started from a persisted
+  // preference, so the system report is always visible first.
+  const [preferredModel, setPreferredModel] = useState<string | null>(null);
+  const [recommendedModel, setRecommendedModel] = useState<string | null>(null);
 
   useEffect(() => {
     void fetchPreferences()
-      .then((prefs) => setInitialModel(prefs.selected_qwen_model))
-      .catch(() => setInitialModel(DEFAULT_PREFERENCES.selected_qwen_model));
+      .then((prefs) => setPreferredModel(prefs.selected_qwen_model))
+      .catch(() => setPreferredModel(DEFAULT_PREFERENCES.selected_qwen_model));
   }, []);
 
   const handleReady = useCallback(
@@ -62,6 +67,17 @@ function ModelOnboardingPage() {
     ai.setNonAi();
     track({ event_name: "ai_session_non_ai_selected", feature: "ai" });
     await navigate({ to: await resolveStartupDestination(), replace: true });
+  };
+
+  // Best-effort runtime release, then a deterministic landing on the public
+  // auth page even if the release call fails.
+  const handleSignOut = async () => {
+    try {
+      await signOutCompletely();
+    } catch {
+      /* never trap the user in the app */
+    }
+    await navigate({ to: "/", replace: true });
   };
 
   const continueToApp = async () => {
@@ -88,22 +104,23 @@ function ModelOnboardingPage() {
         </div>
 
         <div className="mb-5">
-          <SystemCapabilityPanel
-            preferredModelId={initialModel}
-            onReport={(report) => {
-              // The backend recommendation preselects the picker; hardware
-              // values are never inferred in the browser.
-              const recommended = report.recommendation.recommended_model_id;
-              if (recommended) setInitialModel(recommended);
-            }}
-          />
+          {preferredModel !== null && (
+            <SystemCapabilityPanel
+              preferredModelId={preferredModel}
+              onReport={(report) => {
+                // Advisory only. Hardware values are never inferred in the
+                // browser and a recommendation never means "ready".
+                setRecommendedModel(report.recommendation.recommended_model_id);
+              }}
+            />
+          )}
         </div>
 
         <div className="app-card p-5 sm:p-6">
-          {initialModel !== null && (
+          {preferredModel !== null && (
             <ModelReadinessPanel
-              initialModelId={initialModel}
-              autoStart
+              initialModelId={preferredModel}
+              recommendedModelId={recommendedModel}
               onReady={handleReady}
               onPreparing={ai.setPreparing}
               onUnavailable={handleUnavailable}
@@ -134,7 +151,7 @@ function ModelOnboardingPage() {
           <Button size="lg" variant="outline" onClick={() => void continueWithoutAi()}>
             {t("onboarding.model.continueWithoutAi")}
           </Button>
-          <Button size="lg" variant="ghost" onClick={() => void signOutCompletely()}>
+          <Button size="lg" variant="ghost" onClick={() => void handleSignOut()}>
             {t("onboarding.model.logout")}
           </Button>
         </div>
