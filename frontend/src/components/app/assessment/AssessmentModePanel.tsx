@@ -8,6 +8,8 @@
 import { useCallback, useEffect, useReducer, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { AiBlockedNotice, useAiBlocked } from "@/components/app/AiFeatureGate";
+import { useAiAvailability } from "@/lib/ai-availability";
+import { isRuntimeUnavailableFailure } from "@/lib/ai-runtime-errors";
 import { useI18n } from "@/lib/i18n/provider";
 import { track } from "@/lib/telemetry";
 import {
@@ -105,6 +107,7 @@ export function AssessmentModePanel({
   // Generation and grading are AI actions: they must never be attempted while
   // the session has no backend-confirmed ready model.
   const aiBlocked = useAiBlocked() && !isPreviewAdapterEnabled();
+  const ai = useAiAvailability();
   const [config, setConfig] = useState<AssessmentConfig>(() =>
     createDefaultConfig({
       kind,
