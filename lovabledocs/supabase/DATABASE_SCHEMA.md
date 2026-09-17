@@ -208,8 +208,11 @@ See `docs/supabase/DATABASE_ERD.mmd` for the entity-relationship diagram.
 
 ## RPC: `get_storage_usage_status()`
 
-- **Signature:** `get_storage_usage_status(): StorageUsageStatus[]` (no arguments; SECURITY DEFINER
-  presumed so it can aggregate the caller's own Storage usage — not independently confirmed).
+- **Signature:** `get_storage_usage_status(): StorageUsageStatus[]` (no arguments).
+  Note (2026-09-17 external hardening): privileged RPC implementations were moved into the
+  non-exposed `api_privileged` schema behind stable public `SECURITY INVOKER` wrappers with empty
+  `search_path` and no `anon` EXECUTE (see `SUPABASE_CURRENT_STATE.md`); the exact definer/invoker
+  split of this function is part of that externally applied hardening and is not asserted here.
 - **Returns per row:** `quota_bytes`, `used_bytes`, `remaining_bytes`, `used_percent`,
   `remaining_percent`, `warning_threshold_reached`, `emergency_cleanup_needed` — a 1 GiB per-user
   quota (`frontend/src/integrations/supabase/types.ts:11-19`).
