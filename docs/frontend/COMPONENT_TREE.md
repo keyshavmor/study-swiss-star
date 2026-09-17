@@ -286,11 +286,11 @@ All are shadcn/Radix-derived generic primitives (buttons, dialogs, inputs, selec
 ## Compliance, safety & peer messaging
 
 **Startup order (CURRENT FRONTEND / CURRENT SUPABASE, 2026-09-17):** signed out →
-sign in/up → `/onboarding/compliance` (CURRENT SUPABASE flag
-`account_compliance.compliance_onboarding_completed`, RPC
-`complete_account_compliance_onboarding`) → `/onboarding/language` (MANDATORY
-per-session decision) → `/onboarding/model` (MANDATORY per-session decision:
-backend-confirmed `ready`, or explicit continue-without-AI) → `/home`. The system
+sign in/up → `/onboarding/language` (MANDATORY per-session decision) →
+`/onboarding/model` (MANDATORY per-session decision: backend-confirmed `ready`,
+or explicit continue-without-AI) → `/onboarding/compliance` if still required
+(CURRENT SUPABASE flag `account_compliance.compliance_onboarding_completed`, RPC
+`complete_account_compliance_onboarding`) → `/home`. The system
 admission gate is NOT part of this order any more; its data is shown on the model
 screen and `/onboarding/system-admission` is optional. `account_compliance.account_status
 = 'suspended_pending_review'` outranks every other route and redirects to
