@@ -293,10 +293,23 @@ export function AssessmentModePanel({
     let active = true;
     const timer = window.setInterval(async () => {
       const status = await getAssessmentApi().getGradingStatus(attemptId);
-      if (!active || !status.ok) return;
+      if (!active) return;
+      // BOUNDED FAILURE: a failed poll must leave the grading state instead of
+      // spinning forever. `noteFailure` downgrades central AI readiness only for
+      // `backend_unavailable`.
+      if (!status.ok) {
+        noteFailure(status.failure);
+        dispatch({ type: "grading_failed", errorKey: "assessment.unavailable.heading" });
+        return;
+      }
       if (status.data.status === "graded") {
         const result = await getAssessmentApi().getResult(attemptId);
-        if (!active || !result.ok) return;
+        if (!active) return;
+        if (!result.ok) {
+          noteFailure(result.failure);
+          dispatch({ type: "grading_failed", errorKey: "assessment.unavailable.heading" });
+          return;
+        }
         dispatch({ type: "graded", result: result.data });
         track({ event_name: "grading_completed", feature: "assessment", properties: { kind } });
       }
@@ -309,7 +322,7 @@ export function AssessmentModePanel({
       active = false;
       window.clearInterval(timer);
     };
-  }, [session.state, session.attemptId, kind]);
+  }, [session.state, session.attemptId, kind, noteFailure]);
 
   /* ------------------------------------------------------------ actions */
 
