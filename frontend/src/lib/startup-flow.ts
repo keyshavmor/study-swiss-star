@@ -57,16 +57,16 @@ export function isStartupExempt(pathname: string): boolean {
  * "continue without AI" and enter the product with no language decision.
  */
 const ONBOARDING_STAGE_RANK: Record<string, number> = {
-  [COMPLIANCE_ONBOARDING_PATH]: 1,
-  [LANGUAGE_ONBOARDING_PATH]: 2,
-  [ADMISSION_ONBOARDING_PATH]: 3,
-  [MODEL_ONBOARDING_PATH]: 3,
+  [LANGUAGE_ONBOARDING_PATH]: 1,
+  [ADMISSION_ONBOARDING_PATH]: 2,
+  [MODEL_ONBOARDING_PATH]: 2,
+  [COMPLIANCE_ONBOARDING_PATH]: 3,
 };
 
 const DESTINATION_STAGE_RANK: Record<string, number> = {
-  [COMPLIANCE_ONBOARDING_PATH]: 1,
-  [LANGUAGE_ONBOARDING_PATH]: 2,
-  [MODEL_ONBOARDING_PATH]: 3,
+  [LANGUAGE_ONBOARDING_PATH]: 1,
+  [MODEL_ONBOARDING_PATH]: 2,
+  [COMPLIANCE_ONBOARDING_PATH]: 3,
   [HOME_PATH]: 4,
 };
 
