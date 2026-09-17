@@ -162,6 +162,19 @@ export function AssessmentModePanel({
 
   /* --------------------------------------------------------- generation */
 
+  /**
+   * A `backend_unavailable` failure means the local runtime is gone: downgrade
+   * the central AI state so the red gate appears before the next request.
+   * `invalid_payload`, `not_implemented` and `cancelled` never do this.
+   */
+  const noteFailure = useCallback(
+    (failure: string) => {
+      setFailure(failure);
+      if (isRuntimeUnavailableFailure(failure)) ai.setUnavailable();
+    },
+    [ai],
+  );
+
   const startGeneration = useCallback(async () => {
     if (aiBlocked) return;
     setFailure(null);
@@ -174,12 +187,12 @@ export function AssessmentModePanel({
     });
     const response = await getAssessmentApi().createGenerationJob(config);
     if (!response.ok) {
-      setFailure(response.failure);
+      noteFailure(response.failure);
       dispatch({ type: "generation_failed", errorKey: "assessment.unavailable.heading" });
       return;
     }
     dispatch({ type: "generation_accepted", jobId: response.data.jobId });
-  }, [aiBlocked, config, kind]);
+  }, [aiBlocked, config, kind, noteFailure]);
 
   // Poll generation status while a job is running.
   useEffect(() => {
@@ -190,7 +203,7 @@ export function AssessmentModePanel({
       const response = await getAssessmentApi().getGenerationStatus(jobId);
       if (!active) return;
       if (!response.ok) {
-        setFailure(response.failure);
+        noteFailure(response.failure);
         dispatch({ type: "generation_failed", errorKey: "assessment.unavailable.heading" });
         return;
       }
@@ -219,7 +232,7 @@ export function AssessmentModePanel({
       active = false;
       window.clearInterval(timer);
     };
-  }, [session.state, session.jobId, kind]);
+  }, [session.state, session.jobId, kind, noteFailure]);
 
   /* ------------------------------------------------------------- timer */
 
@@ -252,7 +265,7 @@ export function AssessmentModePanel({
         autoSubmitted,
       });
       if (!response.ok) {
-        setFailure(response.failure);
+        noteFailure(response.failure);
         dispatch({ type: "grading_failed", errorKey: "assessment.unavailable.heading" });
         return;
       }
@@ -264,7 +277,7 @@ export function AssessmentModePanel({
         properties: { kind, auto: autoSubmitted },
       });
     },
-    [kind],
+    [kind, noteFailure],
   );
 
   // Auto-submit once the reducer moves into `submitting`.
