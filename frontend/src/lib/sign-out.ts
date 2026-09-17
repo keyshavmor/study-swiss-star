@@ -45,7 +45,7 @@ export async function signOutCompletely(): Promise<void> {
 
   await logActivity({ event_name: "auth_signout", feature: "auth" });
   try {
-    const { error } = await supabase.auth.signOut();
+    const { error } = await supabase.auth.signOut({ scope: "local" });
     if (error) throw error;
   } catch (err) {
     trackFailure("auth_signout_failed", err, { feature: "auth" });
