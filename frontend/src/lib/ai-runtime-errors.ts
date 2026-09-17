@@ -72,6 +72,17 @@ const NON_RUNTIME_PATTERNS = [
 /** HTTP statuses that mean the runtime/backend could not serve the request. */
 const RUNTIME_LOSS_STATUSES = new Set([502, 503, 504, 522, 524]);
 
+/** Prose from Errors, strings and plain `{ message }` server payloads. */
+function messageOf(error: unknown): string {
+  if (error instanceof Error) return `${error.name} ${error.message}`;
+  if (typeof error === "string") return error;
+  if (error && typeof error === "object") {
+    const candidate = (error as { message?: unknown }).message;
+    if (typeof candidate === "string") return candidate;
+  }
+  return "";
+}
+
 /** Stable error codes some server errors carry instead of prose. */
 function codeOf(error: unknown): string {
   if (!error || typeof error !== "object") return "";
@@ -93,13 +104,7 @@ function statusOf(error: unknown): number | null {
  */
 export function isRuntimeUnavailableError(error: unknown): boolean {
   const code = codeOf(error);
-  const message = (
-    error instanceof Error
-      ? `${error.name} ${error.message}`
-      : typeof error === "string"
-        ? error
-        : ""
-  ).toLowerCase();
+  const message = messageOf(error).toLowerCase();
 
   // Text/code wins over the status, so a fail-closed safety verdict served as
   // 503 (`safety_unavailable`) is never mistaken for local runtime loss.
