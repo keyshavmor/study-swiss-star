@@ -354,6 +354,16 @@ function ComplianceOnboardingPage() {
           <Button type="submit" size="lg" className="w-full" disabled={saving}>
             {saving ? t("compliance.saving") : t("compliance.submit")}
           </Button>
+          {/* Deterministic exit from the normal compliance state as well. */}
+          <Button
+            type="button"
+            size="lg"
+            variant="ghost"
+            className="w-full"
+            onClick={() => void handleSignOut()}
+          >
+            {t("nav.signOut")}
+          </Button>
         </form>
       </div>
     </div>
