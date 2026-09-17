@@ -44,6 +44,11 @@ function ModelOnboardingPage() {
   // preference, so the system report is always visible first.
   const [preferredModel, setPreferredModel] = useState<string | null>(null);
   const [recommendedModel, setRecommendedModel] = useState<string | null>(null);
+  // STRICT INITIAL SYSTEM-ASSESSMENT GATE: the model picker/prepare controls are
+  // not mounted until the FIRST capability probe resolves — either with a real
+  // report or with the truthful unavailable fallback. A later "Re-check" never
+  // re-closes this gate and never clobbers a manual model choice.
+  const [initialProbeResolved, setInitialProbeResolved] = useState(false);
 
   useEffect(() => {
     void fetchPreferences()
