@@ -119,10 +119,7 @@ export function SystemCapabilityPanel({ preferredModelId = null, onReport }: Pro
             }
           />
           {report.activeUserCount !== null && (
-            <Row
-              label={t("capability.activeUsers", { count: report.activeUserCount })}
-              value=""
-            />
+            <Row label={t("capability.activeUsers", { count: report.activeUserCount })} value="" />
           )}
           <Row
             label={t("capability.balancing")}

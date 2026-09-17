@@ -14,10 +14,7 @@
  */
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import {
-  isRuntimeUnavailableError,
-  isRuntimeUnavailableFailure,
-} from "./ai-runtime-errors";
+import { isRuntimeUnavailableError, isRuntimeUnavailableFailure } from "./ai-runtime-errors";
 import { normaliseCapabilityPayload } from "./system-capability.server";
 import { unavailableCapabilityReport } from "./system-capability.types";
 

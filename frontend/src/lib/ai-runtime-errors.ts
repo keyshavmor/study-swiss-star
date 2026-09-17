@@ -15,10 +15,7 @@
 
 /** Failure codes used by the assessment API (`src/lib/assessment/api.ts`). */
 export type AssessmentFailureCode =
-  | "backend_unavailable"
-  | "not_implemented"
-  | "invalid_payload"
-  | "cancelled";
+  "backend_unavailable" | "not_implemented" | "invalid_payload" | "cancelled";
 
 /** Only `backend_unavailable` means the local runtime is unusable. */
 export function isRuntimeUnavailableFailure(failure: string | null | undefined): boolean {
@@ -64,7 +61,8 @@ const RUNTIME_LOSS_STATUSES = new Set([502, 503, 504, 522, 524]);
 
 function statusOf(error: unknown): number | null {
   if (!error || typeof error !== "object") return null;
-  const candidate = (error as { status?: unknown; statusCode?: unknown }).status ??
+  const candidate =
+    (error as { status?: unknown; statusCode?: unknown }).status ??
     (error as { statusCode?: unknown }).statusCode;
   return typeof candidate === "number" ? candidate : null;
 }
