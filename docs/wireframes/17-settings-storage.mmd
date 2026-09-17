@@ -9,9 +9,9 @@ flowchart TD
     A -->|upload / remove| AV[(profile-avatars bucket)]
     A -->|auth.updateUser email| AU[Supabase Auth]
     A -->|auth.updateUser password| AU
-    M -->|preferences.selected_qwen_model| DBU[(user_preferences)]
+    M -->|"preferences.selected_qwen_model<br/>DURABLE PREFERENCE ONLY, never readiness"| DBU[(user_preferences)]
     P -->|exam_reminders, daily_study_summary,<br/>sound_effects| DBU
-    S --> ON[Model onboarding gate reused here<br/>ModelReadinessPanel, no autoStart]
+    S --> ON[Model decision screen reused here<br/>ModelReadinessPanel, no autoStart.<br/>Explicit backend ready confirmation → AI-ready session<br/>alim.ai_session.v1 sessionStorage, cleared on sign-out]
     ON -->|preferences.selected_qwen_model, ai_model_catalog| DBU
     AU2 -->|assistant_audio_enabled default true,<br/>assistant_audio_autoplay default false| DBU
     NoteLang["Language menu lives in AppHeader.tsx, not Settings"] -.-> S
@@ -22,3 +22,5 @@ flowchart TD
     G -->|list| L[assistant_attachments + documents with storage paths]
     L -->|select + confirm| D1[Storage bucket remove first]
     D1 --> D2[assistant_attachments.deleted_at set;<br/>documents storage pointer cleared]
+%% CURRENT (2026-09-17): runtime/model/GPU readiness is never persisted in Supabase;
+%% only app_language and selected_qwen_model are durable preferences.
