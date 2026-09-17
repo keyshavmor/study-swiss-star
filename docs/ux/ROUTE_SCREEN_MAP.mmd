@@ -90,10 +90,16 @@ flowchart LR
   class ASSISTTHREAD,ASSISTIDX,CONTEXTBACKEND backendUnknown
 
 
-  subgraph ONBOARDING["Onboarding / admission (new)"]
-    ONBCOMPLIANCE["/onboarding/compliance<br/>ComplianceOnboarding"]
-    ONBADMISSION["/onboarding/system-admission<br/>SystemAdmissionGate"]
+  subgraph ONBOARDING["Post-login gate (CURRENT 2026-09-17) — strict order"]
+    ONBCOMPLIANCE["/onboarding/compliance<br/>ComplianceOnboarding (durable, once)"]
+    ONBLANG["/onboarding/language<br/>MANDATORY per-session decision:<br/>select a language or explicit skip"]
+    ONBMODEL["/onboarding/model<br/>MANDATORY per-session decision:<br/>backend-confirmed ready OR explicit continue-without-AI"]
+    ONBADMISSION["/onboarding/system-admission<br/>SystemAdmissionGate (OPTIONAL, not a startup gate)"]
   end
+  ONBCOMPLIANCE --> ONBLANG
+  ONBLANG --> ONBMODEL
+  ONBMODEL -->|"only after an explicit decision"| HOME["/home"]
+  ONBMODEL -.->|"no language decision yet:<br/>startupRedirectFor() sends the user back"| ONBLANG
   subgraph LEGALROUTES["Legal document routes (new)"]
     LEGALTERMS["/legal/terms"]
     LEGALPRIVACY["/legal/privacy"]
