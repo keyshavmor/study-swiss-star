@@ -284,9 +284,12 @@ In addition to `harden_auth_peer_rpcs_and_signup_defaults`, these migrations are
   `peer_message_notifications(conversation_id)`, `peer_message_notifications(message_id)`,
   `peer_messages(moderation_event_id)`.
 
-**Security Advisor is NOT claimed to be at zero warnings.** It still reports the intentionally
-callable signed-in `SECURITY DEFINER` application RPCs. There is NO anon `SECURITY DEFINER` warning
-any more.
+**Security Advisor — SUPERSEDED 2026-09-17.** The statement above (intentional signed-in
+`SECURITY DEFINER` application-RPC warnings remaining) was superseded by the external live
+hardening recorded in "2026-09-17 — external live security hardening (CURRENT)" below: the
+Security Advisor no longer reports any public `SECURITY DEFINER` executable warnings. Only the
+two project-level Auth advisories (leaked-password protection, insufficient MFA options) remain,
+and those are Supabase Auth project settings, not database/frontend settings.
 
 **Performance Advisor state.** The Supabase Performance Advisor now reports **ZERO
 `unindexed_foreign_keys` findings** — the `cover_peer_and_guardian_foreign_keys` migration above
@@ -432,8 +435,10 @@ Historical hCaptcha/CAPTCHA incidents above remain clearly marked HISTORICAL.
    `STARTUP_COMPLIANCE_LANGUAGE_ADMISSION_MODEL_HOME.mmd` describe the previous
    mandatory-gate order and are superseded by
    `AUTH_STARTUP_HOME_VS_OPTIONAL_AI.mmd`.
-6. Security advisor state unchanged: the intentional signed-in SECURITY DEFINER
-   application-RPC warnings remain; Security Advisor is NOT zero.
+6. Security advisor state — SUPERSEDED 2026-09-17: the intentional signed-in
+   SECURITY DEFINER application-RPC warnings described here were resolved by the
+   external live hardening recorded below; only the two Auth-project advisories
+   (leaked-password protection, MFA options) remain open.
 
 
 ## Post-login gate — CURRENT (2026-09-17)
