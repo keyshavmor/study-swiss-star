@@ -22,8 +22,20 @@ export function isRuntimeUnavailableFailure(failure: string | null | undefined):
   return failure === "backend_unavailable";
 }
 
+/**
+ * Exact server texts currently emitted by `routes/api/chat.ts` and
+ * `lib/context-backend.server.ts` are covered explicitly:
+ *   "Context backend is unavailable", "Context backend request timed out",
+ *   "Local Qwen backend unavailable", ContextBackendError code
+ *   `context_backend_unavailable`.
+ */
 const RUNTIME_LOSS_PATTERNS = [
   "backend_unavailable",
+  "context_backend_unavailable",
+  "context backend",
+  "backend is unavailable",
+  "backend unavailable",
+  "qwen",
   "model_not_loaded",
   "model_unavailable",
   "runtime_unavailable",
@@ -44,6 +56,7 @@ const RUNTIME_LOSS_PATTERNS = [
 
 const NON_RUNTIME_PATTERNS = [
   "safety",
+  "safety_unavailable",
   "moderation",
   "blocked",
   "invalid",
@@ -58,6 +71,13 @@ const NON_RUNTIME_PATTERNS = [
 
 /** HTTP statuses that mean the runtime/backend could not serve the request. */
 const RUNTIME_LOSS_STATUSES = new Set([502, 503, 504, 522, 524]);
+
+/** Stable error codes some server errors carry instead of prose. */
+function codeOf(error: unknown): string {
+  if (!error || typeof error !== "object") return "";
+  const candidate = (error as { code?: unknown }).code;
+  return typeof candidate === "string" ? candidate.toLowerCase() : "";
+}
 
 function statusOf(error: unknown): number | null {
   if (!error || typeof error !== "object") return null;
@@ -75,6 +95,10 @@ export function isRuntimeUnavailableError(error: unknown): boolean {
   const status = statusOf(error);
   if (status !== null && RUNTIME_LOSS_STATUSES.has(status)) return true;
   if (status !== null && status >= 400 && status < 500) return false;
+
+  const code = codeOf(error);
+  if (code && NON_RUNTIME_PATTERNS.some((pattern) => code.includes(pattern))) return false;
+  if (code && RUNTIME_LOSS_PATTERNS.some((pattern) => code.includes(pattern))) return true;
 
   const message = (
     error instanceof Error
