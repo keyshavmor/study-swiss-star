@@ -121,9 +121,39 @@ describe("authenticated startup flow", () => {
 
   it("never treats a failed compliance read as completed", async () => {
     compliance.fails = true;
+    languageRequired = false;
+    aiDecisionRequired = false;
     await expect(complianceStatus()).resolves.toBe("unknown");
     expect(complianceStateUnavailable()).toBe(true);
     await expect(resolveStartupDestination()).resolves.toBe(COMPLIANCE_ONBOARDING_PATH);
+  });
+
+  it("puts ordinary compliance onboarding AFTER language and model", async () => {
+    compliance.completed = false;
+    // Fresh session: language first, even when compliance is still outstanding.
+    await expect(resolveStartupDestination()).resolves.toBe(LANGUAGE_ONBOARDING_PATH);
+    languageRequired = false;
+    await expect(resolveStartupDestination()).resolves.toBe(MODEL_ONBOARDING_PATH);
+    aiDecisionRequired = false;
+    await expect(resolveStartupDestination()).resolves.toBe(COMPLIANCE_ONBOARDING_PATH);
+    // Product routes stay blocked until compliance is done.
+    await expect(startupRedirectFor("/home")).resolves.toBe(COMPLIANCE_ONBOARDING_PATH);
+    compliance.completed = true;
+    invalidateStartupCache();
+    await expect(resolveStartupDestination()).resolves.toBe(HOME_PATH);
+  });
+
+  it("does not let the compliance screen be used to skip language or model", async () => {
+    compliance.completed = false;
+    await expect(startupRedirectFor(COMPLIANCE_ONBOARDING_PATH)).resolves.toBe(
+      LANGUAGE_ONBOARDING_PATH,
+    );
+    languageRequired = false;
+    await expect(startupRedirectFor(COMPLIANCE_ONBOARDING_PATH)).resolves.toBe(
+      MODEL_ONBOARDING_PATH,
+    );
+    aiDecisionRequired = false;
+    await expect(startupRedirectFor(COMPLIANCE_ONBOARDING_PATH)).resolves.toBeNull();
   });
 
   it("exempts onboarding, auth, account and legal routes", () => {
