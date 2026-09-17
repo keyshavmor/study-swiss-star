@@ -363,7 +363,7 @@ belongs only in Supabase Auth > Bot and Abuse Protection, per the
 [official guide](https://supabase.com/docs/guides/auth/auth-captcha).
 No production signup, login, session, row-creation or cleanup PASS is claimed this pass; no new
 throwaway account was created. Previously observed email confirmation requirements still apply,
-but were not independently re-tested in this pass. Security Advisor is not claimed to be zero.
+but were not independently re-tested in this pass. (Security Advisor state as of that date; superseded by the 2026-09-17 external hardening below.)
 
 ## 2026-09-15 — CAPTCHA removed as an authentication dependency (CURRENT)
 
@@ -396,7 +396,7 @@ confirmed account in the smoke test and is **NOT declared PASS** from signup alo
 Bot/Abuse Protection is enabled or disabled in the dashboard is not independently verified from
 here; historically, while it was enabled, tokenless signup/sign-in/recovery returned HTTP 400
 `captcha_failed` (see the historical entries above). Unit tests alone are not treated as evidence.
-Security Advisor is still not claimed to be zero.
+(Security Advisor state as of that date; superseded by the 2026-09-17 external hardening below.)
 
 ## 2026-09-15 — live production signup observed succeeding without CAPTCHA (CURRENT)
 
