@@ -10,7 +10,7 @@ sequenceDiagram
     User->>UI: click "Free up my session"
     UI->>Fn: releaseMyRuntime({ leaseId })
     Fn->>Adapter: releaseRuntimeOnBackend(verified JWT, leaseId)
-    Adapter->>Backend: POST runtime/release
+    Adapter->>Backend: POST /api/system/runtime/release
     alt unavailable
         Backend-->>Adapter: no response
         Adapter-->>UI: { released:false, message_code:backend_unavailable }

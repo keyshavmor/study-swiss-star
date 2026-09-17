@@ -25,6 +25,8 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AiBlockedNotice, useAiBlocked } from "@/components/app/AiFeatureGate";
+import { useAiAvailability } from "@/lib/ai-availability";
+import { isRuntimeUnavailableError } from "@/lib/ai-runtime-errors";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
@@ -93,6 +95,7 @@ function AttachmentChip({
 export function AssistantChat({ threadId }: { threadId?: string }) {
   const { t, language, formatDate } = useI18n();
   const aiBlocked = useAiBlocked();
+  const ai = useAiAvailability();
   const navigate = useNavigate();
   const [threads, setThreads] = useState<AssistantThread[]>([]);
   const [messages, setMessages] = useState<AssistantMessage[]>([]);
@@ -242,6 +245,9 @@ export function AssistantChat({ threadId }: { threadId?: string }) {
       });
     } catch (err) {
       trackFailure("assistant_message_failed", err, { feature: "assistant" });
+      // Only a genuine local-runtime loss/timeout downgrades the central AI
+      // state; quota, validation and safety errors never do.
+      if (!isQuotaExceededError(err) && isRuntimeUnavailableError(err)) ai.setUnavailable();
       toast.error(isQuotaExceededError(err) ? t("quota.exceededError") : t("assistant.sendFailed"));
     } finally {
       setSending(false);
