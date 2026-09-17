@@ -79,7 +79,7 @@ supabase.functions.invoke("username-login", { body: { username, password } })
 
 - **On success:** the frontend immediately calls
   `supabase.auth.setSession({ access_token, refresh_token })`, then enters
-  `resolveStartupDestination()` (compliance → language → admission → model → Home).
+  `resolveStartupDestination()` (suspended → language → model → compliance → Home).
 - **On failure:** `invalid_credentials` shows a generic invalid username/password message — no
   account enumeration, no email disclosed. `authentication_unavailable` (and any transport
   failure) shows a generic service error instead of blaming the credentials.
@@ -184,7 +184,7 @@ the Supabase session; a user's data is whatever rows/objects carry their `auth.u
 `frontend/src/lib/sign-out.ts` (`signOutCompletely`):
 
 1. Attempts runtime-lease release while the access token is still valid.
-2. Sends `auth_signout` telemetry, then calls `supabase.auth.signOut()`.
+2. Sends `auth_signout` telemetry, best-effort asks the REQUIRED FUTURE BACKEND to release this user's runtime while the bearer is still valid, then calls `supabase.auth.signOut({ scope: "local" })` — current-session scope only.
 3. In `finally`, clears the Google token, AI/admission session state, messaging state and startup
    cache whether sign-out succeeds or fails.
 
@@ -239,9 +239,17 @@ export const Route = createFileRoute("/_authenticated")({
 `resolveStartupDestination()` now considers ONLY:
 
 1. account suspension (`suspended_pending_review`) → `/account/suspended`
-2. compliance / safety onboarding not completed or unknown → `/onboarding/compliance`
-3. language onboarding not completed or unknown → `/onboarding/language`
-4. otherwise → `/home`
+2. no language decision for this browser session → `/onboarding/language`
+3. no model decision for this browser session → `/onboarding/model`
+4. compliance / safety onboarding not completed or unknown → `/onboarding/compliance`
+5. otherwise → `/home`
+
+Both onboarding decisions are session-scoped (`alim.language_session.v1`,
+`alim.ai_session.v1` in `sessionStorage`), survive a refresh and are cleared on
+sign-out. Direct navigation cannot skip an earlier stage: `/onboarding/model`
+without a language decision redirects to `/onboarding/language`, and
+`/onboarding/compliance` without both decisions redirects back to the stage that
+is still missing.
 
 The system admission gate and the model readiness gate were previously
 mandatory, fail-closed startup gates. Because the local AI backend is not

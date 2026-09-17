@@ -37,6 +37,7 @@ import { AiBlockedNotice, useAiBlocked } from "@/components/app/AiFeatureGate";
 import { SourceSnippetList } from "@/components/app/SourceSnippetList";
 import { GraduationCap, Plus, LogOut, Volume2, Square } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { signOutCompletely } from "@/lib/sign-out";
 import { useAcademicYear } from "@/lib/store/academic-year";
 import type { ContextResponseMetadata } from "@/lib/context-backend.types";
 import { toast } from "sonner";
@@ -201,8 +202,9 @@ export function StudyChat({ threadId }: StudyChatProps) {
   };
 
   const handleSignOut = async () => {
-    await supabase.auth.signOut();
-    navigate({ to: "/auth" });
+    // Single sign-out path: best-effort runtime release, local-scope Supabase
+    // sign-out, then all session-scoped state cleared.
+    await signOutCompletely();
   };
 
   const handleToggleSpeech = (messageId: string, text: string) => {

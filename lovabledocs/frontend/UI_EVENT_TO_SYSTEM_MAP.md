@@ -163,7 +163,7 @@ Files: `frontend/src/components/StudyChat.tsx`, `frontend/src/components/ThreadL
 | Study chat | "Listen" button (assistant message) | `StudyChat.tsx` `handleToggleSpeech()` | Click | `speak({text, uiLanguage, onEnd})` (`lib/speech.ts`, browser `speechSynthesis`) | `speakingId` | none | none — **local browser API only, never persisted** | none | Icon swaps to "Stop"; `speakingId` set | `toast.error(t("assistant.audio.unsupported"))` or `t("assistant.audio.noVoice")` depending on `speak()` outcome |
 | Study chat | "Stop" button (while speaking) | `StudyChat.tsx` `handleToggleSpeech()` | Click | `stopSpeaking()` (`lib/speech.ts`) | `speakingId=null` | none | none | none | Playback stops, icon reverts to "Listen" | n/a |
 | Study chat | Autoplay of new assistant reply | `StudyChat.tsx` `useChat({onFinish})` | Passive (if `assistant_audio_enabled && assistant_audio_autoplay` in preferences fetched via `fetchPreferences()`) | `speak({...})` | `speakingId` | reads `user_preferences` — **CURRENT — SUPABASE** | none | none | Audio plays automatically for the newly completed message only | same audio-unavailable toasts as "Listen" |
-| Study chat | Sign out (chat-page mini header) | `StudyChat.tsx` `handleSignOut()` | Click | `supabase.auth.signOut()` then `navigate({to:"/auth"})` — note: this is a **separate, simpler path than `signOutCompletely()`** used in `AppHeader.tsx`; it does not clear the Google Calendar token or log `auth_signout` telemetry | none | Supabase Auth | none | Supabase session ended | Navigates to `/auth` | none surfaced (no try/catch) |
+| Study chat | Sign out (chat-page mini header) | `StudyChat.tsx` `handleSignOut()` | Click | `signOutCompletely()` (`lib/sign-out.ts`) — the SAME single sign-out path as `AppHeader.tsx`: best-effort backend runtime release, `supabase.auth.signOut({ scope: "local" })`, then all session-scoped state cleared | none | `usage_events` (event `auth_signout`) | none | Supabase session ended, language/AI session decisions cleared | Redirects to `/` | `toast.error(t("nav.signOutFailed"))` |
 
 ---
 
@@ -282,11 +282,11 @@ File: `frontend/src/routes/_authenticated/help.tsx`. Entirely static content —
 ## Compliance, safety & peer messaging
 
 **Startup order (CURRENT FRONTEND / CURRENT SUPABASE, 2026-09-17):** signed out →
-sign in/up → `/onboarding/compliance` (CURRENT SUPABASE flag
-`account_compliance.compliance_onboarding_completed`, RPC
-`complete_account_compliance_onboarding`) → `/onboarding/language` (MANDATORY
-per-session decision) → `/onboarding/model` (MANDATORY per-session decision:
-backend-confirmed `ready`, or explicit continue-without-AI) → `/home`. The system
+sign in/up → `/onboarding/language` (MANDATORY per-session decision) →
+`/onboarding/model` (MANDATORY per-session decision: backend-confirmed `ready`,
+or explicit continue-without-AI) → `/onboarding/compliance` if still required
+(CURRENT SUPABASE flag `account_compliance.compliance_onboarding_completed`, RPC
+`complete_account_compliance_onboarding`) → `/home`. The system
 admission gate is NOT part of this order any more; its data is shown on the model
 screen and `/onboarding/system-admission` is optional. `account_compliance.account_status
 = 'suspended_pending_review'` outranks every other route and redirects to
@@ -299,11 +299,15 @@ screen and `/onboarding/system-admission` is optional. `account_compliance.accou
 Supersedes any statement earlier in this file that language onboarding is a
 once-per-account step or that model setup is optional/advisory.
 
-Canonical order after Supabase Auth succeeds:
-compliance (durable, once) → **language decision for this browser session**
-(select a language or explicit skip) → **model decision for this browser
-session** (backend-confirmed `ready`, or an explicit "Continue without AI") →
-`/home` and the rest of the product.
+Canonical order after Supabase Auth succeeds (account suspension pre-empts
+everything):
+**language decision for this browser session** (select a language or explicit
+skip) → **model decision for this browser session** (backend-confirmed `ready`,
+or an explicit "Continue without AI") → compliance onboarding *if still
+required* (durable, once) → `/home` and the rest of the product.
+Ordinary compliance onboarding NEVER appears before the language and model
+decisions; a suspended account (`suspended_pending_review`) still outranks all
+of them.
 
 - Authentication and non-AI product areas never depend on the local AI backend.
 - `user_preferences.preferences.app_language` stays the durable default used to

@@ -28,7 +28,7 @@ stateDiagram-v2
     protected_route --> SIGNED_OUT: beforeLoad getUser() fails,<br/>redirect({ to: "/" })
 
     SIGNED_IN --> SIGNING_OUT: user triggers signOutCompletely()
-    SIGNING_OUT --> SIGNED_OUT: supabase.auth.signOut() resolves,<br/>Google sessionStorage token cleared
+    SIGNING_OUT --> SIGNED_OUT: supabase.auth.signOut({ scope: "local" }) resolves,<br/>language + AI session decisions, admission lease and<br/>Google sessionStorage token cleared
 
     state protected_route {
       [*] --> checking_user

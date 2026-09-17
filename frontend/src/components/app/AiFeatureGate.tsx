@@ -18,6 +18,7 @@ import { Button } from "@/components/ui/button";
 import { useAiAvailability } from "@/lib/ai-availability";
 import { useI18n } from "@/lib/i18n/provider";
 import { MODEL_ONBOARDING_PATH } from "@/lib/startup-flow";
+import { signOutCompletely } from "@/lib/sign-out";
 
 /** True when an AI request must not be issued right now. */
 export function useAiBlocked(): boolean {
@@ -59,6 +60,10 @@ export function AiBlockedNotice({ compact = false }: { compact?: boolean }) {
         </Button>
         <Button asChild size="sm" variant="ghost">
           <Link to="/settings">{t("ai.blocked.openSettings")}</Link>
+        </Button>
+        {/* Third honest path: leave the session entirely. */}
+        <Button size="sm" variant="ghost" onClick={() => void signOutCompletely()}>
+          {t("nav.signOut")}
         </Button>
       </div>
     </div>

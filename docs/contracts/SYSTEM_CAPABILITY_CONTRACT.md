@@ -59,10 +59,16 @@ adapter → local backend operation currently referenced as
 
 ## Authentication independence
 
-AI readiness is NEVER an authentication gate. `resolveStartupDestination()`
-only considers suspension, compliance onboarding and language onboarding.
-`aiSetupPending()` is advisory: it may offer the AI setup screens, but a
-signed-in user always reaches `/home` and every non-AI area.
+AI readiness is NEVER an authentication gate: Supabase Auth completes with no
+call to the local backend, and a backend that is absent, 404, slow or unparsable
+resolves to `backend_unavailable` rather than a failed login.
+
+The model decision screen IS a mandatory per-session stage
+(`/onboarding/language` → `/onboarding/model` → compliance if required →
+`/home`), but it can always be satisfied without any backend by an explicit
+"Continue without AI", which stores session-scoped non-AI state and unlocks the
+whole non-AI product. The screen always also offers retry/recheck and sign out,
+so an unreachable backend can never trap a signed-in user.
 
 ## Tests
 
@@ -78,11 +84,15 @@ the local backend.
 Supersedes any statement earlier in this file that language onboarding is a
 once-per-account step or that model setup is optional/advisory.
 
-Canonical order after Supabase Auth succeeds:
-compliance (durable, once) → **language decision for this browser session**
-(select a language or explicit skip) → **model decision for this browser
-session** (backend-confirmed `ready`, or an explicit "Continue without AI") →
-`/home` and the rest of the product.
+Canonical order after Supabase Auth succeeds (account suspension pre-empts
+everything):
+**language decision for this browser session** (select a language or explicit
+skip) → **model decision for this browser session** (backend-confirmed `ready`,
+or an explicit "Continue without AI") → compliance onboarding *if still
+required* (durable, once) → `/home` and the rest of the product.
+Ordinary compliance onboarding NEVER appears before the language and model
+decisions; a suspended account (`suspended_pending_review`) still outranks all
+of them.
 
 - Authentication and non-AI product areas never depend on the local AI backend.
 - `user_preferences.preferences.app_language` stays the durable default used to

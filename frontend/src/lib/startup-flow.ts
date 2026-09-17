@@ -57,16 +57,16 @@ export function isStartupExempt(pathname: string): boolean {
  * "continue without AI" and enter the product with no language decision.
  */
 const ONBOARDING_STAGE_RANK: Record<string, number> = {
-  [COMPLIANCE_ONBOARDING_PATH]: 1,
-  [LANGUAGE_ONBOARDING_PATH]: 2,
-  [ADMISSION_ONBOARDING_PATH]: 3,
-  [MODEL_ONBOARDING_PATH]: 3,
+  [LANGUAGE_ONBOARDING_PATH]: 1,
+  [ADMISSION_ONBOARDING_PATH]: 2,
+  [MODEL_ONBOARDING_PATH]: 2,
+  [COMPLIANCE_ONBOARDING_PATH]: 3,
 };
 
 const DESTINATION_STAGE_RANK: Record<string, number> = {
-  [COMPLIANCE_ONBOARDING_PATH]: 1,
-  [LANGUAGE_ONBOARDING_PATH]: 2,
-  [MODEL_ONBOARDING_PATH]: 3,
+  [LANGUAGE_ONBOARDING_PATH]: 1,
+  [MODEL_ONBOARDING_PATH]: 2,
+  [COMPLIANCE_ONBOARDING_PATH]: 3,
   [HOME_PATH]: 4,
 };
 
@@ -163,7 +163,12 @@ export type StartupDestination =
 
 /**
  * Where an authenticated user belongs right now:
- * suspended → compliance → language decision → model decision → home.
+ * suspended → language decision → model decision → compliance → home.
+ *
+ * A suspended account is intercepted immediately for account-control reasons.
+ * Otherwise the two session-scoped decisions come first, so a newly
+ * authenticated user always sees language and then model preparation; ordinary
+ * compliance onboarding runs AFTER the model decision and before Home.
  *
  * The model step is reached even when the local backend is unavailable, because
  * the user still has to make an explicit AI decision for the session. There is
@@ -174,9 +179,9 @@ export type StartupDestination =
 export async function resolveStartupDestination(): Promise<StartupDestination> {
   const compliance = await complianceStatus();
   if (compliance === "suspended") return SUSPENDED_PATH;
-  if (compliance !== "completed") return COMPLIANCE_ONBOARDING_PATH;
   if (languageDecisionRequired()) return LANGUAGE_ONBOARDING_PATH;
   if (modelGateRequired()) return MODEL_ONBOARDING_PATH;
+  if (compliance !== "completed") return COMPLIANCE_ONBOARDING_PATH;
   return HOME_PATH;
 }
 

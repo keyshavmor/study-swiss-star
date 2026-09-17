@@ -9,7 +9,7 @@ import { SystemCapabilityPanel } from "@/components/app/SystemCapabilityPanel";
 import { useI18n } from "@/lib/i18n/provider";
 import { DEFAULT_PREFERENCES, fetchPreferences } from "@/lib/account-data";
 import { useAiAvailability } from "@/lib/ai-availability";
-import { HOME_PATH } from "@/lib/startup-flow";
+import { resolveStartupDestination } from "@/lib/startup-flow";
 import { signOutCompletely } from "@/lib/sign-out";
 import { track } from "@/lib/telemetry";
 
@@ -61,12 +61,12 @@ function ModelOnboardingPage() {
   const continueWithoutAi = async () => {
     ai.setNonAi();
     track({ event_name: "ai_session_non_ai_selected", feature: "ai" });
-    await navigate({ to: HOME_PATH, replace: true });
+    await navigate({ to: await resolveStartupDestination(), replace: true });
   };
 
   const continueToApp = async () => {
     if (!ai.aiEnabled) return;
-    await navigate({ to: HOME_PATH, replace: true });
+    await navigate({ to: await resolveStartupDestination(), replace: true });
   };
 
   return (
