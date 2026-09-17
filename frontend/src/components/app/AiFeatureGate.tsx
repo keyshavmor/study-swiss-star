@@ -60,6 +60,10 @@ export function AiBlockedNotice({ compact = false }: { compact?: boolean }) {
         <Button asChild size="sm" variant="ghost">
           <Link to="/settings">{t("ai.blocked.openSettings")}</Link>
         </Button>
+        {/* Third honest path: leave the session entirely. */}
+        <Button size="sm" variant="ghost" onClick={() => void signOutCompletely()}>
+          {t("nav.signOut")}
+        </Button>
       </div>
     </div>
   );
