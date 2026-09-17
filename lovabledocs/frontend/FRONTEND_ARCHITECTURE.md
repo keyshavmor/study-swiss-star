@@ -118,7 +118,7 @@ Grouped by responsibility; each module runs under the signed-in user's Supabase 
 - **Mock/prototype data** — `lib/mock/{subjects,grades,materials,academic}` — School subject catalogue, grade math test fixtures, static academic-year calendar; not backend-fed.
 - **Grade math** — `lib/grade-math.ts`: pure functions for point→grade conversion and subject averages.
 - **Date/time utilities** — `lib/date-utils.ts` (calendar math for the planner) and `lib/i18n/format.ts` (presentation) — see `docs/frontend/DATE_TIME_PRESENTATION.md`.
-- **Sign-out** — `lib/sign-out.ts`: `signOutCompletely()` logs `auth_signout`, calls `supabase.auth.signOut()`, always clears the Google provider token from `sessionStorage`.
+- **Sign-out** — `lib/sign-out.ts`: `signOutCompletely()` is the SINGLE sign-out path used by the header, the chat mini header, both onboarding decision screens, the AI blocked notice, the suspended screen and the root error screen. Order: (1) best-effort ask the REQUIRED FUTURE BACKEND to release this user's runtime/lease while the bearer is still valid — failure never blocks sign-out, (2) `supabase.auth.signOut({ scope: "local" })` (current session only, per current Supabase guidance), (3) clear every session-scoped gate/cache (language decision, AI decision, admission lease, messaging state, Google provider token, startup cache, active assessment). Frontend sign-out cannot guarantee release after a browser/process death — the future backend MUST provide lease/heartbeat/TTL cleanup as the fallback.
 - **Speech** — `lib/speech.ts`: browser `speechSynthesis` wrapper used by `StudyChat` and `AssistantChat` (ephemeral, never persisted).
 
 ## Error boundaries and reporting (CURRENT — FRONTEND)
@@ -153,14 +153,14 @@ Status: the route itself is CURRENT — FRONTEND (fully implemented and shipped)
 ## Authenticated startup flow — CURRENT (2026-09-17)
 
 Signed out → `/` (sign in / sign up; authentication NEVER waits on the local AI
-backend) → `/onboarding/compliance` (durable, once, CURRENT SUPABASE
-`account_compliance`) → **`/onboarding/language` — MANDATORY once per browser
+backend) → **`/onboarding/language` — MANDATORY once per browser
 session**: select a language (persists `user_preferences.preferences.app_language`
 as the durable default) or explicitly skip → **`/onboarding/model` — MANDATORY
 once per browser session**: system capability probe, recommendation, model
 selection and prepare/poll; the app can be entered only after an explicit backend
 `ready` confirmation (AI-ready) or an explicit "Continue without AI" (non-AI) →
-`/home`.
+`/onboarding/compliance` if compliance onboarding is still required (durable,
+once, CURRENT SUPABASE `account_compliance`) → `/home`.
 
 - Session gates: `alim.language_session.v1` and `alim.ai_session.v1`
   (`sessionStorage`). They survive a refresh and are cleared on sign-out.
@@ -194,11 +194,11 @@ Canonical: `docs/sequences/POST_LOGIN_STARTUP.mmd`,
 ## Compliance, safety & peer messaging
 
 **Startup order (CURRENT FRONTEND / CURRENT SUPABASE, 2026-09-17):** signed out →
-sign in/up → `/onboarding/compliance` (CURRENT SUPABASE flag
-`account_compliance.compliance_onboarding_completed`, RPC
-`complete_account_compliance_onboarding`) → `/onboarding/language` (MANDATORY
-per-session decision) → `/onboarding/model` (MANDATORY per-session decision:
-backend-confirmed `ready`, or explicit continue-without-AI) → `/home`. The system
+sign in/up → `/onboarding/language` (MANDATORY per-session decision) →
+`/onboarding/model` (MANDATORY per-session decision: backend-confirmed `ready`,
+or explicit continue-without-AI) → `/onboarding/compliance` if still required
+(CURRENT SUPABASE flag `account_compliance.compliance_onboarding_completed`, RPC
+`complete_account_compliance_onboarding`) → `/home`. The system
 admission gate is NOT part of this order any more; its data is shown on the model
 screen and `/onboarding/system-admission` is optional. `account_compliance.account_status
 = 'suspended_pending_review'` outranks every other route and redirects to
@@ -211,11 +211,15 @@ screen and `/onboarding/system-admission` is optional. `account_compliance.accou
 Supersedes any statement earlier in this file that language onboarding is a
 once-per-account step or that model setup is optional/advisory.
 
-Canonical order after Supabase Auth succeeds:
-compliance (durable, once) → **language decision for this browser session**
-(select a language or explicit skip) → **model decision for this browser
-session** (backend-confirmed `ready`, or an explicit "Continue without AI") →
-`/home` and the rest of the product.
+Canonical order after Supabase Auth succeeds (account suspension pre-empts
+everything):
+**language decision for this browser session** (select a language or explicit
+skip) → **model decision for this browser session** (backend-confirmed `ready`,
+or an explicit "Continue without AI") → compliance onboarding *if still
+required* (durable, once) → `/home` and the rest of the product.
+Ordinary compliance onboarding NEVER appears before the language and model
+decisions; a suspended account (`suspended_pending_review`) still outranks all
+of them.
 
 - Authentication and non-AI product areas never depend on the local AI backend.
 - `user_preferences.preferences.app_language` stays the durable default used to

@@ -19,7 +19,7 @@ sequenceDiagram
     else release succeeds
         Release-->>SignOut: released
     end
-    SignOut->>Supa: auth.signOut()
+    SignOut->>Supa: auth.signOut({ scope: "local" })<br/>current session only
     SignOut->>Local: clearAiSession(), clearAdmissionSession(), clearMessagingSessionState(), clearGoogleAccess()
     Note over Sweeper: If the browser closed before release ran (crash, network loss),<br/>nothing frees the model process/VRAM, session CPU/context RAM or temp artifacts.
     Sweeper-->>Sweeper: BACKEND TODO FOR CODEX — heartbeat/lease-TTL expiry cleanup does not exist yet.

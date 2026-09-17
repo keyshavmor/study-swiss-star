@@ -184,7 +184,7 @@ the Supabase session; a user's data is whatever rows/objects carry their `auth.u
 `frontend/src/lib/sign-out.ts` (`signOutCompletely`):
 
 1. Attempts runtime-lease release while the access token is still valid.
-2. Sends `auth_signout` telemetry, then calls `supabase.auth.signOut()`.
+2. Sends `auth_signout` telemetry, best-effort asks the REQUIRED FUTURE BACKEND to release this user's runtime while the bearer is still valid, then calls `supabase.auth.signOut({ scope: "local" })` — current-session scope only.
 3. In `finally`, clears the Google token, AI/admission session state, messaging state and startup
    cache whether sign-out succeeds or fails.
 

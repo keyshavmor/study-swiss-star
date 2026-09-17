@@ -19,7 +19,7 @@ sequenceDiagram
     UI->>SignOut: signOutCompletely()
     SignOut->>Telemetry: logActivity({ event_name: "auth_signout" })
     Note over SignOut: telemetry sent BEFORE session ends<br/>so the event is still attributed to the user
-    SignOut->>Supa: auth.signOut()
+    SignOut->>Supa: auth.signOut({ scope: "local" })<br/>current session only
     alt signOut error
         Supa-->>SignOut: error
         SignOut->>Telemetry: trackFailure("auth_signout_failed")

@@ -161,14 +161,14 @@ All five are invoked via `supabase.functions.invoke("<name>", { body })`, which 
 ## Authenticated startup flow — CURRENT (2026-09-17)
 
 Signed out → `/` (sign in / sign up; authentication NEVER waits on the local AI
-backend) → `/onboarding/compliance` (durable, once, CURRENT SUPABASE
-`account_compliance`) → **`/onboarding/language` — MANDATORY once per browser
+backend) → **`/onboarding/language` — MANDATORY once per browser
 session**: select a language (persists `user_preferences.preferences.app_language`
 as the durable default) or explicitly skip → **`/onboarding/model` — MANDATORY
 once per browser session**: system capability probe, recommendation, model
 selection and prepare/poll; the app can be entered only after an explicit backend
 `ready` confirmation (AI-ready) or an explicit "Continue without AI" (non-AI) →
-`/home`.
+`/onboarding/compliance` if compliance onboarding is still required (durable,
+once, CURRENT SUPABASE `account_compliance`) → `/home`.
 
 - Session gates: `alim.language_session.v1` and `alim.ai_session.v1`
   (`sessionStorage`). They survive a refresh and are cleared on sign-out.
@@ -222,11 +222,11 @@ STATUS: CURRENT FRONTEND / EXPECTED LOCAL BACKEND CONTRACT.
 ## Compliance, safety & peer messaging
 
 **Startup order (CURRENT FRONTEND / CURRENT SUPABASE, 2026-09-17):** signed out →
-sign in/up → `/onboarding/compliance` (CURRENT SUPABASE flag
-`account_compliance.compliance_onboarding_completed`, RPC
-`complete_account_compliance_onboarding`) → `/onboarding/language` (MANDATORY
-per-session decision) → `/onboarding/model` (MANDATORY per-session decision:
-backend-confirmed `ready`, or explicit continue-without-AI) → `/home`. The system
+sign in/up → `/onboarding/language` (MANDATORY per-session decision) →
+`/onboarding/model` (MANDATORY per-session decision: backend-confirmed `ready`,
+or explicit continue-without-AI) → `/onboarding/compliance` if still required
+(CURRENT SUPABASE flag `account_compliance.compliance_onboarding_completed`, RPC
+`complete_account_compliance_onboarding`) → `/home`. The system
 admission gate is NOT part of this order any more; its data is shown on the model
 screen and `/onboarding/system-admission` is optional. `account_compliance.account_status
 = 'suspended_pending_review'` outranks every other route and redirects to

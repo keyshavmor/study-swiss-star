@@ -98,11 +98,15 @@ for non-AI product access.
 Supersedes any statement earlier in this file that language onboarding is a
 once-per-account step or that model setup is optional/advisory.
 
-Canonical order after Supabase Auth succeeds:
-compliance (durable, once) → **language decision for this browser session**
-(select a language or explicit skip) → **model decision for this browser
-session** (backend-confirmed `ready`, or an explicit "Continue without AI") →
-`/home` and the rest of the product.
+Canonical order after Supabase Auth succeeds (account suspension pre-empts
+everything):
+**language decision for this browser session** (select a language or explicit
+skip) → **model decision for this browser session** (backend-confirmed `ready`,
+or an explicit "Continue without AI") → compliance onboarding *if still
+required* (durable, once) → `/home` and the rest of the product.
+Ordinary compliance onboarding NEVER appears before the language and model
+decisions; a suspended account (`suspended_pending_review`) still outranks all
+of them.
 
 - Authentication and non-AI product areas never depend on the local AI backend.
 - `user_preferences.preferences.app_language` stays the durable default used to

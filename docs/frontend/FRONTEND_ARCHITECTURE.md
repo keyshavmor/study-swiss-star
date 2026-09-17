@@ -118,7 +118,7 @@ Grouped by responsibility; each module runs under the signed-in user's Supabase 
 - **Mock/prototype data** — `lib/mock/{subjects,grades,materials,academic}` — School subject catalogue, grade math test fixtures, static academic-year calendar; not backend-fed.
 - **Grade math** — `lib/grade-math.ts`: pure functions for point→grade conversion and subject averages.
 - **Date/time utilities** — `lib/date-utils.ts` (calendar math for the planner) and `lib/i18n/format.ts` (presentation) — see `docs/frontend/DATE_TIME_PRESENTATION.md`.
-- **Sign-out** — `lib/sign-out.ts`: `signOutCompletely()` logs `auth_signout`, calls `supabase.auth.signOut()`, always clears the Google provider token from `sessionStorage`.
+- **Sign-out** — `lib/sign-out.ts`: `signOutCompletely()` is the SINGLE sign-out path used by the header, the chat mini header, both onboarding decision screens, the AI blocked notice, the suspended screen and the root error screen. Order: (1) best-effort ask the REQUIRED FUTURE BACKEND to release this user's runtime/lease while the bearer is still valid — failure never blocks sign-out, (2) `supabase.auth.signOut({ scope: "local" })` (current session only, per current Supabase guidance), (3) clear every session-scoped gate/cache (language decision, AI decision, admission lease, messaging state, Google provider token, startup cache, active assessment). Frontend sign-out cannot guarantee release after a browser/process death — the future backend MUST provide lease/heartbeat/TTL cleanup as the fallback.
 - **Speech** — `lib/speech.ts`: browser `speechSynthesis` wrapper used by `StudyChat` and `AssistantChat` (ephemeral, never persisted).
 
 ## Error boundaries and reporting (CURRENT — FRONTEND)
