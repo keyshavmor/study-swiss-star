@@ -42,7 +42,8 @@ function LanguageOnboardingPage() {
   const [error, setError] = useState(false);
   const [loadFailed, setLoadFailed] = useState(false);
 
-  // The durable Supabase app_language is the DEFAULT/preselection only. A failed
+  // The durable Supabase app_language is only a SAVED DEFAULT VISUAL HINT. It
+  // never counts as this session's choice and never enables Continue. A failed
   // read never blocks this screen: the user can still choose or skip.
   const loadPersisted = useCallback(async () => {
     invalidateStartupCache();
