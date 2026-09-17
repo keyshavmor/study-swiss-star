@@ -129,6 +129,8 @@ function SubjectDashboard() {
           { label: subject.name },
         ]}
       />
+      {/* Compact AI readiness state + route to the canonical model setup page. */}
+      <AiStatusBanner className="mb-5" />
       <div className="mb-6">
         <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4">
           <div className="flex min-w-0 items-center gap-3">
@@ -323,9 +325,16 @@ function SubjectDashboard() {
               <p className="text-[15px] text-muted-foreground">
                 {t("subject.chatDescription", { name: active.name })}
               </p>
-              <Button asChild className="mt-5">
-                <Link to="/chat">{t("subject.openStudyChat")}</Link>
-              </Button>
+              {/* Never navigate into an AI chat while no ready model exists. */}
+              {aiBlocked ? (
+                <div className="mt-5">
+                  <AiBlockedNotice />
+                </div>
+              ) : (
+                <Button asChild className="mt-5">
+                  <Link to="/chat">{t("subject.openStudyChat")}</Link>
+                </Button>
+              )}
             </div>
           ) : mode === "Statistics" && components.length > 0 && statsView === "combined" ? (
             <div className="mt-4 space-y-5">
@@ -455,7 +464,15 @@ function SubjectDashboard() {
               <AssessmentModePanel kind="quick_check" context={assessmentContext} />
             </div>
           ) : mode === "Knowledge Profile" ? (
-            <div className="mt-4">
+            /* Stored mastery information is read-only and stays visible; only
+               the AI analysis/refresh part is gated. */
+            <div className="mt-4 space-y-4">
+              {aiBlocked && (
+                <>
+                  <AiBlockedNotice />
+                  <p className="text-[13px] text-muted-foreground">{t("ai.status.aiOnlyPart")}</p>
+                </>
+              )}
               <KnowledgeProfile entries={[]} subjectName={active.name} />
             </div>
           ) : mode === "Quiz Mode" ? (
@@ -490,12 +507,18 @@ function SubjectDashboard() {
               <AssessmentModePanel kind="mock_exam" context={assessmentContext} />
             </div>
           ) : (
-            <EmptyState
-              className="mt-6 border-0 bg-surface-2"
-              heading={t("subject.comingNext", { mode })}
-              description={t("subject.comingNextDescription")}
-              action={<Button variant="secondary">{t("subject.notifyMe")}</Button>}
-            />
+            /* Placeholder modes. Study Plan generation is AI-dependent, so the
+               blocked notice appears instead of any generate action; non-AI
+               placeholders (Subject Tools) stay untouched. */
+            <div className="mt-4 space-y-4">
+              {modeNeedsAi && aiBlocked && <AiBlockedNotice />}
+              <EmptyState
+                className="mt-2 border-0 bg-surface-2"
+                heading={t("subject.comingNext", { mode })}
+                description={t("subject.comingNextDescription")}
+                action={<Button variant="secondary">{t("subject.notifyMe")}</Button>}
+              />
+            </div>
           )}
         </section>
 
