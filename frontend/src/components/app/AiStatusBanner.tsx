@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { useAiAvailability } from "@/lib/ai-availability";
 import { useI18n } from "@/lib/i18n/provider";
 import { MODEL_ONBOARDING_PATH } from "@/lib/startup-flow";
+import { signOutCompletely } from "@/lib/sign-out";
 import { cn } from "@/lib/utils";
 
 export function AiStatusBanner({ className }: { className?: string }) {
@@ -64,12 +65,17 @@ export function AiStatusBanner({ className }: { className?: string }) {
         {t("ai.status.blockedTitle")}
       </p>
       <p className="mt-1 text-[14px] text-foreground">{t("ai.status.blockedBody")}</p>
+      <p className="mt-1 text-[13px] text-muted-foreground">{t("ai.status.nonAiNote")}</p>
       <div className="mt-3 flex flex-wrap gap-2">
         <Button asChild size="sm" variant="outline">
           <Link to={MODEL_ONBOARDING_PATH}>{t("ai.status.openSetup")}</Link>
         </Button>
         <Button asChild size="sm" variant="ghost">
           <Link to="/settings">{t("ai.blocked.openSettings")}</Link>
+        </Button>
+        {/* Recovery path from any AI-dependent surface. */}
+        <Button size="sm" variant="ghost" onClick={() => void signOutCompletely()}>
+          {t("nav.signOut")}
         </Button>
       </div>
     </div>
