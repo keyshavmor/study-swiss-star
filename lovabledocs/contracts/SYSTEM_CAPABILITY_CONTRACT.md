@@ -68,6 +68,12 @@ adapter → local backend operation currently referenced as
     recommendation may preselect the picker, and only an explicit user action
     starts `POST /api/model/prepare`. Preparation is never auto-started from a
     persisted preference.
+  - STRICT INITIAL GATE: the model picker / prepare controls are not mounted
+    while the FIRST capability probe is pending; a loading state is shown
+    instead. The gate opens as soon as that probe resolves — with a real report
+    OR with the truthful unavailable fallback — so a failing probe never traps
+    the user. `Continue without AI` and `Sign out` stay available throughout, and
+    a later Re-check neither re-closes the gate nor clobbers a manual choice.
   - The same panel in Settings, with a recheck action, status and timestamp.
 - When the backend is absent the panel says so plainly and states that the app
   can be used without AI.

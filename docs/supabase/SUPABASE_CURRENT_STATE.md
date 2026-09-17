@@ -134,3 +134,25 @@ flow:
 Supabase never stores model/GPU/runtime readiness, admission leases or session
 decisions. Those live in `sessionStorage` (`alim.language_session.v1`,
 `alim.ai_session.v1`, `alim.admission_session.v1`) and are cleared on sign-out.
+## CURRENT SUPABASE — security hardening requirements (2026-09-17)
+
+Database-side rules that apply to every exposed SECURITY DEFINER RPC in this
+project. These are database/Auth-side responsibilities; the frontend repo only
+consumes the RPCs.
+
+- **EXECUTE grants.** Exposed SECURITY DEFINER functions must have `EXECUTE`
+  revoked from `PUBLIC` and `anon`. Grant `EXECUTE` to `authenticated` (and to
+  `service_role` only where server-side/privileged use is intended):
+  `REVOKE EXECUTE ON FUNCTION public.fn(...) FROM PUBLIC, anon;`
+- **search_path.** Every SECURITY DEFINER function must set a non-user-writable
+  `search_path` (prefer `SET search_path = ''` with fully qualified object
+  names, e.g. `public.user_preferences`) so a writable schema cannot hijack
+  resolution.
+- **`auth.uid()` scoping.** Any user-facing privileged RPC must derive ownership
+  from `auth.uid()` internally and must never accept a caller-supplied user id
+  as an authorization argument (`get_my_quota_status()`,
+  `can_allocate_my_quota(bigint)`, `get_ai_runtime_policy()` follow this).
+- **Project Auth settings.** Leaked-password protection and additional MFA
+  methods are Supabase project Auth settings. They are NOT controlled by this
+  frontend repository and were NOT changed from Lovable; enabling them is a
+  project-level Auth configuration task.

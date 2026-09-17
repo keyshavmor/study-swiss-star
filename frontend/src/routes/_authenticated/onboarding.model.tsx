@@ -44,6 +44,11 @@ function ModelOnboardingPage() {
   // preference, so the system report is always visible first.
   const [preferredModel, setPreferredModel] = useState<string | null>(null);
   const [recommendedModel, setRecommendedModel] = useState<string | null>(null);
+  // STRICT INITIAL SYSTEM-ASSESSMENT GATE: the model picker/prepare controls are
+  // not mounted until the FIRST capability probe resolves — either with a real
+  // report or with the truthful unavailable fallback. A later "Re-check" never
+  // re-closes this gate and never clobbers a manual model choice.
+  const [initialProbeResolved, setInitialProbeResolved] = useState(false);
 
   useEffect(() => {
     void fetchPreferences()
@@ -111,13 +116,14 @@ function ModelOnboardingPage() {
                 // Advisory only. Hardware values are never inferred in the
                 // browser and a recommendation never means "ready".
                 setRecommendedModel(report.recommendation.recommended_model_id);
+                setInitialProbeResolved(true);
               }}
             />
           )}
         </div>
 
         <div className="app-card p-5 sm:p-6">
-          {preferredModel !== null && (
+          {preferredModel !== null && initialProbeResolved ? (
             <ModelReadinessPanel
               initialModelId={preferredModel}
               recommendedModelId={recommendedModel}
@@ -125,6 +131,10 @@ function ModelOnboardingPage() {
               onPreparing={ai.setPreparing}
               onUnavailable={handleUnavailable}
             />
+          ) : (
+            <p aria-live="polite" className="text-[14px] text-muted-foreground">
+              {t("capability.status.pending")}
+            </p>
           )}
         </div>
 
