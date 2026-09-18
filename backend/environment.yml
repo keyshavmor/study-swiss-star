@@ -1,0 +1,9 @@
+# Python API environment only. Frontend, Supabase CLI and llama.cpp are separate.
+name: alim-backend
+channels:
+  - conda-forge
+dependencies:
+  - python=3.11
+  - pip
+  - pip:
+      - uv==0.12.13

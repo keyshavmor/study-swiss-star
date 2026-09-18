@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 from dataclasses import asdict, dataclass
 from pathlib import Path
 
@@ -24,9 +25,16 @@ def repository_root() -> Path:
 
 
 def default_model_path() -> Path:
-    """Return the repository-local directory reserved for Qwen model artifacts."""
+    """Return the external cache directory reserved for Qwen model artifacts."""
 
-    return repository_root() / "models" / MODEL_DIRECTORY_NAME
+    configured = os.getenv("ALIM_MODEL_PATH")
+    if configured:
+        return Path(configured).expanduser().resolve()
+    cache = os.getenv("ALIM_MODEL_CACHE_ROOT")
+    data_root = Path(cache).expanduser() if cache else Path(
+        os.getenv("XDG_DATA_HOME", Path.home() / ".local" / "share")
+    ) / "alim" / "models"
+    return (data_root / MODEL_REPOSITORY.replace("/", "--")).resolve()
 
 
 def default_model_file() -> Path:
@@ -71,7 +79,8 @@ def inspect_model(path: str | Path | None = None) -> ModelPresence:
     marker = model_path / ".alim-model.json"
     if marker.is_file():
         try:
-            marker_repository = json.loads(marker.read_text(encoding="utf-8")).get("repository")
+            marker_payload = json.loads(marker.read_text(encoding="utf-8"))
+            marker_repository = marker_payload.get("repository") or marker_payload.get("model_id")
             if marker_repository != MODEL_REPOSITORY:
                 missing.append(f"marker repository {MODEL_REPOSITORY}")
         except (json.JSONDecodeError, OSError, AttributeError):

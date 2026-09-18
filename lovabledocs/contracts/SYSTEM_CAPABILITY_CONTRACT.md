@@ -1,8 +1,7 @@
 # Local system capability + model recommendation — contract
 
-Status: **CURRENT FRONTEND** (types, server function, adapter, UI, truthful
-unavailable state) + **FUTURE BACKEND / CODEX** (the probe and the
-recommendation engine).
+Status: **CURRENT FRONTEND + CURRENT LOCAL BACKEND** (Prompt 04 measured probe,
+catalogue-constrained recommendation, admission and leases).
 
 ## Accuracy rule
 
@@ -35,11 +34,11 @@ fields stay `null` until the local backend reports a measured value.
 A `ready` report older than `CAPABILITY_STALE_AFTER_MS` (10 minutes) is
 presented as `stale`.
 
-## Future operation semantics (no URL is claimed to exist)
+## Current operation semantics
 
 Operation: **probe system capability**. Client abstraction:
 `probeSystemCapability` server function → `probeSystemCapabilityOnBackend`
-adapter → local backend operation currently referenced as
+adapter → local backend operation
 `/api/system/capability` (POST).
 
 - Input: `{ preferred_model_id: string | null, model_catalog: string[] }`, plus
@@ -48,8 +47,8 @@ adapter → local backend operation currently referenced as
   header (context only, never an authorization boundary). `model_catalog` is the
   enabled `public.ai_model_catalog` list, read server-side as the signed-in user
   (RLS applies). A failed catalogue read degrades to an empty array and never
-  implies readiness. FUTURE CODEX IMPLEMENTATION: the recommendation must stay inside
-  the forwarded catalogue.
+  implies readiness. The backend recommendation stays inside the forwarded
+  catalogue and its own reviewed registry.
 - Output: the report shape above in snake_case.
 - Any 404, timeout, network error or unparsable payload maps to
   `unavailableCapabilityReport()` — status `unavailable`, `backendConnected:

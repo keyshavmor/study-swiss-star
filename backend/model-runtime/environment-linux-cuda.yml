@@ -1,0 +1,7 @@
+# Local NVIDIA model process only; CUDA 13 runtime build is pinned independently.
+name: alim-model-runtime
+channels:
+  - conda-forge
+dependencies:
+  - python=3.11
+  - llama.cpp=10751=cuda130*

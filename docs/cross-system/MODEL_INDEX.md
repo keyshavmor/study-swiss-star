@@ -3,9 +3,9 @@
 | Field | Value |
 |---|---|
 | Owner | Frontend catalogue UX + backend model runtime + Supabase control plane |
-| Status | Mixed; mapping-specific below |
+| Status | Prompt 04 backend current; mapping-specific below |
 | Canonical path | `docs/cross-system/MODEL_INDEX.md` |
-| Verified | frontend/live handover 2026-09-18; target backend `bff4ec7` |
+| Verified | frontend/live read-only catalogue and Prompt 04 tests, 2026-09-18 |
 
 The enabled frontend/live order is:
 
@@ -20,13 +20,12 @@ The enabled frontend/live order is:
 9. `Qwen/Qwen3-1.7B`
 10. `Qwen/Qwen3-0.6B`
 
-`Qwen/Qwen3.8-27B` alone has a verified target mapping to a llama.cpp GGUF
-artifact (`Q4_K_M`, approximately 17.67 GiB). That mapping is
-`CURRENT — LOCAL BACKEND`. The other nine are `UNKNOWN — REQUIRES VERIFICATION`,
-not smaller-model substitutions. Each is a release blocker until Prompt 04
-records an official source/revision, license, format, quantization, size/hash,
-runtime compatibility and resource envelope, or an explicit product/data
-decision disables it.
+`Qwen/Qwen3.8-27B` alone has a verified target mapping to
+`ggml-org/Qwen3.8-27B-GGUF` revision
+`0669b98607d47046c7c2b3f801011d54a08cfccf`, `Q4_K_M`, 18,973,870,432 bytes,
+SHA-256 `31629f53165ab6a7dad8c9847dcfd1fdf55829dac1e6e748f4a68581b0033d34`,
+Apache-2.0 and llama.cpp. The other nine return typed `unresolved`; they are not
+smaller-model substitutions and cannot be recommended/prepared as runnable.
 
 Supabase may enable/order a model ID and provide policy thresholds. It may not
 inject download URLs, filenames, paths, executables or flags. The backend owns

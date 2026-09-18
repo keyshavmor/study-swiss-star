@@ -2,8 +2,8 @@
 """Create or update Alim's Conda environment for Linux or Apple Silicon macOS.
 
 The base environment is shared.  This bootstrap then chooses the CUDA, Metal/
-Accelerate, or CPU llama.cpp build after probing the actual host, and installs
-the locked Python and frontend dependencies inside the same Conda environment.
+Accelerate, or CPU llama.cpp build after probing the actual host. Python API,
+frontend Node packages and model runtime remain separate environments.
 """
 
 from __future__ import annotations
@@ -23,7 +23,8 @@ sys.path.insert(0, str(REPOSITORY_ROOT / "backend"))
 from app.model_spec import inspect_model
 from app.platform import HostProfile, detect_host
 
-ENVIRONMENT_NAME = "alim-study"
+BACKEND_ENVIRONMENT_NAME = "alim-backend"
+MODEL_ENVIRONMENT_NAME = "alim-model-runtime"
 
 
 def parser() -> argparse.ArgumentParser:
@@ -68,6 +69,18 @@ def llama_matchspec(profile: HostProfile) -> str:
     return f"llama.cpp={profile.conda_llama_variant}"
 
 
+def runtime_manifest(profile: HostProfile) -> Path:
+    """Select one pinned model-runtime manifest for the measured host."""
+
+    if profile.system == "Darwin":
+        name = "environment-macos-metal.yml"
+    elif profile.accelerator.value == "cuda":
+        name = "environment-linux-cuda.yml"
+    else:
+        name = "environment-linux-cpu.yml"
+    return REPOSITORY_ROOT / "backend" / "model-runtime" / name
+
+
 def setup_commands(
     conda: str,
     profile: HostProfile,
@@ -83,25 +96,24 @@ def setup_commands(
             "env",
             "update",
             "--name",
-            ENVIRONMENT_NAME,
+            BACKEND_ENVIRONMENT_NAME,
             "--file",
-            str(REPOSITORY_ROOT / "environment.yml"),
+            str(REPOSITORY_ROOT / "backend" / "environment.yml"),
         ],
         [
             conda,
-            "install",
+            "env",
+            "update",
             "--name",
-            ENVIRONMENT_NAME,
-            "--channel",
-            "conda-forge",
-            "--yes",
-            llama_matchspec(profile),
+            MODEL_ENVIRONMENT_NAME,
+            "--file",
+            str(runtime_manifest(profile)),
         ],
         [
             conda,
             "run",
             "--name",
-            ENVIRONMENT_NAME,
+            BACKEND_ENVIRONMENT_NAME,
             "uv",
             "sync",
             "--project",
@@ -110,35 +122,22 @@ def setup_commands(
             "dev",
             "--extra",
             "documents",
-            "--extra",
-            "model-download",
         ],
-        [
-            conda,
-            "run",
-            "--name",
-            ENVIRONMENT_NAME,
-            "npm",
-            "ci",
-            "--prefix",
-            str(REPOSITORY_ROOT / "frontend"),
-        ],
+        ["npm", "ci", "--prefix", str(REPOSITORY_ROOT / "frontend")],
     ]
     if with_model or model_source is not None:
         model_command = [
             conda,
             "run",
             "--name",
-            ENVIRONMENT_NAME,
-            "uv",
-            "run",
-            "--project",
-            str(REPOSITORY_ROOT / "backend"),
+            MODEL_ENVIRONMENT_NAME,
             "python",
-            str(REPOSITORY_ROOT / "models" / "download_qwen3_8_27b.py"),
+            str(REPOSITORY_ROOT / "backend" / "scripts" / "model_runtime.py"),
         ]
         if model_source is not None:
-            model_command.extend(["--source-file", str(model_source.expanduser().resolve())])
+            model_command.extend(["import", "--source", str(model_source.expanduser().resolve())])
+        else:
+            model_command.extend(["download", "--yes-download"])
         commands.append(model_command)
     return commands
 
@@ -147,15 +146,23 @@ def environment_report(conda: str, profile: HostProfile) -> dict[str, object]:
     """Collect non-mutating setup diagnostics suitable for support requests."""
 
     tools: dict[str, dict[str, object]] = {}
-    for name, version_args in {
-        "python": ["python", "--version"],
+    commands = {
+        "python": [conda, "run", "--name", BACKEND_ENVIRONMENT_NAME, "python", "--version"],
+        "uv": [conda, "run", "--name", BACKEND_ENVIRONMENT_NAME, "uv", "--version"],
+        "llama-server": [
+            conda,
+            "run",
+            "--name",
+            MODEL_ENVIRONMENT_NAME,
+            "llama-server",
+            "--version",
+        ],
         "node": ["node", "--version"],
         "npm": ["npm", "--version"],
-        "uv": ["uv", "--version"],
-        "llama-server": ["llama-server", "--version"],
-    }.items():
+    }
+    for name, command in commands.items():
         result = subprocess.run(
-            [conda, "run", "--name", ENVIRONMENT_NAME, *version_args],
+            command,
             check=False,
             capture_output=True,
             text=True,
@@ -165,7 +172,11 @@ def environment_report(conda: str, profile: HostProfile) -> dict[str, object]:
             "version": (result.stdout or result.stderr).strip().splitlines()[:1],
         }
     return {
-        "environment": ENVIRONMENT_NAME,
+        "environments": {
+            "backend": BACKEND_ENVIRONMENT_NAME,
+            "model_runtime": MODEL_ENVIRONMENT_NAME,
+            "frontend": "repository package manager",
+        },
         "platform": profile.to_dict(),
         "llama_matchspec": llama_matchspec(profile),
         "tools": tools,
@@ -199,7 +210,8 @@ def main() -> int:
         print(f"+ {shlex.join(command)}", flush=True)
         if not options.dry_run:
             subprocess.run(command, cwd=REPOSITORY_ROOT, check=True)
-    print(f"Activate with: conda activate {ENVIRONMENT_NAME}")
+    print(f"Backend: conda activate {BACKEND_ENVIRONMENT_NAME}")
+    print(f"Model runtime: conda activate {MODEL_ENVIRONMENT_NAME}")
     return 0
 
 

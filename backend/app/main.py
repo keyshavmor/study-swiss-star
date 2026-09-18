@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import logging
 import os
 import tempfile
@@ -12,6 +13,7 @@ import urllib.request
 import uuid
 from collections.abc import Callable
 from contextlib import asynccontextmanager
+from dataclasses import replace
 from datetime import UTC, datetime
 from pathlib import Path
 from time import monotonic
@@ -25,6 +27,7 @@ from pydantic import BaseModel, Field
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
+from .artifact_store import ArtifactStore
 from .auth import AccessTokenVerifier, AuthenticatedUser, BearerAuthenticator
 from .config import BackendSettings
 from .context import ContextConfig, ContextManager
@@ -34,12 +37,15 @@ from .context.retrieval import EmbeddingUnavailableError
 from .context.store_supabase import SupabaseContextStore, SupabaseStoreError
 from .contracts import LivenessResponse, ReadinessCheck, ReadinessResponse
 from .errors import ApiError, error_response
+from .model_registry import MODEL_REGISTRY, model_cache_root
+from .runtime_control import RuntimeCoordinator
 from .services import (
     DocumentIngestor,
     LocalOpenAICompatibleClient,
     ModelRuntimeManager,
     ModelUnavailableError,
 )
+from .system_probe import SystemProbe
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("alim.api")
@@ -165,6 +171,50 @@ class StorageDocumentRequest(BaseModel):
     metadata: dict[str, Any] = Field(default_factory=dict)
 
 
+class CapabilityRequest(BaseModel):
+    """Caller-visible catalogue constraint for a truthful local probe."""
+
+    preferred_model_id: str | None = None
+    model_catalog: list[str] = Field(default_factory=list, max_length=100)
+
+
+class AdmissionCheckRequest(BaseModel):
+    """Live policy is data supplied by the authenticated server adapter."""
+
+    preferred_model_id: str | None = None
+    policy: dict[str, Any] = Field(default_factory=dict)
+
+
+class PercentThresholds(BaseModel):
+    """Free-resource thresholds supplied by the current policy RPC."""
+
+    gpu_free_percent: float = Field(ge=0, le=100)
+    ram_free_percent: float = Field(ge=0, le=100)
+    storage_free_percent: float = Field(ge=0, le=100)
+
+
+class ModelPrepareRequest(BaseModel):
+    """Exact frontend model-preparation request contract."""
+
+    model_id: str = Field(min_length=1, max_length=200)
+    admission_policy: PercentThresholds
+    runtime_floors: PercentThresholds
+    deduplicate_downloads: bool = True
+    report_active_users: bool = True
+
+
+class LeaseRequest(BaseModel):
+    """Caller-scoped lease reference; ownership comes from the bearer token."""
+
+    lease_id: str = Field(min_length=1, max_length=200)
+
+
+class ReleaseRequest(BaseModel):
+    """Optional caller-scoped lease release."""
+
+    lease_id: str | None = Field(default=None, max_length=200)
+
+
 def create_app(
     context_manager: ContextManager | None = None,
     llm_client: LocalOpenAICompatibleClient | None = None,
@@ -172,6 +222,7 @@ def create_app(
     auth_verifier: AccessTokenVerifier | None = None,
     context_manager_factory: Callable[[str, str], ContextManager] | None = None,
     settings: BackendSettings | None = None,
+    runtime_coordinator: RuntimeCoordinator | None = None,
 ) -> FastAPI:
     """Construct an injectable app for production startup and isolated tests."""
 
@@ -180,22 +231,60 @@ def create_app(
     authenticator = BearerAuthenticator(auth_verifier)
     llm = llm_client or LocalOpenAICompatibleClient()
     started = monotonic()
-    manage_runtime = runtime_manager is not None or (
-        context_manager is None
-        and llm_client is None
-        and os.getenv("ALIM_MODEL_AUTOSTART", "true").lower() == "true"
+    production_runtime = context_manager is None and llm_client is None
+    runtime = runtime_manager or (ModelRuntimeManager() if production_runtime else None)
+    autostart_runtime = bool(
+        runtime
+        and (
+            runtime_manager is not None
+            or os.getenv("ALIM_MODEL_AUTOSTART", "false").lower() == "true"
+        )
     )
-    runtime = runtime_manager or (ModelRuntimeManager() if manage_runtime else None)
+
+    async def runtime_ready(model_id: str) -> bool:
+        return bool(runtime and runtime.config.model_name == model_id and await runtime.is_ready())
+
+    async def prepare_runtime(model_id: str, path: Path) -> bool:
+        if runtime is None or model_id != "Qwen/Qwen3.8-27B":
+            return False
+        if runtime.config.model_path != path.parent:
+            runtime.config = replace(runtime.config, model_path=path.parent, model_name=model_id)
+        await runtime.start()
+        return await runtime.is_ready()
+
+    probe = runtime_coordinator.probe if runtime_coordinator else SystemProbe()
+    coordinator = runtime_coordinator or RuntimeCoordinator(
+        probe=probe,
+        state_path=model_cache_root().parent / "runtime-state.json",
+        runtime_ready=runtime_ready,
+        runtime_prepare=prepare_runtime,
+        runtime_release=runtime.stop if runtime else None,
+        artifact_store=ArtifactStore(model_cache_root()),
+    )
 
     @asynccontextmanager
     async def lifespan(_api: FastAPI):
         """Preload Qwen before accepting requests and stop only owned processes."""
 
-        if runtime is not None:
+        if runtime is not None and autostart_runtime:
             await runtime.start()
+        stop_sweeper = asyncio.Event()
+
+        async def sweep_leases() -> None:
+            while not stop_sweeper.is_set():
+                try:
+                    await asyncio.wait_for(stop_sweeper.wait(), timeout=15)
+                except TimeoutError:
+                    await coordinator.sweep()
+
+        sweeper = asyncio.create_task(sweep_leases())
         try:
             yield
         finally:
+            stop_sweeper.set()
+            sweeper.cancel()
+            with contextlib.suppress(asyncio.CancelledError):
+                await sweeper
             if runtime is not None:
                 await runtime.stop()
 
@@ -402,13 +491,120 @@ def create_app(
         )
         return JSONResponse(status_code=200 if ready else 503, content=payload.model_dump())
 
+    @api.post("/api/system/capability")
+    async def system_capability(
+        body: CapabilityRequest,
+        identity: AuthenticatedUser = Depends(require_user),  # noqa: B008
+    ) -> dict[str, object]:
+        """Measure the local host and recommend only an allowed reviewed model."""
+
+        del identity
+        allowed = [model_id for model_id in body.model_catalog if model_id in MODEL_REGISTRY]
+        active_processes = int(bool(runtime and runtime.process and runtime.process.poll() is None))
+        return probe.report(
+            allowed,
+            active_users=coordinator.active_user_count,
+            active_processes=active_processes,
+        )
+
+    @api.post("/api/system/model/recommendation")
+    async def model_recommendation(
+        body: CapabilityRequest,
+        identity: AuthenticatedUser = Depends(require_user),  # noqa: B008
+    ) -> dict[str, object]:
+        """Return the same stable recommendation used by the capability report."""
+
+        del identity
+        allowed = [model_id for model_id in body.model_catalog if model_id in MODEL_REGISTRY]
+        return probe.recommendation(probe.measure(), allowed)
+
+    @api.post("/api/system/admission/check")
+    async def admission_check(
+        body: AdmissionCheckRequest,
+        identity: AuthenticatedUser = Depends(require_user),  # noqa: B008
+    ) -> dict[str, Any]:
+        """Issue or renew a caller-scoped capacity lease."""
+
+        return await coordinator.admit(identity.user_id, body.preferred_model_id, body.policy)
+
+    @api.get("/api/system/health")
+    async def system_health(
+        identity: AuthenticatedUser = Depends(require_user),  # noqa: B008
+    ) -> dict[str, Any]:
+        """Return local resource health without exposing other user identities."""
+
+        return await coordinator.health(identity.user_id, {"max_active_users": 10})
+
+    @api.post("/api/system/session/heartbeat")
+    async def session_heartbeat(
+        body: LeaseRequest,
+        identity: AuthenticatedUser = Depends(require_user),  # noqa: B008
+    ) -> dict[str, bool]:
+        """Renew only a lease owned by the authenticated caller."""
+
+        return {"alive": await coordinator.heartbeat(identity.user_id, body.lease_id)}
+
+    @api.post("/api/system/runtime/release")
+    async def runtime_release(
+        body: ReleaseRequest,
+        identity: AuthenticatedUser = Depends(require_user),  # noqa: B008
+    ) -> dict[str, object]:
+        """Release caller-owned leases; missing and foreign leases are indistinguishable."""
+
+        released = await coordinator.release(identity.user_id, body.lease_id)
+        return {"released": released, "message_code": "released" if released else "not_found"}
+
+    @api.post("/api/model/prepare")
+    async def prepare_model(
+        body: ModelPrepareRequest,
+        identity: AuthenticatedUser = Depends(require_user),  # noqa: B008
+    ) -> dict[str, Any]:
+        """Start or join explicit local acquisition and preparation."""
+
+        return await coordinator.prepare(
+            identity.user_id,
+            body.model_id,
+            body.admission_policy.model_dump(),
+            body.runtime_floors.model_dump(),
+            authorize_download=True,
+            deduplicate_downloads=body.deduplicate_downloads,
+        )
+
+    @api.get("/api/model/operation/{operation_id}")
+    async def model_operation(
+        operation_id: str,
+        identity: AuthenticatedUser = Depends(require_user),  # noqa: B008
+    ) -> dict[str, Any]:
+        """Poll a caller-authorized operation without revealing foreign IDs."""
+
+        operation = await coordinator.operation(identity.user_id, operation_id)
+        if operation is None:
+            raise ApiError(404, "operation_not_found", "Model operation is unavailable")
+        return operation
+
     @api.get("/api/model/status")
     async def model_status(
+        model_id: str | None = None,
         identity: AuthenticatedUser = Depends(require_user),  # noqa: B008
     ) -> dict[str, Any]:
         """Expose the active generation and embedding model configuration."""
 
-        del identity
+        if model_id is not None:
+            return await coordinator.prepare(
+                identity.user_id,
+                model_id,
+                {
+                    "gpu_free_percent": 50,
+                    "ram_free_percent": 50,
+                    "storage_free_percent": 50,
+                },
+                {
+                    "gpu_free_percent": 30,
+                    "ram_free_percent": 25,
+                    "storage_free_percent": 30,
+                },
+                authorize_download=False,
+            )
         status = await llm.status()
         status["embedding_model"] = (
             context_manager.embedder.model_name

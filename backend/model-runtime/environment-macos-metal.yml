@@ -1,0 +1,7 @@
+# Apple-silicon model process only; Accelerate/Metal build is separate from FastAPI.
+name: alim-model-runtime
+channels:
+  - conda-forge
+dependencies:
+  - python=3.11
+  - llama.cpp=10751=cpu_accelerate*

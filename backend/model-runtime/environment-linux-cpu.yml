@@ -1,0 +1,7 @@
+# Local model process only; no frontend, Supabase CLI or FastAPI packages.
+name: alim-model-runtime
+channels:
+  - conda-forge
+dependencies:
+  - python=3.11
+  - llama.cpp=10751=cpu*

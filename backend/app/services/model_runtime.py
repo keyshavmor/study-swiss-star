@@ -44,6 +44,9 @@ class ModelRuntimeConfig:
     command: str | None = None
     executable: str = "llama-server"
     host_profile: HostProfile | None = None
+    threads: int = 1
+    batch_size: int = 256
+    gpu_layers: int = 0
 
     @classmethod
     def from_env(cls) -> ModelRuntimeConfig:
@@ -52,6 +55,8 @@ class ModelRuntimeConfig:
         profile = detect_host()
         host = os.getenv("ALIM_MODEL_HOST", "127.0.0.1")
         port = int(os.getenv("ALIM_MODEL_PORT", "8000"))
+        default_threads = max(1, min(os.cpu_count() or 1, 16))
+        accelerated = profile.accelerator.value in {"cuda", "metal"}
         return cls(
             model_path=Path(os.getenv("ALIM_MODEL_PATH", str(default_model_path()))),
             model_name=os.getenv("ALIM_LLM_MODEL", MODEL_NAME),
@@ -70,6 +75,9 @@ class ModelRuntimeConfig:
             command=os.getenv("ALIM_MODEL_SERVER_COMMAND") or None,
             executable=os.getenv("ALIM_MODEL_SERVER_EXECUTABLE", "llama-server"),
             host_profile=profile,
+            threads=int(os.getenv("ALIM_MODEL_THREADS", str(default_threads))),
+            batch_size=int(os.getenv("ALIM_MODEL_BATCH_SIZE", "512" if accelerated else "256")),
+            gpu_layers=int(os.getenv("ALIM_MODEL_GPU_LAYERS", "-1" if accelerated else "0")),
         )
 
 
@@ -91,7 +99,7 @@ class ModelRuntimeManager:
         if not presence.present:
             raise ModelStartupError(
                 "Qwen3.8-27B is not complete at "
-                f"{presence.path}; run models/download_qwen3_8_27b.py first. "
+                f"{presence.path}; run the explicit model-runtime import/download first. "
                 f"Missing: {', '.join(presence.missing)}"
             )
         if await self.is_ready():
@@ -100,7 +108,8 @@ class ModelRuntimeManager:
         if self.config.command is None and shutil.which(self.config.executable) is None:
             raise ModelStartupError(
                 f"{self.config.executable} is not installed. Run "
-                "`python3 backend/scripts/setup_environment.py` and activate the alim-study environment."
+                "`python3 backend/scripts/setup_environment.py` and use the "
+                "alim-model-runtime environment."
             )
         command = self.build_command()
         self.config.log_path.parent.mkdir(parents=True, exist_ok=True)
@@ -180,6 +189,12 @@ class ModelRuntimeManager:
             str(self.config.max_model_len),
             "--parallel",
             "1",
+            "--threads",
+            str(max(1, self.config.threads)),
+            "--batch-size",
+            str(max(32, self.config.batch_size)),
+            "--n-gpu-layers",
+            str(max(-1, self.config.gpu_layers)),
             "--jinja",
             "--fit",
             "on",
@@ -216,5 +231,10 @@ class ModelRuntimeManager:
             "process_running": self.process is not None and self.process.poll() is None,
             "reused_existing_server": self.reused_existing_server,
             "engine": "llama.cpp",
+            "tuning": {
+                "threads": self.config.threads,
+                "batch_size": self.config.batch_size,
+                "gpu_layers": self.config.gpu_layers,
+            },
             "platform": profile.to_dict(),
         }

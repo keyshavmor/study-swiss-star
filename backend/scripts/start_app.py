@@ -37,24 +37,29 @@ def require_executable(command: list[str]) -> None:
 
 
 def ensure_model() -> ModelPresence:
-    """Validate local weights and automatically fetch them when they are absent."""
+    """Validate local weights and fetch only after an explicit operator opt-in."""
 
     presence = inspect_model()
     if presence.present:
         return presence
-    if os.getenv("ALIM_MODEL_AUTO_DOWNLOAD", "true").lower() != "true":
+    if os.getenv("ALIM_MODEL_AUTO_DOWNLOAD", "false").lower() != "true":
         raise SystemExit(
             "Qwen3.8-27B is missing or incomplete and automatic download is disabled. "
-            "Run `uv run --project backend python models/download_qwen3_8_27b.py` first."
+            "Run `conda run -n alim-model-runtime python "
+            "backend/scripts/model_runtime.py download --yes-download` first."
         )
-    downloader = REPOSITORY_ROOT / "models" / "download_qwen3_8_27b.py"
+    controller = REPOSITORY_ROOT / "backend" / "scripts" / "model_runtime.py"
     print("Qwen3.8-27B is not present; downloading the validated GGUF checkpoint...", flush=True)
     try:
-        subprocess.run([sys.executable, str(downloader)], cwd=REPOSITORY_ROOT, check=True)
+        subprocess.run(
+            [sys.executable, str(controller), "download", "--yes-download"],
+            cwd=REPOSITORY_ROOT,
+            check=True,
+        )
     except subprocess.CalledProcessError as error:
         raise SystemExit(
             "Automatic model download failed. Check internet access and free disk space, then "
-            "rerun startup; the downloader resumes partial transfers."
+            "rerun startup; the verified artifact store resumes partial transfers."
         ) from error
     presence = inspect_model()
     if not presence.present:
@@ -95,7 +100,7 @@ def main() -> int:
     require_executable(backend)
     require_executable(frontend)
     environment = os.environ.copy()
-    environment.setdefault("ALIM_MODEL_AUTOSTART", "true")
+    environment.setdefault("ALIM_MODEL_AUTOSTART", "false")
     environment.setdefault(
         "ALIM_CONTEXT_BACKEND_URL",
         f"http://{backend_settings.bind_host}:{backend_settings.bind_port}",

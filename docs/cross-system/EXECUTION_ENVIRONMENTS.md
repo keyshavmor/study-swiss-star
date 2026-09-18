@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Owner | Operations with each layer owner |
-| Status | Current boundaries plus `FUTURE CODEX IMPLEMENTATION` launcher work |
+| Status | Current boundaries and model lifecycle; Prompt 08 central launcher remains future |
 | Canonical path | `docs/cross-system/EXECUTION_ENVIRONMENTS.md` |
 | Verified | Ubuntu 26.04.1 x86_64 documentation run, 2026-09-18 |
 | MacBook M4 | `UNVERIFIED — MANUAL` until Prompt 08/09 physical-host smoke |
@@ -15,14 +15,15 @@
 | UX/UI docs | Markdown; Mermaid; `frontend/scripts/validate-docs.ts` and `validate-mermaid.ts` | no product daemon | none | `docs/` canonical; `lovabledocs/` generated mirror |
 | Frontend | `frontend/package.json`, `frontend/bun.lock`; Bun/Node/Vite | TanStack/Vite on `127.0.0.1:8080`; user opens `http://127.0.0.1:8080` | publishable Supabase values; server-only caller session; never a service secret in `VITE_*` | `frontend/node_modules` and `.output` ignored; browser session/local state |
 | Supabase | `supabase/config.toml`, migrations/functions; Supabase CLI + its container runtime | hosted `https://ucacmeadsufiedxrgqit.supabase.co` or documented CLI endpoints; never the app URL | CLI access token/project credentials outside Git; function secrets in platform environment | hosted/local Postgres/Auth/Storage; migration history in Git |
-| Python backend | Python 3.11 via `backend/.python-version`; `backend/pyproject.toml`, exact `backend/uv.lock`; project-local `.venv` via `uv` | FastAPI on `127.0.0.1:8001` | server-only publishable key + caller JWT; exact Host/CORS config; narrow worker secret only where authorized | backend logs/state/cache outside Git; tests under owned result path |
-| Model runtime | reviewed llama.cpp build/runtime; future model registry | OpenAI-compatible runtime on `127.0.0.1:8000` | local API placeholder only; no remote AI key | weights/cache/provenance under ignored model root; never Git |
+| Python backend | `alim-backend`; Python 3.11 via `backend/environment.yml` and `.python-version`; `backend/pyproject.toml`, exact `backend/uv.lock`; project `.venv` via `uv` | FastAPI on `127.0.0.1:8001` | server-only publishable key + caller JWT; exact Host/CORS config | backend logs/state outside Git; tests under owned result path |
+| Model runtime | `alim-model-runtime`; one pinned platform manifest under `backend/model-runtime/`; registry + lifecycle script | OpenAI-compatible runtime on `127.0.0.1:8000` | no remote AI key; tuning overrides only | weights/cache/provenance/PID state under OS data root or `ALIM_MODEL_CACHE_ROOT`; never Git |
 | E2E | backend/frontend test manifests and optional browser runner | fake services use isolated ephemeral ports | fixture-only credentials | `tests/results`, temporary directories and logs; no user data |
 
-The current root `environment.yml` combines Node, Python and build tools. It is
-`DEPRECATED` as the eventual all-layer setup contract, although it remains an
-implemented legacy bootstrap input. Prompt 08 must split/install layers without
-breaking existing operation and must not use one global environment.
+The root `environment.yml` is `DEPRECATED`; it combines Node, Python and build
+tools and is no longer consumed by `setup_environment.py`. That bootstrap now
+selects `backend/environment.yml`, one model-runtime manifest and the frontend
+package manager independently. Prompt 08 must reconcile these with the final
+all-layer orchestrator without returning to one global environment.
 
 ## Platform variants
 
@@ -45,14 +46,16 @@ Platform lifecycle sources:
 - [Ubuntu 26.04 LTS release notes](https://documentation.ubuntu.com/release-notes/26.04/)
 - [Apple macOS Tahoe 26 compatibility](https://support.apple.com/en-au/122867)
 
-Operating-system minimums are not model-runtime minimums. Per-model RAM, VRAM/
-unified-memory and disk requirements remain unknown until Prompt 04 verifies
-artifacts and measures runtime overhead. Admission must use those verified
-values rather than the OS installation minimum.
+Operating-system minimums are not model-runtime minimums. The one verified Qwen
+artifact is 18,973,870,432 bytes with an estimated 23,717,338,040 resident-byte
+envelope before context/runtime variance. Admission uses measured resources and
+never extrapolates the nine unresolved entries.
 
 ## Launcher contract (`FUTURE CODEX IMPLEMENTATION`, Prompt 08)
 
-The repository does not yet claim the requested launcher exists. Prompt 08 must
+Prompt 04 supplies a foreground model-runtime controller with check, command,
+start, stop, status, explicit import and authorized download. The repository
+does not yet claim the requested all-layer launcher exists. Prompt 08 must
 provide idempotent, non-root, caller-directory-independent bootstrap plus
 per-layer `start`, `stop`, `status` and `health`, and one fail-fast orchestrator.
 The orchestrator starts dependencies in order, reports URLs/PIDs/logs/readiness,

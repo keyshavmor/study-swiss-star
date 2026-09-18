@@ -6,7 +6,7 @@
 | Status | `CURRENT — LOCAL BACKEND` for implemented rows; future rows stay explicit gaps |
 | Contract version | `2026-09-18` |
 | Executable fixture | `tests/contracts/local-backend-v1.json` |
-| Last verified | Prompt 03, 2026-09-18 |
+| Last verified | Prompt 04, 2026-09-18 |
 
 ## Transport and identity
 
@@ -31,7 +31,15 @@ logs.
 |---|---|---|
 | `GET /health` | public loopback | Process liveness only; HTTP 200 does not mean AI/model readiness |
 | `GET /ready` | public loopback | Minimal model-runtime readiness; HTTP 503 and `not_ready` are truthful |
-| `GET /api/model/status` | bearer | Legacy one-model diagnostic; not the Prompt 04 multi-model contract |
+| `GET /api/model/status` | bearer | Legacy diagnostic; `model_id` query returns fail-closed preparation-compatible state without downloading |
+| `POST /api/model/prepare` | bearer | Explicitly start/join registry-owned acquire/verify/load operation |
+| `GET /api/model/operation/{operation_id}` | bearer | Poll an operation joined by this caller; foreign/missing IDs both return 404 |
+| `POST /api/system/capability` | bearer | Measured local capability and catalogue-constrained advisory recommendation |
+| `POST /api/system/model/recommendation` | bearer | Recompute the same catalogue-constrained advisory recommendation |
+| `POST /api/system/admission/check` | bearer | Create/renew caller capacity lease from supplied current policy |
+| `GET /api/system/health` | bearer | Resource/use health with no other-user identity |
+| `POST /api/system/session/heartbeat` | bearer | Renew only the caller-owned lease |
+| `POST /api/system/runtime/release` | bearer | Best-effort release of one/all caller leases |
 | `POST /api/chat` | bearer | Bounded context plus one non-streaming local-model completion |
 | `POST /api/context/compile` | bearer | Inspectable bounded context compilation |
 | `POST /api/context/events` | bearer | User-scoped learning-event persistence |
@@ -39,9 +47,30 @@ logs.
 | `POST /api/context/documents/text` | bearer | Text parse/chunk/embed/index |
 | `POST /api/context/documents/storage` | bearer | Owner-prefixed private Storage download, temporary parse, cleanup and indexing |
 
-Missing model/system/safety/messaging/assessment routes retain
+Missing safety/messaging/assessment routes retain
 `EXPECTED LOCAL BACKEND CONTRACT` or `BACKEND GAP` status in the cross-system
 index. A reserved path in the fixture does not prove an implementation.
+
+## Model/system invariants
+
+All model/system endpoints use the same bearer verifier and subject/header
+cross-check as chat. The request may select only an allowlisted model ID; URLs,
+paths, hashes, runtimes and flags come from the backend registry. The capability
+catalogue is a caller-supplied constraint from the authenticated Supabase read,
+not permission to invent mappings. Empty/unresolved input yields no fabricated
+recommendation.
+
+`POST /api/model/prepare` is the explicit acquisition action. Status and
+capability probes never trigger a download. Progress is bytes-based or null.
+Only state `ready` plus `can_continue_with_ai: true`, after checksum verification
+and a live local runtime probe, unlocks AI. Preferences and files named like a
+model do not. Operation state is persisted outside Git and transient states
+become `operation_interrupted` after API restart.
+
+Admission/heartbeat/release use caller-scoped TTL leases. A background sweeper
+reclaims abandoned leases, and an idle runtime stop is attempted only through
+the manager owned by this API process. Health reports aggregate counts and
+model processes, never another user's identifier or content.
 
 ## Subject-chat request and response
 
