@@ -15,6 +15,7 @@ from pathlib import Path
 REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPOSITORY_ROOT / "backend"))
 
+from app.config import BackendSettings
 from app.model_spec import ModelPresence, inspect_model
 from app.platform import detect_host
 
@@ -65,6 +66,7 @@ def main() -> int:
     """Validate local prerequisites, start both services, and coordinate shutdown."""
 
     profile = detect_host()
+    backend_settings = BackendSettings.from_env()
     print(
         "Detected "
         f"{profile.system}/{profile.machine} with {profile.accelerator.value}; "
@@ -84,9 +86,9 @@ def main() -> int:
             "--app-dir",
             "backend",
             "--host",
-            "127.0.0.1",
+            backend_settings.bind_host,
             "--port",
-            "8001",
+            str(backend_settings.bind_port),
         ],
     )
     frontend = command_from_env("ALIM_FRONTEND_COMMAND", ["npm", "run", "dev"])
@@ -94,7 +96,10 @@ def main() -> int:
     require_executable(frontend)
     environment = os.environ.copy()
     environment.setdefault("ALIM_MODEL_AUTOSTART", "true")
-    environment.setdefault("ALIM_CONTEXT_BACKEND_URL", "http://127.0.0.1:8001")
+    environment.setdefault(
+        "ALIM_CONTEXT_BACKEND_URL",
+        f"http://{backend_settings.bind_host}:{backend_settings.bind_port}",
+    )
     log_root = REPOSITORY_ROOT / "logs"
     log_root.mkdir(parents=True, exist_ok=True)
     with (

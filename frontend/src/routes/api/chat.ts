@@ -67,14 +67,14 @@ async function getUserClient(request: Request) {
     throw new Response("Unauthorized", { status: 401 });
   }
 
-  return { supabase, userId: data.claims.sub };
+  return { supabase, userId: data.claims.sub, accessToken: token };
 }
 
 export const Route = createFileRoute("/api/chat")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const { supabase, userId } = await getUserClient(request);
+        const { supabase, userId, accessToken } = await getUserClient(request);
         const body = (await request.json()) as {
           messages?: UIMessage[];
           threadId?: string;
@@ -153,6 +153,7 @@ export const Route = createFileRoute("/api/chat")({
           const academicYear = body.academicYear ?? body.data?.academicYear;
           const gradeLevel = body.gradeLevel ?? body.data?.gradeLevel;
           contextResponse = await requestContextAnswer({
+            accessToken,
             studentId: userId,
             threadId,
             userMessageId: lastMessage.id,
@@ -160,11 +161,17 @@ export const Route = createFileRoute("/api/chat")({
             ...(thread.subject ? { subject: thread.subject } : {}),
             ...(academicYear ? { academicYear } : {}),
             ...(gradeLevel !== undefined ? { gradeLevel } : {}),
+            signal: request.signal,
           });
         } catch (error) {
           const contextError = error instanceof ContextBackendError ? error : null;
           return new Response(contextError?.message ?? "Local Qwen backend unavailable", {
             status: contextError?.status ?? 503,
+            headers: {
+              "Cache-Control": "no-store",
+              "X-Alim-Error-Code": contextError?.code ?? "context_backend_unavailable",
+              ...(contextError?.requestId ? { "X-Request-Id": contextError.requestId } : {}),
+            },
           });
         }
 

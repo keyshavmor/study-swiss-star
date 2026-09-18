@@ -24,7 +24,7 @@ never upgrades an `EXPECTED LOCAL BACKEND CONTRACT` or `BACKEND GAP` to current.
 | [AI_FEATURE_GATE](AI_FEATURE_GATE.mmd) | no-request/fail-closed behavior | current frontend contract |
 | [MODEL_SELECTION_AND_RUNTIME](MODEL_SELECTION_AND_RUNTIME.mmd) | preference to lease | future backend platform |
 | [MODEL_DOWNLOAD_PREPARE_RELEASE](MODEL_DOWNLOAD_PREPARE_RELEASE.mmd) | artifact/runtime lifecycle | future backend platform |
-| [CHAT_RAG](CHAT_RAG.mmd) | moderated subject-chat sequence | partial current; safety/bearer gaps |
+| [CHAT_RAG](CHAT_RAG.mmd) | moderated subject-chat sequence | bearer/RAG current; safety gap |
 | [ASSESSMENT_FLOW](ASSESSMENT_FLOW.mmd) | job/attempt/grading states | expected backend contract |
 | [STORAGE_AND_RETENTION](STORAGE_AND_RETENTION.mmd) | quota, descriptor, deletion | mixed current/future |
 | [LOCAL_DEPLOYMENT](LOCAL_DEPLOYMENT.mmd) | local ports and orchestrator | ports current; orchestrator future |

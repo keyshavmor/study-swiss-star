@@ -18,6 +18,7 @@ import {
   type ResourceMeasurement,
   type ResourceSnapshot,
 } from "@/lib/model-readiness.types";
+import { localBackendBaseUrl, localBackendTimeoutMs } from "@/lib/local-backend-endpoints";
 
 /** Centralised local-backend endpoint paths. */
 export const MODEL_BACKEND_ENDPOINTS = {
@@ -29,22 +30,14 @@ export const MODEL_BACKEND_ENDPOINTS = {
   operation: "/api/model/operation",
 } as const;
 
-function baseUrl(): string {
-  return (process.env["ALIM_CONTEXT_BACKEND_URL"] ?? "http://127.0.0.1:8001").replace(/\/$/, "");
-}
-
-function timeoutMs(): number {
-  return Number(process.env["ALIM_MODEL_BACKEND_TIMEOUT_MS"] ?? 15_000);
-}
-
 async function callBackend(
   path: string,
   init: { method: "GET" | "POST"; body?: unknown; accessToken: string; studentId: string },
 ): Promise<unknown | null> {
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs());
+  const timer = setTimeout(() => controller.abort(), localBackendTimeoutMs());
   try {
-    const response = await fetch(`${baseUrl()}${path}`, {
+    const response = await fetch(`${localBackendBaseUrl()}${path}`, {
       method: init.method,
       headers: {
         "Content-Type": "application/json",

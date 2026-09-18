@@ -1,6 +1,6 @@
 # API Contracts
 
-Status: CURRENT — VERIFIED 2026-09-15
+Status: CURRENT — VERIFIED 2026-09-18 (contract version `2026-09-18`)
 
 ## TanStack `POST /api/chat`
 
@@ -12,8 +12,9 @@ All `/api/*` endpoints require a verified Supabase bearer token. `X-Student-Id` 
 
 | Endpoint | Purpose |
 |---|---|
-| `GET /health` | API/store/model/runtime health |
-| `GET /api/model/status` | model and embedding configuration/status |
+| `GET /health` | public loopback process liveness only |
+| `GET /ready` | public loopback minimal model-runtime readiness |
+| `GET /api/model/status` | authenticated legacy model and embedding status |
 | `POST /api/context/compile` | inspectable bounded context without inference |
 | `POST /api/chat` | context/RAG/local-Qwen subject answer |
 | `POST /api/context/events` | learning event |
@@ -23,7 +24,10 @@ All `/api/*` endpoints require a verified Supabase bearer token. `X-Student-Id` 
 
 `POST /api/chat` supports only non-streaming FastAPI responses; TanStack converts the complete answer to the UI stream. Language accepts exactly `en|de|gsw|ru|es|fr|it`.
 
-Errors use `{error:{code,message,retryable,request_id}}` and `X-Request-Id`.
+Errors use `{error:{code,message,retryable,request_id}}`. Every response carries
+`X-Request-Id` and `X-Alim-Contract-Version`. See
+[`../../backend/docs/api/CONTRACT_V1.md`](../../backend/docs/api/CONTRACT_V1.md)
+and `tests/contracts/local-backend-v1.json` for the frozen foundation.
 
 ## Supabase functions
 

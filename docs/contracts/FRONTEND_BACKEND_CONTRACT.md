@@ -1,39 +1,84 @@
-# Frontend–Backend Contract
+# Frontend ↔ local-backend contract
 
-Status: CURRENT — IMPLEMENTED 2026-09-15
+| Field | Value |
+|---|---|
+| Owner | Frontend server adapters and backend API |
+| Status | `CURRENT — FRONTEND` + `CURRENT — LOCAL BACKEND` for subject chat/context foundation |
+| Contract version | `2026-09-18` |
+| Verified | Prompt 03 focused/backend/E2E tests, 2026-09-18 |
+
+## Boundary
+
+The browser calls TanStack server routes/functions. Only those server adapters
+call FastAPI at `http://127.0.0.1:8001` by default. A configured backend URL
+must be loopback HTTP with no path, credentials, query or fragment. Lovable is
+editor/build integration, never the runtime endpoint.
+
+Every private local-backend call forwards the caller's verified Supabase access
+token. FastAPI verifies the token independently, derives identity from
+`claims.sub`, and rejects a conflicting `X-Student-Id`. Ordinary Supabase
+persistence uses that caller token and the publishable key so RLS remains the
+authorization boundary. No browser/service adapter uses a service-role key for
+ordinary user operations.
 
 ## Subject chat
 
-Browser `StudyChat` sends its Supabase access token to TanStack `POST /api/chat`. The route:
+Browser `StudyChat` attaches its Supabase access token to TanStack
+`POST /api/chat`. The route:
 
-1. rejects a missing/malformed token with 401;
-2. verifies it with `supabase.auth.getClaims(token)`;
-3. derives `userId` from verified `sub`;
-4. verifies `threads(id,user_id)`;
-5. writes the user message;
-6. computes response language from current message > UI language > English;
-7. calls the server-only adapter with the verified token and identity;
-8. emits the backend answer as an AI-SDK UI-message stream;
-9. persists the assistant message on successful finish.
+1. validates the bearer with `supabase.auth.getClaims(token)`;
+2. derives the subject from verified `sub`;
+3. verifies the requested thread through user-scoped Supabase access;
+4. asks the local safety adapter for an allow verdict and otherwise fails
+   closed (the safety endpoint remains a later backend gap);
+5. stores the real user message;
+6. calls `requestContextAnswer` with the exact token, subject cross-check,
+   typed chat fields and incoming cancellation signal;
+7. emits only the returned backend answer as AI-SDK text and metadata parts;
+8. persists the real returned assistant bytes after successful completion.
 
-The adapter calls FastAPI `POST /api/chat` with:
+FastAPI `POST /api/chat` accepts thread/user-message IDs, question, normalized
+subject, optional supported language, academic year/grade, material/source
+options and `stream:false`. It returns thread/message IDs, answer, sources,
+nullable exam tip, used model, retrieval summary, language and creation time.
+The backend route is non-streaming; the TanStack route wraps that one response
+in the UI stream expected by the authoritative frontend.
 
-- `Authorization: Bearer <verified caller token>`
-- `X-Student-Id: <verified sub>`
-- `Content-Type: application/json`
+The default subject-chat deadline is 90 seconds and its validated range is
+100–300,000 ms. Caller cancellation and timeout abort the server-to-server
+fetch. Timeout, cancellation, offline backend, invalid payload and backend
+non-2xx states are distinct; none creates or stores a fabricated answer.
 
-FastAPI independently verifies the token. A mismatched student header is 403. It never accepts a service-role token or header-only identity.
+## Correlation, version and errors
 
-Request fields include `thread_id`, `user_message_id`, `question`, normalized subject, explicit seven-language `language`, academic year/grade, source/web flags, and `stream:false`.
+Every FastAPI response includes `X-Request-Id` and
+`X-Alim-Contract-Version: 2026-09-18`. Non-2xx bodies contain bounded
+`error.code`, public `error.message`, `error.retryable` and `error.request_id`.
+Validation never echoes the submitted value. Raw JWTs, prompts, stacks,
+provider responses and filesystem paths are excluded.
 
-Response fields are `thread_id`, `message_id`, `answer`, `sources`, `exam_tip`, `used_model`, `retrieval_summary`, `language`, and `created_at`. Failures are not replaced with fabricated replies.
+The TanStack bridge preserves backend status/code/request ID, sanitizes bounded
+messages and uses explicit transport codes: `request_cancelled` (499),
+`context_backend_timeout` (504), `context_backend_unavailable` (503), and
+`invalid_response` (502).
 
-Cancellation from the incoming request aborts the backend fetch; `ALIM_CONTEXT_BACKEND_TIMEOUT_MS` supplies the upper bound. Backend error status/code/request ID is preserved.
+## Liveness and readiness
 
-Source: `frontend/src/components/StudyChat.tsx`, `frontend/src/routes/api/chat.ts`, `frontend/src/lib/context-backend.server.ts`, `backend/app/main.py`, `backend/app/auth.py`.
+`GET /health` is public loopback process liveness only. `GET /ready` is a
+separate minimal model-runtime readiness probe and returns 503 when not ready.
+`GET /api/model/status` is authenticated legacy one-model status. Prompt 04
+still owns the frontend's multi-model prepare/operation/capability/admission/
+lease/health contracts; current liveness never fabricates those states.
 
-## Other boundaries
+## Other current and future boundaries
 
-- Document ingestion exists at FastAPI `/api/context/documents/text` and `/api/context/documents/storage`; current Materials UI has no secure binary upload-to-index action.
-- General Assistant persists via live `assistant_*` tables. Generation and parsing remain explicitly deferred; no parallel context system is invented.
-- Google Calendar is never sent to FastAPI.
+- Context compile/events/artifacts and text/private-Storage ingestion are
+  authenticated current backend operations.
+- Assistant generation/parsing, safety/moderated peer send, assessments and
+  multi-model operations remain explicitly missing; their frontend unavailable
+  states do not prove backend implementation.
+- Google Calendar is not sent to FastAPI.
+
+Executable evidence: `frontend/src/routes/api/chat.ts`,
+`frontend/src/lib/context-backend.server.ts`, `backend/app/{auth,config,errors,
+contracts,main}.py`, and `tests/contracts/local-backend-v1.json`.

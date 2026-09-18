@@ -14,17 +14,17 @@ resolution-markers = [
 
 [[package]]
 name = "alim-context-backend"
-version = "0.2.0"
+version = "0.3.0"
 source = { virtual = "." }
 dependencies = [
     { name = "fastapi" },
+    { name = "httpx" },
     { name = "pydantic" },
     { name = "uvicorn", extra = ["standard"] },
 ]
 
 [package.optional-dependencies]
 dev = [
-    { name = "httpx" },
     { name = "pytest" },
     { name = "ruff" },
 ]
@@ -39,7 +39,7 @@ model-download = [
 [package.metadata]
 requires-dist = [
     { name = "fastapi", specifier = ">=0.115,<1" },
-    { name = "httpx", marker = "extra == 'dev'", specifier = ">=0.27,<1" },
+    { name = "httpx", specifier = ">=0.27,<1" },
     { name = "huggingface-hub", marker = "extra == 'model-download'", specifier = ">=0.35,<2" },
     { name = "pydantic", specifier = ">=2.9,<3" },
     { name = "pypdf", marker = "extra == 'documents'", specifier = ">=5,<7" },

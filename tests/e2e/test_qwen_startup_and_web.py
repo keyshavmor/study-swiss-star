@@ -107,7 +107,7 @@ class QwenStartupAndWebTests(unittest.IsolatedAsyncioTestCase):
                 async with app.router.lifespan_context(app):
                     self.assertTrue(await runtime.is_ready())
                     client = AsyncClient(
-                        transport=ASGITransport(app=app), base_url="http://test"
+                        transport=ASGITransport(app=app), base_url="http://127.0.0.1"
                     )
                     response = await client.post(
                         "/api/chat",

@@ -22,14 +22,18 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
+from starlette.middleware.trustedhost import TrustedHostMiddleware
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
-from .auth import AccessTokenVerifier, SupabaseAccessTokenVerifier, TokenVerificationError
+from .auth import AccessTokenVerifier, AuthenticatedUser, BearerAuthenticator
+from .config import BackendSettings
 from .context import ContextConfig, ContextManager
 from .context.budget import ContextBudgetError
 from .context.models import ModelConfig
 from .context.retrieval import EmbeddingUnavailableError
-from .context.store_supabase import SupabaseContextStore
+from .context.store_supabase import SupabaseContextStore, SupabaseStoreError
+from .contracts import LivenessResponse, ReadinessCheck, ReadinessResponse
+from .errors import ApiError, error_response
 from .services import (
     DocumentIngestor,
     LocalOpenAICompatibleClient,
@@ -46,8 +50,9 @@ SupportedLanguage = Literal["en", "de", "gsw", "ru", "es", "fr", "it"]
 class RequestIdMiddleware:
     """Attach a request identifier without spawning BaseHTTPMiddleware tasks."""
 
-    def __init__(self, app: ASGIApp) -> None:
+    def __init__(self, app: ASGIApp, *, contract_version: str) -> None:
         self.app = app
+        self.contract_version = contract_version
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         if scope["type"] != "http":
@@ -60,7 +65,13 @@ class RequestIdMiddleware:
         async def send_with_request_id(message: Message) -> None:
             if message["type"] == "http.response.start":
                 headers = list(message.get("headers", []))
-                headers.append((b"x-request-id", request_id.encode("ascii")))
+                names = {name.lower() for name, _value in headers}
+                if b"x-request-id" not in names:
+                    headers.append((b"x-request-id", request_id.encode("ascii")))
+                if b"x-alim-contract-version" not in names:
+                    headers.append(
+                        (b"x-alim-contract-version", self.contract_version.encode("ascii"))
+                    )
                 message = {**message, "headers": headers}
             await send(message)
 
@@ -154,52 +165,19 @@ class StorageDocumentRequest(BaseModel):
     metadata: dict[str, Any] = Field(default_factory=dict)
 
 
-class AuthenticatedUser(BaseModel):
-    """Verified request identity and immutable bearer token for RLS calls."""
-
-    user_id: str
-    access_token: str
-    claims: dict[str, Any]
-
-
-class ApiAuthError(RuntimeError):
-    """Authentication or authorization failure rendered by the stable envelope."""
-
-    def __init__(self, status: int, code: str, message: str) -> None:
-        super().__init__(message)
-        self.status = status
-        self.code = code
-
-
-def error_response(
-    status: int, code: str, message: str, request_id: str, *, retryable: bool = False
-) -> JSONResponse:
-    """Build the stable error envelope consumed by the frontend."""
-
-    return JSONResponse(
-        status_code=status,
-        content={
-            "error": {
-                "code": code,
-                "message": message,
-                "retryable": retryable,
-                "request_id": request_id,
-            }
-        },
-        headers={"X-Request-Id": request_id},
-    )
-
-
 def create_app(
     context_manager: ContextManager | None = None,
     llm_client: LocalOpenAICompatibleClient | None = None,
     runtime_manager: ModelRuntimeManager | None = None,
     auth_verifier: AccessTokenVerifier | None = None,
     context_manager_factory: Callable[[str, str], ContextManager] | None = None,
+    settings: BackendSettings | None = None,
 ) -> FastAPI:
     """Construct an injectable app for production startup and isolated tests."""
 
     config = ContextConfig.from_env()
+    backend_settings = settings or BackendSettings.from_env()
+    authenticator = BearerAuthenticator(auth_verifier)
     llm = llm_client or LocalOpenAICompatibleClient()
     started = monotonic()
     manage_runtime = runtime_manager is not None or (
@@ -221,96 +199,131 @@ def create_app(
             if runtime is not None:
                 await runtime.stop()
 
-    api = FastAPI(title="Alim local context backend", version="0.2.0", lifespan=lifespan)
+    api = FastAPI(title="Alim local context backend", version="0.3.0", lifespan=lifespan)
+    api.add_middleware(
+        TrustedHostMiddleware,
+        allowed_hosts=list(backend_settings.allowed_hosts),
+    )
     api.add_middleware(
         CORSMiddleware,
-        allow_origins=["http://localhost:8080", "http://127.0.0.1:8080"],
+        allow_origins=list(backend_settings.allowed_origins),
         allow_credentials=True,
         allow_methods=["GET", "POST", "OPTIONS"],
         allow_headers=["Content-Type", "Authorization", "X-Student-Id"],
-        expose_headers=["X-Request-Id"],
+        expose_headers=["X-Request-Id", "X-Alim-Contract-Version"],
     )
-    api.add_middleware(RequestIdMiddleware)
+    api.add_middleware(
+        RequestIdMiddleware,
+        contract_version=backend_settings.contract_version,
+    )
 
     @api.exception_handler(RequestValidationError)
     async def validation_handler(request: Request, error: RequestValidationError):
         """Normalize Pydantic validation errors."""
 
-        return error_response(422, "validation_error", str(error), request.state.request_id)
+        del error
+        return error_response(
+            ApiError(422, "validation_error", "Request validation failed"),
+            request.state.request_id,
+        )
 
     @api.exception_handler(ContextBudgetError)
     async def budget_handler(request: Request, error: ContextBudgetError):
         """Explain requests that cannot fit inside the configured model window."""
 
-        return error_response(422, "context_budget_error", str(error), request.state.request_id)
+        del error
+        return error_response(
+            ApiError(422, "context_budget_error", "Request exceeds the context budget"),
+            request.state.request_id,
+        )
 
     @api.exception_handler(ModelUnavailableError)
     async def model_handler(request: Request, error: ModelUnavailableError):
         """Return a retryable response when the local model server is unavailable."""
 
+        del error
         return error_response(
-            503, "model_unavailable", str(error), request.state.request_id, retryable=True
+            ApiError(503, "model_unavailable", "The local model is unavailable", retryable=True),
+            request.state.request_id,
         )
 
     @api.exception_handler(EmbeddingUnavailableError)
     async def embedding_handler(request: Request, error: EmbeddingUnavailableError):
         """Return a retryable response when an explicitly configured embedder fails."""
 
+        del error
         return error_response(
-            503, "embedding_unavailable", str(error), request.state.request_id, retryable=True
+            ApiError(
+                503,
+                "embedding_unavailable",
+                "The local embedding service is unavailable",
+                retryable=True,
+            ),
+            request.state.request_id,
         )
 
     @api.exception_handler(ValueError)
     async def value_handler(request: Request, error: ValueError):
         """Normalize domain-level invalid requests."""
 
-        return error_response(400, "invalid_request", str(error), request.state.request_id)
+        del error
+        return error_response(
+            ApiError(400, "invalid_request", "The request is invalid"),
+            request.state.request_id,
+        )
 
-    @api.exception_handler(ApiAuthError)
-    async def auth_handler(request: Request, error: ApiAuthError):
-        """Return 401/403 without leaking token or provider details."""
+    @api.exception_handler(ApiError)
+    async def api_error_handler(request: Request, error: ApiError):
+        """Return an intentionally public bounded error."""
 
-        return error_response(error.status, error.code, str(error), request.state.request_id)
+        return error_response(error, request.state.request_id)
+
+    @api.exception_handler(SupabaseStoreError)
+    async def supabase_store_handler(request: Request, error: SupabaseStoreError):
+        """Hide provider response bodies while preserving an explicit unavailable state."""
+
+        del error
+        return error_response(
+            ApiError(
+                503,
+                "supabase_unavailable",
+                "User data storage is unavailable",
+                retryable=True,
+            ),
+            request.state.request_id,
+        )
+
+    @api.exception_handler(PermissionError)
+    async def permission_handler(request: Request, error: PermissionError):
+        """Normalize cross-user store rejections without revealing identifiers."""
+
+        del error
+        return error_response(
+            ApiError(403, "forbidden", "The requested resource is not available to this user"),
+            request.state.request_id,
+        )
+
+    @api.exception_handler(Exception)
+    async def unexpected_handler(request: Request, error: Exception):
+        """Return no stack/provider/input detail for unexpected failures."""
+
+        logger.error(
+            "unhandled_api_error request_id=%s error_type=%s",
+            request.state.request_id,
+            type(error).__name__,
+        )
+        return error_response(
+            ApiError(500, "internal_error", "The local backend could not complete the request"),
+            request.state.request_id,
+        )
 
     async def require_user(
         authorization: str | None = Header(default=None),
         x_student_id: str | None = Header(default=None),
     ) -> AuthenticatedUser:
-        """Verify Supabase identity and reject spoofed legacy student headers."""
+        """Delegate every private endpoint to the central bearer authenticator."""
 
-        if not authorization or not authorization.startswith("Bearer "):
-            raise ApiAuthError(401, "unauthorized", "A valid Supabase bearer token is required")
-        token = authorization.removeprefix("Bearer ").strip()
-        if not token:
-            raise ApiAuthError(401, "unauthorized", "A valid Supabase bearer token is required")
-        verifier = auth_verifier
-        is_injected_verifier = verifier is not None
-        if verifier is None:
-            try:
-                verifier = SupabaseAccessTokenVerifier.from_env()
-            except ValueError as error:
-                raise ApiAuthError(503, "auth_not_configured", str(error)) from error
-        try:
-            # Production verification performs network I/O and must leave the event
-            # loop. Injected verifiers are deterministic test doubles and stay
-            # synchronous so isolated event loops do not retain an executor.
-            claims = (
-                verifier.verify(token)
-                if is_injected_verifier
-                else await asyncio.to_thread(verifier.verify, token)
-            )
-        except TokenVerificationError as error:
-            raise ApiAuthError(401, "invalid_token", str(error)) from error
-        user_id = str(claims.get("sub") or "")
-        if not user_id:
-            raise ApiAuthError(401, "invalid_token", "Verified token has no subject")
-        if x_student_id and x_student_id != user_id:
-            raise ApiAuthError(
-                403,
-                "student_id_mismatch",
-                "X-Student-Id does not match the authenticated user",
-            )
-        return AuthenticatedUser(user_id=user_id, access_token=token, claims=claims)
+        return await authenticator.authenticate(authorization, x_student_id)
 
     def manager_for(identity: AuthenticatedUser) -> ContextManager:
         if context_manager is not None:
@@ -325,13 +338,13 @@ def create_app(
 
         expected_prefix = f"{identity.user_id}/"
         if not path.startswith(expected_prefix):
-            raise ApiAuthError(403, "forbidden_material", "Material path is not owned by this user")
+            raise ApiError(403, "forbidden_material", "Material path is not owned by this user")
         url = os.getenv("SUPABASE_URL", "").rstrip("/")
         key = os.getenv("SUPABASE_PUBLISHABLE_KEY", "")
         if not url or not key:
-            raise ApiAuthError(503, "storage_not_configured", "Supabase Storage is not configured")
+            raise ApiError(503, "storage_not_configured", "Supabase Storage is not configured")
         if key.startswith("sb_secret_"):
-            raise ApiAuthError(
+            raise ApiError(
                 503,
                 "storage_not_configured",
                 "SUPABASE_PUBLISHABLE_KEY must not contain a secret key",
@@ -346,39 +359,56 @@ def create_app(
                 return response.read()
         except urllib.error.HTTPError as error:
             if error.code in {401, 403, 404}:
-                raise ApiAuthError(
-                    403, "forbidden_material", "Material is not accessible"
-                ) from error
-            raise RuntimeError("Supabase Storage download failed") from error
+                raise ApiError(403, "forbidden_material", "Material is not accessible") from error
+            raise ApiError(
+                503,
+                "storage_unavailable",
+                "Supabase Storage is unavailable",
+                retryable=True,
+            ) from error
         except (urllib.error.URLError, TimeoutError) as error:
-            raise RuntimeError("Supabase Storage is unavailable") from error
+            raise ApiError(
+                503,
+                "storage_unavailable",
+                "Supabase Storage is unavailable",
+                retryable=True,
+            ) from error
 
-    @api.get("/health")
-    async def health() -> dict[str, Any]:
-        """Report API, local store, platform, and preloaded-model health."""
+    @api.get("/health", response_model=LivenessResponse)
+    async def health() -> LivenessResponse:
+        """Report process liveness without implying model or feature readiness."""
+
+        return LivenessResponse(
+            version="0.3.0",
+            uptime_s=round(monotonic() - started),
+            checked_at=datetime.now(UTC).isoformat(),
+        )
+
+    @api.get("/ready", response_model=ReadinessResponse)
+    async def readiness() -> JSONResponse:
+        """Report minimal model-dependent readiness separately from liveness."""
 
         status = await llm.status()
-        return {
-            "status": "ok" if status["reachable"] else "degraded",
-            "version": "0.2.0",
-            "uptime_s": round(monotonic() - started),
-            "context_store": {
-                "type": "sqlite-test-adapter" if context_manager is not None else "supabase",
-                "reachable": True,
+        ready = status["reachable"] is True
+        payload = ReadinessResponse(
+            status="ready" if ready else "not_ready",
+            checks={
+                "model_runtime": ReadinessCheck(
+                    ready=ready,
+                    code="ready" if ready else "model_unavailable",
+                )
             },
-            "model_server": {
-                "reachable": status["reachable"],
-                "provider": status["provider"],
-                "preloaded": status["reachable"],
-            },
-            "runtime": runtime.status() if runtime is not None else {"managed": False},
-            "checked_at": datetime.now(UTC).isoformat(),
-        }
+            checked_at=datetime.now(UTC).isoformat(),
+        )
+        return JSONResponse(status_code=200 if ready else 503, content=payload.model_dump())
 
     @api.get("/api/model/status")
-    async def model_status() -> dict[str, Any]:
+    async def model_status(
+        identity: AuthenticatedUser = Depends(require_user),  # noqa: B008
+    ) -> dict[str, Any]:
         """Expose the active generation and embedding model configuration."""
 
+        del identity
         status = await llm.status()
         status["embedding_model"] = (
             context_manager.embedder.model_name
@@ -421,7 +451,11 @@ def create_app(
 
         manager = manager_for(identity)
         if body.stream:
-            raise ValueError("Streaming is not implemented yet; send stream=false")
+            raise ApiError(
+                400,
+                "streaming_not_supported",
+                "The local chat endpoint currently requires stream=false",
+            )
         retrieval_subject = body.component_subject_id or body.subject_id
         compiled = await manager.build_context(
             student_id=identity.user_id,

@@ -12,7 +12,7 @@
 | Auth, recovery, OAuth | auth/startup routes | Supabase Auth + OAuth providers | none | `CURRENT — FRONTEND` + `CURRENT — SUPABASE` |
 | Language/model/compliance startup | onboarding routes/session gates | preferences, compliance, catalogue/policy | capability/prepare/readiness/admission | frontend/Supabase current; backend model platform gap |
 | School, grades, planner, stats | product routes and `asa.data.v2` | Calendar external; future persistence decision | AI study tools only | non-AI current; persistence/AI gaps explicit |
-| Study chat | StudyChat + TanStack route | threads/messages, RLS | moderation, RAG, local inference | backend core current; bearer/safety integration gaps |
+| Study chat | StudyChat + TanStack route | threads/messages, RLS | moderation, RAG, local inference | bearer/RAG bridge current; safety endpoint remains a fail-closed gap |
 | General Assistant | Assistant UI and attachment state | assistant tables/private bucket | generation/parse/scan | persistence current; generation gap |
 | Peer messaging | messages routes/components | conversation/message objects and RLS | moderation, scan, atomic send | UI/Supabase current; backend send gap |
 | Assessments/study plans | assessment UI and adapter | quiz/exam/attempt/result objects | job lifecycle, private keys, grading | frontend contract current; backend gap |

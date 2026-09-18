@@ -11,6 +11,9 @@ server and backend secrets must be supplied by the deployment environment.
 | `SUPABASE_PUBLISHABLE_KEY` | TanStack server + FastAPI | Yes | Public | Publishable key used with the caller's bearer JWT and RLS |
 | `ALIM_CONTEXT_BACKEND_URL` | TanStack server | Yes for tutoring | Internal | Defaults locally to `http://127.0.0.1:8001`; do not expose to browser code |
 | `ALIM_CONTEXT_BACKEND_TIMEOUT_MS` | TanStack server | No | Public config | Backend request deadline; example `90000` |
+| `ALIM_BACKEND_HOST` / `ALIM_BACKEND_PORT` | FastAPI launcher | No | Internal | Defaults `127.0.0.1:8001`; remote binding requires explicit hardening/opt-in |
+| `ALIM_CORS_ALLOWED_ORIGINS` | FastAPI | No | Internal trust config | Exact local frontend origins; wildcard/Lovable origins forbidden |
+| `ALIM_ALLOWED_HOSTS` | FastAPI | No | Internal trust config | Exact HTTP Host allowlist; wildcard forbidden |
 | `ALIM_MODEL_PATH` | FastAPI runtime | Yes for local inference | Internal | Local GGUF/model directory |
 | `ALIM_LLM_BASE_URL` | FastAPI runtime | No | Internal | Local OpenAI-compatible endpoint, default loopback |
 | `ALIM_MODEL_HOST` / `ALIM_MODEL_PORT` | Model runtime | No | Internal | Local listener coordinates; keep loopback unless explicitly secured |
@@ -21,4 +24,5 @@ server and backend secrets must be supplied by the deployment environment.
 
 Authentication bypass flags: none are supported. Tests inject a verifier into `create_app`; runtime
 code always requires and verifies a bearer JWT. Use Node.js 22+ or the checked-in Bun lockfile for
-the current Supabase JavaScript client toolchain.
+the current Supabase JavaScript client toolchain. The TanStack backend URL is
+validated as path-free loopback HTTP before a caller token can be forwarded.

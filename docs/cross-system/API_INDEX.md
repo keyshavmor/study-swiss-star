@@ -5,7 +5,7 @@
 | Owner | Frontend/backend contract owners |
 | Status | Endpoint-specific below |
 | Canonical path | `docs/cross-system/API_INDEX.md` |
-| Verified | frontend `f0910e6`; target backend baseline `bff4ec7`; 2026-09-18 |
+| Verified | frontend `f0910e6`; Prompt 03 backend contract tests; 2026-09-18 |
 
 All private FastAPI calls must carry a verified Supabase bearer token. The
 backend derives identity from `claims.sub`; `X-Student-Id` is only a cross-check.
@@ -14,9 +14,10 @@ stacks, prompts, filesystem paths or provider bodies.
 
 | Method/path or operation | Owner/caller | Status | Evidence/next proof |
 |---|---|---|---|
-| `POST /api/chat` | TanStack `/api/chat` → FastAPI | `CURRENT — LOCAL BACKEND`; integration has bearer-forwarding gap | `frontend/src/routes/api/chat.ts`, `backend/app/main.py`; Prompt 03 contract test |
-| `GET /health` | operator/backend tests | `CURRENT — LOCAL BACKEND` | backend tests and `backend/app/main.py` |
-| `GET /api/model/status` | model legacy fallback | `CURRENT — LOCAL BACKEND`, one configured model only | backend model tests |
+| `POST /api/chat` | TanStack `/api/chat` → FastAPI | `CURRENT — LOCAL BACKEND`; exact caller bearer + verified-subject cross-check | Prompt 03 frontend/backend contract tests |
+| `GET /health` | operator/backend tests | `CURRENT — LOCAL BACKEND`; liveness only | backend API tests and `backend/app/main.py` |
+| `GET /ready` | operator/backend tests | `CURRENT — LOCAL BACKEND`; minimal model readiness, not system health | backend API tests |
+| `GET /api/model/status` | model legacy fallback | `CURRENT — LOCAL BACKEND`, authenticated, one configured model only | backend auth/model tests |
 | `POST /api/context/compile` | context tools | `CURRENT — LOCAL BACKEND` | backend context tests |
 | `POST /api/context/events` | context tools | `CURRENT — LOCAL BACKEND` | backend context store tests |
 | `GET/POST /api/context/artifacts` | context tools | `CURRENT — LOCAL BACKEND` | backend artifact tests |
@@ -33,7 +34,8 @@ stacks, prompts, filesystem paths or provider bodies.
 | Assistant generation/parse | Assistant UI | `BACKEND GAP` | exact transport remains a product decision |
 | assessment generation/attempt/grading operations | assessment adapter | `EXPECTED LOCAL BACKEND CONTRACT` / `BACKEND GAP` | Prompt 06; private answer material server-only |
 
-Frontend request/response field detail remains in
-`../contracts/FRONTEND_BACKEND_CONTRACT.md` as compatibility evidence and in
-the executable adapters/types. Prompt 03 must freeze fixtures before changing
-backend behavior.
+Frontend request/response field detail lives in
+`../contracts/FRONTEND_BACKEND_CONTRACT.md`,
+`../../backend/docs/api/CONTRACT_V1.md`, the executable adapters/types, and
+`tests/contracts/local-backend-v1.json`. Reserved future paths do not count as
+implemented routes.

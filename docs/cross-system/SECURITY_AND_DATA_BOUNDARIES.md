@@ -29,6 +29,12 @@ executables or flags. Downloads require reviewed HTTPS sources, redirect and
 size bounds, immutable revision/provenance, integrity checks, staging and
 atomic publication.
 
+The Prompt 03 foundation enforces explicit credentialed CORS origins and Host
+values, rejects wildcard/Lovable runtime origins, validates the loopback
+frontend-to-backend URL, generates correlation IDs, and returns bounded
+versioned errors. Non-loopback binding is disabled unless an operator makes an
+explicit opt-in; that opt-in is not itself TLS/firewall/platform proof.
+
 Uploads, retrieved text, web results and model output are untrusted. Bound and
 sniff files, sandbox parsers, neutralize retrieval prompt injection,
 schema-validate outputs, keep answer material private, and clean temporary

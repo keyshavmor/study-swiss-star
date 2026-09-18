@@ -8,7 +8,10 @@ import os
 import time
 import urllib.error
 import urllib.request
+from dataclasses import dataclass
 from typing import Any, Protocol
+
+from .errors import ApiError
 
 
 class AccessTokenVerifier(Protocol):
@@ -21,6 +24,69 @@ class TokenVerificationError(ValueError):
     """Raised when a token cannot be validated against the configured project."""
 
 
+@dataclass(slots=True, frozen=True)
+class AuthenticatedUser:
+    """Verified request identity and immutable caller token for RLS data access."""
+
+    user_id: str
+    access_token: str
+    claims: dict[str, Any]
+
+
+class BearerAuthenticator:
+    """Central authentication boundary used by every private FastAPI endpoint."""
+
+    def __init__(self, verifier: AccessTokenVerifier | None = None) -> None:
+        self._verifier = verifier
+
+    async def authenticate(
+        self,
+        authorization: str | None,
+        x_student_id: str | None,
+    ) -> AuthenticatedUser:
+        """Verify the bearer JWT and treat client identity only as a cross-check."""
+
+        import asyncio
+
+        if not authorization or not authorization.startswith("Bearer "):
+            raise ApiError(401, "unauthorized", "A valid Supabase bearer token is required")
+        token = authorization.removeprefix("Bearer ").strip()
+        if not token or len(token) > 16_384 or any(character.isspace() for character in token):
+            raise ApiError(401, "unauthorized", "A valid Supabase bearer token is required")
+
+        verifier = self._verifier
+        injected = verifier is not None
+        if verifier is None:
+            try:
+                verifier = SupabaseAccessTokenVerifier.from_env()
+            except ValueError as error:
+                raise ApiError(
+                    503,
+                    "auth_not_configured",
+                    "Supabase authentication is not configured",
+                    retryable=False,
+                ) from error
+        try:
+            claims = (
+                verifier.verify(token)
+                if injected
+                else await asyncio.to_thread(verifier.verify, token)
+            )
+        except TokenVerificationError as error:
+            raise ApiError(401, "invalid_token", "The Supabase bearer token is invalid") from error
+
+        user_id = claims.get("sub")
+        if not isinstance(user_id, str) or not user_id:
+            raise ApiError(401, "invalid_token", "The Supabase bearer token is invalid")
+        if x_student_id and x_student_id != user_id:
+            raise ApiError(
+                403,
+                "student_id_mismatch",
+                "X-Student-Id does not match the authenticated user",
+            )
+        return AuthenticatedUser(user_id=user_id, access_token=token, claims=claims)
+
+
 class SupabaseAccessTokenVerifier:
     """Validate access tokens with Supabase Auth and bind them to their JWT subject."""
 
@@ -29,6 +95,8 @@ class SupabaseAccessTokenVerifier:
             raise ValueError("SUPABASE_URL and SUPABASE_PUBLISHABLE_KEY are required")
         if publishable_key.startswith("sb_secret_"):
             raise ValueError("SUPABASE_PUBLISHABLE_KEY must not contain a secret key")
+        if any(character.isspace() for character in publishable_key):
+            raise ValueError("SUPABASE_PUBLISHABLE_KEY is malformed")
         self.url = url.rstrip("/")
         self.publishable_key = publishable_key
 
@@ -84,6 +152,7 @@ class SupabaseAccessTokenVerifier:
         except (
             urllib.error.HTTPError,
             urllib.error.URLError,
+            OSError,
             TimeoutError,
             json.JSONDecodeError,
         ) as error:

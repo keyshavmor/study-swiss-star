@@ -26,13 +26,12 @@
 
 | Area | Current backend | Required state | Priority |
 |---|---|---|---|
-| Chat auth integration | backend requires bearer; frontend chat omits it | thread verified token through server adapter | blocker |
 | Model catalogue | one hard-coded model/spec/path | versioned allowlisted registry for every enabled row | blocker |
 | Model prepare operations | startup preload/status only | prepare/join/poll/state/retry/progress/recovery | blocker |
 | Capability probe | coarse platform config | typed RAM/disk/GPU/VRAM/quality report | blocker |
 | Admission/leases | absent | policy-aware queue, max users, heartbeat/TTL/release | blocker |
 | Multi-model runtime | single process/model | safe switching/sharing/pooling/rebalance | blocker |
-| System health | basic `/health` | privacy-filtered frontend health contract | high |
+| System health | liveness and minimal readiness separated | privacy-filtered frontend system-health contract | high |
 | Safety | absent | local moderation/strike/guardian workflow; fail closed | blocker for AI/message send |
 | Peer send/scan | absent | atomic moderated send, private attachment scan | blocker |
 | Assistant | no generation/attachment parsing | typed response/parsing contract | high |
@@ -64,12 +63,13 @@ under backend ownership.
 - Old wireframes name speculative endpoints such as study-plan/material routes
   not present in code.
 - `docs` and `lovabledocs` are duplicates with manual drift risk.
-- Current code shows chat bearer mismatch that high-level docs do not resolve.
+- Prompt 03 resolved the chat bearer mismatch with exact-token forwarding,
+  independent FastAPI verification and focused contract tests.
 
 ## Release blockers vs decisions
 
-Release blockers: frontend parity, chat bearer, all selectable-model mappings or
-catalogue disablement decision, readiness/capability endpoints, safety for AI
+Release blockers: all selectable-model mappings or catalogue disablement
+decision, readiness/capability endpoints, safety for AI
 and peer messaging, assessment backend for enabled actions, RLS/security tests,
 and truthful local start documentation.
 

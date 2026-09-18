@@ -62,7 +62,7 @@ class ApiTests(unittest.IsolatedAsyncioTestCase):
         self.model = FakeLocalModel()
         app = create_app(self.manager, self.model, auth_verifier=FakeTokenVerifier())
         self.client = AsyncClient(
-            transport=ASGITransport(app=app), base_url="http://test"
+            transport=ASGITransport(app=app), base_url="http://127.0.0.1"
         )
 
     async def asyncTearDown(self) -> None:
@@ -93,6 +93,12 @@ class ApiTests(unittest.IsolatedAsyncioTestCase):
         health = await self.client.get("/health")
         self.assertEqual(health.status_code, 200)
         self.assertEqual(health.json()["status"], "ok")
+        self.assertNotIn("model_server", health.json())
+        self.assertEqual(health.headers["X-Alim-Contract-Version"], "2026-09-18")
+
+        ready = await self.client.get("/ready")
+        self.assertEqual(ready.status_code, 200)
+        self.assertEqual(ready.json()["status"], "ready")
 
         response = await self.client.post(
             "/api/chat",
@@ -124,8 +130,39 @@ class ApiTests(unittest.IsolatedAsyncioTestCase):
             json={"thread_id": "thread-1", "question": "Hello", "stream": True},
         )
         self.assertEqual(response.status_code, 400)
-        self.assertEqual(response.json()["error"]["code"], "invalid_request")
+        self.assertEqual(response.json()["error"]["code"], "streaming_not_supported")
         self.assertIn("X-Request-Id", response.headers)
+
+    async def test_liveness_does_not_claim_model_readiness(self) -> None:
+        """A live process remains live when the model-dependent feature is unavailable."""
+
+        self.model.status = lambda: _async_value(
+            {
+                "provider": "test",
+                "model": self.model.model,
+                "endpoint": "in-process",
+                "mode": "local",
+                "reachable": False,
+                "latency_ms": 0,
+            }
+        )
+        liveness = await self.client.get("/health")
+        readiness = await self.client.get("/ready")
+        self.assertEqual(liveness.status_code, 200)
+        self.assertEqual(liveness.json()["status"], "ok")
+        self.assertEqual(readiness.status_code, 503)
+        self.assertEqual(readiness.json()["status"], "not_ready")
+
+    async def test_model_status_is_private(self) -> None:
+        """Model diagnostics use the same bearer boundary as other private routes."""
+
+        missing = await self.client.get("/api/model/status")
+        self.assertEqual(missing.status_code, 401)
+        allowed = await self.client.get(
+            "/api/model/status",
+            headers={"Authorization": "Bearer token-student-1"},
+        )
+        self.assertEqual(allowed.status_code, 200)
 
     async def test_private_endpoints_require_auth_and_reject_spoofed_student_header(
         self,
@@ -200,6 +237,40 @@ class ApiTests(unittest.IsolatedAsyncioTestCase):
             },
         )
         self.assertEqual(unsupported.status_code, 422)
+        self.assertEqual(
+            unsupported.json()["error"]["message"], "Request validation failed"
+        )
+        self.assertNotIn("xx", unsupported.text)
+
+    async def test_cors_is_explicitly_local_and_denies_unlisted_origins(self) -> None:
+        """Credentialed CORS never uses a wildcard or a hosted preview origin."""
+
+        allowed = await self.client.options(
+            "/api/chat",
+            headers={
+                "Origin": "http://127.0.0.1:8080",
+                "Access-Control-Request-Method": "POST",
+                "Access-Control-Request-Headers": "Authorization,Content-Type,X-Student-Id",
+            },
+        )
+        self.assertEqual(allowed.status_code, 200)
+        self.assertEqual(
+            allowed.headers["access-control-allow-origin"], "http://127.0.0.1:8080"
+        )
+
+        denied = await self.client.options(
+            "/api/chat",
+            headers={
+                "Origin": "https://preview.example.invalid",
+                "Access-Control-Request-Method": "POST",
+            },
+        )
+        self.assertEqual(denied.status_code, 400)
+        self.assertNotIn("access-control-allow-origin", denied.headers)
+
+
+async def _async_value(value):
+    return value
 
 
 if __name__ == "__main__":

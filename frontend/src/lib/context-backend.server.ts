@@ -1,5 +1,6 @@
 /** Frontend utility or server adapter used by the local Alim application. */
 import type { ContextChatResponse } from "@/lib/context-backend.types";
+import { localBackendBaseUrl, localBackendTimeoutMs } from "@/lib/local-backend-endpoints";
 
 export type { ContextResponseMetadata } from "@/lib/context-backend.types";
 
@@ -8,6 +9,8 @@ export class ContextBackendError extends Error {
     message: string,
     readonly status: number,
     readonly code: string,
+    readonly requestId: string | null = null,
+    readonly retryable = false,
   ) {
     super(message);
     this.name = "ContextBackendError";
@@ -15,6 +18,7 @@ export class ContextBackendError extends Error {
 }
 
 export async function requestContextAnswer(input: {
+  accessToken: string;
   studentId: string;
   threadId: string;
   userMessageId?: string;
@@ -22,21 +26,22 @@ export async function requestContextAnswer(input: {
   subject?: string;
   academicYear?: string;
   gradeLevel?: number;
+  signal?: AbortSignal;
 }): Promise<ContextChatResponse> {
-  const baseUrl = (process.env["ALIM_CONTEXT_BACKEND_URL"] ?? "http://127.0.0.1:8001").replace(
-    /\/$/,
-    "",
-  );
   const controller = new AbortController();
+  const abortFromCaller = () => controller.abort();
+  if (input.signal?.aborted) controller.abort();
+  else input.signal?.addEventListener("abort", abortFromCaller, { once: true });
   const timeout = setTimeout(
     () => controller.abort(),
-    Number(process.env["ALIM_CONTEXT_BACKEND_TIMEOUT_MS"] ?? 90_000),
+    localBackendTimeoutMs("ALIM_CONTEXT_BACKEND_TIMEOUT_MS", 90_000),
   );
   try {
-    const response = await fetch(`${baseUrl}/api/chat`, {
+    const response = await fetch(`${localBackendBaseUrl()}/api/chat`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        Authorization: `Bearer ${input.accessToken}`,
         "X-Student-Id": input.studentId,
       },
       body: JSON.stringify({
@@ -54,13 +59,17 @@ export async function requestContextAnswer(input: {
       signal: controller.signal,
     });
     const payload = (await response.json().catch(() => null)) as
-      ContextChatResponse | { error?: { code?: string; message?: string } } | null;
+      | ContextChatResponse
+      | { error?: { code?: string; message?: string; retryable?: boolean; request_id?: string } }
+      | null;
     if (!response.ok) {
       const error = payload && "error" in payload ? payload.error : undefined;
       throw new ContextBackendError(
-        error?.message ?? `Context backend returned HTTP ${response.status}`,
+        boundedMessage(error?.message) ?? `Context backend returned HTTP ${response.status}`,
         response.status,
-        error?.code ?? "context_backend_error",
+        boundedCode(error?.code),
+        error?.request_id ?? response.headers.get("x-request-id"),
+        error?.retryable === true,
       );
     }
     if (!payload || !("answer" in payload) || typeof payload.answer !== "string") {
@@ -73,14 +82,40 @@ export async function requestContextAnswer(input: {
     return payload;
   } catch (error) {
     if (error instanceof ContextBackendError) throw error;
-    const message =
-      error instanceof Error && error.name === "AbortError"
-        ? "Context backend request timed out"
-        : "Context backend is unavailable";
-    throw new ContextBackendError(message, 503, "context_backend_unavailable");
+    if (error instanceof Error && error.name === "AbortError") {
+      if (input.signal?.aborted) {
+        throw new ContextBackendError("Context request was cancelled", 499, "request_cancelled");
+      }
+      throw new ContextBackendError(
+        "Context backend request timed out",
+        504,
+        "context_backend_timeout",
+        null,
+        true,
+      );
+    }
+    throw new ContextBackendError(
+      "Context backend is unavailable",
+      503,
+      "context_backend_unavailable",
+      null,
+      true,
+    );
   } finally {
     clearTimeout(timeout);
+    input.signal?.removeEventListener("abort", abortFromCaller);
   }
+}
+
+function boundedCode(value: unknown): string {
+  return typeof value === "string" && /^[a-z][a-z0-9_]{0,63}$/.test(value)
+    ? value
+    : "context_backend_error";
+}
+
+function boundedMessage(value: unknown): string | null {
+  if (typeof value !== "string" || !value) return null;
+  return value.replace(/[\r\n\t]+/g, " ").slice(0, 240);
 }
 
 function normalizeSubjectId(subject?: string): string | undefined {

@@ -5,13 +5,12 @@
 | Owner | Architecture/release owner |
 | Status | Current reconciled issue register |
 | Canonical path | `docs/DOCUMENTATION_DISCOVERED_ISSUES.md` |
-| Verified | frontend `f0910e6`, target `bff4ec7`, live handover 2026-09-18 |
+| Verified | frontend `f0910e6`, Prompt 03 target, live handover 2026-09-18 |
 
 This is a final-state register, not an append-only correction log.
 
 | Issue | Status | Owner/next proof |
 |---|---|---|
-| Study-chat adapter omits the bearer token required by FastAPI | `BACKEND GAP` / integration blocker | Prompt 03: forward the already verified token and add negative contract tests; never weaken backend JWT checks |
 | Nine enabled model IDs lack verified artifact/runtime mappings | `UNKNOWN — REQUIRES VERIFICATION` | Prompt 04: primary model/runtime sources, immutable artifact metadata, license/hash/resource proof or explicit disable decision |
 | Capability, prepare/poll, admission/lease/health/release APIs are absent | `BACKEND GAP` | Prompt 04 contract and lifecycle tests |
 | Local safety, moderated peer send/scan, Assistant generation/parse and assessment jobs are absent | `BACKEND GAP` | Prompts 05–07; safety-required paths fail closed |
@@ -25,6 +24,9 @@ This is a final-state register, not an append-only correction log.
 
 Resolved facts folded into current documentation:
 
+- The study-chat bridge forwards the exact verified caller bearer and
+  cancellation signal; FastAPI re-verifies it and rejects subject/header
+  conflicts. Prompt 03 focused/backend/E2E tests cover the boundary.
 - Production Supabase and backend source are inspectable; older “unavailable”
   claims are historical only.
 - There is no Lovable/cloud AI inference fallback in the authoritative product.

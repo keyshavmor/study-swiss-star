@@ -1,0 +1,46 @@
+{
+  "contract_version": "2026-09-18",
+  "default_base_url": "http://127.0.0.1:8001",
+  "transport": {
+    "request_id_header": "X-Request-Id",
+    "version_header": "X-Alim-Contract-Version",
+    "private_auth": "Authorization: Bearer <Supabase access token>",
+    "identity": "verified claims.sub",
+    "student_header": "optional equality cross-check only",
+    "chat_timeout_ms": 90000,
+    "chat_streaming": "TanStack UI stream wraps one non-streaming FastAPI response",
+    "cancellation": "incoming request abort propagates to loopback fetch and async model HTTP",
+    "error_shape": {
+      "error": {
+        "code": "bounded_snake_case",
+        "message": "bounded_public_message",
+        "retryable": false,
+        "request_id": "req_<opaque>"
+      }
+    }
+  },
+  "implemented_routes": [
+    { "method": "GET", "path": "/health", "auth": "public", "meaning": "liveness" },
+    { "method": "GET", "path": "/ready", "auth": "public", "meaning": "minimal readiness" },
+    { "method": "GET", "path": "/api/model/status", "auth": "bearer", "meaning": "legacy single-model status" },
+    { "method": "POST", "path": "/api/chat", "auth": "bearer", "meaning": "non-streaming local chat" },
+    { "method": "POST", "path": "/api/context/compile", "auth": "bearer", "meaning": "context compile" },
+    { "method": "POST", "path": "/api/context/events", "auth": "bearer", "meaning": "learning event" },
+    { "method": "POST", "path": "/api/context/artifacts", "auth": "bearer", "meaning": "context artifact" },
+    { "method": "POST", "path": "/api/context/documents/text", "auth": "bearer", "meaning": "text ingestion" },
+    { "method": "POST", "path": "/api/context/documents/storage", "auth": "bearer", "meaning": "private Storage ingestion" }
+  ],
+  "reserved_expected_routes": [
+    "/api/model/prepare",
+    "/api/model/operation/{id}",
+    "/api/system/capability",
+    "/api/system/admission/check",
+    "/api/system/health",
+    "/api/system/session/heartbeat",
+    "/api/system/runtime/release",
+    "/api/system/model/recommendation",
+    "/api/safety/moderate",
+    "/api/peer-messaging/send",
+    "/api/safety/attachment-scan"
+  ]
+}

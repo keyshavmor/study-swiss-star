@@ -5,7 +5,7 @@
 | Owner | Backend |
 | Status | `CURRENT — LOCAL BACKEND` with explicit gaps |
 | Canonical path | `backend/docs/architecture/SYSTEM.md` |
-| Verified | target baseline `bff4ec7`, 2026-09-18 |
+| Verified | Prompt 03 contract foundation, 2026-09-18 |
 
 FastAPI binds to `127.0.0.1:8001`. It verifies the caller's Supabase JWT,
 derives `claims.sub`, rejects a mismatched `X-Student-Id`, reads/writes ordinary
@@ -16,13 +16,20 @@ local/reference material, and calls an OpenAI-compatible local model process at
 Implemented modules cover authentication, context configuration/budgeting,
 compiler, sparse/dense/hybrid retrieval, reranking, memory, summaries, events,
 artifacts, working memory, documents, Supabase/SQLite adapters, model runtime,
-platform detection and orchestration. SQLite is a deliberately constructed
-test adapter, not canonical user persistence.
+platform detection and orchestration. Authentication, public error envelopes,
+request IDs, contract-version headers, CORS/Host validation and network
+configuration are centralized modules rather than route-specific conventions.
+SQLite is a deliberately constructed test adapter, not canonical user
+persistence.
 
 The model process, FastAPI process, frontend process, Supabase services and
 documentation tooling are separate environments/process owners. The current
 legacy setup script partially coordinates services but is not the final
 centralized launcher contract.
+
+`GET /health` proves only that the API process can answer. `GET /ready`
+separately probes the current local model dependency. Model/system capability,
+admission, leases and multi-model readiness remain Prompt 04 gaps.
 
 Backend trust boundaries and required security tests are linked from
 [`../../../docs/cross-system/SECURITY_AND_DATA_BOUNDARIES.md`](../../../docs/cross-system/SECURITY_AND_DATA_BOUNDARIES.md).

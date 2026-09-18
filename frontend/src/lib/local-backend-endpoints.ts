@@ -35,10 +35,37 @@ export const SAFETY_ENDPOINTS = {
 
 /** Base URL of the local backend. Server-side only. */
 export function localBackendBaseUrl(): string {
-  return (process.env["ALIM_CONTEXT_BACKEND_URL"] ?? "http://127.0.0.1:8001").replace(/\/$/, "");
+  const raw = process.env["ALIM_CONTEXT_BACKEND_URL"]?.trim() || "http://127.0.0.1:8001";
+  let url: URL;
+  try {
+    url = new URL(raw);
+  } catch {
+    throw new Error("ALIM_CONTEXT_BACKEND_URL must be an absolute loopback URL");
+  }
+  const host = url.hostname.toLowerCase();
+  const loopback = host === "localhost" || host === "127.0.0.1" || host === "[::1]";
+  if (
+    url.protocol !== "http:" ||
+    !loopback ||
+    url.username ||
+    url.password ||
+    (url.pathname !== "/" && url.pathname !== "") ||
+    url.search ||
+    url.hash
+  ) {
+    throw new Error("ALIM_CONTEXT_BACKEND_URL must use loopback HTTP with no path or credentials");
+  }
+  return url.origin;
 }
 
 /** Default server-to-server timeout for local-backend calls. */
-export function localBackendTimeoutMs(): number {
-  return Number(process.env["ALIM_MODEL_BACKEND_TIMEOUT_MS"] ?? 15_000);
+export function localBackendTimeoutMs(
+  variable = "ALIM_MODEL_BACKEND_TIMEOUT_MS",
+  fallback = 15_000,
+): number {
+  const value = Number(process.env[variable] ?? fallback);
+  if (!Number.isFinite(value) || value < 100 || value > 300_000) {
+    throw new Error(`${variable} must be between 100 and 300000 milliseconds`);
+  }
+  return value;
 }

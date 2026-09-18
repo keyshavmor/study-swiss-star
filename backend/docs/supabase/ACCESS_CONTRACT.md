@@ -5,18 +5,21 @@
 | Owner | Backend and Supabase |
 | Status | Current user-token pattern plus explicitly listed gaps |
 | Canonical path | `backend/docs/supabase/ACCESS_CONTRACT.md` |
-| Verified | target baseline `bff4ec7905f0d00fbf024c8e28717082a848d71a`, 2026-09-18 |
+| Verified | Prompt 03 auth and caller-token tests, 2026-09-18 |
 
 ## Identity model
 
 The local backend verifies the Supabase bearer token and derives the user only
 from `claims.sub`. It rejects missing/invalid tokens and mismatched
 `X-Student-Id`. Token verification must validate issuer/project, signature,
-expiry and key rotation; user-editable metadata is never authorization.
+expiry and key rotation; user-editable metadata is never authorization. The
+production verifier uses the configured publishable key plus bearer token at
+Supabase Auth `/user`, matching current Supabase guidance for shared-secret
+projects and remaining valid for project-issued access tokens.
 
 ## Ordinary user access
 
-`backend/app/context/store_supabase.py` is valuable target-branch work. It calls
+`backend/app/context/store_supabase.py` calls
 the REST API with the user's access token plus publishable key and adds verified
 `user_id` filters. This preserves RLS for chunks, memories, events, messages,
 summaries, artifacts and working memory. Continue this pattern for ordinary
@@ -24,7 +27,9 @@ user-owned data.
 
 Private `user-materials` downloads likewise use the caller token, require the
 `<claims.sub>/` prefix, URL-encode the object, and delete local temporary files.
-Extend with bounded size, content sniffing, parser sandboxing and deletion hooks.
+Bounded size, content sniffing, parser sandboxing and deletion hooks remain
+hardening work; the caller-token/owner-prefix/temporary-cleanup boundary is
+current.
 
 ## Privileged operations
 
