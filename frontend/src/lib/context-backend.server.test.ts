@@ -126,11 +126,12 @@ describe("subject-chat local backend contract", () => {
       threadId: "thread-a",
       question: "Explain ATP",
     });
-    await vi.advanceTimersByTimeAsync(100);
-    await expect(pending).rejects.toMatchObject({
+    const rejection = expect(pending).rejects.toMatchObject({
       status: 504,
       code: "context_backend_timeout",
       retryable: true,
     });
+    await vi.advanceTimersByTimeAsync(100);
+    await rejection;
   });
 });
