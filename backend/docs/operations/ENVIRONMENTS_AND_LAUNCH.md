@@ -7,12 +7,14 @@
 | Canonical path | `backend/docs/operations/ENVIRONMENTS_AND_LAUNCH.md` |
 | Host evidence | Ubuntu 26.04.1 x86_64 only; CUDA unavailable |
 | MacBook M4 | `UNVERIFIED — MANUAL` |
-| Last reviewed | 2026-09-18 |
+| Last reviewed | 2026-09-19 |
 
 Python application dependencies belong to `alim-backend`, governed by
 `backend/environment.yml`, `backend/.python-version` (Python 3.11),
 `backend/pyproject.toml` and exact `backend/uv.lock`. Sync its project
-environment with `uv sync --project backend --extra dev`. Model-runtime
+environment with `uv sync --project backend --extra dev --extra documents`.
+`pypdf` and `python-docx` stay in this backend-only documents extra; they never
+enter the frontend, Supabase CLI, or model-runtime environments. Model-runtime
 binaries belong to the separate `alim-model-runtime` environment selected from
 the pinned manifests under `backend/model-runtime/`; weights are external data.
 Frontend Node packages use the repository package manager. Supabase CLI/local
@@ -52,7 +54,8 @@ claimed as a supported local default.
 Ubuntu CPU/CUDA and Apple-silicon Metal are required target paths. Prompt 04
 adds selection fixtures and runtime tuning; the present physical host proves
 Ubuntu 26.04.1 CPU probing only. CUDA and M4/Metal are `UNVERIFIED — MANUAL`.
-Prompt 08 must build the
+Prompt 05's chat, hashing/local embedding, retrieval and parser code is
+platform-neutral; tests on this host are not physical M4 evidence. Prompt 08 must build the
 isolated bootstrap/lifecycle scripts and user guides; Prompt 09 must run real or
 explicitly manual platform smoke tests. Large model acquisition must show
 size/time and require operator opt-in.

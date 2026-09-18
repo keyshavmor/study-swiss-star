@@ -60,6 +60,15 @@ class SQLiteContextStore:
 
         self._connection.close()
 
+    def conversation_owned(self, student_id: str, conversation_id: str) -> bool:
+        """Treat caller-created SQLite conversations as owned by their explicit scope.
+
+        SQLite is the isolated local/test store and has no separate thread table. Every
+        read and write still includes ``student_id`` and ``conversation_id``.
+        """
+
+        return bool(student_id and conversation_id)
+
     def _migrate(self) -> None:
         """Create idempotent schema version one and its supporting indexes."""
 

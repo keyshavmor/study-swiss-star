@@ -334,10 +334,10 @@ class ContextManager:
     ) -> dict[str, Any]:
         """Persist a completed turn, extract safe memory, and compact long conversations."""
 
-        # Supabase messages are the canonical UI transcript. The frontend has
-        # already inserted the user turn and inserts the assistant turn after
-        # streaming finishes, so writing either here would create a second
-        # transcript. SQLite retains the old append behavior for isolated tests.
+        # The canonical Supabase transcript requires TanStack to persist the
+        # user turn before calling this backend. SQLite has no TanStack boundary,
+        # so isolated tests/local tools append it here. The assistant ID is
+        # stable in both stores and duplicate inserts are ignored.
         if not self.store.canonical_transcript:
             self.conversations.append(
                 student_id=student_id,
@@ -346,13 +346,14 @@ class ContextManager:
                 content=user_message,
                 message_id=user_message_id,
             )
-            self.conversations.append(
-                student_id=student_id,
-                conversation_id=conversation_id,
-                role="assistant",
-                content=assistant_response,
-                message_id=assistant_message_id,
-            )
+        self.conversations.append(
+            student_id=student_id,
+            conversation_id=conversation_id,
+            role="assistant",
+            content=assistant_response,
+            message_id=assistant_message_id,
+            metadata=metadata,
+        )
         memories = self.memory.process_interaction(
             student_id=student_id,
             user_message=user_message,

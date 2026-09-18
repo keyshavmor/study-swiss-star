@@ -5,7 +5,7 @@
 | Owner | Backend API |
 | Status | Endpoint-specific |
 | Canonical path | `backend/docs/api/README.md` |
-| Verified | Prompt 03 contract foundation, 2026-09-18 |
+| Verified | Prompt 05 chat/RAG contract, 2026-09-19 |
 
 The canonical implemented/expected endpoint registry is
 [`../../../docs/cross-system/API_INDEX.md`](../../../docs/cross-system/API_INDEX.md).
@@ -24,6 +24,7 @@ they are intentionally separate. Private endpoints, including legacy
 contract version is `2026-09-18` and every response carries a backend-generated
 request ID.
 
-Mutating future operations require idempotency; long-running model/assessment
-work requires operation IDs, cancellation, timeout and restart recovery. A
-frontend type or documentation row alone does not prove an endpoint exists.
+Chat uses its required user-message ID for exact durable replay. Other mutating
+operations require explicit idempotency; long-running model/assessment work
+requires operation IDs, cancellation, timeout and restart recovery. A frontend
+type or documentation row alone does not prove an endpoint exists.

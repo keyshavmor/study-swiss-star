@@ -22,6 +22,11 @@ class ContextStore(Protocol):
     canonical_transcript: bool
     location_scheme: str
 
+    def conversation_owned(self, student_id: str, conversation_id: str) -> bool:
+        """Return whether the verified student owns the requested conversation."""
+
+        ...
+
     def add_chunks(
         self, chunks: Iterable[DocumentChunk], *, student_id: str | None = None
     ) -> None: ...

@@ -68,17 +68,32 @@ The backend is the ONLY authority for hardware values. It must:
 - Return an explicit unavailable/error state rather than partial guesses; the
   frontend will present it truthfully and never fabricate values.
 
-## 3. Existing system endpoints still outstanding
+## 3. Current system and chat status
 
-`/api/system/admission/check`, `/api/system/health`,
+Prompt 04 implements `/api/system/admission/check`, `/api/system/health`,
 `/api/system/session/heartbeat`, `/api/system/runtime/release`,
 `/api/system/model/recommendation`, `/api/model/status`, `/api/model/prepare`,
-`/api/model/operation`, `/api/safety/moderate`, `/api/peer-messaging/send`,
-`/api/safety/attachment-scan`.
+and `/api/model/operation` with truthful single-runtime semantics.
+
+Prompt 05 implements `/api/chat` ownership, safety-interface, actual model
+probe, bounded RAG, stable ID/exact replay, response language, citation metadata,
+and durable caller-token persistence. Read
+`docs/contracts/CHAT_ASSISTANT_RAG_CONTRACT.md` before changing it.
+
+Still outstanding: `/api/safety/moderate`, the concrete in-process chat safety
+moderator, `/api/peer-messaging/send`, `/api/safety/attachment-scan`, and the
+assessment/study-tool/privacy operations assigned to later prompts. Until the
+safety implementation is wired, chat correctly returns `safety_unavailable`.
 
 Note the behavioural change: admission and model readiness are ADVISORY. They
 govern AI availability only. They must never be required for authentication or
 for non-AI product access.
+
+General Assistant generation is not permission to reuse subject chat
+implicitly. Its UI does not settle `/api/chat` mode versus a separate endpoint.
+Keep stored attachments `unparsed` and produce no assistant reply until that
+product decision is recorded. Browser SpeechSynthesis remains the current TTS
+contract; server-generated media is separately unresolved.
 
 ## 4. Security obligations
 

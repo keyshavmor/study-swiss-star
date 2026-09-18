@@ -8,4 +8,4 @@ sequenceDiagram
   UI->>Storage: upload validated files under user prefix
   UI->>DB: insert user message and attachment metadata
   DB-->>UI: persisted message
-  Note over UI,DB: No assistant reply is fabricated. Generation/history/attachment parsing semantics need a product contract.
+  Note over UI,DB: No assistant reply is fabricated. Transport remains a product decision, parse state stays unparsed.

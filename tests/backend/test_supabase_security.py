@@ -5,7 +5,7 @@ from __future__ import annotations
 import unittest
 from pathlib import Path
 
-from app.context.models import DocumentChunk
+from app.context.models import ConversationMessage, DocumentChunk
 from app.context.store_supabase import SupabaseContextStore
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -39,6 +39,30 @@ class SupabaseSecurityTests(unittest.TestCase):
         for method, _table, query, _body, _prefer in store.requests:
             if method == "GET":
                 self.assertEqual(query["user_id"], "eq.user-a")
+
+    def test_thread_ownership_and_message_upsert_keep_rls_scope_and_parts(self) -> None:
+        store = CapturingStore("user-a")
+        self.assertFalse(store.conversation_owned("user-a", "thread-a"))
+        method, table, query, _body, _prefer = store.requests[-1]
+        self.assertEqual((method, table), ("GET", "threads"))
+        self.assertEqual(query["user_id"], "eq.user-a")
+        self.assertEqual(query["id"], "eq.thread-a")
+
+        store.add_message(
+            ConversationMessage(
+                id="message-a",
+                conversation_id="thread-a",
+                student_id="user-a",
+                role="assistant",
+                content="Grounded answer",
+                token_count=3,
+            )
+        )
+        _method, table, _query, body, prefer = store.requests[-1]
+        self.assertEqual(table, "messages")
+        self.assertEqual(prefer, "resolution=ignore-duplicates,return=minimal")
+        self.assertEqual(body[0]["parts"], [{"type": "text", "text": "Grounded answer"}])
+        self.assertNotIn("created_at", body[0])
 
     def test_chunk_upsert_matches_live_jsonb_embedding_contract(self) -> None:
         store = CapturingStore("user-a")

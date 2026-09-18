@@ -117,6 +117,22 @@ class SupabaseContextStore:
                 prefer="resolution=merge-duplicates,return=minimal",
             )
 
+    def conversation_owned(self, student_id: str, conversation_id: str) -> bool:
+        """Verify thread ownership through caller-token RLS and an explicit owner filter."""
+
+        self._assert_owner(student_id)
+        rows = self._request(
+            "GET",
+            "threads",
+            query={
+                "select": "id",
+                "id": f"eq.{conversation_id}",
+                "user_id": f"eq.{self.user_id}",
+                "limit": 1,
+            },
+        ) or []
+        return bool(rows)
+
     def add_chunks(self, chunks: Iterable[DocumentChunk], *, student_id: str | None = None) -> None:
         self._assert_owner(student_id)
         values = list(chunks)
@@ -324,20 +340,23 @@ class SupabaseContextStore:
 
     def add_message(self, message: ConversationMessage) -> None:
         self._assert_owner(message.student_id)
-        self._upsert(
+        self._request(
+            "POST",
             "messages",
-            [
+            body=[
                 {
                     "id": message.id,
                     "thread_id": message.conversation_id,
                     "user_id": self.user_id,
                     "role": message.role,
                     "content": message.content,
+                    "parts": [{"type": "text", "text": message.content}],
                     "token_count": message.token_count,
                     "metadata": message.metadata,
-                    "created_at": _iso(message.created_at),
                 }
             ],
+            query={"on_conflict": "id"},
+            prefer="resolution=ignore-duplicates,return=minimal",
         )
 
     def list_messages(self, student_id: str, conversation_id: str) -> list[ConversationMessage]:

@@ -77,7 +77,8 @@ export function StudyChat({ threadId }: StudyChatProps) {
   const [preferences, setPreferences] = useState<UserPreferences>(DEFAULT_PREFERENCES);
   const [speakingId, setSpeakingId] = useState<string | null>(null);
 
-  // Response-language hints per assistant message id (frontend-only, not sent to the backend).
+  // Response-language hints retained for speech; the API route independently
+  // sends the same effective policy result to the backend for generation.
   const responseLanguageHints = useRef(new Map<string, LanguageCode>());
   const pendingHintRef = useRef<LanguageCode | null>(null);
 
@@ -123,6 +124,8 @@ export function StudyChat({ threadId }: StudyChatProps) {
         threadId: activeThreadId,
         academicYear: yearId,
         gradeLevel: Number(year.gradeLevel.replace(/\D/g, "")),
+        modelId: ai.modelId,
+        uiLanguage: language,
       },
       fetch: async (input, init) => {
         const {
@@ -165,8 +168,8 @@ export function StudyChat({ threadId }: StudyChatProps) {
   });
 
   useEffect(() => {
-    // Keep hints keyed to user-message IDs without extending the transport contract.
-    // FUTURE BACKEND / CODEX can consume these alongside ui_language.
+    // Keep speech hints keyed to user-message IDs; generation language is
+    // resolved from the same message and UI language at the server boundary.
     for (const message of chat.messages) {
       if (message.role !== "user" || responseLanguageHints.current.has(message.id)) continue;
       const text = message.parts.map((part) => (part.type === "text" ? part.text : "")).join("");
@@ -473,9 +476,8 @@ export function StudyChat({ threadId }: StudyChatProps) {
                 const value = message.text.trim();
                 if (!value || aiBlocked) return;
                 track({ event_name: "chat_message_sent", feature: "chat" });
-                // FUTURE BACKEND / CODEX: send { ui_language, message_language } so the model
-                // answers in message_language when it is confidently one of the seven supported
-                // languages; otherwise ui_language.
+                // Speech and generation use the same seven-language policy:
+                // confidently detected message language, otherwise UI language.
                 const responseLanguageHint = effectiveResponseLanguage(value, language);
                 pendingHintRef.current = responseLanguageHint;
                 chat.sendMessage({ text: value });

@@ -6,7 +6,7 @@
 | Status | `CURRENT — LOCAL BACKEND` for implemented rows; future rows stay explicit gaps |
 | Contract version | `2026-09-18` |
 | Executable fixture | `tests/contracts/local-backend-v1.json` |
-| Last verified | Prompt 04, 2026-09-18 |
+| Last verified | Prompt 05, 2026-09-19 |
 
 ## Transport and identity
 
@@ -40,7 +40,7 @@ logs.
 | `GET /api/system/health` | bearer | Resource/use health with no other-user identity |
 | `POST /api/system/session/heartbeat` | bearer | Renew only the caller-owned lease |
 | `POST /api/system/runtime/release` | bearer | Best-effort release of one/all caller leases |
-| `POST /api/chat` | bearer | Bounded context plus one non-streaming local-model completion |
+| `POST /api/chat` | bearer | Owned, safety-gated, runtime-ready, idempotent bounded context plus one non-streaming local-model completion |
 | `POST /api/context/compile` | bearer | Inspectable bounded context compilation |
 | `POST /api/context/events` | bearer | User-scoped learning-event persistence |
 | `POST /api/context/artifacts` | bearer | User-scoped reusable artifact persistence |
@@ -76,20 +76,32 @@ model processes, never another user's identifier or content.
 
 The TanStack route first verifies the Supabase token and thread ownership. It
 passes that exact token, verified subject, request cancellation signal and the
-typed body to FastAPI. The backend body includes thread/user-message IDs,
-question, normalized subject, seven-language code when known, academic year,
-grade, source flags and `stream:false`.
+typed body to FastAPI. The backend body includes required thread/user-message
+IDs, selected model ID, question, normalized subject, explicit UI and effective
+response language, academic year, grade, source flags and `stream:false`.
+
+FastAPI independently verifies thread ownership through caller-token RLS. A
+backend-owned safety moderator must return `allow`; missing/unavailable safety
+returns retryable `safety_unavailable`, and a block returns `content_blocked`.
+FastAPI then verifies the selected registry mapping and live model endpoint.
+Saved model preference or frontend session state never substitutes for this
+per-request readiness check.
 
 FastAPI returns thread/message IDs, exact answer bytes, typed source snippets,
 nullable exam tip, used model, retrieval summary, language and creation time.
 FastAPI streaming is deliberately unsupported in v1. TanStack converts the one
-successful response into AI-SDK UI stream parts and persists only those real
-assistant bytes. No backend response means no fabricated answer.
+successful response into AI-SDK UI stream parts. Both boundaries upsert the
+same stable assistant ID; FastAPI persists the exact answer/citation metadata
+before responding, and TanStack finalizes the UI parts. A retry with the same
+user-message ID and same semantic body replays the persisted answer without a
+second inference. Reusing that ID for a changed body returns 409. No backend
+response means no fabricated answer.
 
 The server adapter deadline defaults to 90,000 ms and is bounded to 100–300,000
 ms. Caller cancellation and deadline abort both terminate the loopback fetch;
-the local model client uses cancellable async HTTP. Mutating operations added
-later require idempotency keys rather than blind retries.
+the local model client uses cancellable async HTTP. Cancellation before
+completion creates no assistant row; a disconnect after durable completion can
+recover the exact response by retrying its idempotency key.
 
 ## Error envelope
 

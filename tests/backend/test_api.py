@@ -19,6 +19,9 @@ class FakeLocalModel:
 
     model = "fake-local-model"
 
+    def __init__(self):
+        self.calls = 0
+
     async def status(self):
         """Return a healthy local-model status payload."""
 
@@ -34,6 +37,7 @@ class FakeLocalModel:
     async def complete(self, context):
         """Capture context and return a deterministic tutoring answer."""
 
+        self.calls += 1
         self.last_context = context
         return LLMResponse(
             content="Oxidative phosphorylation uses the proton gradient to make ATP.",
@@ -51,6 +55,12 @@ class FakeTokenVerifier:
         return {"sub": token.removeprefix("token-")}
 
 
+async def allow_safe_content(_identity, _text: str) -> str:
+    """Deterministic allow verdict for tests that are not testing moderation."""
+
+    return "allow"
+
+
 class ApiTests(unittest.IsolatedAsyncioTestCase):
     """Exercise health, chat, persistence, and standardized errors through ASGI."""
 
@@ -60,7 +70,12 @@ class ApiTests(unittest.IsolatedAsyncioTestCase):
         self.store = SQLiteContextStore()
         self.manager = ContextManager(ContextConfig(), store=self.store)
         self.model = FakeLocalModel()
-        app = create_app(self.manager, self.model, auth_verifier=FakeTokenVerifier())
+        app = create_app(
+            self.manager,
+            self.model,
+            auth_verifier=FakeTokenVerifier(),
+            safety_moderator=allow_safe_content,
+        )
         self.client = AsyncClient(
             transport=ASGITransport(app=app), base_url="http://127.0.0.1"
         )
@@ -105,6 +120,7 @@ class ApiTests(unittest.IsolatedAsyncioTestCase):
             headers={"Authorization": "Bearer token-student-1"},
             json={
                 "thread_id": "thread-1",
+                "user_message_id": "user-message-1",
                 "question": "Why does oxidative phosphorylation make more ATP than glycolysis?",
                 "subject_id": "biology",
                 "language": "de",
@@ -127,11 +143,105 @@ class ApiTests(unittest.IsolatedAsyncioTestCase):
         response = await self.client.post(
             "/api/chat",
             headers={"Authorization": "Bearer token-student-1"},
-            json={"thread_id": "thread-1", "question": "Hello", "stream": True},
+            json={
+                "thread_id": "thread-1",
+                "user_message_id": "user-message-stream",
+                "question": "Hello",
+                "stream": True,
+            },
         )
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.json()["error"]["code"], "streaming_not_supported")
         self.assertIn("X-Request-Id", response.headers)
+
+    async def test_chat_retry_replays_exact_persisted_answer_once(self) -> None:
+        """The user-message ID is a durable idempotency key for one exact answer."""
+
+        request = {
+            "thread_id": "thread-retry",
+            "user_message_id": "user-message-retry",
+            "question": "Explain ATP",
+            "language": "en",
+            "allow_web": False,
+        }
+        headers = {"Authorization": "Bearer token-student-1"}
+        first = await self.client.post("/api/chat", headers=headers, json=request)
+        second = await self.client.post("/api/chat", headers=headers, json=request)
+
+        self.assertEqual(first.status_code, 200)
+        self.assertEqual(second.status_code, 200)
+        self.assertEqual(second.json(), first.json())
+        self.assertEqual(self.model.calls, 1)
+        messages = self.store.list_messages("student-1", "thread-retry")
+        self.assertEqual([message.role for message in messages], ["user", "assistant"])
+
+        conflict = await self.client.post(
+            "/api/chat",
+            headers=headers,
+            json=request | {"question": "A different request"},
+        )
+        self.assertEqual(conflict.status_code, 409)
+        self.assertEqual(conflict.json()["error"]["code"], "idempotency_conflict")
+        self.assertEqual(self.model.calls, 1)
+
+    async def test_chat_fails_closed_without_safety_or_ready_model(self) -> None:
+        """No safety verdict or unreachable runtime can ever produce a canned answer."""
+
+        unsafe_store = SQLiteContextStore()
+        unsafe_manager = ContextManager(ContextConfig(), store=unsafe_store)
+        unsafe_model = FakeLocalModel()
+        unsafe_app = create_app(
+            unsafe_manager,
+            unsafe_model,
+            auth_verifier=FakeTokenVerifier(),
+        )
+        async with AsyncClient(
+            transport=ASGITransport(app=unsafe_app), base_url="http://127.0.0.1"
+        ) as client:
+            unavailable = await client.post(
+                "/api/chat",
+                headers={"Authorization": "Bearer token-student-1"},
+                json={
+                    "thread_id": "thread-closed",
+                    "user_message_id": "message-closed",
+                    "question": "Explain ATP",
+                    "allow_web": False,
+                },
+            )
+        self.assertEqual(unavailable.status_code, 503)
+        self.assertEqual(unavailable.json()["error"]["code"], "safety_unavailable")
+        self.assertEqual(unsafe_model.calls, 0)
+        self.assertEqual(unsafe_store.list_messages("student-1", "thread-closed"), [])
+        unsafe_store.close()
+
+        async def block_content(_identity, _text: str) -> str:
+            return "block"
+
+        blocked_store = SQLiteContextStore()
+        blocked_model = FakeLocalModel()
+        blocked_app = create_app(
+            ContextManager(ContextConfig(), store=blocked_store),
+            blocked_model,
+            auth_verifier=FakeTokenVerifier(),
+            safety_moderator=block_content,
+        )
+        async with AsyncClient(
+            transport=ASGITransport(app=blocked_app), base_url="http://127.0.0.1"
+        ) as client:
+            blocked = await client.post(
+                "/api/chat",
+                headers={"Authorization": "Bearer token-student-1"},
+                json={
+                    "thread_id": "thread-blocked",
+                    "user_message_id": "message-blocked",
+                    "question": "blocked fixture",
+                    "allow_web": False,
+                },
+            )
+        self.assertEqual(blocked.status_code, 403)
+        self.assertEqual(blocked.json()["error"]["code"], "content_blocked")
+        self.assertEqual(blocked_model.calls, 0)
+        blocked_store.close()
 
     async def test_liveness_does_not_claim_model_readiness(self) -> None:
         """A live process remains live when the model-dependent feature is unavailable."""
@@ -152,6 +262,34 @@ class ApiTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(liveness.json()["status"], "ok")
         self.assertEqual(readiness.status_code, 503)
         self.assertEqual(readiness.json()["status"], "not_ready")
+
+    async def test_chat_checks_actual_runtime_readiness_before_retrieval(self) -> None:
+        """A stale frontend ready state cannot cause generation when the model is offline."""
+
+        self.model.status = lambda: _async_value(
+            {
+                "provider": "test",
+                "model": self.model.model,
+                "endpoint": "in-process",
+                "mode": "local",
+                "reachable": False,
+                "latency_ms": 0,
+            }
+        )
+        response = await self.client.post(
+            "/api/chat",
+            headers={"Authorization": "Bearer token-student-1"},
+            json={
+                "thread_id": "thread-offline",
+                "user_message_id": "message-offline",
+                "question": "Explain ATP",
+                "allow_web": False,
+            },
+        )
+        self.assertEqual(response.status_code, 503)
+        self.assertEqual(response.json()["error"]["code"], "model_unavailable")
+        self.assertEqual(self.model.calls, 0)
+        self.assertEqual(self.store.list_messages("student-1", "thread-offline"), [])
 
     async def test_model_status_is_private(self) -> None:
         """Model diagnostics use the same bearer boundary as other private routes."""
@@ -204,6 +342,22 @@ class ApiTests(unittest.IsolatedAsyncioTestCase):
         )
         self.assertEqual(matching.status_code, 200)
 
+    async def test_storage_ingestion_rejects_owner_prefix_traversal_before_download(self) -> None:
+        response = await self.client.post(
+            "/api/context/documents/storage",
+            headers={"Authorization": "Bearer token-student-1"},
+            json={
+                "document_id": "document-a",
+                "storage_path": "student-1/../student-2/private.pdf",
+                "original_filename": "private.pdf",
+                "title": "Private",
+                "subject": "biology",
+                "document_type": "pdf",
+            },
+        )
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.json()["error"]["code"], "forbidden_material")
+
     async def test_all_supported_response_languages_reach_the_compiler(self) -> None:
         for language in ("en", "de", "gsw", "ru", "es", "fr", "it"):
             with self.subTest(language=language):
@@ -212,6 +366,7 @@ class ApiTests(unittest.IsolatedAsyncioTestCase):
                     headers={"Authorization": "Bearer token-student-1"},
                     json={
                         "thread_id": f"thread-{language}",
+                        "user_message_id": f"user-message-{language}",
                         "question": "Explain this concept",
                         "language": language,
                         "allow_web": False,
@@ -230,6 +385,7 @@ class ApiTests(unittest.IsolatedAsyncioTestCase):
             headers={"Authorization": "Bearer token-student-1"},
             json={
                 "thread_id": "thread-unsupported",
+                "user_message_id": "user-message-unsupported",
                 "question": "Explain this concept",
                 "language": "xx",
                 "allow_web": False,

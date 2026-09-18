@@ -26,6 +26,12 @@ class FakeTokenVerifier:
         return {"sub": token.removeprefix("token-")}
 
 
+async def allow_safe_content(_identity, _content: str) -> str:
+    """Model the explicit allow verdict required before local inference."""
+
+    return "allow"
+
+
 REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
 
 
@@ -102,7 +108,13 @@ class QwenStartupAndWebTests(unittest.IsolatedAsyncioTestCase):
                 model=MODEL_NAME,
                 timeout_seconds=5,
             )
-            app = create_app(manager, llm, runtime, auth_verifier=FakeTokenVerifier())
+            app = create_app(
+                manager,
+                llm,
+                runtime,
+                auth_verifier=FakeTokenVerifier(),
+                safety_moderator=allow_safe_content,
+            )
             try:
                 async with app.router.lifespan_context(app):
                     self.assertTrue(await runtime.is_ready())
@@ -114,6 +126,7 @@ class QwenStartupAndWebTests(unittest.IsolatedAsyncioTestCase):
                         headers={"Authorization": "Bearer token-student"},
                         json={
                             "thread_id": "thread",
+                            "user_message_id": "user-message-e2e",
                             "question": "Browse the latest current research about ATP production",
                             "subject_id": "biology",
                             "allow_web": True,

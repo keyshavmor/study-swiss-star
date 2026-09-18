@@ -11,7 +11,8 @@ sequenceDiagram
   Store-->>Manager: RLS-filtered records
   Manager->>Retrieval: sparse+dense candidates and optional web
   Retrieval-->>Budget: ranked, deduplicated context items
+  Budget->>Budget: label retrieved text as UNTRUSTED DATA
   Budget-->>API: bounded source-labelled prompt
   API->>Model: OpenAI-compatible completion
   Model-->>API: answer/model metadata
-  API->>Manager: process memory and summaries
+  API->>Manager: idempotently persist exact turn, provenance, memory and summaries

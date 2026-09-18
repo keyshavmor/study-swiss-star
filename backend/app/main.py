@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
+import hashlib
+import json
 import logging
 import os
 import tempfile
@@ -11,11 +13,12 @@ import urllib.error
 import urllib.parse
 import urllib.request
 import uuid
-from collections.abc import Callable
+import weakref
+from collections.abc import Awaitable, Callable
 from contextlib import asynccontextmanager
 from dataclasses import replace
 from datetime import UTC, datetime
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from time import monotonic
 from typing import Any, Literal
 
@@ -37,13 +40,16 @@ from .context.retrieval import EmbeddingUnavailableError
 from .context.store_supabase import SupabaseContextStore, SupabaseStoreError
 from .contracts import LivenessResponse, ReadinessCheck, ReadinessResponse
 from .errors import ApiError, error_response
-from .model_registry import MODEL_REGISTRY, model_cache_root
+from .model_registry import MODEL_REGISTRY, MappingState, model_cache_root, resolve_model
 from .runtime_control import RuntimeCoordinator
 from .services import (
+    MAX_MATERIAL_BYTES,
     DocumentIngestor,
     LocalOpenAICompatibleClient,
     ModelRuntimeManager,
     ModelUnavailableError,
+    UnsupportedDocumentError,
+    stable_text_document_id,
 )
 from .system_probe import SystemProbe
 
@@ -51,6 +57,19 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("alim.api")
 
 SupportedLanguage = Literal["en", "de", "gsw", "ru", "es", "fr", "it"]
+SafetyModerator = Callable[[AuthenticatedUser, str], Awaitable[str]]
+
+
+def _validate_owner_storage_path(user_id: str, path: str) -> None:
+    """Reject traversal and require the verified owner as the first path segment."""
+
+    if "\\" in path or path.startswith("/"):
+        raise ApiError(403, "forbidden_material", "Material path is not owned by this user")
+    parts = PurePosixPath(path).parts
+    if len(parts) < 2 or parts[0] != user_id or any(
+        part in {"", ".", ".."} for part in parts
+    ):
+        raise ApiError(403, "forbidden_material", "Material path is not owned by this user")
 
 
 class RequestIdMiddleware:
@@ -103,9 +122,12 @@ class ChatRequest(BaseModel):
     """Request body for one bounded, locally generated tutoring turn."""
 
     thread_id: str
+    user_message_id: str = Field(min_length=1, max_length=200)
     question: str = Field(min_length=1, max_length=4_000)
+    model_id: str | None = Field(default=None, min_length=1, max_length=200)
     subject_id: str | None = None
     component_subject_id: str | None = None
+    ui_language: SupportedLanguage | None = None
     language: SupportedLanguage | None = None
     academic_year: str | None = None
     grade_level: int | None = None
@@ -114,7 +136,6 @@ class ChatRequest(BaseModel):
     top_k: int = Field(default=6, ge=1, le=20)
     include_sources: bool = True
     stream: bool = False
-    user_message_id: str | None = None
     allow_web: bool = True
 
 
@@ -143,10 +164,10 @@ class ArtifactRequest(BaseModel):
 class TextDocumentRequest(BaseModel):
     """Plain-text learning material plus retrieval metadata."""
 
-    title: str
-    subject: str
-    document_type: str
-    content: str = Field(min_length=1)
+    title: str = Field(min_length=1, max_length=240)
+    subject: str = Field(min_length=1, max_length=120)
+    document_type: str = Field(min_length=1, max_length=80)
+    content: str = Field(min_length=1, max_length=5_000_000)
     source: str | None = None
     topic: str | None = None
     subtopic: str | None = None
@@ -159,12 +180,12 @@ class TextDocumentRequest(BaseModel):
 class StorageDocumentRequest(BaseModel):
     """A private Supabase Storage object to download temporarily and index locally."""
 
-    document_id: str
-    storage_path: str
-    original_filename: str
-    title: str
-    subject: str
-    document_type: str
+    document_id: str = Field(min_length=1, max_length=200)
+    storage_path: str = Field(min_length=1, max_length=1_024)
+    original_filename: str = Field(min_length=1, max_length=255)
+    title: str = Field(min_length=1, max_length=240)
+    subject: str = Field(min_length=1, max_length=120)
+    document_type: str = Field(min_length=1, max_length=80)
     section: str | None = None
     topic: str | None = None
     language: str | None = None
@@ -223,6 +244,7 @@ def create_app(
     context_manager_factory: Callable[[str, str], ContextManager] | None = None,
     settings: BackendSettings | None = None,
     runtime_coordinator: RuntimeCoordinator | None = None,
+    safety_moderator: SafetyModerator | None = None,
 ) -> FastAPI:
     """Construct an injectable app for production startup and isolated tests."""
 
@@ -261,6 +283,8 @@ def create_app(
         runtime_release=runtime.stop if runtime else None,
         artifact_store=ArtifactStore(model_cache_root()),
     )
+    chat_locks: weakref.WeakValueDictionary[str, asyncio.Lock] = weakref.WeakValueDictionary()
+    chat_locks_guard = asyncio.Lock()
 
     @asynccontextmanager
     async def lifespan(_api: FastAPI):
@@ -361,6 +385,16 @@ def create_app(
             request.state.request_id,
         )
 
+    @api.exception_handler(UnsupportedDocumentError)
+    async def unsupported_document_handler(request: Request, error: UnsupportedDocumentError):
+        """Return a stable content/type failure without exposing parser internals."""
+
+        del error
+        return error_response(
+            ApiError(415, "unsupported_document", "The document type or content is unsupported"),
+            request.state.request_id,
+        )
+
     @api.exception_handler(ApiError)
     async def api_error_handler(request: Request, error: ApiError):
         """Return an intentionally public bounded error."""
@@ -425,9 +459,7 @@ def create_app(
     def download_private_material(identity: AuthenticatedUser, path: str) -> bytes:
         """Fetch one object with the caller's JWT so Storage RLS remains authoritative."""
 
-        expected_prefix = f"{identity.user_id}/"
-        if not path.startswith(expected_prefix):
-            raise ApiError(403, "forbidden_material", "Material path is not owned by this user")
+        _validate_owner_storage_path(identity.user_id, path)
         url = os.getenv("SUPABASE_URL", "").rstrip("/")
         key = os.getenv("SUPABASE_PUBLISHABLE_KEY", "")
         if not url or not key:
@@ -445,7 +477,36 @@ def create_app(
         )
         try:
             with urllib.request.urlopen(request, timeout=60) as response:
-                return response.read()
+                announced = response.headers.get("Content-Length")
+                if announced is not None:
+                    try:
+                        announced_bytes = int(announced)
+                    except ValueError as error:
+                        raise ApiError(
+                            503,
+                            "storage_invalid_response",
+                            "Supabase Storage returned an invalid response",
+                            retryable=True,
+                        ) from error
+                    if announced_bytes > MAX_MATERIAL_BYTES:
+                        raise ApiError(
+                            413,
+                            "material_too_large",
+                            "Material exceeds the 50 MiB ingestion limit",
+                        )
+                payload = bytearray()
+                while True:
+                    block = response.read(min(64 * 1024, MAX_MATERIAL_BYTES + 1 - len(payload)))
+                    if not block:
+                        break
+                    payload.extend(block)
+                    if len(payload) > MAX_MATERIAL_BYTES:
+                        raise ApiError(
+                            413,
+                            "material_too_large",
+                            "Material exceeds the 50 MiB ingestion limit",
+                        )
+                return bytes(payload)
         except urllib.error.HTTPError as error:
             if error.code in {401, 403, 404}:
                 raise ApiError(403, "forbidden_material", "Material is not accessible") from error
@@ -462,6 +523,61 @@ def create_app(
                 "Supabase Storage is unavailable",
                 retryable=True,
             ) from error
+
+    async def lock_for_chat(key: str) -> asyncio.Lock:
+        """Serialize duplicate message IDs without retaining an unbounded lock registry."""
+
+        async with chat_locks_guard:
+            lock = chat_locks.get(key)
+            if lock is None:
+                lock = asyncio.Lock()
+                chat_locks[key] = lock
+            return lock
+
+    def chat_fingerprint(body: ChatRequest) -> str:
+        """Hash the semantic request so one idempotency key cannot change meaning."""
+
+        value = body.model_dump(exclude={"user_message_id"}, mode="json")
+        encoded = json.dumps(value, sort_keys=True, separators=(",", ":")).encode("utf-8")
+        return hashlib.sha256(encoded).hexdigest()
+
+    def assistant_message_id(identity: AuthenticatedUser, body: ChatRequest) -> str:
+        """Derive a stable assistant row ID from verified scope and the user turn ID."""
+
+        return str(
+            uuid.uuid5(
+                uuid.NAMESPACE_URL,
+                f"alim-chat-assistant|{identity.user_id}|{body.thread_id}|{body.user_message_id}",
+            )
+        )
+
+    def cached_chat_response(
+        messages: list[Any], message_id: str, fingerprint: str, thread_id: str
+    ) -> dict[str, Any] | None:
+        """Rehydrate a completed response only when its exact request fingerprint matches."""
+
+        existing = next((message for message in messages if message.id == message_id), None)
+        if existing is None:
+            return None
+        if existing.role != "assistant" or existing.metadata.get("request_fingerprint") != fingerprint:
+            raise ApiError(
+                409,
+                "idempotency_conflict",
+                "The message identifier was already used for another request",
+            )
+        metadata = existing.metadata.get("chat_response")
+        if not isinstance(metadata, dict):
+            raise ApiError(
+                409,
+                "idempotency_conflict",
+                "The previous response cannot be safely replayed",
+            )
+        return {
+            "thread_id": thread_id,
+            "message_id": message_id,
+            "answer": existing.content,
+            **metadata,
+        }
 
     @api.get("/health", response_model=LivenessResponse)
     async def health() -> LivenessResponse:
@@ -643,7 +759,7 @@ def create_app(
         body: ChatRequest,
         identity: AuthenticatedUser = Depends(require_user),  # noqa: B008
     ) -> dict[str, Any]:
-        """Compile bounded context, ask local Qwen, then persist reusable memory."""
+        """Generate one safe, ready, user-scoped and idempotently persisted chat turn."""
 
         manager = manager_for(identity)
         if body.stream:
@@ -652,69 +768,148 @@ def create_app(
                 "streaming_not_supported",
                 "The local chat endpoint currently requires stream=false",
             )
-        retrieval_subject = body.component_subject_id or body.subject_id
-        compiled = await manager.build_context(
-            student_id=identity.user_id,
-            conversation_id=body.thread_id,
-            user_message=body.question,
-            subject=retrieval_subject,
-            language=body.language,
-            material_ids=body.material_ids,
-            allow_web=body.allow_web,
-            model_config=ModelConfig(model=llm.model),
-        )
-        result = await llm.complete(compiled)
-        message_id = str(uuid.uuid4())
-        await manager.process_response(
-            student_id=identity.user_id,
-            conversation_id=body.thread_id,
-            user_message=body.question,
-            assistant_response=result.content,
-            user_message_id=body.user_message_id,
-            assistant_message_id=message_id,
-            subject=retrieval_subject,
-            topic=compiled.retrieval_debug.get("topics", [None])[0]
-            if compiled.retrieval_debug.get("topics")
-            else None,
-        )
-        source_items = (
-            compiled.retrieved_knowledge + compiled.syllabus_context + compiled.web_context
-        )
-        sources = (
-            [
-                {
-                    "source_id": item.id,
-                    "material_id": item.metadata.get("document_id"),
-                    "material_name": item.metadata.get("title") or item.source,
-                    "section": item.metadata.get("section"),
-                    "page": item.metadata.get("page"),
-                    "snippet": item.content[:500],
-                    "score": round(item.relevance_score, 4),
-                    "url": item.metadata.get("url"),
-                    "chapter": item.metadata.get("chapter"),
-                }
-                for item in source_items[: body.top_k]
-            ]
-            if body.include_sources
-            else []
-        )
-        return {
-            "thread_id": body.thread_id,
-            "message_id": message_id,
-            "answer": result.content,
-            "sources": sources,
-            "exam_tip": None,
-            "used_model": result.model,
-            "retrieval_summary": {
-                "chunks_considered": compiled.retrieval_debug["retrieval"].get(
-                    "fused_candidates", 0
-                ),
-                "chunks_used": len(source_items),
-                "collections": [retrieval_subject] if retrieval_subject else [],
-            },
-            "language": body.language,
-            "created_at": datetime.now(UTC).isoformat(),
-        }
+        if not manager.store.conversation_owned(identity.user_id, body.thread_id):
+            raise ApiError(404, "thread_not_found", "The study thread is unavailable")
+
+        message_id = assistant_message_id(identity, body)
+        fingerprint = chat_fingerprint(body)
+        lock = await lock_for_chat(f"{identity.user_id}|{body.thread_id}|{body.user_message_id}")
+        async with lock:
+            messages = manager.store.list_messages(identity.user_id, body.thread_id)
+            if manager.store.canonical_transcript:
+                stored_user = next(
+                    (message for message in messages if message.id == body.user_message_id),
+                    None,
+                )
+                if (
+                    stored_user is None
+                    or stored_user.role != "user"
+                    or stored_user.content != body.question
+                ):
+                    raise ApiError(
+                        409,
+                        "idempotency_conflict",
+                        "The user message identifier does not match the persisted request",
+                    )
+            cached = cached_chat_response(messages, message_id, fingerprint, body.thread_id)
+            if cached is not None:
+                return cached
+
+            if safety_moderator is None:
+                raise ApiError(
+                    503,
+                    "safety_unavailable",
+                    "Content safety is unavailable",
+                    retryable=True,
+                )
+            verdict = await safety_moderator(identity, body.question)
+            if verdict != "allow":
+                if verdict == "block":
+                    raise ApiError(403, "content_blocked", "The request cannot be processed")
+                raise ApiError(
+                    503,
+                    "safety_unavailable",
+                    "Content safety is unavailable",
+                    retryable=True,
+                )
+
+            if body.model_id:
+                entry = resolve_model(body.model_id)
+                if entry is None or entry.mapping_state is not MappingState.VERIFIED:
+                    raise ApiError(
+                        409,
+                        "model_not_ready",
+                        "The selected local model is not ready",
+                        retryable=True,
+                    )
+            status = await llm.status()
+            if status.get("reachable") is not True:
+                raise ModelUnavailableError("The local model endpoint is unavailable")
+            if body.model_id and status.get("model") != body.model_id:
+                raise ApiError(
+                    409,
+                    "model_selection_mismatch",
+                    "The ready local model does not match the selected model",
+                    retryable=True,
+                )
+
+            retrieval_subject = body.component_subject_id or body.subject_id
+            compiled = await manager.build_context(
+                student_id=identity.user_id,
+                conversation_id=body.thread_id,
+                user_message=body.question,
+                subject=retrieval_subject,
+                language=body.language,
+                material_ids=body.material_ids,
+                allow_web=body.allow_web,
+                model_config=ModelConfig(model=body.model_id or llm.model),
+            )
+            result = await llm.complete(compiled)
+            source_items = (
+                compiled.retrieved_knowledge + compiled.syllabus_context + compiled.web_context
+            )
+            sources = (
+                [
+                    {
+                        "source_id": item.id,
+                        "material_id": item.metadata.get("document_id"),
+                        "material_name": item.metadata.get("title") or item.source,
+                        "section": item.metadata.get("section"),
+                        "page": item.metadata.get("page"),
+                        "snippet": item.content[:500],
+                        "score": round(item.relevance_score, 4),
+                        "url": item.metadata.get("url"),
+                        "chapter": item.metadata.get("chapter"),
+                    }
+                    for item in source_items[: body.top_k]
+                ]
+                if body.include_sources
+                else []
+            )
+            response_metadata = {
+                "sources": sources,
+                "exam_tip": None,
+                "used_model": result.model,
+                "retrieval_summary": {
+                    "chunks_considered": compiled.retrieval_debug["retrieval"].get(
+                        "fused_candidates", 0
+                    ),
+                    "chunks_used": len(source_items),
+                    "collections": [retrieval_subject] if retrieval_subject else [],
+                },
+                "language": body.language,
+                "created_at": datetime.now(UTC).isoformat(),
+            }
+            await manager.process_response(
+                student_id=identity.user_id,
+                conversation_id=body.thread_id,
+                user_message=body.question,
+                assistant_response=result.content,
+                user_message_id=body.user_message_id,
+                assistant_message_id=message_id,
+                subject=retrieval_subject,
+                topic=compiled.retrieval_debug.get("topics", [None])[0]
+                if compiled.retrieval_debug.get("topics")
+                else None,
+                metadata={
+                    "request_fingerprint": fingerprint,
+                    "chat_response": response_metadata,
+                },
+            )
+            persisted = cached_chat_response(
+                manager.store.list_messages(identity.user_id, body.thread_id),
+                message_id,
+                fingerprint,
+                body.thread_id,
+            )
+            if persisted is None:
+                raise ApiError(
+                    503,
+                    "message_persistence_failed",
+                    "The completed answer could not be persisted",
+                    retryable=True,
+                )
+            return persisted
 
     @api.post("/api/context/events")
     async def record_event(
@@ -747,7 +942,14 @@ def create_app(
 
         manager = manager_for(identity)
         ingestor = DocumentIngestor(manager.store, manager.counter, manager.embedder)
-        chunks = await ingestor.ingest_text(student_id=identity.user_id, **body.model_dump())
+        values = body.model_dump()
+        values["document_id"] = stable_text_document_id(
+            identity.user_id,
+            body.title,
+            body.subject,
+            body.content,
+        )
+        chunks = await ingestor.ingest_text(student_id=identity.user_id, **values)
         return {
             "document_id": chunks[0].document_id,
             "chunks_indexed": len(chunks),
@@ -761,6 +963,13 @@ def create_app(
     ) -> dict[str, Any]:
         """Temporarily parse a private object and persist only its user-scoped chunks."""
 
+        if (
+            "\\" in body.original_filename
+            or "/" in body.original_filename
+            or Path(body.original_filename).name != body.original_filename
+        ):
+            raise ApiError(400, "invalid_filename", "The material filename is invalid")
+        _validate_owner_storage_path(identity.user_id, body.storage_path)
         payload = await asyncio.to_thread(download_private_material, identity, body.storage_path)
         suffix = Path(body.original_filename).suffix.casefold()
         temporary_path: Path | None = None

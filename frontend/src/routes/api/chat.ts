@@ -8,6 +8,8 @@ import {
   type ContextResponseMetadata,
 } from "@/lib/context-backend.server";
 import type { Database, Json } from "@/integrations/supabase/types";
+import { effectiveResponseLanguage } from "@/lib/i18n/detect";
+import { DEFAULT_LANGUAGE, isLanguageCode } from "@/lib/i18n/languages";
 
 type AlimUIMessage = UIMessage<never, { "context-metadata": ContextResponseMetadata }>;
 
@@ -80,7 +82,15 @@ export const Route = createFileRoute("/api/chat")({
           threadId?: string;
           academicYear?: string;
           gradeLevel?: number;
-          data?: { threadId?: string; academicYear?: string; gradeLevel?: number };
+          modelId?: string | null;
+          uiLanguage?: string;
+          data?: {
+            threadId?: string;
+            academicYear?: string;
+            gradeLevel?: number;
+            modelId?: string | null;
+            uiLanguage?: string;
+          };
         };
 
         const messages = body.messages ?? [];
@@ -128,19 +138,25 @@ export const Route = createFileRoute("/api/chat")({
         }
 
         if (lastMessage && lastMessage.role === "user") {
-          const { error: insertError } = await supabase.from("messages").insert({
-            thread_id: threadId,
-            user_id: userId,
-            id: lastMessage.id,
-            role: lastMessage.role,
-            content: lastMessage.parts
-              .map((part) => (part.type === "text" ? part.text : ""))
-              .join(""),
-            parts: lastMessage.parts as Json[],
-          });
+          const { error: insertError } = await supabase.from("messages").upsert(
+            {
+              thread_id: threadId,
+              user_id: userId,
+              id: lastMessage.id,
+              role: lastMessage.role,
+              content: lastMessage.parts
+                .map((part) => (part.type === "text" ? part.text : ""))
+                .join(""),
+              parts: lastMessage.parts as Json[],
+            },
+            { onConflict: "id", ignoreDuplicates: true },
+          );
 
           if (insertError) {
-            console.error("Failed to save user message", insertError);
+            return new Response("Message persistence is unavailable", {
+              status: 503,
+              headers: { "X-Alim-Error-Code": "message_persistence_failed" },
+            });
           }
         }
 
@@ -152,12 +168,20 @@ export const Route = createFileRoute("/api/chat")({
         try {
           const academicYear = body.academicYear ?? body.data?.academicYear;
           const gradeLevel = body.gradeLevel ?? body.data?.gradeLevel;
+          const modelId = body.modelId ?? body.data?.modelId ?? undefined;
+          const candidateLanguage = body.uiLanguage ?? body.data?.uiLanguage;
+          const uiLanguage = isLanguageCode(candidateLanguage)
+            ? candidateLanguage
+            : DEFAULT_LANGUAGE;
           contextResponse = await requestContextAnswer({
             accessToken,
             studentId: userId,
             threadId,
             userMessageId: lastMessage.id,
             question,
+            uiLanguage,
+            responseLanguage: effectiveResponseLanguage(question, uiLanguage),
+            ...(modelId ? { modelId } : {}),
             ...(thread.subject ? { subject: thread.subject } : {}),
             ...(academicYear ? { academicYear } : {}),
             ...(gradeLevel !== undefined ? { gradeLevel } : {}),
@@ -177,6 +201,7 @@ export const Route = createFileRoute("/api/chat")({
 
         const stream = createUIMessageStream<AlimUIMessage>({
           originalMessages: messages as AlimUIMessage[],
+          generateId: () => contextResponse.message_id,
           execute: ({ writer }) => {
             const textId = `text-${contextResponse.message_id}`;
             writer.write({ type: "text-start", id: textId });
@@ -196,15 +221,18 @@ export const Route = createFileRoute("/api/chat")({
             const content = responseMessage.parts
               .map((part) => (part.type === "text" ? part.text : ""))
               .join("");
-            const { error } = await supabase.from("messages").insert({
-              thread_id: threadId,
-              user_id: userId,
-              id: responseMessage.id,
-              role: "assistant",
-              content,
-              parts: responseMessage.parts as Json[],
-            });
-            if (error) console.error("Failed to save assistant message", error);
+            const { error } = await supabase.from("messages").upsert(
+              {
+                thread_id: threadId,
+                user_id: userId,
+                id: responseMessage.id,
+                role: "assistant",
+                content,
+                parts: responseMessage.parts as Json[],
+              },
+              { onConflict: "id" },
+            );
+            if (error) console.error("Failed to finalize the persisted assistant message");
           },
         });
         return createUIMessageStreamResponse({ stream });

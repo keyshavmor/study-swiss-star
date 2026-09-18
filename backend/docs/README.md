@@ -7,7 +7,7 @@
 | Canonical path | `backend/docs/README.md` |
 | Backend foundation | Prompt 03 implementation begun from `f61aeaf21ad3aa3030fb6c1db42203cadb9d8f8c` |
 | Frontend contract authority | `f0910e6971f12efe0ad547b904f6e2a518b13856` |
-| Last reviewed | 2026-09-18 |
+| Last reviewed | 2026-09-19 |
 
 This tree owns implemented backend behavior and the handoff for moving that
 backend toward the authoritative frontend contract. Cross-system UX and API
@@ -26,9 +26,10 @@ meanings remain canonical under `docs/`; backend code cannot weaken them.
 | Implementation order and known gaps | [handoff](handoff/README.md) |
 
 Current strengths include JWT verification, user-token/RLS persistence,
-private Storage ownership checks, context compilation, memory/artifacts,
-hybrid retrieval/reranking, document parsing, local/web reference lookup,
+private Storage ownership/size/type checks, idempotent safety-gated subject
+chat, context compilation, memory/artifacts, hybrid retrieval/reranking,
+bounded document parsing, local/web reference lookup,
 versioned/redacted API errors, loopback/Host/CORS validation, cancellable
 OpenAI-compatible local inference and one Qwen 3.8 27B lifecycle. Model,
-admission, health, safety, peer messaging, Assistant and assessment contracts
+concrete safety moderation, peer messaging, Assistant and assessment contracts
 remain incomplete as listed in the handoff.

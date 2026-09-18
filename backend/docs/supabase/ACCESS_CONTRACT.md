@@ -5,7 +5,7 @@
 | Owner | Backend and Supabase |
 | Status | Current user-token pattern plus explicitly listed gaps |
 | Canonical path | `backend/docs/supabase/ACCESS_CONTRACT.md` |
-| Verified | Prompt 03 auth and caller-token tests, 2026-09-18 |
+| Verified | Prompt 05 ownership/idempotency tests, 2026-09-19 |
 
 ## Identity model
 
@@ -25,11 +25,11 @@ the REST API with the user's access token plus publishable key and adds verified
 summaries, artifacts and working memory. Continue this pattern for ordinary
 user-owned data.
 
-Private `user-materials` downloads likewise use the caller token, require the
-`<claims.sub>/` prefix, URL-encode the object, and delete local temporary files.
-Bounded size, content sniffing, parser sandboxing and deletion hooks remain
-hardening work; the caller-token/owner-prefix/temporary-cleanup boundary is
-current.
+Private `user-materials` downloads likewise use the caller token, require a
+normalized `<claims.sub>/…` path, reject traversal/backslashes, URL-encode the
+object, cap streamed bytes at 50 MiB, sniff supported content, bound PDF/DOCX
+extraction, and delete local temporary files. Parser process isolation remains
+future hardening; size, type, path and cleanup boundaries are current.
 
 ## Privileged operations
 
@@ -43,7 +43,7 @@ authorization before every call. Log only sanitized audit metadata.
 
 | Backend concern | Supabase objects |
 |---|---|
-| Subject chat | `threads`, `messages` (frontend currently persists turns) |
+| Subject chat | `threads`, `messages`; both boundaries upsert stable IDs and FastAPI persists exact completed-answer metadata before response |
 | Context/RAG | `documents`, `document_chunks`, `student_memories`, `learning_events`, `conversation_summaries`, `context_artifacts`, `working_memory`, `user-materials` |
 | Assistant | `assistant_threads/messages/attachments`, `chat-attachments` |
 | Models/policy | read-only `ai_model_catalog`, runtime/admission policy RPCs; never store readiness |
@@ -55,10 +55,11 @@ authorization before every call. Log only sanitized audit metadata.
 
 ## Current gaps
 
-- Backend does not implement live model/admission/safety/peer/assessment/media
-  contracts.
-- Backend's single-model status does not reconcile with the live catalogue.
-- Backend has no durable operation/lease/queue store or TTL sweepers.
+- Backend does not yet implement the concrete safety engine, peer, assessment,
+  media or deletion contracts; chat therefore fails closed until Prompt 07
+  wires its safety moderator.
+- Nine enabled catalogue IDs remain intentionally unavailable because their
+  immutable local artifact mappings are unresolved.
 - Assistant generation and attachment parsing are absent.
 - Context tables are supported, but exact live schema/type drift must be tested
   after forward migration reconciliation.

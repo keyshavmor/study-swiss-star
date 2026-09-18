@@ -44,7 +44,7 @@ uv run --project backend uvicorn app.main:app --app-dir backend --host 127.0.0.1
 For API-only development with an externally managed model server:
 
 ```bash
-uv sync --project backend --extra dev
+uv sync --project backend --extra dev --extra documents
 ALIM_MODEL_AUTOSTART=false uv run --project backend \
   uvicorn app.main:app --app-dir backend --host 127.0.0.1 --port 8001
 ```
@@ -59,6 +59,13 @@ retrieval searches `material/web/` first
 and automatically uses Wikipedia only when no relevant local match exists. It is intent-gated,
 cached, provenance-labelled, and constrained by the same hard budget as local evidence. Use
 `ALIM_WEB_PROVIDER=local` to prohibit network retrieval.
+
+`/api/chat` also verifies thread ownership, requires a concrete safety-moderator
+`allow` verdict, probes the selected local model, and durably replays exact
+completed responses by user-message ID. The default app intentionally has no
+safety bypass: chat returns `safety_unavailable` until Prompt 07 wires the local
+moderator. See the cross-system
+[`CHAT_ASSISTANT_RAG_CONTRACT`](../docs/contracts/CHAT_ASSISTANT_RAG_CONTRACT.md).
 
 Large model download and model autostart are disabled by default. The explicit
 Prepare request may acquire the one verified mapping, or an operator may run

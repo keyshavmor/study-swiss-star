@@ -61,6 +61,10 @@ class ErrorModel:
         raise RuntimeError("private-token raw-question /private/model/path")
 
 
+async def allow_safe_content(_identity, _text: str) -> str:
+    return "allow"
+
+
 class AuthAndConfigTests(unittest.IsolatedAsyncioTestCase):
     """Exercise central auth and fail-fast network configuration."""
 
@@ -181,6 +185,7 @@ class ContractBoundaryTests(unittest.IsolatedAsyncioTestCase):
             self.manager(),
             ErrorModel(),
             auth_verifier=StaticVerifier(),
+            safety_moderator=allow_safe_content,
         )
         async with AsyncClient(
             transport=ASGITransport(app=app, raise_app_exceptions=False),
@@ -191,6 +196,7 @@ class ContractBoundaryTests(unittest.IsolatedAsyncioTestCase):
                 headers={"Authorization": "Bearer caller-secret"},
                 json={
                     "thread_id": "thread-a",
+                    "user_message_id": "message-a",
                     "question": "raw-question",
                     "allow_web": False,
                 },

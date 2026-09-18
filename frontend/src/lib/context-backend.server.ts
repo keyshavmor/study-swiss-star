@@ -23,6 +23,9 @@ export async function requestContextAnswer(input: {
   threadId: string;
   userMessageId?: string;
   question: string;
+  modelId?: string;
+  uiLanguage?: "de" | "en" | "es" | "fr" | "gsw" | "it" | "ru";
+  responseLanguage?: "de" | "en" | "es" | "fr" | "gsw" | "it" | "ru";
   subject?: string;
   academicYear?: string;
   gradeLevel?: number;
@@ -48,8 +51,10 @@ export async function requestContextAnswer(input: {
         thread_id: input.threadId,
         user_message_id: input.userMessageId,
         question: input.question,
+        model_id: input.modelId,
+        ui_language: input.uiLanguage,
         subject_id: normalizeSubjectId(input.subject),
-        language: languageForSubject(input.subject),
+        language: input.responseLanguage,
         academic_year: input.academicYear,
         grade_level: input.gradeLevel,
         include_sources: true,
@@ -129,12 +134,4 @@ function normalizeSubjectId(subject?: string): string | undefined {
   };
   const normalized = subject.trim().toLowerCase();
   return known[normalized] ?? normalized.replace(/\s+/g, "-");
-}
-
-function languageForSubject(subject?: string): "de" | "en" | "fr" | undefined {
-  const normalized = subject?.trim().toLowerCase();
-  if (!normalized || normalized === "all subjects") return undefined;
-  if (["mathematics", "physics", "english", "history"].includes(normalized)) return "en";
-  if (normalized === "french") return "fr";
-  return "de";
 }
