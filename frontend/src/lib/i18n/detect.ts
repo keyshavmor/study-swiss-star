@@ -267,8 +267,8 @@ export function detectLanguage(
  * is confidently written in another approved language.
  *
  * This mirrors the Supabase preference `assistant_reply_language_policy =
- * "message_then_app"`. The TanStack chat boundary applies this result and
- * forwards the explicit response language to the local backend.
+ * "message_then_app"`. FUTURE BACKEND / CODEX: the local AI backend does not
+ * yet consume this metadata — the frontend only prepares and stores it.
  */
 export function effectiveResponseLanguage(text: string, uiLanguage: LanguageCode): LanguageCode {
   const detected = detectLanguage(text, uiLanguage);

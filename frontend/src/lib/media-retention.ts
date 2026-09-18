@@ -11,10 +11,10 @@
  *  4. When the media was fetched rather than generated, `source_url` (remote)
  *     or `source_path` (storage) is retained alongside the descriptor.
  *
- * Descriptor generation/upload remain deferred with General Assistant media
- * generation. The live Supabase cleanup worker is scheduled independently.
- * This module only enqueues after a descriptor path exists and never generates
- * descriptors client-side.
+ * FUTURE BACKEND / CODEX: descriptor generation, descriptor upload and the
+ * 30-minute cleanup worker are backend responsibilities and are NOT
+ * implemented today. This module only enqueues a row when a caller already has
+ * a descriptor object path; it never generates descriptors client-side.
  */
 import { supabase } from "@/integrations/supabase/client";
 
@@ -22,7 +22,7 @@ export const DESCRIPTOR_BUCKET = "assistant-descriptors";
 export const RETENTION_MINUTES = 30;
 
 export type MediaKind = "image" | "audio" | "video";
-export type RetentionStatus = "pending" | "ready" | "processing" | "deleted" | "failed";
+export type RetentionStatus = "pending" | "descriptor_ready" | "deleted" | "failed";
 
 export interface RetentionEnqueueInput {
   /** Owner of the media; must be the signed-in user (RLS enforces this). */
@@ -32,7 +32,8 @@ export interface RetentionEnqueueInput {
   storageBucket: string;
   objectPath: string;
   /** Descriptor produced by the backend, already uploaded. */
-  descriptorPath: string;
+  descriptorBucket?: string;
+  descriptorPath?: string | null;
   /** Set when the media was fetched rather than generated. */
   sourceUrl?: string | null;
   sourcePath?: string | null;
@@ -42,7 +43,7 @@ export interface RetentionRow {
   id: string;
   media_kind: string;
   object_path: string;
-  descriptor_path: string;
+  descriptor_path: string | null;
   source_url: string | null;
   source_path: string | null;
   status: string;
@@ -57,21 +58,17 @@ export interface RetentionRow {
  * Safe to call only for assistant-generated or assistant-fetched media.
  */
 export async function enqueueAssistantMedia(input: RetentionEnqueueInput): Promise<void> {
-  const ownerPrefix = `${input.userId}/`;
-  if (!input.objectPath.startsWith(ownerPrefix) || !input.descriptorPath.startsWith(ownerPrefix)) {
-    throw new Error("Assistant media paths must belong to the signed-in user.");
-  }
   const { error } = await supabase.from("media_retention_queue").insert({
     user_id: input.userId,
     attachment_id: input.attachmentId ?? null,
     media_kind: input.mediaKind,
     storage_bucket: input.storageBucket,
     object_path: input.objectPath,
-    descriptor_bucket: DESCRIPTOR_BUCKET,
-    descriptor_path: input.descriptorPath,
+    descriptor_bucket: input.descriptorBucket ?? DESCRIPTOR_BUCKET,
+    descriptor_path: input.descriptorPath ?? null,
     source_url: input.sourceUrl ?? null,
     source_path: input.sourcePath ?? null,
-    status: "ready",
+    status: input.descriptorPath ? "descriptor_ready" : "pending",
   });
   if (error) throw new Error(error.message);
 }

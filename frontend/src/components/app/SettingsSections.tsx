@@ -4,6 +4,7 @@
  * user_preferences, Storage) under the signed-in user's own session.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { AlertTriangle, Loader2, Trash2, Upload, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,10 +17,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Link } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
+import { ModelReadinessPanel } from "@/components/app/ModelReadinessPanel";
+import { useAiAvailability } from "@/lib/ai-availability";
 import {
   DEFAULT_PREFERENCES,
-  QWEN_MODELS,
   avatarSignedUrl,
   fetchAccountProfile,
   fetchPreferences,
@@ -40,7 +43,15 @@ import {
   type StorageItemKind,
 } from "@/lib/storage-management";
 import type { StorageUsageStatus } from "@/integrations/supabase/types";
+import {
+  getMessagingPreferences,
+  saveMessagingPreferences,
+  type MessagingPreferences,
+} from "@/lib/messaging-preferences";
+import { fetchLocalBackendHealth } from "@/lib/system.functions";
+import { fetchAccountCompliance, fetchLegalConsents } from "@/lib/compliance";
 import { toast } from "sonner";
+import { isQuotaExceededError } from "@/lib/user-quota";
 import { track, trackFailure } from "@/lib/telemetry";
 import { cn } from "@/lib/utils";
 import { useI18n } from "@/lib/i18n/provider";
@@ -135,7 +146,11 @@ export function AccountSection() {
       toast.success(t("settings.account.avatarUpdated"));
     } catch (err) {
       trackFailure("settings_avatar_update_failed", err, { feature: "settings" });
-      toast.error(t("settings.account.avatarUpdateError"));
+      toast.error(
+        isQuotaExceededError(err)
+          ? t("quota.exceededError")
+          : t("settings.account.avatarUpdateError"),
+      );
     }
     if (fileRef.current) fileRef.current.value = "";
   };
@@ -357,9 +372,15 @@ export function AccountSection() {
 
 export function PreferencesSections() {
   const { t } = useI18n();
+  const ai = useAiAvailability();
   const [prefs, setPrefs] = useState<UserPreferences>(DEFAULT_PREFERENCES);
   const [loading, setLoading] = useState(true);
   const audioSupported = useMemo(() => speechSupported(), []);
+  const [modelHealth, setModelHealth] = useState<{
+    available: boolean;
+    assignedModelId: string | null;
+    recommendedModelId: string | null;
+  } | null>(null);
 
   useEffect(() => {
     fetchPreferences()
@@ -367,6 +388,20 @@ export function PreferencesSections() {
       .catch((err: unknown) => toast.error(t("settings.preferences.loadError")))
       .finally(() => setLoading(false));
   }, [t]);
+
+  const fetchHealth = useServerFn(fetchLocalBackendHealth);
+
+  useEffect(() => {
+    fetchHealth()
+      .then((health) =>
+        setModelHealth({
+          available: health.available,
+          assignedModelId: health.my_assigned_model_id,
+          recommendedModelId: health.recommended_model_id,
+        }),
+      )
+      .catch(() => setModelHealth(null));
+  }, [fetchHealth]);
 
   const update = async (next: Partial<UserPreferences>) => {
     const previous = prefs;
@@ -402,26 +437,40 @@ export function PreferencesSections() {
         title={t("settings.localModel.title")}
         description={t("settings.localModel.description")}
       >
-        <div className="max-w-md space-y-2">
-          <Label htmlFor="qwenModel">{t("settings.localModel.label")}</Label>
-          <Select
-            value={prefs.selected_qwen_model}
-            onValueChange={(value) => void update({ selected_qwen_model: value })}
-            disabled={loading}
-          >
-            <SelectTrigger id="qwenModel">
-              <SelectValue placeholder={t("settings.localModel.placeholder")} />
-            </SelectTrigger>
-            <SelectContent>
-              {QWEN_MODELS.map((model) => (
-                <SelectItem key={model} value={model}>
-                  {model}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <p className="text-[13px] text-muted-foreground">{t("settings.localModel.hint")}</p>
-        </div>
+        {!loading && (
+          <ModelReadinessPanel
+            initialModelId={prefs.selected_qwen_model}
+            onPreparing={ai.setPreparing}
+            onReady={(modelId) => {
+              ai.setReady(modelId);
+              setPrefs((current) => ({ ...current, selected_qwen_model: modelId }));
+            }}
+            onUnavailable={() => ai.setUnavailable()}
+          />
+        )}
+        {!loading && modelHealth?.available && (
+          <div className="space-y-1.5 rounded-xl border border-border bg-surface-2 p-4 text-[14px]">
+            <p>
+              <span className="font-medium">{t("settings.model.preferred")}:</span>{" "}
+              {prefs.selected_qwen_model}
+            </p>
+            {modelHealth.assignedModelId && (
+              <p>
+                <span className="font-medium">{t("settings.model.assigned")}:</span>{" "}
+                {modelHealth.assignedModelId}
+              </p>
+            )}
+            {modelHealth.recommendedModelId && (
+              <p className="text-muted-foreground">
+                {t("settings.model.recommendation", { model: modelHealth.recommendedModelId })}
+              </p>
+            )}
+            {modelHealth.assignedModelId &&
+              modelHealth.assignedModelId !== prefs.selected_qwen_model && (
+                <p className="text-muted-foreground">{t("settings.model.assignedDiffers")}</p>
+              )}
+          </div>
+        )}
       </SectionCard>
 
       <SectionCard
@@ -504,7 +553,6 @@ export function StorageSection() {
   const [kind, setKind] = useState<StorageItemKind | "all">("all");
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
-  const cleanupAttempted = useRef(false);
 
   const KIND_FILTERS: { value: StorageItemKind | "all"; label: string }[] = [
     { value: "all", label: t("settings.storage.filter.all") },
@@ -529,21 +577,24 @@ export function StorageSection() {
     }
   }, [t]);
 
+  // Capacity cleanup is platform-wide and runs on a schedule. Opening Settings
+  // must never trigger a global cleanup.
   useEffect(() => {
-    void (async () => {
-      const status = await load();
-      if (status?.emergency_cleanup_needed && !cleanupAttempted.current) {
-        cleanupAttempted.current = true;
-        try {
-          await invokeEmergencyCleanup();
-          toast.success(t("settings.storage.cleanupDone"));
-          await load();
-        } catch (err) {
-          toast.error(t("settings.storage.cleanupError"));
-        }
-      }
-    })();
-  }, [load, t]);
+    void load();
+  }, [load]);
+
+  const handleManualCleanup = async () => {
+    setBusy(true);
+    try {
+      await invokeEmergencyCleanup();
+      toast.success(t("settings.storage.cleanupDone"));
+      await load();
+    } catch (err) {
+      toast.error(t("settings.storage.cleanupError"));
+    } finally {
+      setBusy(false);
+    }
+  };
 
   const filtered = useMemo(
     () =>
@@ -624,13 +675,29 @@ export function StorageSection() {
             <div className="flex items-start gap-3 rounded-xl border border-warning/40 bg-warning/10 p-4">
               <AlertTriangle className="mt-0.5 h-[18px] w-[18px] shrink-0 text-warning" />
               <div className="text-[14px]">
-                <p className="font-semibold text-warning">{t("settings.storage.lowTitle")}</p>
+                <p className="font-semibold text-warning">
+                  {t("settings.storage.capacity.warning", { percent: usedPercent.toFixed(1) })}
+                </p>
                 <p className="mt-1 text-muted-foreground">
-                  {t("settings.storage.lowBody", { percent: remainingPercent.toFixed(1) })}
+                  {t("settings.storage.capacity.warningBody")}
                 </p>
               </div>
             </div>
           )}
+
+          <div className="rounded-xl border border-border bg-surface-2 p-4 text-[14px]">
+            <p className="font-semibold">{t("settings.storage.capacity.title")}</p>
+            <p className="mt-1 text-muted-foreground">{t("settings.storage.capacity.body")}</p>
+            <p className="mt-1 text-muted-foreground">{t("settings.storage.capacity.excluded")}</p>
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              <Button variant="outline" disabled={busy} onClick={() => void handleManualCleanup()}>
+                {t("settings.storage.capacity.manual")}
+              </Button>
+              <span className="text-[12px] text-muted-foreground">
+                {t("settings.storage.capacity.manualHint")}
+              </span>
+            </div>
+          </div>
 
           <div className="grid gap-3 sm:grid-cols-[minmax(0,180px)_minmax(0,1fr)_minmax(0,1fr)]">
             <div className="space-y-2">
@@ -718,6 +785,243 @@ export function StorageSection() {
             </ul>
           )}
         </>
+      )}
+    </SectionCard>
+  );
+}
+
+/* ------------------------------------------------------------- messaging --- */
+
+export function MessagingSection() {
+  const { t } = useI18n();
+  const [prefs, setPrefs] = useState<MessagingPreferences | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [notice, setNotice] = useState<string | null>(null);
+
+  useEffect(() => {
+    getMessagingPreferences()
+      .then(setPrefs)
+      .catch(() => toast.error(t("settings.preferences.loadError")))
+      .finally(() => setLoading(false));
+  }, [t]);
+
+  const handlePeerToggle = async (checked: boolean) => {
+    if (!prefs) return;
+    const previous = prefs;
+    setPrefs({ ...prefs, peerMessageNotifications: checked });
+    try {
+      const saved = await saveMessagingPreferences({ peerMessageNotifications: checked });
+      setPrefs(saved);
+    } catch {
+      setPrefs(previous);
+      toast.error(t("settings.preferences.saveError"));
+    }
+  };
+
+  const handleBrowserToggle = async (checked: boolean) => {
+    if (!prefs) return;
+    if (!checked) {
+      const previous = prefs;
+      setPrefs({ ...prefs, browserMessageNotifications: false });
+      try {
+        const saved = await saveMessagingPreferences({ browserMessageNotifications: false });
+        setPrefs(saved);
+      } catch {
+        setPrefs(previous);
+        toast.error(t("settings.preferences.saveError"));
+      }
+      return;
+    }
+
+    if (typeof window === "undefined" || !("Notification" in window)) {
+      setNotice(t("messages.notifications.unsupported"));
+      return;
+    }
+
+    if (Notification.permission === "denied") {
+      setNotice(t("messages.notifications.blocked"));
+      return;
+    }
+
+    try {
+      const permission = await Notification.requestPermission();
+      if (permission !== "granted") {
+        setNotice(t("messages.notifications.denied"));
+        return;
+      }
+      setNotice(null);
+      const previous = prefs;
+      setPrefs({ ...prefs, browserMessageNotifications: true });
+      try {
+        const saved = await saveMessagingPreferences({ browserMessageNotifications: true });
+        setPrefs(saved);
+      } catch {
+        setPrefs(previous);
+        toast.error(t("settings.preferences.saveError"));
+      }
+    } catch {
+      setNotice(t("messages.notifications.unsupported"));
+    }
+  };
+
+  return (
+    <SectionCard title={t("messages.notifications.title")} description={t("messages.subtitle")}>
+      {loading || !prefs ? (
+        <p className="text-[14px] text-muted-foreground">{t("settings.preferences.loadError")}</p>
+      ) : (
+        <div className="divide-y divide-border">
+          <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 py-3.5">
+            <div>
+              <span className="text-[15px] font-medium">
+                {t("settings.messaging.peerNotifications")}
+              </span>
+              <p className="mt-1 text-[13px] text-muted-foreground">
+                {t("settings.messaging.peerNotificationsHint")}
+              </p>
+            </div>
+            <Switch
+              checked={prefs.peerMessageNotifications}
+              onCheckedChange={(checked) => void handlePeerToggle(checked)}
+            />
+          </div>
+          <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 py-3.5">
+            <div>
+              <span className="text-[15px] font-medium">
+                {t("settings.messaging.browserNotifications")}
+              </span>
+              <p className="mt-1 text-[13px] text-muted-foreground">
+                {t("settings.messaging.browserNotificationsHint")}
+              </p>
+            </div>
+            <Switch
+              checked={prefs.browserMessageNotifications}
+              onCheckedChange={(checked) => void handleBrowserToggle(checked)}
+            />
+          </div>
+        </div>
+      )}
+      {notice && <p className="text-[13px] text-warning">{notice}</p>}
+      {prefs?.browserMessageNotifications && (
+        <p className="text-[13px] text-muted-foreground">{t("messages.notifications.enabled")}</p>
+      )}
+    </SectionCard>
+  );
+}
+
+/* --------------------------------------------------------------- privacy --- */
+
+export function PrivacySection() {
+  const { t } = useI18n();
+  const legalLinks: { to: string; label: string }[] = [
+    { to: "/legal/terms", label: t("legal.terms.title") },
+    { to: "/legal/privacy", label: t("legal.privacy.title") },
+    { to: "/legal/acceptable-use", label: t("legal.acceptableUse.title") },
+    { to: "/legal/child-safety", label: t("legal.childSafety.title") },
+  ];
+
+  return (
+    <SectionCard title={t("settings.privacy.title")} description={t("settings.privacy.body")}>
+      <Button variant="outline" asChild className="w-fit">
+        <Link to="/system-health">{t("settings.privacy.openSystemHealth")}</Link>
+      </Button>
+      <div className="space-y-1.5">
+        <p className="text-[13px] font-medium text-muted-foreground">
+          {t("settings.privacy.legal")}
+        </p>
+        <ul className="flex flex-wrap gap-x-4 gap-y-1.5">
+          {legalLinks.map((link) => (
+            <li key={link.to}>
+              <Link
+                to={link.to}
+                className="text-[14px] text-primary underline-offset-4 hover:underline"
+              >
+                {link.label}
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </SectionCard>
+  );
+}
+
+/* ----------------------------------------------------------- compliance --- */
+
+export function ComplianceSection() {
+  const { t, formatDate } = useI18n();
+  const [accountType, setAccountType] = useState<"student" | "teacher" | "unknown">("unknown");
+  const [accountStatus, setAccountStatus] = useState<
+    "active" | "suspended_pending_review" | "deletion_pending" | null
+  >(null);
+  const [strikeCount, setStrikeCount] = useState(0);
+  const [consents, setConsents] = useState<
+    {
+      document_type: string;
+      document_version: string;
+      accepted_at: string;
+      withdrawn_at: string | null;
+    }[]
+  >([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    Promise.all([fetchAccountCompliance(), fetchLegalConsents()])
+      .then(([compliance, legalConsents]) => {
+        if (compliance) {
+          setAccountType(compliance.accountType === "unknown" ? "unknown" : compliance.accountType);
+          setAccountStatus(compliance.accountStatus);
+          setStrikeCount(compliance.safetyStrikeCount);
+        }
+        setConsents(legalConsents);
+      })
+      .catch(() => {
+        // Leave the section empty when the backend is unavailable; never invent values.
+      })
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) {
+    return (
+      <SectionCard title={t("settings.compliance.title")}>
+        <p className="text-[14px] text-muted-foreground">{t("settings.account.loading")}</p>
+      </SectionCard>
+    );
+  }
+
+  return (
+    <SectionCard title={t("settings.compliance.title")}>
+      <div className="space-y-1.5 text-[14px]">
+        <p>
+          <span className="font-medium">{t("settings.compliance.accountType")}:</span>{" "}
+          {t(`settings.compliance.accountType.${accountType}`)}
+        </p>
+        {accountStatus && (
+          <p>
+            <span className="font-medium">{t("settings.compliance.title")}:</span>{" "}
+            {t(`settings.compliance.status.${accountStatus}`)}
+          </p>
+        )}
+        <p>{t("settings.compliance.strikes", { count: strikeCount })}</p>
+      </div>
+      {consents.length > 0 && (
+        <ul className="divide-y divide-border rounded-xl border border-border">
+          {consents.map((consent) => (
+            <li
+              key={`${consent.document_type}-${consent.document_version}`}
+              className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 p-3.5 text-[14px]"
+            >
+              <span className="font-medium capitalize">
+                {consent.document_type.replace(/_/g, " ")}
+              </span>
+              <span className="text-muted-foreground">
+                {t("settings.compliance.accepted", {
+                  date: formatDate(consent.accepted_at),
+                  version: consent.document_version,
+                })}
+              </span>
+            </li>
+          ))}
+        </ul>
       )}
     </SectionCard>
   );

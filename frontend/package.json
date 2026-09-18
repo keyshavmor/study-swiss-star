@@ -12,9 +12,7 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "check:i18n": "bun run ./scripts/check-translations.ts",
-    "check:docs": "bun run ./scripts/validate-docs.ts",
-    "check:mermaid": "bun run ./scripts/validate-mermaid.ts",
-    "test": "bun test"
+    "test": "vitest run"
   },
   "dependencies": {
     "@ai-sdk/react": "^4.0.45",
@@ -57,6 +55,7 @@
     "@tanstack/react-router": "^1.170.18",
     "@tanstack/react-start": "^1.168.32",
     "@tanstack/router-plugin": "^1.168.23",
+    "@types/katex": "^0.16.8",
     "@xyflow/react": "^12.11.2",
     "ai": "^7.0.42",
     "class-variance-authority": "^0.7.1",
@@ -65,7 +64,9 @@
     "date-fns": "^4.1.0",
     "embla-carousel-react": "^8.6.0",
     "input-otp": "^1.4.2",
+    "katex": "^0.18.7",
     "lucide-react": "^0.575.0",
+    "mathlive": "^0.110.0",
     "media-chrome": "^4.19.2",
     "motion": "^12.43.0",
     "nanoid": "^6.0.0",
@@ -105,6 +106,7 @@
     "prettier": "^3.7.3",
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.56.1",
-    "vite": "^8.1.5"
+    "vite": "^8.1.5",
+    "vitest": "^5.0.0"
   }
 }

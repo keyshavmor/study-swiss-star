@@ -33,9 +33,13 @@ import {
   PromptInputTextarea,
 } from "@/components/ai-elements/prompt-input";
 import { Shimmer } from "@/components/ai-elements/shimmer";
+import { AiBlockedNotice, useAiBlocked } from "@/components/app/AiFeatureGate";
+import { useAiAvailability } from "@/lib/ai-availability";
+import { isRuntimeUnavailableError } from "@/lib/ai-runtime-errors";
 import { SourceSnippetList } from "@/components/app/SourceSnippetList";
 import { GraduationCap, Plus, LogOut, Volume2, Square } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { signOutCompletely } from "@/lib/sign-out";
 import { useAcademicYear } from "@/lib/store/academic-year";
 import type { ContextResponseMetadata } from "@/lib/context-backend.types";
 import { toast } from "sonner";
@@ -54,6 +58,9 @@ interface StudyChatProps {
 
 export function StudyChat({ threadId }: StudyChatProps) {
   const { t, language, formatDate } = useI18n();
+  // Centralized AI guard: no model confirmed ready → no AI request is issued.
+  const aiBlocked = useAiBlocked();
+  const ai = useAiAvailability();
   const routeParams = useParams({ strict: false });
   const activeThreadId = threadId ?? routeParams?.threadId;
   const navigate = useNavigate();
@@ -70,7 +77,7 @@ export function StudyChat({ threadId }: StudyChatProps) {
   const [preferences, setPreferences] = useState<UserPreferences>(DEFAULT_PREFERENCES);
   const [speakingId, setSpeakingId] = useState<string | null>(null);
 
-  // Per-message read-aloud language; /api/chat applies the same policy for backend requests.
+  // Response-language hints per assistant message id (frontend-only, not sent to the backend).
   const responseLanguageHints = useRef(new Map<string, LanguageCode>());
   const pendingHintRef = useRef<LanguageCode | null>(null);
 
@@ -116,7 +123,6 @@ export function StudyChat({ threadId }: StudyChatProps) {
         threadId: activeThreadId,
         academicYear: yearId,
         gradeLevel: Number(year.gradeLevel.replace(/\D/g, "")),
-        uiLanguage: language,
       },
       fetch: async (input, init) => {
         const {
@@ -131,6 +137,10 @@ export function StudyChat({ threadId }: StudyChatProps) {
     }),
     onError: (err) => {
       trackFailure("chat_message_failed", err, { feature: "chat" });
+      // Mid-session runtime loss (local backend/model gone or timed out) turns
+      // the central AI gate red so the next request is blocked before it is
+      // attempted. Safety rejections and validation errors never do this.
+      if (isRuntimeUnavailableError(err)) ai.setUnavailable();
       toast.error(t("chat.sendFailed"));
     },
     onFinish: ({ message }) => {
@@ -155,8 +165,8 @@ export function StudyChat({ threadId }: StudyChatProps) {
   });
 
   useEffect(() => {
-    // Keep the effective language keyed to each user message for read-aloud. The same
-    // policy is applied by /api/chat and forwarded to the Python backend.
+    // Keep hints keyed to user-message IDs without extending the transport contract.
+    // FUTURE BACKEND / CODEX can consume these alongside ui_language.
     for (const message of chat.messages) {
       if (message.role !== "user" || responseLanguageHints.current.has(message.id)) continue;
       const text = message.parts.map((part) => (part.type === "text" ? part.text : "")).join("");
@@ -199,8 +209,9 @@ export function StudyChat({ threadId }: StudyChatProps) {
   };
 
   const handleSignOut = async () => {
-    await supabase.auth.signOut();
-    navigate({ to: "/auth" });
+    // Single sign-out path: best-effort runtime release, local-scope Supabase
+    // sign-out, then all session-scoped state cleared.
+    await signOutCompletely();
   };
 
   const handleToggleSpeech = (messageId: string, text: string) => {
@@ -451,12 +462,20 @@ export function StudyChat({ threadId }: StudyChatProps) {
 
         <div className="border-t border-border bg-surface px-5 py-4 lg:px-8">
           <div className="mx-auto w-full max-w-3xl">
+            {aiBlocked && (
+              <div className="mb-3">
+                <AiBlockedNotice />
+              </div>
+            )}
             <PromptInput
               className="rounded-[18px] border-border bg-input-background shadow-none"
               onSubmit={(message) => {
                 const value = message.text.trim();
-                if (!value) return;
+                if (!value || aiBlocked) return;
                 track({ event_name: "chat_message_sent", feature: "chat" });
+                // FUTURE BACKEND / CODEX: send { ui_language, message_language } so the model
+                // answers in message_language when it is confidently one of the seven supported
+                // languages; otherwise ui_language.
                 const responseLanguageHint = effectiveResponseLanguage(value, language);
                 pendingHintRef.current = responseLanguageHint;
                 chat.sendMessage({ text: value });
@@ -465,10 +484,10 @@ export function StudyChat({ threadId }: StudyChatProps) {
               <PromptInputTextarea
                 placeholder={t("chat.composerPlaceholder")}
                 className="min-h-[76px] resize-none text-[15px]"
-                disabled={isLoading}
+                disabled={isLoading || aiBlocked}
               />
               <PromptInputFooter className="justify-end border-0">
-                <PromptInputSubmit status={chat.status} disabled={isLoading} />
+                <PromptInputSubmit status={chat.status} disabled={isLoading || aiBlocked} />
               </PromptInputFooter>
             </PromptInput>
           </div>

@@ -32,6 +32,8 @@ export const auth = {
     "auth.usernamePasswordError": "That username and password combination did not work.",
     "auth.usernameTaken": "That username is already taken. Please pick another one.",
     "auth.checkEmailToConfirm": "Check your email to confirm your account.",
+    "auth.confirmationPending":
+      "Confirmation pending: open the link we emailed to {email}, then sign in.",
     "auth.resetLinkSent": "Password reset link sent. Check your email.",
     "auth.authenticationFailed": "Authentication failed",
     "auth.oauthSignInFailed": "{provider} sign-in failed",
@@ -44,6 +46,17 @@ export const auth = {
     "auth.saving": "Saving…",
     "auth.passwordsDoNotMatch": "The two passwords do not match.",
     "auth.passwordUpdated": "Password updated.",
+    "auth.errorInvalidCredentials":
+      "Those sign-in details did not work. Please check and try again.",
+    "auth.errorEmailNotConfirmed": "Please confirm your email address first, then sign in.",
+    "auth.errorRateLimited": "Too many attempts. Please wait a moment and try again.",
+    "auth.errorEmailInUse": "An account already exists for those details. Try signing in instead.",
+    "auth.errorWeakPassword": "Please choose a longer, stronger password.",
+    "auth.errorNetwork":
+      "We could not reach the service. Please check your connection and try again.",
+    "auth.errorGeneric": "Something went wrong. Please try again.",
+    "auth.recoveryLinkInvalid":
+      "This password link is invalid or has expired. Please request a new one.",
   },
   de: {
     "auth.appName": "Alim's Study Assistant",
@@ -79,6 +92,8 @@ export const auth = {
       "Diese Kombination aus Benutzername und Passwort hat nicht funktioniert.",
     "auth.usernameTaken": "Dieser Benutzername ist bereits vergeben. Bitte wähle einen anderen.",
     "auth.checkEmailToConfirm": "Prüf dein E-Mail, um dein Konto zu bestätigen.",
+    "auth.confirmationPending":
+      "Bestätigung offen: öffne den Link, den wir an {email} geschickt haben, und melde dich dann an.",
     "auth.resetLinkSent": "Link zum Zurücksetzen wurde gesendet. Prüf dein E-Mail.",
     "auth.authenticationFailed": "Anmeldung fehlgeschlagen",
     "auth.oauthSignInFailed": "Anmeldung mit {provider} fehlgeschlagen",
@@ -91,6 +106,19 @@ export const auth = {
     "auth.saving": "Wird gespeichert…",
     "auth.passwordsDoNotMatch": "Die beiden Passwörter stimmen nicht überein.",
     "auth.passwordUpdated": "Passwort aktualisiert.",
+    "auth.errorInvalidCredentials":
+      "Diese Anmeldedaten haben nicht funktioniert. Bitte prüfe sie und versuche es erneut.",
+    "auth.errorEmailNotConfirmed":
+      "Bitte bestätige zuerst deine E-Mail-Adresse und melde dich dann an.",
+    "auth.errorRateLimited": "Zu viele Versuche. Bitte warte einen Moment und versuche es erneut.",
+    "auth.errorEmailInUse":
+      "Für diese Angaben gibt es bereits ein Konto. Melde dich stattdessen an.",
+    "auth.errorWeakPassword": "Bitte wähle ein längeres, stärkeres Passwort.",
+    "auth.errorNetwork":
+      "Der Dienst war nicht erreichbar. Prüfe deine Verbindung und versuche es erneut.",
+    "auth.errorGeneric": "Etwas ist schiefgelaufen. Bitte versuche es erneut.",
+    "auth.recoveryLinkInvalid":
+      "Dieser Passwort-Link ist ungültig oder abgelaufen. Bitte fordere einen neuen an.",
   },
   gsw: {
     "auth.appName": "Alim's Study Assistant",
@@ -125,6 +153,8 @@ export const auth = {
       "Die Kombination us Benutzername und Passwort het nöd funktioniert.",
     "auth.usernameTaken": "Das Benutzername isch scho vergäh. Wähl bitte es anders.",
     "auth.checkEmailToConfirm": "Lueg i dim E-Mail, zum dis Konto bestätige.",
+    "auth.confirmationPending":
+      "Bestätigung offe: mach de Link uf, wo mir a {email} gschickt hei, und mäld di dänn a.",
     "auth.resetLinkSent": "Link zum Zrucksetze isch gschickt worde. Lueg i dim E-Mail.",
     "auth.authenticationFailed": "Aamäldig fehlgschlage",
     "auth.oauthSignInFailed": "Aamäldig mit {provider} fehlgschlage",
@@ -137,6 +167,18 @@ export const auth = {
     "auth.saving": "Wird gspeichert…",
     "auth.passwordsDoNotMatch": "Die zwei Passwörter stimmed nöd überein.",
     "auth.passwordUpdated": "Passwort aktualisiert.",
+    "auth.errorInvalidCredentials":
+      "Die Aamäldedate hei nid funktioniert. Bitte prüef si und probier nomal.",
+    "auth.errorEmailNotConfirmed":
+      "Bitte bestätig zerscht dini E-Mail-Adrässe und mäld di denn aa.",
+    "auth.errorRateLimited": "Z viel Versüech. Bitte wart e Momänt und probier nomal.",
+    "auth.errorEmailInUse": "Für die Aagabe git es scho es Konto. Mäld di stattdesse aa.",
+    "auth.errorWeakPassword": "Bitte wähl es längers, stärchers Passwort.",
+    "auth.errorNetwork":
+      "De Dienscht isch nid erreichbar gsi. Prüef dini Verbindig und probier nomal.",
+    "auth.errorGeneric": "Öppis isch schiefgloffe. Bitte probier nomal.",
+    "auth.recoveryLinkInvalid":
+      "De Passwort-Link isch nid gültig oder abgloffe. Bitte verlang en nöie.",
   },
   ru: {
     "auth.appName": "Alim's Study Assistant",
@@ -169,6 +211,8 @@ export const auth = {
     "auth.usernamePasswordError": "Такая комбинация имени пользователя и пароля не подошла.",
     "auth.usernameTaken": "Это имя пользователя уже занято. Пожалуйста, выберите другое.",
     "auth.checkEmailToConfirm": "Проверьте почту, чтобы подтвердить аккаунт.",
+    "auth.confirmationPending":
+      "Ожидается подтверждение: откройте ссылку, отправленную на {email}, затем войдите.",
     "auth.resetLinkSent": "Ссылка для сброса пароля отправлена. Проверьте почту.",
     "auth.authenticationFailed": "Не удалось войти",
     "auth.oauthSignInFailed": "Не удалось войти через {provider}",
@@ -181,6 +225,16 @@ export const auth = {
     "auth.saving": "Сохранение…",
     "auth.passwordsDoNotMatch": "Пароли не совпадают.",
     "auth.passwordUpdated": "Пароль обновлён.",
+    "auth.errorInvalidCredentials":
+      "Эти данные для входа не подошли. Проверьте их и попробуйте снова.",
+    "auth.errorEmailNotConfirmed": "Сначала подтвердите адрес электронной почты, затем войдите.",
+    "auth.errorRateLimited": "Слишком много попыток. Подождите немного и попробуйте снова.",
+    "auth.errorEmailInUse": "Аккаунт с такими данными уже существует. Попробуйте войти.",
+    "auth.errorWeakPassword": "Выберите более длинный и надёжный пароль.",
+    "auth.errorNetwork":
+      "Не удалось связаться со сервисом. Проверьте соединение и попробуйте снова.",
+    "auth.errorGeneric": "Что-то пошло не так. Попробуйте снова.",
+    "auth.recoveryLinkInvalid": "Эта ссылка недействительна или истекла. Запросите новую.",
   },
   es: {
     "auth.appName": "Alim's Study Assistant",
@@ -213,6 +267,8 @@ export const auth = {
     "auth.usernamePasswordError": "Esa combinación de nombre de usuario y contraseña no funcionó.",
     "auth.usernameTaken": "Ese nombre de usuario ya está en uso. Elige otro.",
     "auth.checkEmailToConfirm": "Revisa tu correo para confirmar tu cuenta.",
+    "auth.confirmationPending":
+      "Confirmación pendiente: abre el enlace que enviamos a {email} y luego inicia sesión.",
     "auth.resetLinkSent": "Enlace de restablecimiento enviado. Revisa tu correo.",
     "auth.authenticationFailed": "Error de autenticación",
     "auth.oauthSignInFailed": "No se pudo iniciar sesión con {provider}",
@@ -225,6 +281,16 @@ export const auth = {
     "auth.saving": "Guardando…",
     "auth.passwordsDoNotMatch": "Las dos contraseñas no coinciden.",
     "auth.passwordUpdated": "Contraseña actualizada.",
+    "auth.errorInvalidCredentials":
+      "Esos datos de acceso no funcionaron. Compruébalos e inténtalo de nuevo.",
+    "auth.errorEmailNotConfirmed": "Confirma primero tu correo electrónico y luego inicia sesión.",
+    "auth.errorRateLimited": "Demasiados intentos. Espera un momento e inténtalo de nuevo.",
+    "auth.errorEmailInUse": "Ya existe una cuenta con esos datos. Prueba a iniciar sesión.",
+    "auth.errorWeakPassword": "Elige una contraseña más larga y segura.",
+    "auth.errorNetwork":
+      "No pudimos conectar con el servicio. Comprueba tu conexión e inténtalo de nuevo.",
+    "auth.errorGeneric": "Algo salió mal. Inténtalo de nuevo.",
+    "auth.recoveryLinkInvalid": "Este enlace no es válido o ha caducado. Solicita uno nuevo.",
   },
   fr: {
     "auth.appName": "Alim's Study Assistant",
@@ -260,6 +326,8 @@ export const auth = {
       "Cette combinaison de nom d'utilisateur et de mot de passe n'a pas fonctionné.",
     "auth.usernameTaken": "Ce nom d'utilisateur est déjà pris. Veuillez en choisir un autre.",
     "auth.checkEmailToConfirm": "Consultez votre e-mail pour confirmer votre compte.",
+    "auth.confirmationPending":
+      "Confirmation en attente : ouvrez le lien envoyé à {email}, puis connectez-vous.",
     "auth.resetLinkSent": "Lien de réinitialisation envoyé. Consultez votre e-mail.",
     "auth.authenticationFailed": "Échec de l'authentification",
     "auth.oauthSignInFailed": "Échec de la connexion avec {provider}",
@@ -272,6 +340,15 @@ export const auth = {
     "auth.saving": "Enregistrement…",
     "auth.passwordsDoNotMatch": "Les deux mots de passe ne correspondent pas.",
     "auth.passwordUpdated": "Mot de passe mis à jour.",
+    "auth.errorInvalidCredentials":
+      "Ces informations de connexion n'ont pas fonctionné. Vérifie-les et réessaie.",
+    "auth.errorEmailNotConfirmed": "Confirme d'abord ton adresse e-mail, puis connecte-toi.",
+    "auth.errorRateLimited": "Trop de tentatives. Patiente un instant et réessaie.",
+    "auth.errorEmailInUse": "Un compte existe déjà avec ces informations. Essaie de te connecter.",
+    "auth.errorWeakPassword": "Choisis un mot de passe plus long et plus solide.",
+    "auth.errorNetwork": "Le service est injoignable. Vérifie ta connexion et réessaie.",
+    "auth.errorGeneric": "Une erreur est survenue. Réessaie.",
+    "auth.recoveryLinkInvalid": "Ce lien est invalide ou expiré. Demande un nouveau lien.",
   },
   it: {
     "auth.appName": "Alim's Study Assistant",
@@ -306,6 +383,7 @@ export const auth = {
       "Quella combinazione di nome utente e password non ha funzionato.",
     "auth.usernameTaken": "Quel nome utente è già in uso. Scegline un altro.",
     "auth.checkEmailToConfirm": "Controlla la tua email per confermare l'account.",
+    "auth.confirmationPending": "Conferma in sospeso: apri il link inviato a {email}, poi accedi.",
     "auth.resetLinkSent": "Link di ripristino inviato. Controlla la tua email.",
     "auth.authenticationFailed": "Autenticazione non riuscita",
     "auth.oauthSignInFailed": "Accesso con {provider} non riuscito",
@@ -318,5 +396,15 @@ export const auth = {
     "auth.saving": "Salvataggio…",
     "auth.passwordsDoNotMatch": "Le due password non coincidono.",
     "auth.passwordUpdated": "Password aggiornata.",
+    "auth.errorInvalidCredentials":
+      "Questi dati di accesso non hanno funzionato. Controllali e riprova.",
+    "auth.errorEmailNotConfirmed": "Conferma prima il tuo indirizzo e-mail, poi accedi.",
+    "auth.errorRateLimited": "Troppi tentativi. Attendi un momento e riprova.",
+    "auth.errorEmailInUse": "Esiste già un account con questi dati. Prova ad accedere.",
+    "auth.errorWeakPassword": "Scegli una password più lunga e sicura.",
+    "auth.errorNetwork":
+      "Non è stato possibile raggiungere il servizio. Controlla la connessione e riprova.",
+    "auth.errorGeneric": "Qualcosa è andato storto. Riprova.",
+    "auth.recoveryLinkInvalid": "Questo link non è valido o è scaduto. Richiedine uno nuovo.",
   },
 };

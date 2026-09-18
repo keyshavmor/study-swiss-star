@@ -24,6 +24,9 @@ import {
   X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { AiBlockedNotice, useAiBlocked } from "@/components/app/AiFeatureGate";
+import { useAiAvailability } from "@/lib/ai-availability";
+import { isRuntimeUnavailableError } from "@/lib/ai-runtime-errors";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
@@ -41,6 +44,7 @@ import {
   type AssistantThread,
 } from "@/lib/assistant-data";
 import { toast } from "sonner";
+import { isQuotaExceededError } from "@/lib/user-quota";
 import { track, trackFailure } from "@/lib/telemetry";
 import { useI18n } from "@/lib/i18n/provider";
 import { effectiveResponseLanguage } from "@/lib/i18n/detect";
@@ -90,6 +94,8 @@ function AttachmentChip({
 
 export function AssistantChat({ threadId }: { threadId?: string }) {
   const { t, language, formatDate } = useI18n();
+  const aiBlocked = useAiBlocked();
+  const ai = useAiAvailability();
   const navigate = useNavigate();
   const [threads, setThreads] = useState<AssistantThread[]>([]);
   const [messages, setMessages] = useState<AssistantMessage[]>([]);
@@ -202,9 +208,12 @@ export function AssistantChat({ threadId }: { threadId?: string }) {
   const handleSend = async () => {
     const content = text.trim();
     if (!content && files.length === 0) return;
+    // No AI request may leave the browser without a backend-confirmed model.
+    if (aiBlocked) return;
     setSending(true);
-    // Deferred with the General Assistant generation endpoint: forward the effective language
-    // so the model uses the message language when confident and otherwise the UI language.
+    // FUTURE BACKEND / CODEX: send { ui_language, message_language } so the model answers in
+    // message_language when it is confidently one of the seven supported languages; otherwise
+    // ui_language.
     const responseLanguageHint = effectiveResponseLanguage(content, language);
     // Counts only — the message text and attachment contents are never sent.
     track({
@@ -236,7 +245,10 @@ export function AssistantChat({ threadId }: { threadId?: string }) {
       });
     } catch (err) {
       trackFailure("assistant_message_failed", err, { feature: "assistant" });
-      toast.error(t("assistant.sendFailed"));
+      // Only a genuine local-runtime loss/timeout downgrades the central AI
+      // state; quota, validation and safety errors never do.
+      if (!isQuotaExceededError(err) && isRuntimeUnavailableError(err)) ai.setUnavailable();
+      toast.error(isQuotaExceededError(err) ? t("quota.exceededError") : t("assistant.sendFailed"));
     } finally {
       setSending(false);
     }
@@ -457,6 +469,11 @@ export function AssistantChat({ threadId }: { threadId?: string }) {
               ))}
             </div>
           )}
+          {aiBlocked && (
+            <div className="mb-3">
+              <AiBlockedNotice />
+            </div>
+          )}
           <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-end gap-2">
             <input
               ref={fileInputRef}
@@ -484,6 +501,7 @@ export function AssistantChat({ threadId }: { threadId?: string }) {
                   void handleSend();
                 }
               }}
+              disabled={aiBlocked}
               placeholder={t("assistant.composerPlaceholder")}
               rows={1}
               className="max-h-40 min-h-[44px] resize-none"
@@ -492,7 +510,7 @@ export function AssistantChat({ threadId }: { threadId?: string }) {
               size="icon"
               aria-label={t("assistant.sendAria")}
               onClick={() => void handleSend()}
-              disabled={sending || (!text.trim() && files.length === 0)}
+              disabled={aiBlocked || sending || (!text.trim() && files.length === 0)}
             >
               {sending ? (
                 <Loader2 className="h-[18px] w-[18px] animate-spin" />

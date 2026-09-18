@@ -336,16 +336,30 @@
   padding: 0;
 }
 
-/* Academic warning (failing grade) tokens */
+/* Academic warning (failing grade) and status-surface tokens */
 :root {
   --warning: #c96a00;
   --warning-soft: rgba(201, 106, 0, 0.1);
+  /* Ready / success */
+  --success: #1f8a4c;
+  --success-soft: rgba(31, 138, 76, 0.1);
+  /* Degraded / resource pressure */
+  --degraded: #d97706;
+  --degraded-soft: rgba(217, 119, 6, 0.12);
 }
 .dark {
   --warning: #ff9f43;
   --warning-soft: rgba(255, 159, 67, 0.14);
+  --success: #4ade80;
+  --success-soft: rgba(74, 222, 128, 0.14);
+  --degraded: #fb923c;
+  --degraded-soft: rgba(251, 146, 60, 0.16);
 }
 @theme inline {
   --color-warning: var(--warning);
   --color-warning-soft: var(--warning-soft);
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-degraded: var(--degraded);
+  --color-degraded-soft: var(--degraded-soft);
 }

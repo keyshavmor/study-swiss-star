@@ -8,6 +8,7 @@ import {
   ClipboardList,
   FileQuestion,
   MessageSquare,
+  Sparkles,
   Wrench,
 } from "lucide-react";
 import { useState } from "react";
@@ -18,6 +19,15 @@ import { AssessmentDialog } from "@/components/app/AssessmentDialog";
 import { FailingBadge } from "@/components/app/Badges";
 import { AverageWithRounded, GradeLineChart } from "@/components/app/GradeDisplay";
 import { MaterialsPanel } from "@/components/app/MaterialsPanel";
+import {
+  AssessmentModePanel,
+  type AssessmentContext,
+} from "@/components/app/assessment/AssessmentModePanel";
+import { KnowledgeProfile } from "@/components/app/assessment/KnowledgeProfile";
+import { AiStatusBanner } from "@/components/app/AiStatusBanner";
+import { AiBlockedNotice, useAiBlocked } from "@/components/app/AiFeatureGate";
+import { isAiDependentSubjectMode } from "@/lib/ai-mode-classification";
+import { LEARNING_GOALS } from "@/lib/mock/materials";
 import { useI18n } from "@/lib/i18n/provider";
 import { EmptyState } from "@/components/app/States";
 import { Button } from "@/components/ui/button";
@@ -61,13 +71,17 @@ export const Route = createFileRoute("/_authenticated/school/$subject")({
 
 const MODE_ICONS: Record<SubjectMode, typeof MessageSquare> = {
   Chat: MessageSquare,
-  "Knowledge Analysis": Brain,
+  "Quick Check": Sparkles,
+  "Knowledge Profile": Brain,
   "Quiz Mode": FileQuestion,
-  "Exam Mode": ClipboardList,
+  "Mock Exam": ClipboardList,
   "Study Plan": CalendarRange,
   Statistics: BarChart3,
   "Subject Tools": Wrench,
 };
+
+/** Practice and scored quizzes share the Quiz Mode surface. */
+type QuizVariant = "practice" | "quiz";
 
 function SubjectDashboard() {
   const { t, formatDate, formatMonth } = useI18n();
@@ -76,7 +90,11 @@ function SubjectDashboard() {
   const [activeSlug, setActiveSlug] = useState<string>(components[0] ?? subject.slug);
   const [statsView, setStatsView] = useState<"combined" | "component">("combined");
   const [mode, setMode] = useState<SubjectMode>("Chat");
+  const [quizVariant, setQuizVariant] = useState<QuizVariant>("practice");
   const { assessments, materials, events } = useAppData();
+  /** Single readiness truth: no second AI state is invented here. */
+  const aiBlocked = useAiBlocked();
+  const modeNeedsAi = isAiDependentSubjectMode(mode);
   const active = (components.length ? getSubject(activeSlug) : subject) ?? subject;
   const combined = summariseSubjectView(assessments, subject);
   const grades = summariseSubject(assessments, active.slug);
@@ -86,6 +104,20 @@ function SubjectDashboard() {
     .map((e) => e.date)
     .sort()
     .find((d) => d >= new Date().toISOString().slice(0, 10));
+
+  const assessmentContext: AssessmentContext = {
+    subjectSlug: active.slug,
+    subjectName: active.name,
+    component: components.length ? active.name : undefined,
+    language: subject.language,
+    schoolLevel: null,
+    academicYear: null,
+    topics: [],
+    learningGoals: LEARNING_GOALS.map((label, index) => ({ id: `goal-${index + 1}`, label })),
+    materials: materials
+      .filter((file) => file.subjectSlug === active.slug && !file.archived)
+      .map((file) => ({ id: file.id, name: file.name, section: file.section })),
+  };
 
   return (
     <AppShell wide>
@@ -97,6 +129,8 @@ function SubjectDashboard() {
           { label: subject.name },
         ]}
       />
+      {/* Compact AI readiness state + route to the canonical model setup page. */}
+      <AiStatusBanner className="mb-5" />
       <div className="mb-6">
         <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4">
           <div className="flex min-w-0 items-center gap-3">
@@ -291,9 +325,16 @@ function SubjectDashboard() {
               <p className="text-[15px] text-muted-foreground">
                 {t("subject.chatDescription", { name: active.name })}
               </p>
-              <Button asChild className="mt-5">
-                <Link to="/chat">{t("subject.openStudyChat")}</Link>
-              </Button>
+              {/* Never navigate into an AI chat while no ready model exists. */}
+              {aiBlocked ? (
+                <div className="mt-5">
+                  <AiBlockedNotice />
+                </div>
+              ) : (
+                <Button asChild className="mt-5">
+                  <Link to="/chat">{t("subject.openStudyChat")}</Link>
+                </Button>
+              )}
             </div>
           ) : mode === "Statistics" && components.length > 0 && statsView === "combined" ? (
             <div className="mt-4 space-y-5">
@@ -418,13 +459,66 @@ function SubjectDashboard() {
                 </>
               )}
             </div>
+          ) : mode === "Quick Check" ? (
+            <div className="mt-4">
+              <AssessmentModePanel kind="quick_check" context={assessmentContext} />
+            </div>
+          ) : mode === "Knowledge Profile" ? (
+            /* Stored mastery information is read-only and stays visible; only
+               the AI analysis/refresh part is gated. */
+            <div className="mt-4 space-y-4">
+              {aiBlocked && (
+                <>
+                  <AiBlockedNotice />
+                  <p className="text-[13px] text-muted-foreground">{t("ai.status.aiOnlyPart")}</p>
+                </>
+              )}
+              <KnowledgeProfile entries={[]} subjectName={active.name} />
+            </div>
+          ) : mode === "Quiz Mode" ? (
+            <div className="mt-4 space-y-4">
+              <div className="flex flex-wrap gap-2 rounded-[16px] bg-surface-2 p-1.5">
+                {(["practice", "quiz"] as const).map((variant) => (
+                  <button
+                    key={variant}
+                    type="button"
+                    onClick={() => setQuizVariant(variant)}
+                    className={cn(
+                      "rounded-[14px] px-4 py-2.5 text-[14px] font-semibold transition-colors duration-200",
+                      quizVariant === variant
+                        ? "bg-card text-foreground shadow-sm"
+                        : "text-muted-foreground hover:text-foreground",
+                    )}
+                  >
+                    {variant === "practice"
+                      ? t("assessment.mode.practice")
+                      : t("assessment.mode.quiz")}
+                  </button>
+                ))}
+              </div>
+              <AssessmentModePanel
+                key={quizVariant}
+                kind={quizVariant === "practice" ? "practice" : "quiz"}
+                context={assessmentContext}
+              />
+            </div>
+          ) : mode === "Mock Exam" ? (
+            <div className="mt-4">
+              <AssessmentModePanel kind="mock_exam" context={assessmentContext} />
+            </div>
           ) : (
-            <EmptyState
-              className="mt-6 border-0 bg-surface-2"
-              heading={t("subject.comingNext", { mode })}
-              description={t("subject.comingNextDescription")}
-              action={<Button variant="secondary">{t("subject.notifyMe")}</Button>}
-            />
+            /* Placeholder modes. Study Plan generation is AI-dependent, so the
+               blocked notice appears instead of any generate action; non-AI
+               placeholders (Subject Tools) stay untouched. */
+            <div className="mt-4 space-y-4">
+              {modeNeedsAi && aiBlocked && <AiBlockedNotice />}
+              <EmptyState
+                className="mt-2 border-0 bg-surface-2"
+                heading={t("subject.comingNext", { mode })}
+                description={t("subject.comingNextDescription")}
+                action={<Button variant="secondary">{t("subject.notifyMe")}</Button>}
+              />
+            </div>
           )}
         </section>
 

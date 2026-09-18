@@ -1,59 +1,89 @@
-import { afterEach, describe, expect, test } from "bun:test";
+/**
+ * Google Calendar provider-token attribution.
+ *
+ * GitHub / LinkedIn / Spotify sign-ins also put a `provider_token` on the
+ * Supabase session. Only a token that belongs to a Google Calendar linking
+ * attempt may ever be stored as the Google Calendar token.
+ */
+import { beforeEach, describe, expect, it } from "vitest";
+import type { Session } from "@supabase/supabase-js";
 import {
   captureProviderToken,
   clearGoogleAccess,
-  GOOGLE_CALENDAR_SCOPE,
-  googleOccurrences,
+  clearGoogleConnectPending,
   hasGoogleAccess,
-  isGoogleOccurrence,
+  isGoogleCallbackUrl,
+  isGoogleConnectPending,
+  markGoogleConnectPending,
 } from "./google-calendar";
 
-const originalWindow = Object.getOwnPropertyDescriptor(globalThis, "window");
+function fakeStorage() {
+  const map = new Map<string, string>();
+  return {
+    getItem: (k: string) => map.get(k) ?? null,
+    setItem: (k: string, v: string) => void map.set(k, v),
+    removeItem: (k: string) => void map.delete(k),
+    clear: () => map.clear(),
+    key: () => null,
+    length: 0,
+  } as unknown as Storage;
+}
 
-afterEach(() => {
-  if (originalWindow) Object.defineProperty(globalThis, "window", originalWindow);
-  else Reflect.deleteProperty(globalThis, "window");
+const session = (token: string) => ({ provider_token: token }) as unknown as Session;
+
+beforeEach(() => {
+  const storage = fakeStorage();
+  Object.defineProperty(globalThis, "window", {
+    value: { sessionStorage: storage, location: { search: "" } },
+    configurable: true,
+    writable: true,
+  });
 });
 
-describe("Google Calendar boundary", () => {
-  test("requests only the read-only Calendar scope", () => {
-    expect(GOOGLE_CALENDAR_SCOPE).toBe("https://www.googleapis.com/auth/calendar.readonly");
+describe("provider token attribution", () => {
+  it("ignores a GitHub/Spotify-style provider token with no Google attempt", () => {
+    expect(captureProviderToken(session("gho_github_token"))).toBe(false);
+    expect(hasGoogleAccess()).toBe(false);
   });
 
-  test("maps external events to immutable planner occurrences", () => {
-    const [occurrence] = googleOccurrences([
-      {
-        id: "event-1",
-        title: "Private event",
-        date: "2026-09-15",
-        start: "08:00",
-        end: "09:00",
-        allDay: false,
-      },
-    ]);
-    expect(occurrence?.event).toMatchObject({
-      id: "google:event-1",
-      externalSource: "google",
-      readOnly: true,
-    });
-    expect(occurrence && isGoogleOccurrence(occurrence)).toBe(true);
+  it("ignores a provider token from a plain session refresh", () => {
+    markGoogleConnectPending();
+    clearGoogleConnectPending();
+    expect(captureProviderToken(session("spotify_token"))).toBe(false);
+    expect(hasGoogleAccess()).toBe(false);
   });
 
-  test("keeps the provider token in session storage and clears it", () => {
-    const values = new Map<string, string>();
-    const sessionStorage = {
-      getItem: (key: string) => values.get(key) ?? null,
-      setItem: (key: string, value: string) => values.set(key, value),
-      removeItem: (key: string) => values.delete(key),
-    };
-    Object.defineProperty(globalThis, "window", {
-      configurable: true,
-      value: { sessionStorage },
-    });
-
-    expect(captureProviderToken({ provider_token: "private-provider-token" } as never)).toBe(true);
+  it("captures the token while a Google attempt is pending and clears the marker", () => {
+    markGoogleConnectPending();
+    expect(isGoogleConnectPending()).toBe(true);
+    expect(captureProviderToken(session("ya29.google"))).toBe(true);
     expect(hasGoogleAccess()).toBe(true);
+    expect(isGoogleConnectPending()).toBe(false);
+  });
+
+  it("captures the token on an explicit google=connected callback", () => {
+    expect(captureProviderToken(session("ya29.google"), { googleCallback: true })).toBe(true);
+    expect(hasGoogleAccess()).toBe(true);
+  });
+
+  it("recognises only the google=connected callback query", () => {
+    expect(isGoogleCallbackUrl("?google=connected")).toBe(true);
+    expect(isGoogleCallbackUrl("?tab=planner&google=connected")).toBe(true);
+    expect(isGoogleCallbackUrl("?google=pending")).toBe(false);
+    expect(isGoogleCallbackUrl("")).toBe(false);
+  });
+
+  it("disconnect forgets both the token and the pending marker", () => {
+    markGoogleConnectPending();
+    captureProviderToken(session("ya29.google"));
     clearGoogleAccess();
     expect(hasGoogleAccess()).toBe(false);
+    expect(isGoogleConnectPending()).toBe(false);
+  });
+
+  it("never captures a session without a provider token", () => {
+    markGoogleConnectPending();
+    expect(captureProviderToken(null)).toBe(false);
+    expect(captureProviderToken({} as unknown as Session)).toBe(false);
   });
 });

@@ -198,6 +198,16 @@ export async function sendAssistantMessage(input: {
 
   const attachments: AssistantAttachment[] = [];
 
+  // One preflight for the whole batch; the Storage policy and the database
+  // trigger remain the authority if the estimate is optimistic.
+  if (input.files.length > 0) {
+    const { preflightQuota, QUOTA_EXCEEDED_CODE } = await import("@/lib/user-quota");
+    const totalBytes = input.files.reduce((sum, file) => sum + file.size, 0);
+    if ((await preflightQuota(totalBytes)) === "quota_exceeded") {
+      throw new Error(QUOTA_EXCEEDED_CODE);
+    }
+  }
+
   for (const file of input.files) {
     const validationError = validateAttachment(file);
     if (validationError) throw new Error(validationError);
@@ -219,7 +229,7 @@ export async function sendAssistantMessage(input: {
         storage_bucket: CHAT_ATTACHMENT_BUCKET,
         object_path: objectPath,
         file_name: file.name,
-        mime_type: file.type || "application/octet-stream",
+        mime_type: file.type || null,
         byte_size: file.size,
         kind: kindFromMime(file.type, file.name),
         parse_status: "unparsed",

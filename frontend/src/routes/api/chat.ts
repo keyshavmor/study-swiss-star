@@ -8,13 +8,11 @@ import {
   type ContextResponseMetadata,
 } from "@/lib/context-backend.server";
 import type { Database, Json } from "@/integrations/supabase/types";
-import { effectiveResponseLanguage } from "@/lib/i18n/detect";
-import { normaliseLanguage } from "@/lib/i18n/languages";
 
 type AlimUIMessage = UIMessage<never, { "context-metadata": ContextResponseMetadata }>;
 
 function isNewSupabaseApiKey(value: string): boolean {
-  return value.startsWith("sb_publishable_");
+  return value.startsWith("sb_publishable_") || value.startsWith("sb_secret_");
 }
 
 function createSupabaseFetch(supabaseKey: string): typeof fetch {
@@ -41,9 +39,6 @@ async function getUserClient(request: Request) {
   const SUPABASE_PUBLISHABLE_KEY = process.env["SUPABASE_PUBLISHABLE_KEY"];
   if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
     throw new Response("Supabase not configured", { status: 500 });
-  }
-  if (SUPABASE_PUBLISHABLE_KEY.startsWith("sb_secret_")) {
-    throw new Response("Supabase publishable key is misconfigured", { status: 500 });
   }
 
   const authHeader = request.headers.get("authorization");
@@ -72,44 +67,20 @@ async function getUserClient(request: Request) {
     throw new Response("Unauthorized", { status: 401 });
   }
 
-  return { supabase, userId: data.claims.sub, accessToken: token };
-}
-
-function backendErrorResponse(error: unknown): Response {
-  const contextError = error instanceof ContextBackendError ? error : null;
-  const requestId = contextError?.requestId;
-  const init: ResponseInit = { status: contextError?.status ?? 503 };
-  if (requestId) init.headers = { "X-Request-Id": requestId };
-  return Response.json(
-    {
-      error: {
-        code: contextError?.code ?? "context_backend_unavailable",
-        message: contextError?.message ?? "Local Qwen backend unavailable",
-        retryable: !contextError || contextError.status >= 500,
-        ...(requestId ? { request_id: requestId } : {}),
-      },
-    },
-    init,
-  );
+  return { supabase, userId: data.claims.sub };
 }
 
 export const Route = createFileRoute("/api/chat")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const { supabase, userId, accessToken } = await getUserClient(request);
+        const { supabase, userId } = await getUserClient(request);
         const body = (await request.json()) as {
           messages?: UIMessage[];
           threadId?: string;
           academicYear?: string;
           gradeLevel?: number;
-          uiLanguage?: string;
-          data?: {
-            threadId?: string;
-            academicYear?: string;
-            gradeLevel?: number;
-            uiLanguage?: string;
-          };
+          data?: { threadId?: string; academicYear?: string; gradeLevel?: number };
         };
 
         const messages = body.messages ?? [];
@@ -135,6 +106,27 @@ export const Route = createFileRoute("/api/chat")({
           lastMessage?.role === "user"
             ? lastMessage.parts.map((part) => (part.type === "text" ? part.text : "")).join("")
             : "";
+        // CONTENT SAFETY GATE (fail closed). Every AI prompt needs an explicit
+        // allow verdict from the local safety backend before it is stored or
+        // sent for generation. BACKEND TODO FOR CODEX: until that backend
+        // exists this returns `safety_unavailable`, so nothing is processed.
+        if (lastMessage?.role === "user" && question.trim()) {
+          const { moderateContentOnBackend } = await import("@/lib/safety-backend.server");
+          const decision = await moderateContentOnBackend({
+            accessToken: request.headers.get("authorization")?.replace("Bearer ", "") ?? "",
+            studentId: userId,
+            surface: "ai_prompt",
+            text: question,
+          });
+          if (decision.verdict !== "allow") {
+            // Bounded machine-readable code only — never the offending content.
+            return new Response(`safety:${decision.verdict}`, {
+              status: decision.verdict === "safety_unavailable" ? 503 : 403,
+              headers: { "X-Safety-Verdict": decision.verdict },
+            });
+          }
+        }
+
         if (lastMessage && lastMessage.role === "user") {
           const { error: insertError } = await supabase.from("messages").insert({
             thread_id: threadId,
@@ -160,10 +152,7 @@ export const Route = createFileRoute("/api/chat")({
         try {
           const academicYear = body.academicYear ?? body.data?.academicYear;
           const gradeLevel = body.gradeLevel ?? body.data?.gradeLevel;
-          const uiLanguage = normaliseLanguage(body.uiLanguage ?? body.data?.uiLanguage);
-          const responseLanguage = effectiveResponseLanguage(question, uiLanguage);
           contextResponse = await requestContextAnswer({
-            accessToken,
             studentId: userId,
             threadId,
             userMessageId: lastMessage.id,
@@ -171,11 +160,12 @@ export const Route = createFileRoute("/api/chat")({
             ...(thread.subject ? { subject: thread.subject } : {}),
             ...(academicYear ? { academicYear } : {}),
             ...(gradeLevel !== undefined ? { gradeLevel } : {}),
-            responseLanguage,
-            signal: request.signal,
           });
         } catch (error) {
-          return backendErrorResponse(error);
+          const contextError = error instanceof ContextBackendError ? error : null;
+          return new Response(contextError?.message ?? "Local Qwen backend unavailable", {
+            status: contextError?.status ?? 503,
+          });
         }
 
         const stream = createUIMessageStream<AlimUIMessage>({

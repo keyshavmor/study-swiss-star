@@ -3,6 +3,7 @@ import { createFileRoute, useParams } from "@tanstack/react-router";
 import { AppShell, PageHeading } from "@/components/app/AppShell";
 import { PageNav } from "@/components/app/Breadcrumbs";
 import { AssistantChat } from "@/components/assistant/AssistantChat";
+import { AiBlockedNotice } from "@/components/app/AiFeatureGate";
 import { useI18n } from "@/lib/i18n/provider";
 
 export const Route = createFileRoute("/_authenticated/assistant/$threadId")({
@@ -33,6 +34,7 @@ function AssistantThreadPage() {
         ]}
       />
       <PageHeading title={t("assistant.pageTitle")} description={t("assistant.pageDescription")} />
+      <AiBlockedNotice />
       <AssistantChat threadId={threadId} />
     </AppShell>
   );

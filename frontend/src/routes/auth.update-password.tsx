@@ -1,7 +1,7 @@
 /** TanStack route module defining one Alim screen or local API boundary. */
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { GraduationCap } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,6 +9,9 @@ import { Label } from "@/components/ui/label";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { toast } from "sonner";
 import { useI18n } from "@/lib/i18n/provider";
+import { localizedAuthError } from "@/lib/auth-errors";
+import { invalidateStartupCache, resolveStartupDestination } from "@/lib/startup-flow";
+import { track, trackFailure } from "@/lib/telemetry";
 
 export const Route = createFileRoute("/auth/update-password")({
   head: () => ({
@@ -34,6 +37,29 @@ function UpdatePasswordPage() {
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  // A recovery link must have established a session before the password can be
+  // changed; without one we show a localized invalid/expired state.
+  const [sessionState, setSessionState] = useState<"checking" | "ready" | "invalid">("checking");
+
+  useEffect(() => {
+    let active = true;
+    supabase.auth
+      .getSession()
+      .then(({ data }) => {
+        if (active) setSessionState(data.session ? "ready" : "invalid");
+      })
+      .catch(() => {
+        if (active) setSessionState("invalid");
+      });
+    const { data: subscription } = supabase.auth.onAuthStateChange((event, session) => {
+      if (!active) return;
+      if (event === "PASSWORD_RECOVERY" || session) setSessionState("ready");
+    });
+    return () => {
+      active = false;
+      subscription.subscription.unsubscribe();
+    };
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -45,11 +71,16 @@ function UpdatePasswordPage() {
     const { error } = await supabase.auth.updateUser({ password });
     setIsLoading(false);
     if (error) {
-      toast.error(error.message);
+      // Never surface the raw provider message.
+      trackFailure("auth_password_update_failed", error, { feature: "auth" });
+      toast.error(localizedAuthError(t, error));
       return;
     }
     toast.success(t("auth.passwordUpdated"));
-    navigate({ to: "/home" });
+    track({ event_name: "auth_password_updated", feature: "auth" });
+    // Compliance/language/admission/model gates may all still be pending.
+    invalidateStartupCache();
+    navigate({ to: await resolveStartupDestination() });
   };
 
   return (
@@ -67,38 +98,51 @@ function UpdatePasswordPage() {
           </h1>
           <p className="mt-3 text-[15px] text-muted-foreground">{t("auth.newPasswordSubtitle")}</p>
         </div>
-        <form onSubmit={handleSubmit} className="app-card space-y-5 p-7">
-          <div className="space-y-2">
-            <Label htmlFor="password" className="text-[13px] font-semibold text-muted-foreground">
-              {t("auth.newPasswordLabel")}
-            </Label>
-            <Input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              minLength={6}
-              autoFocus
-            />
+        {sessionState === "invalid" ? (
+          <div className="app-card space-y-5 p-7">
+            <p className="text-[15px] text-destructive">{t("auth.recoveryLinkInvalid")}</p>
+            <Button className="w-full" onClick={() => navigate({ to: "/auth" })}>
+              {t("auth.backToSignIn")}
+            </Button>
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="confirm" className="text-[13px] font-semibold text-muted-foreground">
-              {t("auth.repeatPasswordLabel")}
-            </Label>
-            <Input
-              id="confirm"
-              type="password"
-              value={confirm}
-              onChange={(e) => setConfirm(e.target.value)}
-              required
-              minLength={6}
-            />
-          </div>
-          <Button type="submit" className="w-full" disabled={isLoading}>
-            {isLoading ? t("auth.saving") : t("auth.updatePassword")}
-          </Button>
-        </form>
+        ) : (
+          <form onSubmit={handleSubmit} className="app-card space-y-5 p-7">
+            <div className="space-y-2">
+              <Label htmlFor="password" className="text-[13px] font-semibold text-muted-foreground">
+                {t("auth.newPasswordLabel")}
+              </Label>
+              <Input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                minLength={6}
+                autoFocus
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="confirm" className="text-[13px] font-semibold text-muted-foreground">
+                {t("auth.repeatPasswordLabel")}
+              </Label>
+              <Input
+                id="confirm"
+                type="password"
+                value={confirm}
+                onChange={(e) => setConfirm(e.target.value)}
+                required
+                minLength={6}
+              />
+            </div>
+            <Button
+              type="submit"
+              className="w-full"
+              disabled={isLoading || sessionState === "checking"}
+            >
+              {isLoading ? t("auth.saving") : t("auth.updatePassword")}
+            </Button>
+          </form>
+        )}
       </div>
     </div>
   );

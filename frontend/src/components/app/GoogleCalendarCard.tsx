@@ -18,6 +18,8 @@ import {
   GoogleCalendarAuthError,
   GoogleCalendarError,
   hasGoogleAccess,
+  isGoogleCallbackUrl,
+  isGoogleConnectPending,
   refreshProviderTokenFromSession,
 } from "@/lib/google-calendar";
 import type { GoogleCalendarErrorCode } from "@/lib/google-calendar";
@@ -62,50 +64,52 @@ export function GoogleCalendarCard({
   const onOccurrencesRef = useRef(onOccurrences);
   onOccurrencesRef.current = onOccurrences;
 
-  const sync = useCallback(
-    async (from: string, to: string, options?: { silent?: boolean }) => {
-      if (!hasGoogleAccess()) {
+  const sync = useCallback(async (from: string, to: string, options?: { silent?: boolean }) => {
+    if (!hasGoogleAccess()) {
+      setConnected(false);
+      onOccurrencesRef.current([]);
+      return;
+    }
+    setBusy(true);
+    try {
+      const events = await fetchGoogleCalendarEvents(from, to);
+      onOccurrencesRef.current(googleOccurrences(events));
+      setLastSync(new Date());
+      setStatus(null);
+      setConnected(true);
+      track({
+        event_name: "google_calendar_sync_succeeded",
+        feature: "planner",
+        properties: { event_count: events.length },
+      });
+    } catch (err) {
+      onOccurrencesRef.current([]);
+      trackFailure("google_calendar_sync_failed", err, { feature: "planner" });
+      if (err instanceof GoogleCalendarAuthError) {
         setConnected(false);
-        onOccurrencesRef.current([]);
-        return;
       }
-      setBusy(true);
-      try {
-        const events = await fetchGoogleCalendarEvents(from, to);
-        onOccurrencesRef.current(googleOccurrences(events));
-        setLastSync(new Date());
-        setStatus(null);
-        setConnected(true);
-        track({
-          event_name: "google_calendar_sync_succeeded",
-          feature: "planner",
-          properties: { event_count: events.length },
-        });
-      } catch (err) {
-        onOccurrencesRef.current([]);
-        trackFailure("google_calendar_sync_failed", err, { feature: "planner" });
-        if (err instanceof GoogleCalendarAuthError) {
-          setConnected(false);
-        }
-        setStatus(t(errorMessageKey(err)));
-        if (!options?.silent) {
-          toast.error(t("calendar.toastSyncFailed"));
-        }
-      } finally {
-        setBusy(false);
+      setStatus(t(errorMessageKey(err)));
+      if (!options?.silent) {
+        toast.error(t("calendar.toastSyncFailed"));
       }
-    },
-    [t],
-  );
+    } finally {
+      setBusy(false);
+    }
+  }, []);
 
-  // Pick up a provider token that arrived with the OAuth redirect.
+  // Pick up a provider token that arrived with the Google linking redirect only.
+  // A token from another provider (GitHub / LinkedIn / Spotify) or a plain
+  // session refresh is ignored — see `google-calendar.ts`.
   useEffect(() => {
     let cancelled = false;
-    void refreshProviderTokenFromSession().then((captured) => {
+    void refreshProviderTokenFromSession({
+      googleCallback: isGoogleCallbackUrl(),
+    }).then((captured) => {
       if (cancelled) return;
       setConnected(captured || hasGoogleAccess());
     });
     const { data } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!isGoogleConnectPending() && !isGoogleCallbackUrl()) return;
       if (captureProviderToken(session)) setConnected(true);
     });
     return () => {

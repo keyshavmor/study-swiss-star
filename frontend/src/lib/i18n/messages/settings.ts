@@ -55,9 +55,6 @@ export const settings = {
     "settings.preferences.examReminders": "Exam reminders",
     "settings.preferences.dailyStudySummary": "Daily study summary",
     "settings.preferences.soundEffects": "Sound effects",
-    "settings.preferences.autoCleanup.label": "Automatic cleanup when storage is nearly full",
-    "settings.preferences.autoCleanup.hint":
-      "When 1% or less of storage remains, the oldest 5% of eligible study and chat files are removed platform-wide.",
     "settings.audio.title": "Audio responses",
     "settings.audio.description": "Have the assistant's answers read aloud in your browser.",
     "settings.audio.enabled.label": "Read assistant answers aloud",
@@ -158,10 +155,6 @@ export const settings = {
     "settings.preferences.examReminders": "Prüfungserinnerungen",
     "settings.preferences.dailyStudySummary": "Tägliche Lernzusammenfassung",
     "settings.preferences.soundEffects": "Soundeffekte",
-    "settings.preferences.autoCleanup.label":
-      "Automatische Bereinigung, wenn der Speicher fast voll ist",
-    "settings.preferences.autoCleanup.hint":
-      "Sobald 1 % oder weniger Speicher übrig ist, werden die ältesten 5 % der geeigneten Lern- und Chat-Dateien plattformweit entfernt.",
     "settings.audio.title": "Audioantworten",
     "settings.audio.description":
       "Lass dir die Antworten des Assistenten in deinem Browser vorlesen.",
@@ -264,10 +257,6 @@ export const settings = {
     "settings.preferences.examReminders": "Prüefigs-Erinnerige",
     "settings.preferences.dailyStudySummary": "Tägligs Lernfazit",
     "settings.preferences.soundEffects": "Soundeffekt",
-    "settings.preferences.autoCleanup.label":
-      "Automatischi Bereinigung, wänn dr Speicher fascht voll isch",
-    "settings.preferences.autoCleanup.hint":
-      "Sobald 1 % oder weniger Speicher übrig isch, werdet die ältischte 5 % vo de gültige Lern- und Chat-Dateie plattformwiit entfernt.",
     "settings.audio.title": "Audio-Antworte",
     "settings.audio.description": "Lah dir d Antworte vom Assistent i dim Browser vorläse.",
     "settings.audio.enabled.label": "Antworte vom Assistent vorläse",
@@ -369,10 +358,6 @@ export const settings = {
     "settings.preferences.examReminders": "Напоминания об экзаменах",
     "settings.preferences.dailyStudySummary": "Ежедневная учебная сводка",
     "settings.preferences.soundEffects": "Звуковые эффекты",
-    "settings.preferences.autoCleanup.label":
-      "Автоматическая очистка при почти заполненном хранилище",
-    "settings.preferences.autoCleanup.hint":
-      "Когда остаётся 1% или меньше места, самые старые 5% подходящих учебных и чат-файлов удаляются во всём приложении.",
     "settings.audio.title": "Аудиоответы",
     "settings.audio.description": "Прослушивайте ответы ассистента вслух прямо в браузере.",
     "settings.audio.enabled.label": "Читать ответы ассистента вслух",
@@ -474,10 +459,6 @@ export const settings = {
     "settings.preferences.examReminders": "Recordatorios de exámenes",
     "settings.preferences.dailyStudySummary": "Resumen diario de estudio",
     "settings.preferences.soundEffects": "Efectos de sonido",
-    "settings.preferences.autoCleanup.label":
-      "Limpieza automática cuando el almacenamiento esté casi lleno",
-    "settings.preferences.autoCleanup.hint":
-      "Cuando queda un 1% o menos de almacenamiento, se elimina el 5% más antiguo de los archivos de estudio y chat elegibles en toda la plataforma.",
     "settings.audio.title": "Respuestas de audio",
     "settings.audio.description":
       "Haz que las respuestas del asistente se lean en voz alta en tu navegador.",
@@ -582,10 +563,6 @@ export const settings = {
     "settings.preferences.examReminders": "Rappels d'examens",
     "settings.preferences.dailyStudySummary": "Résumé d'étude quotidien",
     "settings.preferences.soundEffects": "Effets sonores",
-    "settings.preferences.autoCleanup.label":
-      "Nettoyage automatique lorsque le stockage est presque plein",
-    "settings.preferences.autoCleanup.hint":
-      "Lorsqu'il reste 1 % ou moins de stockage, les 5 % de fichiers d'étude et de chat éligibles les plus anciens sont supprimés sur toute la plateforme.",
     "settings.audio.title": "Réponses audio",
     "settings.audio.description":
       "Faites lire à voix haute les réponses de l'assistant dans votre navigateur.",
@@ -689,10 +666,6 @@ export const settings = {
     "settings.preferences.examReminders": "Promemoria esami",
     "settings.preferences.dailyStudySummary": "Riepilogo di studio giornaliero",
     "settings.preferences.soundEffects": "Effetti sonori",
-    "settings.preferences.autoCleanup.label":
-      "Pulizia automatica quando l'archiviazione è quasi piena",
-    "settings.preferences.autoCleanup.hint":
-      "Quando rimane l'1% o meno di spazio, il 5% più vecchio dei file di studio e chat idonei viene rimosso in tutta la piattaforma.",
     "settings.audio.title": "Risposte audio",
     "settings.audio.description":
       "Fai leggere ad alta voce le risposte dell'assistente nel tuo browser.",

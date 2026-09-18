@@ -104,9 +104,10 @@ export const LEARNING_GOALS = [
 
 export const SUBJECT_MODES = [
   "Chat",
-  "Knowledge Analysis",
+  "Quick Check",
+  "Knowledge Profile",
   "Quiz Mode",
-  "Exam Mode",
+  "Mock Exam",
   "Study Plan",
   "Statistics",
   "Subject Tools",

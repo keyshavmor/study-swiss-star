@@ -44,13 +44,10 @@ export interface UserPreferences {
   selected_qwen_model: string;
   /** One of the seven approved application languages. */
   app_language: LanguageCode;
-  /** Tracks completion of the post-auth language onboarding flow. */
-  language_onboarding_completed: boolean;
   /**
    * Live Supabase default is `message_then_app`: a confidently detected message
    * language wins, otherwise the app language is used.
-   * Tutoring chat enforces this policy before forwarding `language` to the local backend.
-   * The separate general-assistant generation endpoint remains deferred.
+   * FUTURE BACKEND / CODEX: the local AI backend does not enforce this yet.
    */
   assistant_reply_language_policy: ReplyLanguagePolicy;
   assistant_audio_enabled: boolean;
@@ -58,18 +55,29 @@ export interface UserPreferences {
   exam_reminders: boolean;
   daily_study_summary: boolean;
   sound_effects: boolean;
+  /**
+   * CURRENT SUPABASE: set to true by the language onboarding screen. A missing
+   * or false flag means the user has never confirmed a default language, even
+   * when `app_language` already holds the "en" default.
+   */
+  language_onboarding_completed: boolean;
+  /** Peer-message notification preferences (messaging area). Additive keys. */
+  peer_message_notifications: boolean;
+  browser_message_notifications: boolean;
 }
 
 export const DEFAULT_PREFERENCES: UserPreferences = {
   selected_qwen_model: QWEN_MODELS[0],
   app_language: DEFAULT_LANGUAGE,
-  language_onboarding_completed: false,
   assistant_reply_language_policy: "message_then_app",
   assistant_audio_enabled: true,
   assistant_audio_autoplay: false,
   exam_reminders: true,
   daily_study_summary: true,
   sound_effects: false,
+  language_onboarding_completed: false,
+  peer_message_notifications: true,
+  browser_message_notifications: false,
 };
 
 function asRecord(value: Json | null | undefined): Record<string, unknown> {
@@ -161,6 +169,13 @@ export async function uploadAvatar(file: File): Promise<string> {
   if (!file.type.startsWith("image/")) throw new Error("Please choose an image file.");
   if (file.size > AVATAR_MAX_BYTES) throw new Error("Profile pictures must be 2 MB or smaller.");
 
+  // Quota preflight so people get a friendly message instead of only a
+  // database/Storage rejection. The server stays authoritative.
+  const { preflightQuota, QUOTA_EXCEEDED_CODE } = await import("@/lib/user-quota");
+  if ((await preflightQuota(file.size)) === "quota_exceeded") {
+    throw new Error(QUOTA_EXCEEDED_CODE);
+  }
+
   const extension = file.name.split(".").pop()?.toLowerCase() || "jpg";
   const objectPath = `${userId}/avatar-${Date.now()}.${extension}`;
 
@@ -200,11 +215,11 @@ export async function fetchPreferences(): Promise<UserPreferences> {
   const bool = (key: keyof UserPreferences) =>
     typeof stored[key] === "boolean" ? (stored[key] as boolean) : DEFAULT_PREFERENCES[key];
 
-  const model = asString(stored["selected_qwen_model"]);
+  // The selectable set now comes from `public.ai_model_catalog`, so any stored
+  // non-empty model id is preserved; only an empty value falls back.
+  const model = asString(stored["selected_qwen_model"]).trim();
   return {
-    selected_qwen_model: (QWEN_MODELS as readonly string[]).includes(model)
-      ? model
-      : DEFAULT_PREFERENCES.selected_qwen_model,
+    selected_qwen_model: model || DEFAULT_PREFERENCES.selected_qwen_model,
     assistant_reply_language_policy:
       stored["assistant_reply_language_policy"] === "app_only"
         ? "app_only"
@@ -213,12 +228,14 @@ export async function fetchPreferences(): Promise<UserPreferences> {
       stored["app_language"] === undefined
         ? DEFAULT_LANGUAGE
         : normaliseLanguage(stored["app_language"]),
-    language_onboarding_completed: bool("language_onboarding_completed") as boolean,
     assistant_audio_enabled: bool("assistant_audio_enabled") as boolean,
     assistant_audio_autoplay: bool("assistant_audio_autoplay") as boolean,
     exam_reminders: bool("exam_reminders") as boolean,
     daily_study_summary: bool("daily_study_summary") as boolean,
     sound_effects: bool("sound_effects") as boolean,
+    language_onboarding_completed: bool("language_onboarding_completed") as boolean,
+    peer_message_notifications: bool("peer_message_notifications") as boolean,
+    browser_message_notifications: bool("browser_message_notifications") as boolean,
   };
 }
 

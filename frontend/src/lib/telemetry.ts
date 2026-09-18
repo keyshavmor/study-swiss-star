@@ -26,9 +26,23 @@ export interface ActivityEvent {
 const MAX_STRING = 200;
 const MAX_PROPERTIES = 12;
 
+/**
+ * The ONLY events the production `activity-log` function accepts without a
+ * session. They carry no identifier, form value or credential — just the fact
+ * that a pre-session auth attempt happened.
+ */
+export const ANONYMOUS_EVENTS: ReadonlySet<string> = new Set([
+  "auth_signin_failed",
+  "oauth_signin_failed",
+  "auth_signup_failed",
+  "auth_password_reset_failed",
+  "auth_signup_succeeded",
+  "auth_password_reset_requested",
+]);
+
 /** Keys that must never leave the browser, whatever the caller passes. */
 const FORBIDDEN_KEY =
-  /(password|token|secret|key|authorization|cookie|message|content|prompt|body|title|description|location|summary|email)/i;
+  /(password|token|secret|key|authorization|cookie|message|content|prompt|body|title|description|location|summary|email|username|user_name|identifier|guardian|phone|birth)/i;
 
 function sanitiseValue(value: unknown): Primitive | undefined {
   if (value === null) return null;
@@ -38,7 +52,7 @@ function sanitiseValue(value: unknown): Primitive | undefined {
   return undefined;
 }
 
-export function sanitiseProperties(
+function sanitiseProperties(
   properties: Record<string, Primitive | undefined> | undefined,
 ): Record<string, Primitive> | undefined {
   if (!properties) return undefined;
@@ -72,6 +86,13 @@ export async function logActivity(event: ActivityEvent): Promise<void> {
       ...event.properties,
     });
     if (properties) payload["properties"] = properties;
+
+    // CURRENT SUPABASE (verified 2026-09-15): `activity-log` accepts exactly
+    // the ANONYMOUS_EVENTS below without a session. Every other event requires
+    // a verified session and is skipped while signed out, so telemetry never
+    // produces a 401 the user can see.
+    const { data } = await supabase.auth.getSession();
+    if (!data.session && !ANONYMOUS_EVENTS.has(payload["event_name"] as string)) return;
 
     await supabase.functions.invoke("activity-log", { body: payload });
   } catch {

@@ -9,7 +9,7 @@ import {
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/hooks/use-theme";
 import { supabase } from "@/integrations/supabase/client";
@@ -21,21 +21,64 @@ import { I18nProvider, useI18n } from "@/lib/i18n/provider";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 
+/** Reads whether a Supabase session exists, for recovery surfaces only. */
+function useHasSupabaseSession(): boolean {
+  const [hasSession, setHasSession] = useState(false);
+  useEffect(() => {
+    let active = true;
+    void supabase.auth
+      .getSession()
+      .then(({ data }) => {
+        if (active) setHasSession(Boolean(data.session));
+      })
+      .catch(() => {
+        /* recovery UI must render even when the auth check fails */
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+  return hasSession;
+}
+
+/** Shared recovery sign-out: best-effort runtime release, then the auth page. */
+function RecoverySignOutButton() {
+  const { t } = useI18n();
+  return (
+    <button
+      onClick={() => {
+        void import("@/lib/sign-out")
+          .then(({ signOutCompletely }) => signOutCompletely())
+          .catch(() => {})
+          .finally(() => {
+            window.location.assign("/");
+          });
+      }}
+      className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent"
+    >
+      {t("nav.signOut")}
+    </button>
+  );
+}
+
 function NotFoundComponent() {
   const { t } = useI18n();
+  // An authenticated user who lands on an unknown URL must not be stuck either.
+  const hasSession = useHasSupabaseSession();
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
         <h1 className="text-7xl font-bold text-foreground">404</h1>
         <h2 className="mt-4 text-xl font-semibold text-foreground">{t("common.notFound.title")}</h2>
         <p className="mt-2 text-sm text-muted-foreground">{t("common.notFound.body")}</p>
-        <div className="mt-6">
+        <div className="mt-6 flex flex-wrap justify-center gap-2">
           <Link
             to="/"
             className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
           >
             {t("common.goHome")}
           </Link>
+          {hasSession && <RecoverySignOutButton />}
         </div>
       </div>
     </div>
@@ -46,6 +89,9 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   console.error(error);
   const { t } = useI18n();
   const router = useRouter();
+  // A stuck/undefined authenticated state must never trap the user: whenever a
+  // Supabase session exists, sign-out is offered next to retry/home.
+  const hasSession = useHasSupabaseSession();
   useEffect(() => {
     reportLovableError(error, { boundary: "tanstack_root_error_component" });
   }, [error]);
@@ -73,6 +119,7 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
           >
             {t("common.goHome")}
           </a>
+          {hasSession && <RecoverySignOutButton />}
         </div>
       </div>
     </div>
