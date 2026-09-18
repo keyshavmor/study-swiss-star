@@ -1,0 +1,16 @@
+%% Status: EXPECTED LOCAL BACKEND CONTRACT + CURRENT SUPABASE
+%% Source: frontend/src/lib/safety.types.ts, moderation_events, apply_confirmed_safety_strike (service-only)
+sequenceDiagram
+    participant User
+    participant Backend as EXPECTED local backend classifier
+    participant StrikeFn as apply_confirmed_safety_strike (service-role only, NOT callable by browser)
+    participant DB as account_compliance / moderation_events
+
+    User->>Backend: content submitted (peer message or AI prompt)
+    Backend->>Backend: classify content (FUTURE CODEX IMPLEMENTATION)
+    Backend-->>Backend: CONFIRMED violation #1
+    Backend->>StrikeFn: apply_confirmed_safety_strike(user_id, category_code, bounded metadata)
+    StrikeFn->>DB: insert moderation_events (bounded metadata + hash only, no raw content)
+    StrikeFn->>DB: account_compliance.safety_strike_count = 1, account_status stays 'active'
+    Backend-->>User: verdict = block_warning, content blocked, warning shown
+    Note over DB: Raw offending content is never stored or echoed back.

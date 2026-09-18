@@ -1,0 +1,29 @@
+%% Status: CURRENT FRONTEND + CURRENT SUPABASE + EXPECTED LOCAL BACKEND CONTRACT
+%% Source: frontend/src/lib/safety.functions.ts, safety-backend.server.ts, peer-messaging.ts
+sequenceDiagram
+    participant User
+    participant UI as /messages/$conversationId composer
+    participant Fn as sendPeerMessage (server fn)
+    participant Adapter as safety-backend.server.ts
+    participant Backend as EXPECTED /api/peer-messaging/send
+    participant DB as peer_messages / peer_message_attachments / peer_message_notifications
+
+    User->>UI: write message, click Send
+    UI->>Fn: sendPeerMessage({ conversationId, body, attachments })
+    Fn->>Adapter: sendPeerMessageOnBackend(verified JWT, studentId)
+    Adapter->>Backend: POST /api/peer-messaging/send
+    alt backend unavailable
+        Backend-->>Adapter: no response
+        Adapter-->>UI: { sent:false, safety: safety_unavailable } — FAILS CLOSED, nothing persisted
+    else responds
+        Backend->>Backend: moderate text + attachments (FUTURE CODEX IMPLEMENTATION: classifier)
+        alt verdict allow
+            Backend->>DB: insert peer_messages/attachments, insert peer_message_notifications for other members
+            Backend-->>Adapter: { sent:true, message_id, safety:{verdict:allow} }
+            Adapter-->>UI: message appended to thread
+        else verdict block_warning / block_suspend_pending_review
+            Backend-->>Adapter: { sent:false, safety:{...} } — nothing written to DB
+            Adapter-->>UI: localized block/warning copy, no content echoed back
+        end
+    end
+    Note over DB: Direct browser INSERTs to peer_messages/peer_message_attachments are disabled by RLS on purpose.

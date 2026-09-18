@@ -20,27 +20,26 @@ sequenceDiagram
   Cloud-->>UI: Persisted UI messages
   Student->>UI: Submit question
   UI->>I18n: detectLanguage(text) + effectiveResponseLanguage(text, uiLanguage)
-  I18n-->>UI: responseLanguageHint, kept per message for read-aloud
+  I18n-->>UI: responseLanguageHint, CLIENT STATE ONLY, kept per message
   UI-->>Student: Optimistic message + Thinking indicator
-  UI->>API: UI messages + threadId + academicYear + gradeLevel + uiLanguage
+  UI->>API: UI messages + threadId + academicYear + gradeLevel, bearer token<br/>responseLanguageHint is NOT included in this payload today
   API->>Cloud: Verify thread ownership (threads.id + user_id), then insert user message
-  API->>API: Apply message_then_app language policy
-  API->>PY: Bearer JWT and matching X-Student-Id<br/>question, subject, language, year, grade, stream false
+  API->>PY: requestContextAnswer (context-backend.server.ts): question + subject/language/year/grade, stream:false
   PY->>RAG: Build budgeted context and provenance
   RAG-->>PY: Relevant chunks and memory
   PY->>LLM: Compiled context + current question
-  LLM-->>PY: Answer text under explicit seven-language instruction
+  LLM-->>PY: Answer text (response-language enforcement NOT implemented today)
   PY-->>API: ContextChatResponse: answer, sources, used_model, retrieval_summary
   API->>Cloud: Insert completed assistant message (onFinish)
-  API-->>UI: AI SDK stream with text parts and context metadata
-  UI-->>Student: Markdown answer, exam tip, and collapsible sources
+  API-->>UI: AI SDK stream: text-start/text-delta/text-end + data part context-metadata
+  UI-->>Student: Markdown answer + exam tip + collapsible sources
   opt Listen / Stop read-aloud
     Student->>UI: Click Listen on a completed assistant message
     UI->>UI: speechLocaleFor(answerText, uiLanguage), lib/speech.ts<br/>Web Speech API, ephemeral, never stored
     UI-->>Student: Spoken answer, or graceful no-op when unsupported/no voice
   end
   opt Python backend unreachable or returns an error
-    API-->>UI: Structured status/code/retryable/request_id error
-    UI-->>Student: Error surfaced in chat and no fallback answer is generated
+    API-->>UI: HTTP error with ContextBackendError.status (default 503) and message
+    UI-->>Student: Error surfaced in chat. No fallback answer is generated
   end
-  Note over API,PY: CURRENT INTEGRATED<br/>A confidently detected message language wins<br/>otherwise uiLanguage wins, then English<br/>FastAPI validates all seven codes and forwards the language into context compilation
+  Note over PY,LLM: FUTURE CODEX IMPLEMENTATION: ui_language, message_language and effective<br/>response_language contract. message_language should win only when confidently<br/>one of the seven approved languages (en/de/gsw/ru/es/fr/it).

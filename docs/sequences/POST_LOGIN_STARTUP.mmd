@@ -1,0 +1,69 @@
+%% Status: CURRENT FRONTEND + CURRENT SUPABASE (2026-09-17)
+%% Canonical post-login sequence. Supersedes every older description of a
+%% once-only language gate or an optional/advisory model screen.
+%% Source: frontend/src/lib/startup-flow.ts, lib/language-session.ts,
+%% lib/ai-session.ts, routes/_authenticated/route.tsx,
+%% routes/_authenticated/onboarding.language.tsx, onboarding.model.tsx
+sequenceDiagram
+    participant User
+    participant Entry as "/" sign in / sign up
+    participant Supa as Supabase Auth
+    participant Flow as lib/startup-flow.ts
+    participant Comp as account_compliance (Supabase)
+    participant LangS as sessionStorage<br/>alim.language_session.v1
+    participant AiS as sessionStorage<br/>alim.ai_session.v1
+    participant Lang as /onboarding/language
+    participant Model as /onboarding/model
+    participant Backend as REQUIRED FUTURE BACKEND<br/>capability probe + model prepare
+    participant Home as /home + product
+
+    User->>Entry: sign in (email or username)
+    Entry->>Supa: signInWithPassword / username-login v4
+    Supa-->>Entry: session (auth NEVER depends on the AI backend)
+    Entry->>Flow: resolveStartupDestination()
+    Flow->>Comp: complianceStatus() (suspension check only pre-empts)
+    alt suspended
+        Flow-->>Entry: /account/suspended (outranks everything)
+    else not suspended
+        Flow->>LangS: languageDecisionRequired()
+        alt no language decision this session
+            Flow-->>Lang: /onboarding/language
+        else decided
+            Flow->>AiS: modelGateRequired()
+            alt no AI decision this session
+                Flow-->>Model: /onboarding/model
+            else decided
+                alt compliance onboarding still required / unknown
+                    Flow-->>Entry: /onboarding/compliance (AFTER language + model)
+                else completed
+                    Flow-->>Home: /home
+                end
+            end
+        end
+    end
+
+    Note over Lang: persisted app_language is only a SAVED DEFAULT HINT.<br/>Continue is disabled until an explicit click, or the user skips
+    User->>Lang: pick a language → persist app_language
+    User->>Lang: OR "Skip language selection" (keeps current language)
+    Lang->>LangS: markLanguageSelected / markLanguageSkipped
+    Lang-->>Model: /onboarding/model (replace)
+
+    Model->>Backend: system capability probe (active users, GPU VRAM, RAM,<br/>storage, health, load balancing, recommendation)
+    alt backend unavailable
+        Backend-->>Model: no answer
+        Model-->>User: truthful "backend unavailable / cannot recommend"
+    else report ready
+        Backend-->>Model: report + recommended model (preselected)
+    end
+    User->>Model: check / prepare model (optionally change model → persist preference)
+    Model->>Backend: prepare + poll operation (checking, download, shared cache,<br/>loading, ready / blocked / failed)
+    alt backend confirms ready AND can_continue_with_ai
+        Backend-->>Model: state = ready
+        Model->>AiS: markAiReady(modelId)
+        Model-->>Home: "Continue to the app" (only now enabled).<br/>Compliance first if still required
+    else not ready (unavailable, blocked, failed, no suitable model)
+        Model-->>User: red state.<br/>Paths: retry or change model / sign out / explicit "Continue without AI"
+        User->>Model: Continue without AI
+        Model->>AiS: markNonAi()
+        Model-->>Home: /home in non-AI mode
+    end

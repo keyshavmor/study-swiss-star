@@ -1,0 +1,18 @@
+flowchart LR
+  Student[Student or teacher] --> Browser[Alim browser UI]
+  Guardian[Guardian or reviewer] --> Browser
+  Browser --> TanStack[TanStack server runtime]
+  Browser --> Supabase[Supabase Auth, Postgres, Storage, RPC, Edge]
+  TanStack --> Supabase
+  TanStack --> FastAPI[Local FastAPI backend :8001]
+  FastAPI --> Supabase
+  FastAPI --> Runtime[Local llama.cpp runtime :8000]
+  FastAPI --> LocalData[Local models, material, cache and indexes]
+  FastAPI -. compact policy-permitted query .-> Reference[External reference provider]
+  Browser --> Google[Google Calendar API]
+  note1[main is UX and frontend authority] --- Browser
+  note2[AI inference remains local] --- Runtime
+%% Owner: cross-system architecture
+%% Status: mixed current/expected; see README.md and canonical status indices
+%% Verified: frontend f0910e6; target baseline bff4ec7; 2026-09-18
+%% Source: codex/diagrams/SYSTEM_CONTEXT.mmd

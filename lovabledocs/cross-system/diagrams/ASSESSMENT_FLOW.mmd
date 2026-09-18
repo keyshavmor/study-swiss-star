@@ -1,0 +1,27 @@
+stateDiagram-v2
+  [*] --> Configured
+  Configured --> Queued: create generation job
+  Queued --> Generating
+  Generating --> Validating
+  Validating --> Ready: public questions valid and private keys stored
+  Validating --> Failed
+  Queued --> Cancelled: cancel
+  Generating --> Cancelled: cancel
+  Ready --> Attempt: begin with server time
+  Attempt --> Attempt: answer, navigate and heartbeat
+  Attempt --> Review
+  Review --> Attempt: edit answer
+  Review --> Submitted: idempotent final submit
+  Attempt --> Abandoned: quit, sign out or TTL
+  Submitted --> Grading
+  Grading --> Result
+  Grading --> Failed: bounded retry state
+  Cancelled --> Cleaned
+  Abandoned --> Cleaned
+  Failed --> Cleaned: ephemeral data expiry
+  Result --> [*]
+  Cleaned --> [*]
+%% Owner: cross-system architecture
+%% Status: mixed current/expected; see README.md and canonical status indices
+%% Verified: frontend f0910e6; target baseline bff4ec7; 2026-09-18
+%% Source: codex/diagrams/ASSESSMENT_FLOW.mmd

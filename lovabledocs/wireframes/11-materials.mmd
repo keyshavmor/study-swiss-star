@@ -3,13 +3,14 @@ flowchart TD
   Panel["MaterialsPanel on /school/$subject"] --> LocalList["Local user files, links and notes"]
   LocalList --> CRUD["Add / edit / archive / delete / restore"]
   CRUD --> Local["Browser storage (AppDataProvider)<br/>CURRENT - FRONTEND"]
-  Panel -.-> BackendList["Indexed corpus materials list<br/>DEFERRED - no list endpoint/UI connection"]
-  Upload["Choose PDF / DOCX / MD / TXT<br/>UI wiring DEFERRED"] -.-> Import["POST /api/context/documents/storage<br/>CURRENT - BACKEND, UI not connected"]
+  Panel -.-> BackendList["Indexed corpus materials<br/>FUTURE CODEX IMPLEMENTATION"]
+  BackendList -.-> GET["GET /api/subjects/{id}/materials<br/>FUTURE CODEX IMPLEMENTATION"]
+  Upload["Choose PDF / DOCX / MD / TXT<br/>UI wiring PLANNED"] -.-> Import["POST /api/import/document, multipart<br/>FUTURE CODEX IMPLEMENTATION"]
   Import -.-> Parse["Backend parse and normalise"]
   Parse -.-> Chunk["Chunk + embed + index"]
-  Chunk -.-> Store["Request-scoped Supabase documents/document_chunks<br/>CURRENT - BACKEND"]
+  Chunk -.-> Store["Python SQLite / vector index<br/>BACKEND GAP"]
   Store -.-> BackendList
   Import -. success .-> Status["Indexed status: pages, chunks, warnings"]
   Import -. parse failure .-> Review["Item stays visible as Needs review"]
-  Text["POST /api/context/documents/text<br/>CURRENT - BACKEND"] --> Chunk
+  Text["POST /api/context/documents/text<br/>EXPECTED LOCAL BACKEND CONTRACT"] --> Chunk
   Transcript["TranscriptImportDialog: simulated OCR, review, confirm"] --> Assessments["Local assessments only<br/>CURRENT - FRONTEND"]

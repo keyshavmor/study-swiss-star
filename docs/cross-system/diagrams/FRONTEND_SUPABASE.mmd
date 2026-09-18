@@ -1,0 +1,22 @@
+flowchart TB
+  UI[React UI] --> Client[Supabase browser client]
+  Server[TanStack server functions] --> UserClient[User-scoped server client]
+  Client --> Auth[Supabase Auth]
+  Client --> Data[Data API]
+  Client --> Storage[Private Storage]
+  Client --> Edge[Edge Functions]
+  UserClient --> Auth
+  UserClient --> Data
+  Data --> Grants[Explicit grants]
+  Grants --> RLS[RLS ownership and role policy]
+  RLS --> Tables[(37 public tables)]
+  Storage --> StoragePolicy[Bucket and path policies plus quota]
+  StoragePolicy --> Buckets[(7 private buckets)]
+  Data --> RPC[Public RPC API]
+  Edge --> Worker[Auth, feedback, logging, cleanup and deletion]
+  Secret[Service secret] -. server-only narrow path .-> Worker
+  Secret -. never .-> UI
+%% Owner: cross-system architecture
+%% Status: mixed current/expected; see README.md and canonical status indices
+%% Verified: frontend f0910e6; target baseline bff4ec7; 2026-09-18
+%% Source: codex/diagrams/FRONTEND_SUPABASE.mmd

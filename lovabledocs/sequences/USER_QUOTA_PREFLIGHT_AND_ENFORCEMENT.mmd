@@ -1,0 +1,39 @@
+%% Status: CURRENT FRONTEND + CURRENT SUPABASE (add_per_user_combined_50mb_quota)
+%% Source: frontend/src/lib/user-quota.ts, components/app/UserQuotaCard.tsx,
+%% lib/account-data.ts (avatar), lib/assistant-data.ts (attachments)
+sequenceDiagram
+    participant UI as Settings / upload action
+    participant Client as lib/user-quota.ts
+    participant Rpc as get_my_quota_status() / can_allocate_my_quota()
+    participant Guard as DB trigger + Storage policy
+    participant Store as user-owned table / bucket
+
+    UI->>Client: fetchMyQuotaStatus()
+    Client->>Rpc: get_my_quota_status() (RLS, user session)
+    Rpc-->>Client: database + storage + total, limit 52428800,<br/>warning 47185920, remaining, usage_fraction
+    alt usage >= 90%
+        Client-->>UI: warning state (Settings + contextual upload warning)
+    else usage = 100%
+        Client-->>UI: allowance-full state. Sizable action prevented before write
+    end
+
+    UI->>Client: preflightQuota(plannedBytes)
+    Client->>Rpc: can_allocate_my_quota(p_additional_bytes)
+    alt false
+        Rpc-->>Client: false
+        Client-->>UI: quota_exceeded → localized "allowance full" message
+    else check failed
+        Rpc-->>Client: error
+        Client-->>UI: check_unavailable → attempt still allowed
+    else true
+        Rpc-->>Client: true
+        UI->>Store: insert row / upload object
+        Store->>Guard: quota guard runs (authoritative)
+        alt guard rejects
+            Guard-->>UI: user_data_quota_exceeded
+            UI-->>UI: isQuotaExceededError() → localized quota.exceededError
+        else accepted
+            Guard-->>UI: written
+        end
+    end
+    Note over Guard: Ownerless system assets are not user data:<br/>never counted, never deleted here

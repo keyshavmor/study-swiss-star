@@ -56,5 +56,53 @@ flowchart LR
   SETTINGS --> STORAGEMGMT
 
   APICHAT --> CTXBACKEND["lib/context-backend.server.ts"]
-  CTXBACKEND --> LOCALBACKEND["Local Python backend :8001<br/>CURRENT - JWT/language integrated"]
+  CTXBACKEND --> LOCALBACKEND["Local Python backend :8001<br/>EXPECTED LOCAL BACKEND CONTRACT"]
   APICHAT --> SUPACLIENT
+
+
+  GATE --> ONBCOMPLIANCE2["onboarding.compliance.tsx"]
+  ONBCOMPLIANCE2 --> COMPLIANCECOMP["ComplianceOnboarding.tsx"]
+  GATE --> ONBADMISSION2["onboarding.system-admission.tsx"]
+  ONBADMISSION2 --> ADMISSIONGATECOMP["SystemAdmissionGate.tsx"]
+  GATE --> SUSPENDEDR["account.suspended.tsx"]
+  ROOT --> LEGALR["legal.$doc.tsx"]
+  LEGALR --> LEGALCOMP["LegalDocumentPage.tsx"]
+
+  GATE --> MSGIDX["messages.index.tsx / messages.$conversationId.tsx"]
+  MSGIDX --> CONVLIST["messaging/ConversationList.tsx"]
+  MSGIDX --> MSGTHREADCOMP["messaging/MessageThread.tsx"]
+  MSGTHREADCOMP --> MSGCOMPOSER["messaging/MessageComposer.tsx"]
+  MSGTHREADCOMP --> ATTACHPICK["messaging/AttachmentPicker.tsx"]
+  CONVLIST --> NEWCONVDIALOG["messaging/NewConversationDialog.tsx"]
+  MSGCOMPOSER --> LOCALPEERSEND2["local-backend-endpoints.ts: /api/peer-messaging/send"]
+  ATTACHPICK --> LOCALATTACHSCAN2["local-backend-endpoints.ts: /api/safety/attachment-scan"]
+  CONVLIST --> SUPACLIENT
+  MSGTHREADCOMP --> SUPACLIENT
+
+  GATE --> SYSHEALTHR["system-health.tsx"]
+  SYSHEALTHR --> SYSHEALTHCOMP["SystemHealthPanel.tsx"]
+  SYSHEALTHCOMP --> LOCALHEALTH2["local-backend-endpoints.ts: /api/system/health"]
+
+  SETTINGS --> DATARIGHTSCOMP["DataRightsPanel.tsx"]
+  DATARIGHTSCOMP --> SUPACLIENT
+
+  APICHAT --> LOCALMODERATE2["local-backend-endpoints.ts: /api/safety/moderate"]
+
+  classDef backendUnknown2 fill:#fdf1d0,stroke:#a67c00,color:#333;
+  class LOCALPEERSEND2,LOCALATTACHSCAN2,LOCALHEALTH2,LOCALMODERATE2 backendUnknown2
+
+%% CURRENT (2026-09-17): the authenticated startup flow is auth → PER-SESSION
+%% language decision (select or explicit skip) → PER-SESSION model decision
+%% (backend-confirmed ready, or explicit continue-without-AI) → product. Language
+%% onboarding is NOT once-per-account; language_onboarding_completed is legacy
+%% metadata only. There is NO mandatory system-admission screen between them, and
+%% /onboarding/model redirects to /onboarding/language while that decision is
+%% missing. Canonical: docs/sequences/POST_LOGIN_STARTUP.mmd. Model/GPU readiness
+%% lives in sessionStorage only, never in Supabase. auto_storage_cleanup user
+%% preference removed; cleanup is a platform-wide cron (STORAGE_CAPACITY_CLEANUP.mmd).
+
+%% Compliance onboarding, suspension, legal document routes, peer messaging and the
+%% system health panel: see docs/sequences/PEER_CHAT_CREATION_BY_USERNAME.mmd,
+%% docs/sequences/SYSTEM_HEALTH_AGGREGATION.mmd and docs/contracts/BACKEND_GAP_MATRIX.md.
+%% The system-admission screen is OPTIONAL and no longer part of the startup order
+%% (capability/admission/recommendation data is rendered on the model screen).

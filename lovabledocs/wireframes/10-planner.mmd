@@ -20,7 +20,7 @@ flowchart TD
   Override --> Store
   Split --> Store
   Generate["Generate study plan action"] -.-> Context["Send exams + free slots + limits"]
-  Context -.-> Python["POST /api/study-plan/generate<br/>DEFERRED"]
+  Context -.-> Python["POST /api/study-plan/generate<br/>FUTURE CODEX IMPLEMENTATION"]
   Python -.-> Review["Review proposal; no automatic write"]
   Review -.-> Confirm["Student confirms"]
   Confirm -.-> Store

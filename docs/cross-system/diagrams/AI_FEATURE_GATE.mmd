@@ -1,0 +1,17 @@
+flowchart TD
+  Action[User invokes AI-dependent action] --> Session{Session decision}
+  Session -->|ready plus allowed| Request[Issue backend request]
+  Session -->|non-AI or missing| Block[Do not issue request]
+  Request --> Safety{Safety available and allow?}
+  Safety -->|allow| Runtime{Lease and model ready?}
+  Safety -->|block or unavailable| Closed[Fail closed with localized notice]
+  Runtime -->|yes| Result[Real validated AI result]
+  Runtime -->|no| Unavailable[Backend unavailable or retry state]
+  Result --> Persist[Persist authorized result]
+  Block --> Paths[Retry setup, Settings, sign out or non-AI path]
+  Closed --> Paths
+  Unavailable --> Paths
+%% Owner: cross-system architecture
+%% Status: mixed current/expected; see README.md and canonical status indices
+%% Verified: frontend f0910e6; target baseline bff4ec7; 2026-09-18
+%% Source: codex/diagrams/AI_FEATURE_GATE.mmd

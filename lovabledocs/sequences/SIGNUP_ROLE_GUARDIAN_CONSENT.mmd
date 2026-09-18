@@ -1,0 +1,25 @@
+%% Status: CURRENT — FRONTEND + CURRENT — SUPABASE
+%% Source: frontend/src/lib/compliance.ts, supabase RPC complete_account_compliance_onboarding
+sequenceDiagram
+    participant User
+    participant UI as /onboarding/compliance
+    participant Lib as lib/compliance.ts
+    participant RPC as Supabase RPC complete_account_compliance_onboarding
+    participant DB as account_compliance / user_legal_consents
+
+    User->>UI: choose accountType (student/teacher), DOB, guardian email, accept 4 documents
+    UI->>Lib: validateComplianceInput()
+    Note over Lib: student must be <18, teacher must be >=18,<br/>guardian email required + different from account email for students
+    alt validation error
+        Lib-->>UI: ComplianceValidationError[]
+        UI-->>User: localized inline errors, no network call
+    else valid
+        UI->>Lib: completeComplianceOnboarding()
+        Lib->>RPC: complete_account_compliance_onboarding(p_account_type, p_date_of_birth, p_guardian_email, versions 2026-09-15)
+        RPC->>DB: upsert account_compliance + insert user_legal_consents rows
+        RPC-->>Lib: success or error (RPC re-validates. Frontend copy is convenience only)
+        Lib-->>UI: resolves
+        UI->>Lib: fetchAccountCompliance() (re-read, never assume completion)
+        Lib-->>UI: complianceOnboardingCompleted = true
+        UI-->>User: proceed to language onboarding
+    end

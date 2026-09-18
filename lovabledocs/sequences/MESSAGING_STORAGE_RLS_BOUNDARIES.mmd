@@ -1,0 +1,18 @@
+%% Status: CURRENT SUPABASE
+%% Source: frontend/src/lib/peer-messaging.ts, attachment-processing.ts
+sequenceDiagram
+    participant BrowserA as Browser (member of conversation)
+    participant BrowserB as Browser (NOT a member)
+    participant DB as peer_conversations / peer_messages / peer_message_attachments (RLS)
+    participant Bucket as Storage: peer-message-attachments (private)
+
+    BrowserA->>DB: SELECT messages WHERE conversation membership matches auth.uid()
+    DB-->>BrowserA: rows returned (RLS allows)
+    BrowserB->>DB: SELECT same conversation_id
+    DB-->>BrowserB: no rows (RLS denies non-members)
+    BrowserA->>DB: attempt direct INSERT into peer_messages
+    DB-->>BrowserA: denied — writes intentionally disabled for clients, only local backend may insert
+    BrowserA->>Bucket: createSignedUrl(objectPath) for an attachment in its own conversation
+    Bucket-->>BrowserA: short-lived signed URL (300s)
+    BrowserB->>Bucket: attempt signed URL / direct access to same object
+    Bucket-->>BrowserB: denied — private bucket, no authenticated direct upload, membership not satisfied

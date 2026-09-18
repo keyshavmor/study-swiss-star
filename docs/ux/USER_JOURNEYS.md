@@ -1,7 +1,7 @@
 Document status: CURRENT
-Generated from: current Lovable project · GitHub main (keyshavmor/study-swiss-star) · live Supabase project ucacmeadsufiedxrgqit
-Last verified: 2026-09-14 (UTC)
-Frontend commit: e0ef3464557d4786d214accb0d1bf44082ae3466
+Generated from: frontend authority main at f0910e6971f12efe0ad547b904f6e2a518b13856 · live Supabase evidence dated 2026-09-18
+Production Supabase verified: 2026-09-15 (UTC)
+Frontend commit: f0910e6971f12efe0ad547b904f6e2a518b13856
 
 # User Journeys
 
@@ -14,8 +14,8 @@ Superseded document: `docs/archive/USER_FLOWS.md` predates this catalogue; this 
 source of truth for user journeys.
 
 Status labels used below: **CURRENT — FRONTEND**, **CURRENT — SUPABASE**,
-**CURRENT — EXTERNAL INTEGRATION**, **DEFERRED — NO CURRENT INTEGRATION**,
-**DEFERRED**, **DEPRECATED — REMOVED**.
+**CURRENT — EXTERNAL INTEGRATION**, **EXPECTED LOCAL BACKEND CONTRACT**,
+**BACKEND GAP**, **FUTURE CODEX IMPLEMENTATION**, **DEPRECATED**.
 
 ---
 
@@ -60,8 +60,10 @@ Status labels used below: **CURRENT — FRONTEND**, **CURRENT — SUPABASE**,
   event via `track()` (`frontend/src/lib/telemetry.ts`).
 - **Error state:** `validateUsername` failure → `UiError` with localized length/char message.
   `availability.data.valid === false` → `auth.usernameCharsError`. `availability.data.available
-  === false` → `auth.usernameTaken`. `signUp` error matching `/username/i` +
-  `/(exists|duplicate|unique)/i` → `auth.usernameTaken`; otherwise raw error rethrown and shown via
+  === false` → `auth.usernameTaken`. A `signUp` failure NEVER matches on the raw message: an
+  `unexpected_failure`/HTTP 500 triggers a re-check of the exact username via
+  `username-availability` and only `available: false` shows `auth.usernameTaken`, otherwise the
+  generic localized error from `auth-errors.ts`; other errors map by stable code and are shown via
   `toast.error(localizedMessage(err) ?? t("auth.authenticationFailed"))`; `trackFailure` logs
   `auth_signup_failed`.
 - **Next navigation:** stays on `/`, now in sign-in mode awaiting email confirmation, or user
@@ -203,7 +205,7 @@ Status labels used below: **CURRENT — FRONTEND**, **CURRENT — SUPABASE**,
   (`frontend/src/components/app/TranscriptImportDialog.tsx`), `StatsOverviewPanel`.
 - **Supabase interaction:** none directly; grade math runs client-side over `useAppData()`
   assessments (`frontend/src/lib/grade-math.ts`).
-- **Backend interaction:** none. Transcript OCR/parsing is DEFERRED — NO CURRENT INTEGRATION — the
+- **Backend interaction:** none. Transcript OCR/parsing is BACKEND GAP — the
   dialog collects data client-side only (see Document upload journey for the actual upload path).
 - **Persistence:** assessments live in the `AppDataProvider` client store (prototype state), not
   Supabase tables, per current code.
@@ -250,7 +252,7 @@ Status labels used below: **CURRENT — FRONTEND**, **CURRENT — SUPABASE**,
   `frontend/src/components/app/AssessmentActions.tsx`, `frontend/src/components/app/AssessmentDialog.tsx`.
 - **Supabase interaction:** none for these tabs (grade edits go through `useAppData()` local
   mutators).
-- **Backend interaction:** Quiz/Exam/Study-Plan generation is DEFERRED — no such
+- **Backend interaction:** Quiz/Exam/Study-Plan generation is FUTURE CODEX IMPLEMENTATION — no such
   endpoint exists or is called from the frontend; the tabs are intentionally inert placeholders.
 - **Persistence:** grade edits persist in the client `AppDataProvider` store only.
 - **Success state:** immediate re-render on mode/tab switch; grade edits reflect instantly.
@@ -327,12 +329,12 @@ type, points, and yields a grade). See **Grades** above for the full journey; th
   per the preview-project evidence in FACTS (must be re-verified against production before
   treating as machine-verified).
 - **Backend interaction:** transcript OCR/parsing and document chunking (`documents`,
-  `document_chunks` tables) are DEFERRED — NO CURRENT INTEGRATION — no frontend code parses uploaded
+  `document_chunks` tables) are BACKEND GAP — no frontend code parses uploaded
   transcripts today; the dialog captures manual entry alongside the file.
 - **Persistence:** object stored in Supabase Storage under the user's folder; a
   `media_retention_queue` row is created for chat/assistant attachments per
   `frontend/src/lib/media-retention.ts`, with a default `delete_after` of `now() + 30 minutes`
-  (DEFERRED for the actual deletion sweep — the frontend only enqueues the row).
+  (FUTURE CODEX IMPLEMENTATION for the actual deletion sweep — the frontend only enqueues the row).
 - **Success state:** `toast.success` and the attachment/material chip appears attached.
 - **Error state:** `validateAttachment` rejects oversized/unsupported files client-side before
   upload with a localized error; Storage errors are caught and surfaced via `toast.error` /
@@ -350,7 +352,7 @@ type, points, and yields a grade). See **Grades** above for the full journey; th
   study-tools implementation exists yet.
 - **Frontend handler/component:** `school.$subject.tsx` (mode `"Subject Tools"` branch).
 - **Supabase interaction:** none.
-- **Backend interaction:** DEFERRED — no endpoint defined.
+- **Backend interaction:** FUTURE CODEX IMPLEMENTATION — no endpoint defined.
 - **Persistence:** none.
 - **Success/Error state:** n/a (static placeholder).
 - **Next navigation:** switch to another mode tab.
@@ -375,12 +377,12 @@ type, points, and yields a grade). See **Grades** above for the full journey; th
     tables — CURRENT — SUPABASE, RLS `user_id = auth.uid()` (preview-project evidence).
   - `supabase.auth.getSession()` is used per-request to attach `Authorization: Bearer
     <access_token>` to the `/api/chat` fetch (`StudyChat.tsx:120-129`).
-- **Backend interaction:** `POST /api/chat` (`frontend/src/routes/api/chat.ts`) — CURRENT,
-  INTEGRATED BACKEND CONTRACT. Verifies the bearer token via `supabase.auth.getClaims`, checks thread
+- **Backend interaction:** `POST /api/chat` (`frontend/src/routes/api/chat.ts`) — EXPECTED
+  BACKEND CONTRACT. Verifies the bearer token via `supabase.auth.getClaims`, checks thread
   ownership, inserts the user message, then calls
   `frontend/src/lib/context-backend.server.ts` `requestContextAnswer`, which POSTs to
   `${ALIM_CONTEXT_BACKEND_URL}/api/chat` (default `http://127.0.0.1:8001/api/chat`) with headers
-  `Content-Type`, `Authorization: Bearer <token>`, and matching `X-Student-Id`, plus JSON `{thread_id, user_message_id, question,
+  `Content-Type` + `X-Student-Id` and a JSON body `{thread_id, user_message_id, question,
   subject_id, language, academic_year, grade_level, include_sources:true, allow_web:true,
   stream:false}`. On success, streams `text-start/text-delta/text-end` plus a
   `context-metadata` data part `{sources, examTip, usedModel, retrievalSummary}`; on
@@ -391,8 +393,8 @@ type, points, and yields a grade). See **Grades** above for the full journey; th
   present; optional Listen button (see Speech journey) appears on the completed assistant
   message.
 - **Error state:** missing/invalid bearer → 401 from `/api/chat`; thread not owned/found → 404;
-  no `threadId`/no user text → 400; backend failure preserves status/code/retryable/request ID
-  (default 503). `chat.onError` shows `toast.error(t("chat.sendFailed"))` and
+  no `threadId`/no user text → 400; backend failure → `ContextBackendError.status` (default 503)
+  with its message. `chat.onError` shows `toast.error(t("chat.sendFailed"))` and
   `trackFailure("chat_message_failed", ...)`.
 - **Next navigation:** stays in `/chat/$threadId`; "New session" creates another thread via
   `createThreadFn`.
@@ -444,7 +446,7 @@ type, points, and yields a grade). See **Grades** above for the full journey; th
   `removeEvent`, `removeOccurrence`, `endSeriesBefore`, `duplicateEvent`, `restoreEvent`).
 - **Supabase interaction:** none for editable planner events (client `AppDataProvider` store);
   see Google Calendar journeys below for the read-only external merge.
-- **Backend interaction:** none; study-session/plan auto-generation is DEFERRED.
+- **Backend interaction:** none; study-session/plan auto-generation is FUTURE CODEX IMPLEMENTATION.
 - **Persistence:** client store only for editable events.
 - **Success state:** `toast.success(t("planner.movedToast", ...))` after a drag-move;
   `track({ event_name: "planner_event_moved", ... })`.
@@ -577,7 +579,7 @@ type, points, and yields a grade). See **Grades** above for the full journey; th
   `frontend/src/components/app/EventDetailDialog.tsx` (opened on click).
 - **Supabase interaction:** none.
 - **Backend interaction:** none. Real push/reminder delivery (`exam_reminders`,
-  `daily_study_summary` preferences) is DEFERRED — the preferences exist in
+  `daily_study_summary` preferences) is FUTURE CODEX IMPLEMENTATION — the preferences exist in
   `frontend/src/lib/account-data.ts` but no delivery mechanism is implemented.
 - **Persistence:** `readNotifications`/`dismissedNotifications` are tracked in the client
   `AppDataProvider` store (`markNotificationRead`, `markAllNotificationsRead`,
@@ -703,14 +705,12 @@ type, points, and yields a grade). See **Grades** above for the full journey; th
   - `profile-avatars` Storage bucket upload/remove (`AVATAR_MAX_BYTES` 2 MiB) — CURRENT —
     SUPABASE.
   - `public.user_preferences` read/update (`preferences` jsonb: `selected_qwen_model`,
-    `app_language`, `language_onboarding_completed`, `assistant_reply_language_policy`, `assistant_audio_enabled`,
+    `app_language`, `assistant_reply_language_policy`, `assistant_audio_enabled`,
     `assistant_audio_autoplay`, `exam_reminders`, `daily_study_summary`, `sound_effects`,
-    with global storage cleanup deliberately excluded) — CURRENT — SUPABASE.
+    `auto_storage_cleanup`) — CURRENT — SUPABASE.
   - `get_storage_usage_status()` RPC (1 GiB quota; returns quota/used/remaining/percent/
     warning/emergency) — CURRENT — SUPABASE.
   - `storage-emergency-cleanup` Edge Function via `invokeEmergencyCleanup` — CURRENT — SUPABASE.
-  - Vault/cron also invokes global capacity cleanup every five minutes; no per-user cleanup toggle
-    controls this policy — CURRENT — SUPABASE.
   - `supabase.auth.updateUser` for email/password change (implied by `AccountSection`'s
     email/password fields).
 - **Backend interaction:** none — local model inference itself (llama.cpp/Qwen on port 8000) is
@@ -778,3 +778,68 @@ type, points, and yields a grade). See **Grades** above for the full journey; th
 - **Error state:** a missing file would produce a browser-level 404 for that tab; not handled in
   application code.
 - **Next navigation:** none (separate tab); original `/help` tab remains open.
+
+## Appendix — authenticated startup flow (added this pass)
+
+See `docs/sequences/POST_LOGIN_STARTUP.mmd`, `LANGUAGE_ONBOARDING.mmd`,
+`MODEL_SELECTION_READINESS.mmd`, `RESOURCE_BLOCKED_NON_AI.mmd`, `SETTINGS_MODEL_RETRY.mmd`,
+`AI_SESSION_STATE_MACHINE.mmd` for the full, source-grounded journey:
+
+- **First authenticated load** — `frontend/src/routes/index.tsx` / `auth.tsx` resolve
+  `resolveStartupDestination()` (`lib/startup-flow.ts`) instead of assuming `/home` — CURRENT FRONTEND.
+- **Language onboarding** (`/onboarding/language`) — one-time, gated by
+  `user_preferences.preferences.language_onboarding_completed` — CURRENT SUPABASE — CURRENT FRONTEND.
+- **Model readiness gate** (`/onboarding/model`) — required every NEW browser session (sessionStorage
+  key `alim.ai_session.v1`, never Supabase, never localStorage) — CURRENT FRONTEND. Backend
+  preparation itself (`/api/model/prepare`, `/api/model/operation`) is FUTURE CODEX IMPLEMENTATION; until
+  implemented every check ends in `backend_unavailable` and "Continue without AI".
+- **Guard** — `frontend/src/routes/_authenticated/route.tsx` re-checks on every protected navigation;
+  `/onboarding/*` and `/auth` are exempt; direct `/home` access cannot bypass the gate.
+- **Sign-out** — `lib/sign-out.ts` clears both the cached language flag and the AI session.
+
+## Compliance, safety & peer messaging
+
+**Startup order (CURRENT FRONTEND / CURRENT SUPABASE, 2026-09-17):** signed out →
+sign in/up → `/onboarding/language` (MANDATORY per-session decision) →
+`/onboarding/model` (MANDATORY per-session decision: backend-confirmed `ready`,
+or explicit continue-without-AI) → `/onboarding/compliance` if still required
+(CURRENT SUPABASE flag `account_compliance.compliance_onboarding_completed`, RPC
+`complete_account_compliance_onboarding`) → `/home`. The system
+admission gate is NOT part of this order any more; its data is shown on the model
+screen and `/onboarding/system-admission` is optional. `account_compliance.account_status
+= 'suspended_pending_review'` outranks every other route and redirects to
+`/account/suspended`. Legal routes: `/legal/terms`, `/legal/privacy`,
+`/legal/acceptable-use`, `/legal/child-safety`. See
+`sequences/SIGNUP_ROLE_GUARDIAN_CONSENT.mmd`, `sequences/POST_LOGIN_STARTUP.mmd`.
+
+## Post-login gate — CURRENT (2026-09-17)
+
+Supersedes any statement earlier in this file that language onboarding is a
+once-per-account step or that model setup is optional/advisory.
+
+Canonical order after Supabase Auth succeeds (account suspension pre-empts
+everything):
+**language decision for this browser session** (select a language or explicit
+skip) → **model decision for this browser session** (backend-confirmed `ready`,
+or an explicit "Continue without AI") → compliance onboarding *if still
+required* (durable, once) → `/home` and the rest of the product.
+Ordinary compliance onboarding NEVER appears before the language and model
+decisions; a suspended account (`suspended_pending_review`) still outranks all
+of them.
+
+- Authentication and non-AI product areas never depend on the local AI backend.
+- `user_preferences.preferences.app_language` is a SAVED DEFAULT VISUAL HINT
+  only. It never counts as the session selection: Continue on the language screen
+  stays disabled until the user clicks a language in this session, or the user
+  explicitly skips. `language_onboarding_completed` is kept only as legacy
+  compatibility metadata and is not a gate.
+- `selected_qwen_model` persists a *preference*; readiness comes only from an
+  explicit backend `ready` state (`alim.ai_session.v1` in `sessionStorage`).
+- The decisions survive a refresh in the same session and are cleared on
+  sign-out; direct navigation to a protected route re-runs the same gate.
+- AI actions are centrally guarded (`AiFeatureGate` / `useAiBlocked`): blocked
+  actions issue no request and show one localized red notice with retry,
+  Settings and non-AI paths.
+
+Full contract: `docs/backend-handoff/POST_LOGIN_LANGUAGE_MODEL_GATE_HANDOFF.md`;
+sequence: `docs/sequences/POST_LOGIN_STARTUP.mmd`.

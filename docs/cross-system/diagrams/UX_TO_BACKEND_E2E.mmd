@@ -1,0 +1,23 @@
+flowchart LR
+  Goal[User goal] --> Route[Route and screen]
+  Route --> Control[Button, field, option or background event]
+  Control --> Handler[React handler]
+  Handler --> State[Frontend and session state]
+  State --> Choice{Dependency}
+  Choice -->|Frontend only| Visible[Visible result]
+  Choice -->|Supabase| RLS[JWT plus RLS and Storage or RPC]
+  Choice -->|Local AI| Server[TanStack server adapter]
+  Server --> JWT[Verified bearer and ownership]
+  JWT --> Backend[Local backend service]
+  Backend --> Model[Local model runtime]
+  Backend --> DB[Supabase using user JWT or narrow worker]
+  RLS --> Normalize[Normalize response or error]
+  Model --> Normalize
+  DB --> Normalize
+  Normalize --> State2[State transition and persistence]
+  State2 --> Visible
+  Normalize -->|failure| Error[Localized retry, blocked or unavailable state]
+%% Owner: cross-system architecture
+%% Status: mixed current/expected; see README.md and canonical status indices
+%% Verified: frontend f0910e6; target baseline bff4ec7; 2026-09-18
+%% Source: codex/diagrams/UX_TO_BACKEND_E2E.mmd

@@ -1,0 +1,47 @@
+%% NOTE 2026-09-17: the canonical post-login sequence is now
+%% docs/sequences/POST_LOGIN_STARTUP.mmd — auth → per-session language decision
+%% → mandatory model decision (backend-confirmed ready OR explicit non-AI) → app.
+%% There is no separate mandatory system-admission screen.
+%% SUPERSEDED 2026-09-16: admission and model readiness are NO LONGER startup
+%% gates. Current behaviour: docs/sequences/AUTH_STARTUP_HOME_VS_OPTIONAL_AI.mmd
+%% Status: CURRENT — FRONTEND + CURRENT — SUPABASE + EXPECTED LOCAL BACKEND CONTRACT
+%% Source: frontend/src/lib/startup-flow.ts, admission-session.ts, ai-session.ts
+sequenceDiagram
+    participant User
+    participant Gate as _authenticated/route.tsx
+    participant Flow as lib/startup-flow.ts
+    participant Compliance as account_compliance (Supabase)
+    participant Prefs as user_preferences (Supabase)
+    participant Admission as lib/admission-session.ts (sessionStorage)
+    participant Backend as EXPECTED local backend /api/system/admission/check
+    participant Model as lib/ai-session.ts (sessionStorage)
+
+    User->>Gate: navigate to any protected route
+    Gate->>Flow: resolveStartupDestination()
+    Flow->>Compliance: complianceStatus()
+    alt suspended_pending_review
+        Compliance-->>Flow: suspended
+        Flow-->>Gate: /account/suspended (outranks everything)
+    else not completed
+        Compliance-->>Flow: required
+        Flow-->>Gate: /onboarding/compliance
+    else completed
+        Flow->>Prefs: languageOnboardingStatus()
+        alt not completed
+            Flow-->>Gate: /onboarding/language
+        else completed
+            Flow->>Admission: admissionGateRequired() (sessionStorage lease present?)
+            alt no lease this browser session
+                Flow->>Backend: checkSystemAdmission() via server fn
+                Backend-->>Flow: admitted+lease | queued | denied | backend_unavailable (FAILS CLOSED)
+                Flow-->>Gate: /onboarding/system-admission
+            else lease present
+                Flow->>Model: modelGateRequired()
+                alt model not ready
+                    Flow-->>Gate: /onboarding/model
+                else ready
+                    Flow-->>Gate: /home
+                end
+            end
+        end
+    end

@@ -8,11 +8,11 @@ flowchart TD
   Cloud -->|Yes| Gate["Authentication and chat/thread history available"]
   Gate --> Python{"Local Python backend (default 127.0.0.1:8001) reachable?"}
   Python -->|Yes| AI["Context-backed chat works via POST /api/chat"]
-  Python -->|No, or backend error| Error["frontend/src/routes/api/chat.ts preserves structured status, code and request ID<br/>default 503, no fallback answer is generated<br/>CURRENT - INTEGRATED"]
-  Python -. future health UI .-> Banner["Non-blocking offline banner + Retry<br/>DEFERRED / frontend not wired"]
+  Python -->|No, or backend error| Error["frontend/src/routes/api/chat.ts returns ContextBackendError.status<br/>(default 503) with a message; no fallback answer is generated<br/>CURRENT - FRONTEND"]
+  Python -. future health UI .-> Banner["Non-blocking offline banner + Retry<br/>FUTURE CODEX IMPLEMENTATION / frontend not wired"]
   Banner -.-> Disable["Disable AI-only actions<br/>PLANNED"]
   Error --> Continue["School, grades, stats, planner, profile and links remain usable locally"]
   Disable --> Continue
   Continue --> Store["Browser storage (AppDataProvider)"]
-  ModelDown{"Local model runtime down but FastAPI reachable"} --> Degraded["GET /health reports degraded and model reachability false<br/>CURRENT - BACKEND"]
+  ModelDown{"Local model runtime down but FastAPI reachable"} --> Degraded["Backend health endpoint may report degraded<br/>BACKEND GAP"]
   Degraded -. planned UI .-> Banner

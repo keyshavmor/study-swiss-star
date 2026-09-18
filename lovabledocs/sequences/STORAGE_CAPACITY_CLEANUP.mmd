@@ -1,0 +1,25 @@
+%% Status: CURRENT SUPABASE — platform-wide scheduled cleanup (not user-disableable)
+%% Source: FACTS provided by the app owner (production Supabase project); not visible as
+%% code in this repository (no auto_storage_cleanup user preference exists any more).
+sequenceDiagram
+    participant Cron as Scheduled trigger (every 5 minutes)
+    participant Fn as Custom-authenticated Edge Function
+    participant Storage as Supabase Storage<br/>(user-materials, chat-attachments)
+    participant DB as Postgres (documents, assistant_attachments,<br/>document_chunks)
+
+    loop every 5 minutes
+        Cron->>Fn: invoke
+        Fn->>Storage: compute global storage usage percentage
+        alt used < 90%
+            Fn-->>Cron: no-op
+        else used >= 90%
+            Fn->>Storage: list objects in user-materials + chat-attachments,<br/>globally ordered oldest-first (not per-user)
+            loop delete oldest eligible objects until used ~= 80%
+                Fn->>Storage: delete object via Storage API
+                Fn->>DB: hard-delete matching documents /<br/>assistant_attachments row
+                DB->>DB: cascade delete document_chunks
+            end
+            Fn-->>Cron: cleanup complete, usage now ~80%
+        end
+    end
+    Note over Fn,Storage: Never touches auth, profiles, user_preferences or<br/>profile-avatars. Platform-wide policy — no per-user opt-out exists.

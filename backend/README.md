@@ -1,5 +1,12 @@
 # Alim backend
 
+Status: `CURRENT — LOCAL BACKEND` at baseline `bff4ec7`, not the complete
+frontend-required backend. See [backend documentation](docs/README.md) and the
+[gap analysis](docs/handoff/BACKEND_GAP_ANALYSIS.md). Commands below describe
+the implemented single-model backend; multi-model/platform support and isolated
+launchers remain later prompt work. Physical MacBook M4 and working CUDA paths
+are not proven by this document.
+
 This FastAPI service compiles bounded tutoring context and routes it only to the locally served
 `Qwen/Qwen3.8-27B` model. Startup manages `llama-server` and does not accept traffic until the
 expected model alias is resident and listed by `/v1/models`.

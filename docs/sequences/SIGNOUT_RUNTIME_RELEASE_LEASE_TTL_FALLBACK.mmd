@@ -1,0 +1,25 @@
+%% NOTE 2026-09-17: the canonical post-login sequence is now
+%% docs/sequences/POST_LOGIN_STARTUP.mmd — auth → per-session language decision
+%% → mandatory model decision (backend-confirmed ready OR explicit non-AI) → app.
+%% There is no separate mandatory system-admission screen.
+%% Status: CURRENT FRONTEND + FUTURE CODEX IMPLEMENTATION
+%% Source: frontend/src/lib/sign-out.ts
+sequenceDiagram
+    participant User
+    participant SignOut as lib/sign-out.ts (signOutCompletely)
+    participant Release as releaseMyRuntime (server fn, best-effort)
+    participant Supa as Supabase Auth
+    participant Local as sessionStorage (ai-session, admission-session, messaging-session)
+    participant Sweeper as EXPECTED backend heartbeat/lease TTL sweeper (NOT IMPLEMENTED)
+
+    User->>SignOut: sign out
+    SignOut->>Release: releaseMyRuntime({leaseId}) while token still valid
+    alt release fails
+        Release-->>SignOut: swallowed, best-effort only
+    else release succeeds
+        Release-->>SignOut: released
+    end
+    SignOut->>Supa: auth.signOut({ scope: "local" })<br/>current session only
+    SignOut->>Local: clearAiSession(), clearAdmissionSession(), clearMessagingSessionState(), clearGoogleAccess()
+    Note over Sweeper: If the browser closed before release ran (crash, network loss),<br/>nothing frees the model process/VRAM, session CPU/context RAM or temp artifacts.
+    Sweeper-->>Sweeper: FUTURE CODEX IMPLEMENTATION — heartbeat/lease-TTL expiry cleanup does not exist yet.

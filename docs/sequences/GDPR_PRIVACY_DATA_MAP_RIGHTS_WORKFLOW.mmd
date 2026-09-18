@@ -1,0 +1,16 @@
+%% Status: CURRENT SUPABASE + LEGAL REVIEW REQUIRED BEFORE PRODUCTION
+%% Source: frontend/src/lib/system-health.ts, docs/legal/LEGAL_REVIEW_REQUIRED.md
+sequenceDiagram
+    participant User
+    participant UI as data-rights settings screen
+    participant Summary as get_my_data_summary()
+    participant Edge as Edge Function delete-my-data
+    participant Legal as LEGAL_REVIEW_REQUIRED.md (organisational process, NOT implemented in code)
+
+    User->>UI: open "My data"
+    UI->>Summary: get_my_data_summary()
+    Summary-->>UI: counts (peer_messages, peer_attachments, etc.) for the caller only
+    User->>UI: choose export/deletion action
+    UI->>Edge: requestMyDataDeletion(mode)
+    Edge-->>UI: result summary
+    Note over Legal: Lawful basis, DPAs, records of processing, breach procedures,<br/>jurisdictional guardian-consent rules and cookie/ePrivacy analysis<br/>are ORGANISATIONAL decisions this frontend cannot certify or implement.

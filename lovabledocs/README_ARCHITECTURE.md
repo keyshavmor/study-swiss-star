@@ -1,16 +1,16 @@
-# Alim Architecture Documentation
+# Architecture documentation compatibility entry
 
-Status: CURRENT — RECONCILED 2026-09-15
+Status: `DEPRECATED` compatibility path.
 
-This tree describes current-main UX/frontend, the implemented backend branch, and live Supabase project `ucacmeadsufiedxrgqit`.
+The canonical documentation entry is [README.md](README.md). This filename is
+retained so historical Lovable and repository links continue to resolve. It
+does not contain a second architecture truth.
 
-Start with:
+Current architecture:
 
-- `architecture/SYSTEM_CONTEXT.md` and `CONTAINER_ARCHITECTURE.md`
-- `contracts/FRONTEND_BACKEND_CONTRACT.md`
-- `supabase/SUPABASE_CURRENT_STATE.md`
-- `DATA_FLOW_AND_PRIVACY.md`
-- `backend-handoff/BACKEND_BRANCH_SYNC_REPORT.md`
-- `DOCUMENTATION_DISCOVERED_ISSUES.md`
+- [frontend](frontend/README.md)
+- [Supabase](supabase/README.md)
+- [local backend](../backend/docs/README.md)
+- [cross-system contracts and diagrams](cross-system/README.md)
 
-Current product/UI truth remains in `frontend/`, `ux/`, and `wireframes/`. Backend code truth is `backend/app/`; live runtime truth is documented from read-only Supabase inspection. Files under `archive/` are historical and non-authoritative.
+Verified 2026-09-18 against frontend `f0910e6` and target `bff4ec7`.

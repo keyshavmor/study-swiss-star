@@ -1,7 +1,7 @@
 Document status: CURRENT
-Generated from: current Lovable project · GitHub main (keyshavmor/study-swiss-star) · live Supabase project ucacmeadsufiedxrgqit
-Last verified: 2026-09-14 (UTC)
-Frontend commit: e0ef3464557d4786d214accb0d1bf44082ae3466
+Generated from: frontend authority main at f0910e6971f12efe0ad547b904f6e2a518b13856 · live Supabase evidence dated 2026-09-18
+Production Supabase verified: 2026-09-15 (UTC)
+Frontend commit: f0910e6971f12efe0ad547b904f6e2a518b13856
 
 # Date, time and number presentation
 
@@ -33,25 +33,25 @@ noon so a stored calendar date never shifts a day across timezones (see
 
 ### `formatDate(value: DateInput): string`
 `dd/mm/yyyy`, identical in every language — no locale parameter.
-- `formatDate("2026-09-14")` → `"14/09/2026"` (same output for en/de/gsw/ru/es/fr/it).
+- `formatDate("2026-09-18")` → `"14/09/2026"` (same output for en/de/gsw/ru/es/fr/it).
 
 ### `formatDateCompact(value: DateInput): string`
 `dd/mm`, for dense lists/calendar chips.
-- `formatDateCompact("2026-09-14")` → `"14/09"`.
+- `formatDateCompact("2026-09-18")` → `"14/09"`.
 
 ### `formatWeekday(value: DateInput, language: LanguageCode, style?: "long" | "short"): string`
 Localized weekday name. `gsw` uses the explicit `GSW_WEEKDAYS_LONG` /
 `GSW_WEEKDAYS_SHORT` arrays; every other language uses
 `Intl.DateTimeFormat(intlLocaleFor(language), { weekday: style })`.
-- `formatWeekday("2026-09-14", "en")` → `"Monday"`
-- `formatWeekday("2026-09-14", "de")` → `"Montag"`
-- `formatWeekday("2026-09-14", "gsw")` → `"Mäntig"`
-- `formatWeekday("2026-09-14", "gsw", "short")` → `"Mä"`
+- `formatWeekday("2026-09-18", "en")` → `"Monday"`
+- `formatWeekday("2026-09-18", "de")` → `"Montag"`
+- `formatWeekday("2026-09-18", "gsw")` → `"Mäntig"`
+- `formatWeekday("2026-09-18", "gsw", "short")` → `"Mä"`
 
 ### `formatWeekdayDate(value: DateInput, language: LanguageCode, style?: "long" | "short"): string`
 `<weekday>, dd/mm/yyyy`.
-- `formatWeekdayDate("2026-09-14", "gsw")` → `"Mäntig, 14/09/2026"`
-- `formatWeekdayDate("2026-09-14", "fr")` → `"lundi, 14/09/2026"`
+- `formatWeekdayDate("2026-09-18", "gsw")` → `"Mäntig, 14/09/2026"`
+- `formatWeekdayDate("2026-09-18", "fr")` → `"lundi, 14/09/2026"`
 
 ### `formatTime(value: DateInput): string`
 24-hour `HH:mm`. Accepts a `Date`, or a string already starting `HH:mm`
@@ -63,16 +63,16 @@ like `"9:00"` without constructing a `Date`.
 
 ### `formatDateTime(value: DateInput): string`
 `dd/mm/yyyy HH:mm`.
-- `formatDateTime("2026-09-14T09:05:00")` → `"14/09/2026 09:05"`.
+- `formatDateTime("2026-09-18T09:05:00")` → `"14/09/2026 09:05"`.
 
 ### `formatWeekdayDateTime(value: DateInput, language: LanguageCode): string`
 `<weekday>, dd/mm/yyyy HH:mm`.
-- `formatWeekdayDateTime("2026-09-14T09:05:00", "gsw")` → `"Mäntig, 14/09/2026 09:05"`.
+- `formatWeekdayDateTime("2026-09-18T09:05:00", "gsw")` → `"Mäntig, 14/09/2026 09:05"`.
 
 ### `formatMonth(value: DateInput): string`
 `mm/yyyy` — month granularity **without a textual month name** (the "no
 textual month" rule applied at helper level).
-- `formatMonth("2026-09-14")` → `"09/2026"`, same in every language.
+- `formatMonth("2026-09-18")` → `"09/2026"`, same in every language.
 
 ### `formatNumber(value: number, language: LanguageCode, options?: Intl.NumberFormatOptions): string`
 The only helper that actually varies its `Intl` locale by language (via
@@ -90,7 +90,7 @@ call `useI18n()`.
 
 ## Which components/routes use which helper (verified with `rg`)
 
-Verified 2026-09-14 by `rg -n "format(Date|Time|Weekday|Month|Number)"` across
+Verified 2026-09-15 by `rg -n "format(Date|Time|Weekday|Month|Number)"` across
 `frontend/src`:
 
 | Helper | Used in |

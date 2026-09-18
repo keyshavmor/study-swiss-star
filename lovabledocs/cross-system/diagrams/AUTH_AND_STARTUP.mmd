@@ -1,0 +1,21 @@
+stateDiagram-v2
+  [*] --> SignedOut
+  SignedOut --> Authenticated: email, username or OAuth success
+  Authenticated --> Suspended: account status suspended pending review
+  Suspended --> SignedOut: sign out
+  Authenticated --> LanguageDecision: ordinary account
+  LanguageDecision --> LanguageDecision: refresh or retry preference
+  LanguageDecision --> ModelDecision: select or explicit skip
+  ModelDecision --> ModelDecision: probe, prepare, poll or retry
+  ModelDecision --> Compliance: backend ready or explicit non-AI
+  Compliance --> Home: already complete or valid submit
+  Home --> SignedOut: release runtime and sign out
+  Home --> LanguageDecision: new browser session
+  note right of ModelDecision
+    Model preference is not readiness.
+    Admission diagnostics are optional.
+  end note
+%% Owner: cross-system architecture
+%% Status: mixed current/expected; see README.md and canonical status indices
+%% Verified: frontend f0910e6; target baseline bff4ec7; 2026-09-18
+%% Source: codex/diagrams/AUTH_AND_STARTUP.mmd

@@ -1,7 +1,7 @@
 %% Document status: CURRENT
-%% Generated from: current Lovable project · GitHub main (keyshavmor/study-swiss-star) · live Supabase project ucacmeadsufiedxrgqit
-%% Last verified: 2026-09-14 (UTC)
-%% Frontend commit: e0ef3464557d4786d214accb0d1bf44082ae3466
+%% Generated from: frontend authority main at f0910e6971f12efe0ad547b904f6e2a518b13856 · live Supabase evidence dated 2026-09-18
+%% Production Supabase verified: 2026-09-15 (UTC)
+%% Frontend commit: f0910e6971f12efe0ad547b904f6e2a518b13856
 %% Superseded document: the older top-level docs/ROUTE_SCREEN_MAP.md is superseded by this diagram.
 flowchart LR
   ROOT["__root.tsx<br/>Providers: QueryClient -> I18n -> Theme -> AppData -> AcademicYear"]
@@ -84,7 +84,98 @@ flowchart LR
 
   CHATTHREAD -- "POST /api/chat" --> APICHAT
   APICHAT --> THREADSTBL
-  APICHAT -- "Bearer JWT + language; requestContextAnswer (CURRENT)" --> CONTEXTBACKEND["Local Python context backend<br/>ALIM_CONTEXT_BACKEND_URL"]
+  APICHAT -- "requestContextAnswer (EXPECTED LOCAL BACKEND CONTRACT)" --> CONTEXTBACKEND["Local Python context backend<br/>ALIM_CONTEXT_BACKEND_URL"]
 
   classDef backendUnknown fill:#fdf1d0,stroke:#a67c00,color:#333;
-  class ASSISTTHREAD,ASSISTIDX backendUnknown
+  class ASSISTTHREAD,ASSISTIDX,CONTEXTBACKEND backendUnknown
+
+
+  subgraph ONBOARDING["Post-login gate (CURRENT 2026-09-17) — strict order"]
+    ONBCOMPLIANCE["/onboarding/compliance<br/>ComplianceOnboarding (durable, once)"]
+    ONBLANG["/onboarding/language<br/>MANDATORY per-session decision:<br/>select a language or explicit skip"]
+    ONBMODEL["/onboarding/model<br/>MANDATORY per-session decision:<br/>backend-confirmed ready OR explicit continue-without-AI"]
+    ONBADMISSION["/onboarding/system-admission<br/>SystemAdmissionGate (OPTIONAL, not a startup gate)"]
+  end
+  ONBCOMPLIANCE --> ONBLANG
+  ONBLANG --> ONBMODEL
+  ONBMODEL -->|"only after an explicit decision"| HOME["/home"]
+  ONBMODEL -.->|"no language decision yet:<br/>startupRedirectFor() sends the user back"| ONBLANG
+  subgraph LEGALROUTES["Legal document routes (new)"]
+    LEGALTERMS["/legal/terms"]
+    LEGALPRIVACY["/legal/privacy"]
+    LEGALAUP["/legal/acceptable-use"]
+    LEGALCHILD["/legal/child-safety"]
+  end
+  SUSPENDED["/account/suspended<br/>AccountSuspendedPage"]
+
+  subgraph MESSAGINGROUTES["Peer messaging (new)"]
+    MSGLIST["/messages<br/>ConversationList"]
+    MSGTHREAD["/messages/$conversationId<br/>MessageThread"]
+  end
+  SYSHEALTH["/system-health<br/>SystemHealthPanel"]
+
+  ROOT --> ONBOARDING
+  ROOT --> LEGALROUTES
+  GATE --> SUSPENDED
+  GATE --> MESSAGINGROUTES
+  GATE --> SYSHEALTH
+  ONBCOMPLIANCE --> ONBADMISSION
+  ONBADMISSION --> HOME
+  MSGLIST --> MSGTHREAD
+
+  subgraph SUPABASE_SVC2["Supabase (compliance/safety/messaging — this pass)"]
+    ACCTCOMPLIANCE[("public.account_compliance")]
+    LEGALCONSENTS[("public.user_legal_consents")]
+    MODEVENTS[("public.moderation_events")]
+    GUARDIANQ[("public.guardian_notification_queue")]
+    PEERTBLS[("public.peer_conversations / peer_conversation_members /<br/>peer_messages / peer_message_attachments / peer_message_notifications")]
+    RPCCOMPLIANCE["RPC: complete_account_compliance_onboarding"]
+    RPCPEERFIND["RPC: find_peer_by_exact_username"]
+    RPCPEERCONV["RPC: get_or_create_direct_peer_conversation"]
+    RPCPEERREAD["RPC: mark_peer_conversation_read"]
+    RPCHEALTH["RPC: get_user_visible_supabase_health"]
+    RPCDATASUM["RPC: get_my_data_summary"]
+    RPCADMISSIONPOLICY["RPC: get_system_admission_policy"]
+    EDGEFN_DELETEDATA["Edge Fn: delete-my-data"]
+    BUCKETATTACH["Storage: peer-message-attachments (private)"]
+  end
+
+  ONBCOMPLIANCE --> ACCTCOMPLIANCE
+  ONBCOMPLIANCE --> RPCCOMPLIANCE
+  ONBCOMPLIANCE --> LEGALCONSENTS
+  GATE --> ACCTCOMPLIANCE
+  ONBADMISSION --> RPCADMISSIONPOLICY
+  ONBADMISSION -.->|"EXPECTED LOCAL BACKEND CONTRACT"| LOCALADMISSION["/api/system/admission/check"]
+  SYSHEALTH -.->|"EXPECTED LOCAL BACKEND CONTRACT"| LOCALHEALTH["/api/system/health"]
+  MSGLIST --> RPCPEERFIND
+  MSGLIST --> RPCPEERCONV
+  MSGTHREAD --> PEERTBLS
+  MSGTHREAD --> RPCPEERREAD
+  MSGTHREAD --> BUCKETATTACH
+  MSGTHREAD -.->|"EXPECTED LOCAL BACKEND CONTRACT"| LOCALPEERSEND["/api/peer-messaging/send"]
+  MSGTHREAD -.->|"EXPECTED LOCAL BACKEND CONTRACT"| LOCALATTACHSCAN["/api/safety/attachment-scan"]
+  APICHAT -.->|"EXPECTED LOCAL BACKEND CONTRACT"| LOCALMODERATE["/api/safety/moderate"]
+  APICHAT --> MODEVENTS
+  MODEVENTS --> GUARDIANQ
+  SETTINGS --> RPCHEALTH
+  SETTINGS --> RPCDATASUM
+  SETTINGS --> EDGEFN_DELETEDATA
+
+  classDef backendUnknown fill:#fdf1d0,stroke:#a67c00,color:#333;
+  class LOCALADMISSION,LOCALHEALTH,LOCALPEERSEND,LOCALATTACHSCAN,LOCALMODERATE backendUnknown
+
+%% CURRENT (2026-09-17): the authenticated startup flow is auth → PER-SESSION
+%% language decision (select or explicit skip) → PER-SESSION model decision
+%% (backend-confirmed ready, or explicit continue-without-AI) → product. Language
+%% onboarding is NOT once-per-account; language_onboarding_completed is legacy
+%% metadata only. There is NO mandatory system-admission screen between them, and
+%% /onboarding/model redirects to /onboarding/language while that decision is
+%% missing. Canonical: docs/sequences/POST_LOGIN_STARTUP.mmd. Model/GPU readiness
+%% lives in sessionStorage only, never in Supabase. auto_storage_cleanup user
+%% preference removed; cleanup is a platform-wide cron (STORAGE_CAPACITY_CLEANUP.mmd).
+
+%% Compliance onboarding, suspension, legal document routes, peer messaging and the
+%% system health panel: see docs/sequences/PEER_CHAT_CREATION_BY_USERNAME.mmd,
+%% docs/sequences/SYSTEM_HEALTH_AGGREGATION.mmd and docs/contracts/BACKEND_GAP_MATRIX.md.
+%% The system-admission screen is OPTIONAL and no longer part of the startup order
+%% (capability/admission/recommendation data is rendered on the model screen).

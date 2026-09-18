@@ -7,10 +7,11 @@ flowchart TD
   Settings["/settings"] --> Account["Account: profile, email, password, avatar<br/>CURRENT - FRONTEND"]
   Settings --> Toggles["Preference switches: exam_reminders, daily_study_summary,<br/>sound_effects<br/>persisted in user_preferences"]
   Settings --> Audio["assistant_audio_enabled default true<br/>assistant_audio_autoplay default false<br/>persisted in user_preferences"]
-  Settings --> Model["Local Qwen model selector (selected_qwen_model)<br/>persisted in user_preferences"]
+  Settings --> Model["Local model section: ModelReadinessPanel<br/>reused from onboarding, no autoStart.<br/>Choices from ai_model_catalog; selected_qwen_model is a DURABLE PREFERENCE ONLY.<br/>AI mode flips to ready only on an explicit backend ready confirmation<br/>(alim.ai_session.v1, never stored in Supabase)."]
   Settings --> Storage["Storage usage, filters and deletion<br/>CURRENT - FRONTEND"]
   NoteLang["Language selection lives in AppHeader.tsx's LanguageMenu only,<br/>not in Settings"] -.-> Settings
-  Assistant["/assistant"] --> AssistantData["General AI chat with attachments (AssistantChat.tsx)<br/>CURRENT - FRONTEND; assistant generation DEFERRED"]
+  Assistant["/assistant"] --> AssistantData["General AI chat with attachments (AssistantChat.tsx)<br/>CURRENT - FRONTEND; assistant generation FUTURE CODEX IMPLEMENTATION"]
+  AssistantData --> AiGate["AiFeatureGate / useAiBlocked: with no AI-ready session the<br/>composer is disabled and a localized red notice offers<br/>retry model setup / Settings / non-AI features"]
   AssistantData --> Speech["Listen / Stop read-aloud, lib/speech.ts<br/>CURRENT - FRONTEND"]
   AssistantData --> AssistantDB["assistant_threads / assistant_messages / assistant_attachments<br/>+ chat-attachments bucket<br/>CURRENT - SUPABASE"]
   Help["/help"] --> Guides["User guides section: seven static A4 PDF downloads<br/>frontend/public/help-guides/alim-user-guide-{en,de,gsw,ru,es,fr,it}.pdf<br/>CURRENT - FRONTEND"]
@@ -20,3 +21,6 @@ flowchart TD
   Notifications["NotificationCenter (AppHeader.tsx)"] --> Derived["Derived from local exams and deadlines<br/>CURRENT - FRONTEND"]
   SchoolLinks["SchoolLinksSection"] --> LinkCRUD["Open / add / edit / duplicate / reorder / delete<br/>CURRENT - FRONTEND"]
   LinkCRUD --> Local
+%% CURRENT (2026-09-17): Settings is the re-entry point for the model decision, so a
+%% non-AI session can be upgraded without signing out. See
+%% docs/sequences/POST_LOGIN_STARTUP.mmd and docs/sequences/SETTINGS_MODEL_RETRY.mmd.

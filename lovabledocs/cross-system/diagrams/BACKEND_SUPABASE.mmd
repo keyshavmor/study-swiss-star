@@ -1,0 +1,18 @@
+flowchart LR
+  API[FastAPI request] --> Verify[Verify Supabase JWT]
+  Verify --> Identity[claims.sub]
+  Identity --> Ordinary{Operation class}
+  Ordinary -->|User-owned| UserToken[Caller-token client]
+  UserToken --> RLS[Postgres RLS and Storage policy]
+  RLS --> UserData[(User rows and objects)]
+  Ordinary -->|Privileged worker| Guard[Independent authorization and audit]
+  Guard --> Secret[Isolated service credential or privileged RPC]
+  Secret --> WorkerData[(Moderation, queues, cleanup, deletion)]
+  Identity --> CrossCheck[X-Student-Id cross-check only]
+  Local[(Local cache, indexes, leases)] --> Erasure[User deletion hook]
+  UserData --> Erasure
+  Erasure --> Receipt[Resumable deletion receipt]
+%% Owner: cross-system architecture
+%% Status: mixed current/expected; see README.md and canonical status indices
+%% Verified: frontend f0910e6; target baseline bff4ec7; 2026-09-18
+%% Source: codex/diagrams/BACKEND_SUPABASE.mmd

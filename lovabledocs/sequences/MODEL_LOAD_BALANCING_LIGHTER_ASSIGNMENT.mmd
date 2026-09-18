@@ -1,0 +1,19 @@
+%% Status: EXPECTED LOCAL BACKEND CONTRACT
+%% Source: frontend/src/lib/system-admission.types.ts (automatic_model_rebalancing, recommend_model_from_system_health)
+sequenceDiagram
+    participant User
+    participant Backend as EXPECTED local backend
+    participant Health as /api/system/health
+    participant Recommend as /api/system/model/recommendation
+
+    User->>Backend: admitted, requests preferred_model_id
+    Backend->>Health: aggregate GPU/RAM/disk + per-GPU model instances
+    Backend->>Backend: automatic_model_rebalancing = true → evaluate lighter model fit
+    Backend->>Recommend: recommend_model_from_system_health policy
+    Recommend-->>Backend: recommended_model_id + recommendation_reason_code
+    alt system under pressure
+        Backend-->>User: assigned_model_id != preferred_model_id (lighter model), reason_code explains why
+    else system has headroom
+        Backend-->>User: assigned_model_id = preferred_model_id
+    end
+    Note over Backend: FUTURE CODEX IMPLEMENTATION: rebalancing algorithm, shared global model artifacts,<br/>no per-user duplicate downloads — not implemented in this repo.

@@ -1,8 +1,10 @@
 %% Planned quiz / mock exam / grading tools. Not implemented in the current backend.
 flowchart TD
-  Subject["Subject workspace tools tab"] --> Quiz["Generate quiz<br/>DEFERRED"]
-  Subject --> Exam["Generate mock exam<br/>DEFERRED"]
-  Subject --> Grade["Grade answer<br/>DEFERRED"]
+  AiGate{"AI decision this session?<br/>useAiBlocked() / AiFeatureGate"} -->|"non-AI or unavailable"| Blocked["Localized red notice: no request is issued.<br/>Paths: retry model setup, Settings, keep non-AI features"]
+  AiGate -->|"backend-confirmed ready"| Subject
+  Subject["Subject workspace tools tab"] --> Quiz["Generate quiz<br/>FUTURE CODEX IMPLEMENTATION"]
+  Subject --> Exam["Generate mock exam<br/>FUTURE CODEX IMPLEMENTATION"]
+  Subject --> Grade["Grade answer<br/>FUTURE CODEX IMPLEMENTATION"]
   Quiz -.-> QAPI["POST /api/quiz/generate"]
   Exam -.-> EAPI["POST /api/mock-exam/generate"]
   Grade -.-> GAPI["POST /api/grade"]
@@ -20,3 +22,7 @@ flowchart TD
   Formula -.-> Display["Frontend rounds to 0.5 and marks below 4.0"]
   Display -.-> Confirm{"Save as practice assessment?"}
   Confirm -. yes .-> Local["Browser storage via AppDataProvider<br/>CURRENT - FRONTEND once a result exists"]
+%% CURRENT (2026-09-17): every AI action is centrally guarded. Without a
+%% backend-confirmed ready model no quiz/exam/grading request is sent; a backend loss
+%% during a run becomes a bounded generation_failed/grading_failed state, never a hang.
+%% Non-AI study areas stay fully usable.

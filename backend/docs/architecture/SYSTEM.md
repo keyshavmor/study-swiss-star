@@ -1,0 +1,28 @@
+# Backend architecture
+
+| Field | Value |
+|---|---|
+| Owner | Backend |
+| Status | `CURRENT — LOCAL BACKEND` with explicit gaps |
+| Canonical path | `backend/docs/architecture/SYSTEM.md` |
+| Verified | target baseline `bff4ec7`, 2026-09-18 |
+
+FastAPI binds to `127.0.0.1:8001`. It verifies the caller's Supabase JWT,
+derives `claims.sub`, rejects a mismatched `X-Student-Id`, reads/writes ordinary
+user data through the caller token and RLS, compiles bounded context, retrieves
+local/reference material, and calls an OpenAI-compatible local model process at
+`127.0.0.1:8000/v1`.
+
+Implemented modules cover authentication, context configuration/budgeting,
+compiler, sparse/dense/hybrid retrieval, reranking, memory, summaries, events,
+artifacts, working memory, documents, Supabase/SQLite adapters, model runtime,
+platform detection and orchestration. SQLite is a deliberately constructed
+test adapter, not canonical user persistence.
+
+The model process, FastAPI process, frontend process, Supabase services and
+documentation tooling are separate environments/process owners. The current
+legacy setup script partially coordinates services but is not the final
+centralized launcher contract.
+
+Backend trust boundaries and required security tests are linked from
+[`../../../docs/cross-system/SECURITY_AND_DATA_BOUNDARIES.md`](../../../docs/cross-system/SECURITY_AND_DATA_BOUNDARIES.md).

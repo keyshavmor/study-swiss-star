@@ -2,9 +2,12 @@
 %% (frontend/src/components/app/LanguageMenu.tsx) between NotificationCenter and the avatar menu.
 flowchart TD
   Root["/ index.tsx — Welcome + sign in/up<br/>localised via cached alim.app_language"] --> SignedIn{Existing session?}
-  SignedIn -->|yes| Home["/home"]
+  SignedIn -->|yes| Home["/home (only once both session decisions exist)"]
   SignedIn -->|no| AuthForm["AuthForm.tsx: email or username + password,<br/>GitHub / LinkedIn / Spotify OAuth"]
-  AuthForm -->|success| Home
+  AuthForm -->|success| GateLang["/onboarding/language<br/>MANDATORY per-session decision (select or skip)"]
+  GateLang --> GateModel["/onboarding/model<br/>MANDATORY per-session decision:<br/>backend ready confirmation OR Continue without AI"]
+  GateModel --> Home
+  GateModel -.->|"opened directly with no language decision → redirect"| GateLang
   AuthAlias["/auth (auth.tsx alias)"] -->|redirect signed out| Root
   AuthAlias -->|redirect signed in| Home
   Gate{"_authenticated/route.tsx gate<br/>ssr:false, getUser()"} -->|no session| Root
@@ -38,3 +41,7 @@ flowchart TD
   Mobile --> Assistant
   Footer["AppFooter (AppShell.tsx)"] --> Feedback
   Footer --> Help
+%% CURRENT (2026-09-17): authentication never depends on the local AI backend, but
+%% /home and every product route stay blocked until the per-session language decision
+%% AND the per-session model decision exist. Sign-out clears both.
+%% Canonical: docs/sequences/POST_LOGIN_STARTUP.mmd

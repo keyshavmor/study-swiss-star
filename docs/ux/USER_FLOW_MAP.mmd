@@ -1,7 +1,7 @@
 %% Document status: CURRENT
-%% Generated from: current Lovable project · GitHub main (keyshavmor/study-swiss-star) · live Supabase project ucacmeadsufiedxrgqit
-%% Last verified: 2026-09-14 (UTC)
-%% Frontend commit: e0ef3464557d4786d214accb0d1bf44082ae3466
+%% Generated from: frontend authority main at f0910e6971f12efe0ad547b904f6e2a518b13856 · live Supabase evidence dated 2026-09-18
+%% Production Supabase verified: 2026-09-15 (UTC)
+%% Frontend commit: f0910e6971f12efe0ad547b904f6e2a518b13856
 flowchart TD
   Root(["Any URL"]) --> Root_check{"Session check<br/>frontend/src/routes/index.tsx / auth.tsx"}
   Root_check -->|"signed out, at /"| Welcome["/ Welcome + AuthForm<br/>frontend/src/routes/index.tsx"]
@@ -79,3 +79,55 @@ flowchart TD
   ApiChat(["POST /api/chat<br/>frontend/src/routes/api/chat.ts<br/>(server route, non-visual)"])
   ChatThread -.->|"Bearer token fetch"| ApiChat
   ApiChat -.->|"streams reply"| ChatThread
+
+
+  Welcome -->|"sign up success, first login"| LangOnboard2["/onboarding/language<br/>MANDATORY per-session decision: pick a language or explicit skip<br/>persists app_language (durable default only)"]
+  Compliance["/onboarding/compliance<br/>ComplianceOnboarding — shown AFTER the language and model decisions<br/>(EXPECTED LOCAL BACKEND CONTRACT: none — CURRENT SUPABASE account_compliance)"]
+  Compliance -->|"complete_account_compliance_onboarding RPC"| Home
+  LangOnboard2 -->|"markLanguageSelected / markLanguageSkipped"| ModelGate2["/onboarding/model<br/>MANDATORY per-session decision<br/>capability probe + recommendation + prepare/poll<br/>REQUIRED FUTURE BACKEND"]
+  ModelGate2 -->|"backend confirms ready (only then)"| Compliance
+  ModelGate2 -->|"explicit Continue without AI"| Compliance
+  ModelGate2 -->|"both decisions made, compliance already completed"| Home
+  ModelGate2 -->|"retry / change model / sign out"| ModelGate2
+  DirectModel["manual navigation to /onboarding/model<br/>with no language decision"] -->|"startupRedirectFor() redirects"| LangOnboard2
+  OptionalAdmission["/onboarding/system-admission (OPTIONAL, not a startup gate)"] -.-> ModelGate2
+
+  Suspended["/account/suspended<br/>account_status=suspended_pending_review"]
+  ProtectedGate -->|"suspended_pending_review outranks all other routes"| Suspended
+
+  LegalTerms["/legal/terms LegalDocumentPage"]
+  LegalPrivacy["/legal/privacy LegalDocumentPage"]
+  LegalAUP["/legal/acceptable-use LegalDocumentPage"]
+  LegalChildSafety["/legal/child-safety LegalDocumentPage"]
+  Welcome -.->|"footer / consent links"| LegalTerms
+  Welcome -.->|"footer / consent links"| LegalPrivacy
+  Welcome -.->|"footer / consent links"| LegalAUP
+  Welcome -.->|"footer / consent links"| LegalChildSafety
+  Compliance -.->|"consent copy links"| LegalTerms
+  Compliance -.->|"consent copy links"| LegalPrivacy
+
+  Messages["/messages<br/>ConversationList"] --> ProtectedGate
+  MessageThread["/messages/$conversationId<br/>MessageThread + MessageComposer"] --> ProtectedGate
+  AppHeaderNav --> Messages
+  Messages -->|"select existing conversation"| MessageThread
+  Messages -->|"NewConversationDialog: find_peer_by_exact_username"| MessageThread
+  MessageThread -->|"send, fail-closed until /api/peer-messaging/send exists"| MessageThread
+
+  SystemHealthRoute["/system-health<br/>SystemHealthPanel"] --> ProtectedGate
+  AppHeaderNav --> SystemHealthRoute
+
+%% CURRENT (2026-09-17): the authenticated startup flow is auth → PER-SESSION
+%% language decision (select or explicit skip) → PER-SESSION model decision
+%% (backend-confirmed ready, or explicit continue-without-AI) → product. Language
+%% onboarding is NOT once-per-account; language_onboarding_completed is legacy
+%% metadata only. There is NO mandatory system-admission screen between them, and
+%% /onboarding/model redirects to /onboarding/language while that decision is
+%% missing. Canonical: docs/sequences/POST_LOGIN_STARTUP.mmd. Model/GPU readiness
+%% lives in sessionStorage only, never in Supabase. auto_storage_cleanup user
+%% preference removed; cleanup is a platform-wide cron (STORAGE_CAPACITY_CLEANUP.mmd).
+
+%% Compliance onboarding, suspension, legal document routes, peer messaging and the
+%% system health panel: see docs/sequences/PEER_CHAT_CREATION_BY_USERNAME.mmd,
+%% docs/sequences/SYSTEM_HEALTH_AGGREGATION.mmd and docs/contracts/BACKEND_GAP_MATRIX.md.
+%% The system-admission screen is OPTIONAL and no longer part of the startup order
+%% (capability/admission/recommendation data is rendered on the model screen).

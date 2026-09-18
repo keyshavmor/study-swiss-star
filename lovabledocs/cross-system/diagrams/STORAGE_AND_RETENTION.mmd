@@ -1,0 +1,21 @@
+flowchart TD
+  Create[User or backend creates object] --> Quota[Preflight and atomic quota enforcement]
+  Quota --> Private[Private owner-prefixed Storage]
+  Private --> Row[Owner-scoped database metadata]
+  Row --> Kind{Assistant output media?}
+  Kind -->|No| Retain[Normal lifecycle and user deletion]
+  Kind -->|Yes| Descriptor[Generate safe text descriptor]
+  Descriptor --> DescriptorStore[Upload private descriptor]
+  DescriptorStore --> Queue[Mark descriptor ready in retention queue]
+  Queue --> Due{Delete-after reached and no hold/error?}
+  Due -->|No| Retry[Retry or retain]
+  Due -->|Yes| Delete[Idempotently delete original binary]
+  Delete --> Receipt[Record completion]
+  Descriptor -. failure .-> NeverDelete[No descriptor means no source deletion]
+  Retain --> Rights[Range, all-content or account deletion]
+  Retry --> Rights
+  Rights --> Local[Also purge local backend state]
+%% Owner: cross-system architecture
+%% Status: mixed current/expected; see README.md and canonical status indices
+%% Verified: frontend f0910e6; target baseline bff4ec7; 2026-09-18
+%% Source: codex/diagrams/STORAGE_AND_RETENTION.mmd

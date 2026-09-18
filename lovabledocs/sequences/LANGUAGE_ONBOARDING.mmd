@@ -1,0 +1,36 @@
+%% Status: CURRENT FRONTEND + CURRENT SUPABASE (2026-09-17)
+%% The language screen is a PER-SESSION decision, not a once-only onboarding.
+%% Source: frontend/src/routes/_authenticated/onboarding.language.tsx,
+%% frontend/src/lib/language-session.ts, frontend/src/lib/account-data.ts
+sequenceDiagram
+    participant User
+    participant Page as onboarding.language.tsx
+    participant I18n as I18nProvider (setLanguage)
+    participant DB as user_preferences.preferences (Supabase)
+    participant LangS as sessionStorage<br/>alim.language_session.v1
+    participant Model as /onboarding/model
+
+    Page->>DB: fetchPreferences() → app_language (SAVED DEFAULT HINT (never counts as the session selection))
+    alt read fails
+        DB-->>Page: error
+        Page-->>User: localized load notice + "Try again"<br/>(screen stays usable: choose or skip)
+    else read succeeds
+        DB-->>Page: app_language highlighted as "Your saved default"
+    end
+
+    alt user picks a language
+        User->>Page: select tile
+        Page->>I18n: setLanguage(code) (UI switches immediately)
+        User->>Page: Continue
+        Page->>DB: savePreferences({ app_language, language_onboarding_completed: true })
+        Note over DB: language_onboarding_completed is LEGACY metadata,<br/>NOT the session gate
+        Page->>LangS: markLanguageSelected(code)
+        Page-->>Model: navigate /onboarding/model (replace)
+    else user skips
+        User->>Page: "Skip language selection"
+        Page->>LangS: markLanguageSkipped(persisted/current language)
+        Page-->>Model: navigate /onboarding/model (replace)
+    else user signs out
+        User->>Page: Sign out
+        Page->>LangS: cleared with every other session gate
+    end

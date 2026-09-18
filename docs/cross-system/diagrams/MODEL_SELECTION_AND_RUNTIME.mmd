@@ -1,0 +1,22 @@
+flowchart TB
+  Catalog[Live enabled model catalogue] --> Picker[Model picker]
+  Preference[Durable preferred model] --> Picker
+  Picker --> Probe[Local capability probe]
+  Probe --> Recommend[Allowlisted fit recommendation]
+  Recommend --> Manual{User choice preserved?}
+  Manual --> Selected[Selected model ID]
+  Selected --> Registry[Server-owned artifact registry]
+  Registry --> Known{Verified mapping exists?}
+  Known -->|No| Unavailable[Blocked with stable reason]
+  Known -->|Yes| Admission[Resource and user admission]
+  Admission --> Prepare[Prepare or join operation]
+  Prepare --> Ready{Loaded and floors satisfied?}
+  Ready -->|Yes| Session[AI-ready session lease]
+  Ready -->|No| Retry[Queued, retryable or blocked]
+  Session --> Features[AI feature gate opens]
+  Unavailable --> NonAI[Continue without AI]
+  Retry --> NonAI
+%% Owner: cross-system architecture
+%% Status: mixed current/expected; see README.md and canonical status indices
+%% Verified: frontend f0910e6; target baseline bff4ec7; 2026-09-18
+%% Source: codex/diagrams/MODEL_SELECTION_AND_RUNTIME.mmd

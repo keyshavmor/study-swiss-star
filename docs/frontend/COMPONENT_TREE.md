@@ -1,7 +1,7 @@
 Document status: CURRENT
-Generated from: current Lovable project · GitHub main (keyshavmor/study-swiss-star) · live Supabase project ucacmeadsufiedxrgqit
-Last verified: 2026-09-14 (UTC)
-Frontend commit: e0ef3464557d4786d214accb0d1bf44082ae3466
+Generated from: frontend authority main at f0910e6971f12efe0ad547b904f6e2a518b13856 · live Supabase evidence dated 2026-09-18
+Production Supabase verified: 2026-09-15 (UTC)
+Frontend commit: f0910e6971f12efe0ad547b904f6e2a518b13856
 
 > Supersedes: `docs/archive/COMPONENT_TREE.md` (top-level, if present). Archived centrally.
 
@@ -157,7 +157,7 @@ Conventions: "Backend calls" = the local Python context backend (`ALIM_CONTEXT_B
 - Supabase calls: `listThreads`/`listMessages`/`createThread`/`deleteThread` server functions (`lib/chat.functions.ts`, tables `threads`/`messages`); `supabase.auth.getSession()` to attach the bearer token to every `/api/chat` fetch; `supabase.auth.signOut()` on sign-out button.
 - Backend calls: every chat send goes through `/api/chat` → `requestContextAnswer` → local Python context backend (see `FRONTEND_ARCHITECTURE.md`).
 - Side effects: `track`/`trackFailure` for message lifecycle (`chat_message_completed`, `chat_message_failed`) — status only, never prompt/response text; `speak()`/`stopSpeaking()` (Web Speech API) for autoplay/manual "Listen"/"Stop" controls, gated by `preferences.assistant_audio_enabled`/`assistant_audio_autoplay`; navigates to the first thread when none is selected.
-- Persistence: thread/message rows in Supabase (`threads`, `messages`); the per-message `responseLanguageHints` map is in-memory only, while `/api/chat` independently applies the same policy and forwards the effective language.
+- Persistence: thread/message rows in Supabase (`threads`, `messages`); `responseLanguageHints` map is in-memory only (never persisted, never sent to backend).
 - Error behaviour: `onError` in `useChat` → `toast.error(t("chat.sendFailed"))` + `trackFailure`; thread create/delete failures show `toast.error` with dedicated keys.
 - Localisation: fully localized; assistant reply text itself is rendered as-is (backend-controlled language).
 - Source: `frontend/src/components/StudyChat.tsx`.
@@ -197,7 +197,7 @@ Conventions: "Backend calls" = the local Python context backend (`ALIM_CONTEXT_B
 - Side effects: `track`/`trackFailure` for thread create/delete/message-send (`assistant_thread_created`, `assistant_message_send_started`, `assistant_message_saved`, counts only); `speak()`/`stopSpeaking()` for audio playback of existing assistant messages, gated by `assistant_audio_enabled`.
 - Persistence: `assistant_threads`/`assistant_messages`/`assistant_attachments` tables; attachments in `chat-attachments` bucket (private, `<uid>/...` path convention).
 - Error behaviour: every Supabase call wrapped in `try/catch` → `toast.error` with a dedicated localized key (`assistant.loadThreadsFailed`, `assistant.sendFailed`, `assistant.deleteFailed`, etc.).
-- Localisation: `effectiveResponseLanguage(content, language)` computes a `responseLanguageHint` per outgoing message. It remains frontend-only because General Assistant generation is deferred; tutoring chat is integrated separately.
+- Localisation: `effectiveResponseLanguage(content, language)` computes a `responseLanguageHint` per outgoing message — **frontend-only today**, not sent to any backend (marked `FUTURE BACKEND / CODEX` in source).
 - Source: `frontend/src/components/assistant/AssistantChat.tsx`.
 
 ## `frontend/src/components/app/*` — School / Planner / Profile / Settings / Stats
@@ -207,7 +207,7 @@ Conventions: "Backend calls" = the local Python context backend (`ALIM_CONTEXT_B
 - Children: `AssessmentActions`, `AssessmentDialog`, `FailingBadge` (`Badges.tsx`), `AverageWithRounded` (`GradeDisplay.tsx`), `TranscriptImportDialog`.
 - State consumed: `assessments`, `materials`, `events` from `useAppData()`; static `Subject` data from `lib/mock/subjects.ts`.
 - State owned: `open` (expand/collapse).
-- Supabase/Backend calls: none directly — grades/assessments are `AppDataProvider`-owned local state even though a live `assessments` table exists; this UI is not connected to it (see `STATE_OWNERSHIP.md`).
+- Supabase/Backend calls: none directly — grades/assessments are `AppDataProvider`-owned local state only (no Supabase table for assessments today; see `STATE_OWNERSHIP.md`).
 - Localisation: `useI18n`, `GRADE_SOURCE_LABEL_KEY`/`ASSESSMENT_TYPE_LABEL_KEY`/`TREND_LABEL_KEY`.
 - Source: `frontend/src/components/app/SubjectCard.tsx`.
 
@@ -262,7 +262,7 @@ Conventions: "Backend calls" = the local Python context backend (`ALIM_CONTEXT_B
   - Side effects: `track()` for `settings_profile_saved`, `settings_avatar_updated`, `settings_avatar_removed`, `settings_email_change_requested`, `settings_password_changed`.
 - `PreferencesSections`:
   - Supabase calls: `fetchPreferences`/`savePreferences` (`user_preferences.preferences`).
-  - UI: `Switch` controls for `assistant_audio_enabled`, `assistant_audio_autoplay` (autoplay switch disabled/forced off when audio itself is off — `onCheckedChange` composition at source line ~446), plus other boolean preferences (`exam_reminders`, `daily_study_summary`, `sound_effects`) and the `selected_qwen_model` selector. Storage cleanup is a global scheduled policy, not a user toggle.
+  - UI: `Switch` controls for `assistant_audio_enabled`, `assistant_audio_autoplay` (autoplay switch disabled/forced off when audio itself is off — `onCheckedChange` composition at source line ~446), plus other boolean preferences (`exam_reminders`, `daily_study_summary`, `sound_effects`) and the `selected_qwen_model` selector, whose choice list now comes from `public.ai_model_catalog` (CURRENT SUPABASE) with a hard-coded `QWEN_MODELS` fallback.
   - Side effects: `track()` per preference change.
 - `StorageSection`:
   - Supabase calls: `fetchStorageUsage()` (RPC `get_storage_usage_status`), `listStorageItems()` (`assistant_attachments` + defensive `documents` read), deletions via Storage API, `storage-emergency-cleanup` Edge Function trigger.
@@ -281,3 +281,19 @@ Conventions: "Backend calls" = the local Python context backend (`ALIM_CONTEXT_B
 ## `frontend/src/components/ui/*`
 
 All are shadcn/Radix-derived generic primitives (buttons, dialogs, inputs, selects, sheets, tables, tooltips, etc.). None call Supabase or the backend, own no domain state, and carry no localisation of their own — all copy is passed in as props/children by the components documented above. Not enumerated individually because they create no backend requirement.
+
+
+## Compliance, safety & peer messaging
+
+**Startup order (CURRENT FRONTEND / CURRENT SUPABASE, 2026-09-17):** signed out →
+sign in/up → `/onboarding/language` (MANDATORY per-session decision) →
+`/onboarding/model` (MANDATORY per-session decision: backend-confirmed `ready`,
+or explicit continue-without-AI) → `/onboarding/compliance` if still required
+(CURRENT SUPABASE flag `account_compliance.compliance_onboarding_completed`, RPC
+`complete_account_compliance_onboarding`) → `/home`. The system
+admission gate is NOT part of this order any more; its data is shown on the model
+screen and `/onboarding/system-admission` is optional. `account_compliance.account_status
+= 'suspended_pending_review'` outranks every other route and redirects to
+`/account/suspended`. Legal routes: `/legal/terms`, `/legal/privacy`,
+`/legal/acceptable-use`, `/legal/child-safety`. See
+`sequences/SIGNUP_ROLE_GUARDIAN_CONSENT.mmd`, `sequences/POST_LOGIN_STARTUP.mmd`.

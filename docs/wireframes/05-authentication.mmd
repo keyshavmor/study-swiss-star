@@ -25,11 +25,18 @@ sequenceDiagram
       Auth->>Cloud: signUp with options.data.username
     end
     Cloud-->>Auth: Session and access token
-    Auth->>Cloud: Load user_preferences.preferences.app_language (authoritative once signed in)
-    Auth-->>Student: Navigate to /home
+    Auth->>Cloud: Load user_preferences.preferences.app_language (durable SAVED DEFAULT HINT only)
+    Auth-->>Student: Navigate to /onboarding/language (MANDATORY per-session decision),<br/>then /onboarding/model (MANDATORY per-session decision), then /home.<br/>Authentication itself never waits on the local AI backend.
   else Valid session
     Cloud-->>Gate: User
-    Gate-->>Page: Render protected screen
+    Gate->>Gate: startupRedirectFor(pathname)
+    alt Language decision missing this session
+      Gate-->>Student: Redirect to /onboarding/language<br/>(also when /onboarding/model was opened by hand)
+    else AI decision missing this session
+      Gate-->>Student: Redirect to /onboarding/model
+    else Both decisions present
+      Gate-->>Page: Render protected screen
+    end
   end
   Student->>Cloud: Sign out via signOutCompletely (lib/sign-out.ts), header avatar menu
-  Cloud-->>Student: Session cleared, navigate to /
+  Cloud-->>Student: Session cleared, session language + AI decisions cleared, navigate to /

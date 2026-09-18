@@ -1,7 +1,7 @@
 Document status: CURRENT
-Generated from: current Lovable project · GitHub main (keyshavmor/study-swiss-star) · live Supabase project ucacmeadsufiedxrgqit
-Last verified: 2026-09-14 (UTC)
-Frontend commit: e0ef3464557d4786d214accb0d1bf44082ae3466
+Generated from: frontend authority main at f0910e6971f12efe0ad547b904f6e2a518b13856 · live Supabase evidence dated 2026-09-18
+Production Supabase verified: 2026-09-15 (UTC)
+Frontend commit: f0910e6971f12efe0ad547b904f6e2a518b13856
 
 # Frontend data model — types the backend must mirror
 
@@ -143,7 +143,8 @@ Supabase `profiles`/`AccountProfile` described in §3). Do not conflate them:
 
 This is the exact shape returned by the local Python context backend's
 `POST /api/chat` (see `frontend/src/lib/context-backend.server.ts`,
-`requestContextAnswer`) and is the current integrated FastAPI contract.
+`requestContextAnswer`) and is EXPECTED LOCAL BACKEND CONTRACT / BACKEND
+IMPLEMENTATION UNKNOWN beyond what the frontend defines here.
 
 ```ts
 export interface ContextSourceSnippet {
@@ -192,7 +193,7 @@ documented in `FACTS.md` and `FRONTEND_ARCHITECTURE.md`) is:
   user_message_id: string;
   question: string;
   subject_id: string;
-  language: "en" | "de" | "gsw" | "ru" | "es" | "fr" | "it";
+  language: "de" | "en" | "fr"; // derived from subject, NOT the 7 app languages
   academic_year: string;
   grade_level: string;
   include_sources: true;
@@ -201,10 +202,11 @@ documented in `FACTS.md` and `FRONTEND_ARCHITECTURE.md`) is:
 }
 ```
 
-The backend's error envelope carries `{ error: { code, message, retryable,
-request_id? } }`; status and request ID are preserved at the server route.
-The tutoring backend validates all seven codes and adds the explicit reply
-language to context compilation. See `docs/frontend/I18N_AND_LANGUAGE.md`.
+The backend's error envelope is `{ error: { code, message } }` with codes
+`context_backend_error`, `invalid_response`, `context_backend_unavailable`
+consumed frontend-side. **BACKEND GAP**: whether the
+backend enforces `language`/`assistant_reply_language_policy` end-to-end is
+not verified — see `docs/frontend/I18N_AND_LANGUAGE.md`.
 
 ## 3. `frontend/src/lib/account-data.ts` — WIRE CONTRACT (Supabase-backed)
 
@@ -241,25 +243,25 @@ export type ReplyLanguagePolicy = "message_then_app" | "app_only";
 export interface UserPreferences {
   selected_qwen_model: string;
   app_language: LanguageCode;              // one of the 7 codes, see I18N_AND_LANGUAGE.md
-  language_onboarding_completed: boolean;
   assistant_reply_language_policy: ReplyLanguagePolicy;
   assistant_audio_enabled: boolean;
   assistant_audio_autoplay: boolean;
   exam_reminders: boolean;
   daily_study_summary: boolean;
   sound_effects: boolean;
+  language_onboarding_completed: boolean;
 }
 
 export const DEFAULT_PREFERENCES: UserPreferences = {
   selected_qwen_model: QWEN_MODELS[0],
   app_language: DEFAULT_LANGUAGE, // "en"
-  language_onboarding_completed: false,
   assistant_reply_language_policy: "message_then_app",
   assistant_audio_enabled: true,
   assistant_audio_autoplay: false,
   exam_reminders: true,
   daily_study_summary: true,
   sound_effects: false,
+  language_onboarding_completed: false,
 };
 
 export const AVATAR_BUCKET = "profile-avatars";
@@ -321,7 +323,7 @@ constraint client-side: images/audio/video ≤ `MEDIA_MAX_BYTES` (1 MiB, from
 
 ```ts
 export type MediaKind = "image" | "audio" | "video";
-export type RetentionStatus = "pending" | "ready" | "processing" | "deleted" | "failed";
+export type RetentionStatus = "pending" | "descriptor_ready" | "deleted" | "failed";
 
 export interface RetentionEnqueueInput {
   userId: string;
@@ -329,7 +331,8 @@ export interface RetentionEnqueueInput {
   mediaKind: MediaKind;
   storageBucket: string;
   objectPath: string;
-  descriptorPath: string;
+  descriptorBucket?: string;
+  descriptorPath?: string | null;
   sourceUrl?: string | null;
   sourcePath?: string | null;
 }
@@ -338,7 +341,7 @@ export interface RetentionRow {
   id: string;
   media_kind: string;
   object_path: string;
-  descriptor_path: string;
+  descriptor_path: string | null;
   source_url: string | null;
   source_path: string | null;
   status: string;
@@ -351,10 +354,11 @@ export interface RetentionRow {
 
 This module only **enqueues** a `media_retention_queue` row when a caller
 already has a descriptor object path — it never generates descriptors
-client-side. Descriptor generation/upload remain deferred because no General
-Assistant generation endpoint exists. The 30-minute cleanup worker is a live
-Supabase Edge Function invoked every minute by a Vault-authenticated cron job.
-`RetentionStatus` is the closed set written by the client/worker contract.
+client-side. Per the file's own header comment: descriptor generation,
+descriptor upload, and the 30-minute cleanup worker are **FUTURE BACKEND /
+CODEX** responsibilities, NOT implemented in the frontend. `RetentionStatus`
+is the closed set of values a backend is expected to write into
+`media_retention_queue.status`.
 
 ## 6. `frontend/src/lib/storage-management.ts` — mixed
 
@@ -526,10 +530,25 @@ override it.
 | Source file | Primary exports | Status |
 |---|---|---|
 | `lib/store/types.ts` | `Assessment`, `PlannerEvent`, `Material`, `SchoolLink`, `StudentProfile`, `DataState` | BROWSER-ONLY |
-| `lib/context-backend.types.ts` | `ContextChatResponse`, `ContextSourceSnippet`, `ContextResponseMetadata` | WIRE CONTRACT — CURRENT — INTEGRATED BACKEND |
+| `lib/context-backend.types.ts` | `ContextChatResponse`, `ContextSourceSnippet`, `ContextResponseMetadata` | WIRE CONTRACT — EXPECTED LOCAL BACKEND CONTRACT |
 | `lib/account-data.ts` | `AccountProfile`, `UserPreferences`, `DEFAULT_PREFERENCES`, `QWEN_MODELS`, `ReplyLanguagePolicy` | WIRE CONTRACT — CURRENT — SUPABASE |
 | `lib/assistant-data.ts` | `AssistantThread`, `AssistantMessage`, `AssistantAttachment` | WIRE CONTRACT — CURRENT — SUPABASE |
-| `lib/media-retention.ts` | `RetentionEnqueueInput`, `RetentionRow`, `MediaKind`, `RetentionStatus` | WIRE CONTRACT — CURRENT — SUPABASE (descriptor producer deferred) |
+| `lib/media-retention.ts` | `RetentionEnqueueInput`, `RetentionRow`, `MediaKind`, `RetentionStatus` | WIRE CONTRACT — CURRENT — SUPABASE (worker FUTURE CODEX IMPLEMENTATION) |
 | `lib/storage-management.ts` | `StorageItem` (browser-only view), `StorageUsageStatus` (RPC, wire) | MIXED |
 | `lib/mock/subjects.ts` | `Subject`, `SUBJECTS`, `SCHOOL_SUBJECTS` | BROWSER-ONLY |
-| `integrations/supabase/types.ts` | all table `Row`/`Insert`/`Update` types | WIRE CONTRACT — CURRENT — SUPABASE (generated from live project 2026-09-15) |
+| `integrations/supabase/types.ts` | all table `Row`/`Insert`/`Update` types | WIRE CONTRACT — CURRENT — SUPABASE (hand-maintained) |
+
+## Compliance, safety & peer messaging
+
+**Startup order (CURRENT FRONTEND / CURRENT SUPABASE, 2026-09-17):** signed out →
+sign in/up → `/onboarding/language` (MANDATORY per-session decision) →
+`/onboarding/model` (MANDATORY per-session decision: backend-confirmed `ready`,
+or explicit continue-without-AI) → `/onboarding/compliance` if still required
+(CURRENT SUPABASE flag `account_compliance.compliance_onboarding_completed`, RPC
+`complete_account_compliance_onboarding`) → `/home`. The system
+admission gate is NOT part of this order any more; its data is shown on the model
+screen and `/onboarding/system-admission` is optional. `account_compliance.account_status
+= 'suspended_pending_review'` outranks every other route and redirects to
+`/account/suspended`. Legal routes: `/legal/terms`, `/legal/privacy`,
+`/legal/acceptable-use`, `/legal/child-safety`. See
+`sequences/SIGNUP_ROLE_GUARDIAN_CONSENT.mmd`, `sequences/POST_LOGIN_STARTUP.mmd`.

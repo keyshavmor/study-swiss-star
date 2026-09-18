@@ -18,8 +18,8 @@ flowchart LR
   Browser --> ChatRoute["POST /api/chat<br/>frontend/src/routes/api/chat.ts<br/>CURRENT - FRONTEND"]
   ChatRoute --> Cloud
   ChatRoute --> Adapter["requestContextAnswer<br/>frontend/src/lib/context-backend.server.ts<br/>CURRENT - FRONTEND"]
-  Adapter --> Python["Local Python backend, FastAPI<br/>default http://127.0.0.1:8001/api/chat<br/>CURRENT - BACKEND"]
-  Python --> Model["Local Qwen via llama.cpp, localhost:8000<br/>backend-owned, not called by the browser<br/>CURRENT - BACKEND"]
-  Python --> Lang["Effective response language<br/>en de gsw ru es fr it<br/>CURRENT - INTEGRATED"]
-  Python -. deferred .-> FutureMedia["Assistant media descriptor generation<br/>DEFERRED - no assistant generation endpoint"]
-  Python -. deferred .-> FutureTools["Quiz, mock exam, grading, study-plan generation<br/>DEFERRED"]
+  Adapter --> Python["Local Python backend, FastAPI<br/>default http://127.0.0.1:8001/api/chat<br/>EXPECTED LOCAL BACKEND CONTRACT"]
+  Python --> Model["Local Qwen via llama.cpp, localhost:8000<br/>backend-owned, not called by the frontend<br/>BACKEND GAP"]
+  Python -. not implemented today .-> FutureLang["ui_language / message_language / response_language contract<br/>FUTURE CODEX IMPLEMENTATION"]
+  Python -. not implemented today .-> FutureMedia["Assistant media descriptor generation<br/>+ 30-minute retention cleanup worker<br/>FUTURE CODEX IMPLEMENTATION"]
+  Python -. not implemented today .-> FutureTools["Quiz, mock exam, grading, study-plan generation<br/>FUTURE CODEX IMPLEMENTATION"]

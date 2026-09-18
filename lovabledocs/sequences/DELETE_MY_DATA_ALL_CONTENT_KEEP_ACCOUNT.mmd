@@ -1,0 +1,17 @@
+%% Status: CURRENT SUPABASE
+%% Source: frontend/src/lib/system-health.ts, Edge Function delete-my-data mode=all_content
+sequenceDiagram
+    participant User
+    participant UI as data-rights settings screen
+    participant Fn as requestMyDataDeletion({mode:"all_content"})
+    participant Edge as Edge Function delete-my-data
+    participant Storage as Storage buckets (caller-owned objects)
+    participant DB as all caller content tables
+
+    User->>UI: choose "Delete all my content, keep my account"
+    UI->>Fn: requestMyDataDeletion(mode="all_content")
+    Fn->>Edge: functions.invoke("delete-my-data")
+    Edge->>Storage: delete all caller-owned objects across buckets first
+    Edge->>DB: delete all caller content rows (peer messages sent, attachments, chat history, etc.)
+    Edge-->>Fn: { deleted_objects, deleted_rows, account_deleted:false }
+    Fn-->>UI: account_compliance / auth identity remain intact

@@ -2,12 +2,12 @@
 
 ```
 Document status: CURRENT
-Generated from: current Lovable project · GitHub main (keyshavmor/study-swiss-star) · live Supabase project ucacmeadsufiedxrgqit
-Last verified: 2026-09-14 (UTC)
-Frontend commit: e0ef3464557d4786d214accb0d1bf44082ae3466
+Generated from: frontend authority main at f0910e6971f12efe0ad547b904f6e2a518b13856 · live Supabase evidence dated 2026-09-18
+Production Supabase verified: 2026-09-15 (UTC)
+Frontend commit: f0910e6971f12efe0ad547b904f6e2a518b13856
 ```
 
-Every row is derived from a real file under `frontend/src/routes/**`, `frontend/src/components/**` or `frontend/src/lib/**`. "Supabase" names a table/bucket/RPC/Edge Function or `none`. "Backend/API" states the local Python backend involvement using the verbatim status labels from the facts handoff: **CURRENT — FRONTEND**, **CURRENT — SUPABASE**, **CURRENT — EXTERNAL INTEGRATION**, **DEFERRED — NO CURRENT INTEGRATION**, **DEFERRED**, **DEPRECATED — REMOVED**.
+Every row is derived from a real file under `frontend/src/routes/**`, `frontend/src/components/**` or `frontend/src/lib/**`. "Supabase" names a table/bucket/RPC/Edge Function or `none`. "Backend/API" states the local Python backend involvement using the verbatim status labels from the facts handoff: **CURRENT — FRONTEND**, **CURRENT — SUPABASE**, **CURRENT — EXTERNAL INTEGRATION**, **EXPECTED LOCAL BACKEND CONTRACT**, **BACKEND GAP**, **FUTURE CODEX IMPLEMENTATION**, **DEPRECATED**.
 
 A large share of Alim's "study" surface (School, Subject workspace, Planner, Notifications, most of Profile) is a **local-only prototype**: state lives in `localStorage` (`lib/store/app-data.tsx`, key `asa.data.v2`) with no Supabase table and no backend call. These rows are marked **CURRENT — FRONTEND (local only)** and Supabase/Backend columns say `none`.
 
@@ -109,7 +109,7 @@ Files: `frontend/src/routes/_authenticated/school.$subject.tsx`, `frontend/src/c
 | Screen | UI element | Component | User action | Frontend handler | Local state | Supabase | Backend/API | Persistence | Success UI | Failure UI |
 |---|---|---|---|---|---|---|---|---|---|---|
 | Subject workspace | Component tabs (e.g. SPF split subjects) | `school.$subject.tsx` | Click tab | `setActiveSlug(slug)` | `activeSlug` | none | none | none | Switches active sub-subject view | n/a |
-| Subject workspace | Mode nav (Chat / Knowledge Analysis / Quiz / Exam / Study Plan / Statistics / Subject Tools) | `school.$subject.tsx` `SUBJECT_MODES` | Click a mode | `setMode(m)` | `mode: SubjectMode` | none | none | none | Right pane switches content; **Knowledge Analysis, Quiz Mode, Exam Mode, Study Plan, Subject Tools render `EmptyState` placeholders** — **DEFERRED** (quiz/exam/grading/study-plan endpoints are explicitly unimplemented) | n/a |
+| Subject workspace | Mode nav (Chat / Knowledge Analysis / Quiz / Exam / Study Plan / Statistics / Subject Tools) | `school.$subject.tsx` `SUBJECT_MODES` | Click a mode | `setMode(m)` | `mode: SubjectMode` | none | none | none | Right pane switches content; **Knowledge Analysis, Quiz Mode, Exam Mode, Study Plan, Subject Tools render `EmptyState` placeholders** — **FUTURE CODEX IMPLEMENTATION** (quiz/exam/grading/study-plan endpoints are explicitly unimplemented) | n/a |
 | Subject workspace | Statistics view toggle (Combined SPF / per component) | `school.$subject.tsx` | Click chip | `setStatsView("combined"/"component")`, `setActiveSlug()` | `statsView` | none | none | none | Chart/table swaps dataset | n/a |
 | Subject workspace | "Chat" mode → "Open Study Chat" button | `school.$subject.tsx` | Click | Router `Link to="/chat"` | none | none | none | none | Navigates to Study Chat (§8) | n/a |
 | Subject workspace | Grade entry — add test (per active subject) | `AssessmentDialog.tsx` | Fill dialog, Save | `addAssessment(payload)` | dialog draft | none | none | `localStorage` | `toast.success(t("grades.toast.addedTitle"))` | Save disabled while invalid |
@@ -158,12 +158,12 @@ Files: `frontend/src/components/StudyChat.tsx`, `frontend/src/components/ThreadL
 | Study chat | "New session" button | `StudyChat.tsx` | Click, fill Subject + Topic, "Create" | `handleCreateThread()` → `createThreadFn()` → `createThread` server fn → `supabase.from("threads").insert({user_id, title, subject})` | `newThreadOpen`, `newThreadTitle`, `newThreadSubject` | `threads` table — **CURRENT — SUPABASE** | Server function (Supabase-only) | Supabase Postgres | Dialog closes, `refetchThreads()`, navigates to new thread | `toast.error(t("chat.createFailed"))` |
 | Study chat | Thread row — delete | `ThreadList.tsx` trash icon | Click | `handleDeleteThread(id)` → `deleteThreadFn()` → `deleteThread` server fn → `supabase.from("threads").delete().eq("id",..).eq("user_id",..)` | none | `threads` table — **CURRENT — SUPABASE** | Server function (Supabase-only) | Supabase Postgres | List refetches; if active thread deleted, navigates to `/chat` | `toast.error(t("chat.deleteFailed"))` |
 | Study chat | Message text field | `PromptInputTextarea` inside `PromptInput` | Type | local `PromptInput` state (ai-elements) | draft text | none | none | none | n/a | n/a |
-| Study chat | "Send" button | `PromptInputSubmit` / `PromptInput onSubmit` | Click / Enter | `chat.sendMessage({text:value})` via `useChat` (`@ai-sdk/react`) with `DefaultChatTransport` targeting `POST /api/chat` (`routes/api/chat.ts`); auth header injected from `supabase.auth.getSession()` and `uiLanguage` included in the body | `chat.status` (submitted/streaming/ready/error) | `messages` table — inserted server-side inside `/api/chat` (user message, then assistant message on `onFinish`) — **CURRENT — SUPABASE** for persistence | `/api/chat` verifies `Authorization: Bearer <token>`, checks thread ownership, applies message-then-app language selection, then calls `requestContextAnswer()` → `POST {ALIM_CONTEXT_BACKEND_URL}/api/chat` with the bearer token and matching `X-Student-Id` — **CURRENT — INTEGRATED BACKEND** | Supabase `messages` rows; response streamed as AI-SDK UI message parts incl. `data-context-metadata` (sources, examTip, usedModel, retrievalSummary) | Assistant text streams in; `track({event_name:"chat_message_sent"})` on submit, `chat_message_completed` on finish | `toast.error(t("chat.sendFailed"))`; `trackFailure("chat_message_failed", ...)`; structured backend status/code/retryable/request ID is preserved (503 default) |
-| Study chat | Sources disclosure (`<details>`) | `SourceSnippetList.tsx` | Click "Sources (n)" | native `<details>` toggle, no handler | none | none | data comes from the integrated backend's `context-metadata` stream part | none | Expands list of `source_id`/`material_name`/`section`/`page`/`snippet`/`url` | If `sources` empty/absent, component renders `null` |
+| Study chat | "Send" button | `PromptInputSubmit` / `PromptInput onSubmit` | Click / Enter | `chat.sendMessage({text:value})` via `useChat` (`@ai-sdk/react`) with `DefaultChatTransport` targeting `POST /api/chat` (`routes/api/chat.ts`); auth header injected from `supabase.auth.getSession()` | `chat.status` (submitted/streaming/ready/error) | `messages` table — inserted server-side inside `/api/chat` (user message, then assistant message on `onFinish`) — **CURRENT — SUPABASE** for persistence | `/api/chat` verifies `Authorization: Bearer <token>`, checks thread ownership, then calls `requestContextAnswer()` → `POST {ALIM_CONTEXT_BACKEND_URL}/api/chat` with `X-Student-Id` header — **EXPECTED LOCAL BACKEND CONTRACT** (local Python backend implementation unverified) | Supabase `messages` rows; response streamed as AI-SDK UI message parts incl. `data-context-metadata` (sources, examTip, usedModel, retrievalSummary) | Assistant text streams in; `track({event_name:"chat_message_sent"})` on submit, `chat_message_completed` on finish | `toast.error(t("chat.sendFailed"))`; `trackFailure("chat_message_failed", ...)`; backend failure surfaces the `ContextBackendError` status/message from `/api/chat` (503 default) |
+| Study chat | Sources disclosure (`<details>`) | `SourceSnippetList.tsx` | Click "Sources (n)" | native `<details>` toggle, no handler | none | none | data comes from `context-metadata` part of the stream — **EXPECTED LOCAL BACKEND CONTRACT** | none | Expands list of `source_id`/`material_name`/`section`/`page`/`snippet`/`url` | If `sources` empty/absent, component renders `null` |
 | Study chat | "Listen" button (assistant message) | `StudyChat.tsx` `handleToggleSpeech()` | Click | `speak({text, uiLanguage, onEnd})` (`lib/speech.ts`, browser `speechSynthesis`) | `speakingId` | none | none — **local browser API only, never persisted** | none | Icon swaps to "Stop"; `speakingId` set | `toast.error(t("assistant.audio.unsupported"))` or `t("assistant.audio.noVoice")` depending on `speak()` outcome |
 | Study chat | "Stop" button (while speaking) | `StudyChat.tsx` `handleToggleSpeech()` | Click | `stopSpeaking()` (`lib/speech.ts`) | `speakingId=null` | none | none | none | Playback stops, icon reverts to "Listen" | n/a |
 | Study chat | Autoplay of new assistant reply | `StudyChat.tsx` `useChat({onFinish})` | Passive (if `assistant_audio_enabled && assistant_audio_autoplay` in preferences fetched via `fetchPreferences()`) | `speak({...})` | `speakingId` | reads `user_preferences` — **CURRENT — SUPABASE** | none | none | Audio plays automatically for the newly completed message only | same audio-unavailable toasts as "Listen" |
-| Study chat | Sign out (chat-page mini header) | `StudyChat.tsx` `handleSignOut()` | Click | `supabase.auth.signOut()` then `navigate({to:"/auth"})` — note: this is a **separate, simpler path than `signOutCompletely()`** used in `AppHeader.tsx`; it does not clear the Google Calendar token or log `auth_signout` telemetry | none | Supabase Auth | none | Supabase session ended | Navigates to `/auth` | none surfaced (no try/catch) |
+| Study chat | Sign out (chat-page mini header) | `StudyChat.tsx` `handleSignOut()` | Click | `signOutCompletely()` (`lib/sign-out.ts`) — the SAME single sign-out path as `AppHeader.tsx`: best-effort backend runtime release, `supabase.auth.signOut({ scope: "local" })`, then all session-scoped state cleared | none | `usage_events` (event `auth_signout`) | none | Supabase session ended, language/AI session decisions cleared | Redirects to `/` | `toast.error(t("nav.signOutFailed"))` |
 
 ---
 
@@ -171,7 +171,7 @@ Files: `frontend/src/components/StudyChat.tsx`, `frontend/src/components/ThreadL
 
 Files: `frontend/src/components/assistant/AssistantChat.tsx`, `frontend/src/routes/_authenticated/assistant.index.tsx`, `frontend/src/routes/_authenticated/assistant.$threadId.tsx`, `frontend/src/lib/assistant-data.ts`, `frontend/src/lib/storage-management.ts`, `frontend/src/lib/speech.ts`.
 
-Assistant tables (`assistant_threads`, `assistant_messages`, `assistant_attachments`) are entirely separate from tutoring `threads`/`messages`. **The assistant never generates a reply in the frontend** — no backend call exists for assistant generation; assistant rows for the model's answer are, per the facts handoff, never fabricated client-side. This is **DEFERRED — NO CURRENT INTEGRATION / DEFERRED**.
+Assistant tables (`assistant_threads`, `assistant_messages`, `assistant_attachments`) are entirely separate from tutoring `threads`/`messages`. **The assistant never generates a reply in the frontend** — no backend call exists for assistant generation; assistant rows for the model's answer are, per the facts handoff, never fabricated client-side. This is **BACKEND GAP / FUTURE CODEX IMPLEMENTATION**.
 
 | Screen | UI element | Component | User action | Frontend handler | Local state | Supabase | Backend/API | Persistence | Success UI | Failure UI |
 |---|---|---|---|---|---|---|---|---|---|---|
@@ -182,7 +182,7 @@ Assistant tables (`assistant_threads`, `assistant_messages`, `assistant_attachme
 | Assistant | Composer text field | `AssistantChat.tsx` `Textarea` | Type / Enter (no Shift) | `setText(e.target.value)`; Enter triggers `handleSend()` | `text: string` | none | none | none | n/a | n/a |
 | Assistant | Attachment picker (paperclip) | `AssistantChat.tsx` `handlePickFiles()` | Click paperclip, choose files | `validateAttachment(file)` (`lib/assistant-data.ts`) per file: images/audio/video ≤ `MEDIA_MAX_BYTES` (1 MiB), else PDF/DOCX/DOC | `files: File[]` | none (validated client-side against the same rule the DB enforces) | none | none until Send | Accepted files appear as chips | `toast.error(...)` per rejected file (size or unsupported type) |
 | Assistant | Attachment chip remove (×) | `AssistantChat.tsx` | Click × on a pending chip | `setFiles((current) => current.filter(...))` | `files` | none | none | none | Chip removed | n/a |
-| Assistant | "Send" button | `AssistantChat.tsx` `handleSend()` | Click / icon button | `sendAssistantMessage({threadId, content, files})` (`lib/assistant-data.ts`): inserts `assistant_messages` row, uploads each file to `chat-attachments` bucket at `<uid>/<threadId>/...`, inserts `assistant_attachments` metadata row per file, bumps thread `updated_at`; auto-creates a thread first if none is active, and auto-renames "New conversation" threads from the first message via `deriveThreadTitle()` | `sending`, `text`, `files` | `assistant_messages`, `assistant_attachments`, Storage bucket `chat-attachments` — **CURRENT — SUPABASE** | **No backend call is made** — the assistant's reply is never generated; UI shows a static "response pending" notice — **DEFERRED** | Supabase Postgres + Storage | Message + chips appear; `track({event_name:"assistant_message_send_started"})` then `assistant_message_saved`; pending notice `t("assistant.pendingNotice")` shown after a user message | `toast.error(t("assistant.sendFailed"))`; `trackFailure("assistant_message_failed", ...)`; upload failures also roll back the just-inserted attachment metadata row |
+| Assistant | "Send" button | `AssistantChat.tsx` `handleSend()` | Click / icon button | `sendAssistantMessage({threadId, content, files})` (`lib/assistant-data.ts`): inserts `assistant_messages` row, uploads each file to `chat-attachments` bucket at `<uid>/<threadId>/...`, inserts `assistant_attachments` metadata row per file, bumps thread `updated_at`; auto-creates a thread first if none is active, and auto-renames "New conversation" threads from the first message via `deriveThreadTitle()` | `sending`, `text`, `files` | `assistant_messages`, `assistant_attachments`, Storage bucket `chat-attachments` — **CURRENT — SUPABASE** | **No backend call is made** — the assistant's reply is never generated; UI shows a static "response pending" notice — **FUTURE CODEX IMPLEMENTATION** | Supabase Postgres + Storage | Message + chips appear; `track({event_name:"assistant_message_send_started"})` then `assistant_message_saved`; pending notice `t("assistant.pendingNotice")` shown after a user message | `toast.error(t("assistant.sendFailed"))`; `trackFailure("assistant_message_failed", ...)`; upload failures also roll back the just-inserted attachment metadata row |
 | Assistant | "Listen" (assistant message) | `AssistantChat.tsx` `handleToggleSpeech()` | Click | `speak({text: content, uiLanguage, onEnd})` (`lib/speech.ts`) | `speakingId` | none | none | none | Icon swaps to Stop | `toast.error(t("assistant.audio.unsupported"/"noVoice"))` |
 | Assistant | "Stop" (while speaking) | `AssistantChat.tsx` | Click | `stopSpeaking()` | `speakingId=null` | none | none | none | Playback stops | n/a |
 
@@ -235,9 +235,9 @@ Files: `frontend/src/routes/_authenticated/settings.tsx`, `frontend/src/componen
 | Settings | "Save profile" button | `AccountSection` `handleSaveProfile()` | Click | `updateAccountProfile({username, fullName, preferredName, nationality, contactPhone, contactDetails})` (`lib/account-data.ts`) | `saving: boolean` | `profiles` table — **CURRENT — SUPABASE** | none | Supabase Postgres | `track({event_name:"settings_profile_saved"})`, `toast.success(t("settings.account.profileSaved"))` | `trackFailure("settings_profile_save_failed", ...)`, `toast.error(t("settings.account.profileSaveError"))` |
 | Settings | New email field + "Update" | `AccountSection` `handleEmailChange()` | Type + click | `supabase.auth.updateUser({email: newEmail})` | `newEmail` | Supabase Auth — **CURRENT — SUPABASE** | none | Supabase pending-email-change flow | `track({event_name:"settings_email_change_requested"})`, `toast.success(t("settings.account.email.sent"))` | `trackFailure("settings_email_change_failed", ...)`, `console.error`, `toast.error(t("settings.account.updateError"))` |
 | Settings | New password / repeat password + "Update" | `AccountSection` `handlePasswordChange()` | Type + click | client match check, then `supabase.auth.updateUser({password})` | `password`, `confirmPassword` | Supabase Auth — **CURRENT — SUPABASE** | none | Supabase Auth | `track({event_name:"settings_password_changed"})`, `toast.success(t("settings.account.password.updated"))` | `toast.error(t("settings.account.password.mismatch"))` (client-side) or `trackFailure(...)` + `toast.error(t("settings.account.updateError"))` (server) |
-| Settings | Qwen model selector | `PreferencesSections` `Select` | Choose model | `update({selected_qwen_model: value})` → `savePreferences()` (`lib/account-data.ts`) → `supabase.from("user_preferences").upsert({user_id, preferences}, {onConflict:"user_id"})` | `prefs: UserPreferences` (optimistic update, rolled back on failure) | `user_preferences.preferences.selected_qwen_model` — **CURRENT — SUPABASE**; consumption by the actual local model runtime is **DEFERRED — NO CURRENT INTEGRATION** | none (preference storage only; not sent to `/api/chat`) | Supabase Postgres (JSONB) | `track({event_name:"settings_preference_saved", properties:{preference:"selected_qwen_model"}})` | Optimistic value reverted; `trackFailure("settings_preference_save_failed", ...)`, `toast.error(t("settings.preferences.saveError"))` |
-| Settings | Switch — Exam reminders | `PreferencesSections` | Toggle | `update({exam_reminders: checked})` | see above | `user_preferences` — **CURRENT — SUPABASE** | none — reminders are not actually scheduled/sent anywhere (**DEFERRED** if intended) | Supabase Postgres | toast/track as above | as above |
-| Settings | Switch — Daily study summary | `PreferencesSections` | Toggle | `update({daily_study_summary: checked})` | — | `user_preferences` — **CURRENT — SUPABASE** | none — no summary is generated anywhere (**DEFERRED**) | Supabase Postgres | as above | as above |
+| Settings | Qwen model selector | `PreferencesSections` `Select` | Choose model | `update({selected_qwen_model: value})` → `savePreferences()` (`lib/account-data.ts`) → `supabase.from("user_preferences").upsert({user_id, preferences}, {onConflict:"user_id"})` | `prefs: UserPreferences` (optimistic update, rolled back on failure) | `user_preferences.preferences.selected_qwen_model` — **CURRENT — SUPABASE**; consumption by the actual local model runtime is **BACKEND GAP** | none (preference storage only; not sent to `/api/chat`) | Supabase Postgres (JSONB) | `track({event_name:"settings_preference_saved", properties:{preference:"selected_qwen_model"}})` | Optimistic value reverted; `trackFailure("settings_preference_save_failed", ...)`, `toast.error(t("settings.preferences.saveError"))` |
+| Settings | Switch — Exam reminders | `PreferencesSections` | Toggle | `update({exam_reminders: checked})` | see above | `user_preferences` — **CURRENT — SUPABASE** | none — reminders are not actually scheduled/sent anywhere (**FUTURE CODEX IMPLEMENTATION** if intended) | Supabase Postgres | toast/track as above | as above |
+| Settings | Switch — Daily study summary | `PreferencesSections` | Toggle | `update({daily_study_summary: checked})` | — | `user_preferences` — **CURRENT — SUPABASE** | none — no summary is generated anywhere (**FUTURE CODEX IMPLEMENTATION**) | Supabase Postgres | as above | as above |
 | Settings | Switch — Sound effects | `PreferencesSections` | Toggle | `update({sound_effects: checked})` | — | `user_preferences` — **CURRENT — SUPABASE** | none (no sound effects are wired up in the UI) | Supabase Postgres | as above | as above |
 | Settings | Switch — Assistant audio enabled | `PreferencesSections` | Toggle | `update({assistant_audio_enabled: checked})` | — | `user_preferences` — **CURRENT — SUPABASE** | none (consumed client-side by `speech.ts` gating) | Supabase Postgres | as above | as above |
 | Settings | Switch — Assistant audio autoplay | `PreferencesSections` | Toggle (disabled unless audio enabled) | `update({assistant_audio_autoplay: checked})` | — | `user_preferences` — **CURRENT — SUPABASE** | none | Supabase Postgres | as above | as above |
@@ -278,3 +278,50 @@ File: `frontend/src/routes/_authenticated/help.tsx`. Entirely static content —
 - **Telemetry** (`lib/telemetry.ts` `track`/`trackFailure`) is invoked from many rows above; it always calls `supabase.functions.invoke("activity-log", {body})`, which per the facts handoff writes to `usage_events` and an `activity-logs` Storage object — **CURRENT — SUPABASE**. It is fire-and-forget and never surfaces its own failures to the user.
 - **`localizedMessage()` / `UiError`** (`lib/ui-error.ts`) is used in `AuthForm.tsx` to avoid leaking raw (English) Supabase error text into localized toasts; several other screens (`auth.update-password.tsx`, `SettingsSections.tsx` email/password) still show the raw `error.message` from Supabase in some paths, as noted per-row above.
 - **Speech (`lib/speech.ts`)** is browser `speechSynthesis` only, ephemeral, never persisted; used identically by Study Chat (§7) and Assistant (§8) "Listen"/"Stop" controls.
+
+## Compliance, safety & peer messaging
+
+**Startup order (CURRENT FRONTEND / CURRENT SUPABASE, 2026-09-17):** signed out →
+sign in/up → `/onboarding/language` (MANDATORY per-session decision) →
+`/onboarding/model` (MANDATORY per-session decision: backend-confirmed `ready`,
+or explicit continue-without-AI) → `/onboarding/compliance` if still required
+(CURRENT SUPABASE flag `account_compliance.compliance_onboarding_completed`, RPC
+`complete_account_compliance_onboarding`) → `/home`. The system
+admission gate is NOT part of this order any more; its data is shown on the model
+screen and `/onboarding/system-admission` is optional. `account_compliance.account_status
+= 'suspended_pending_review'` outranks every other route and redirects to
+`/account/suspended`. Legal routes: `/legal/terms`, `/legal/privacy`,
+`/legal/acceptable-use`, `/legal/child-safety`. See
+`sequences/SIGNUP_ROLE_GUARDIAN_CONSENT.mmd`, `sequences/POST_LOGIN_STARTUP.mmd`.
+
+## Post-login gate — CURRENT (2026-09-17)
+
+Supersedes any statement earlier in this file that language onboarding is a
+once-per-account step or that model setup is optional/advisory.
+
+Canonical order after Supabase Auth succeeds (account suspension pre-empts
+everything):
+**language decision for this browser session** (select a language or explicit
+skip) → **model decision for this browser session** (backend-confirmed `ready`,
+or an explicit "Continue without AI") → compliance onboarding *if still
+required* (durable, once) → `/home` and the rest of the product.
+Ordinary compliance onboarding NEVER appears before the language and model
+decisions; a suspended account (`suspended_pending_review`) still outranks all
+of them.
+
+- Authentication and non-AI product areas never depend on the local AI backend.
+- `user_preferences.preferences.app_language` is a SAVED DEFAULT VISUAL HINT
+  only. It never counts as the session selection: Continue on the language screen
+  stays disabled until the user clicks a language in this session, or the user
+  explicitly skips. `language_onboarding_completed` is kept only as legacy
+  compatibility metadata and is not a gate.
+- `selected_qwen_model` persists a *preference*; readiness comes only from an
+  explicit backend `ready` state (`alim.ai_session.v1` in `sessionStorage`).
+- The decisions survive a refresh in the same session and are cleared on
+  sign-out; direct navigation to a protected route re-runs the same gate.
+- AI actions are centrally guarded (`AiFeatureGate` / `useAiBlocked`): blocked
+  actions issue no request and show one localized red notice with retry,
+  Settings and non-AI paths.
+
+Full contract: `docs/backend-handoff/POST_LOGIN_LANGUAGE_MODEL_GATE_HANDOFF.md`;
+sequence: `docs/sequences/POST_LOGIN_STARTUP.mmd`.

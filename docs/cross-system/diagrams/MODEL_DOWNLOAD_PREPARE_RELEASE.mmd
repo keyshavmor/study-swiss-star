@@ -1,0 +1,22 @@
+stateDiagram-v2
+  [*] --> CheckingBackend
+  CheckingBackend --> CheckingResources
+  CheckingResources --> Blocked: admission or disk failure
+  CheckingResources --> CheckingModel
+  CheckingModel --> Loading: verified artifact present
+  CheckingModel --> Queued: download lock held by another operation
+  CheckingModel --> Downloading: acquire model lock
+  Queued --> Downloading: join or lock available
+  Downloading --> Failed: network, integrity or storage failure
+  Downloading --> Downloaded: staged artifact verified and atomically published
+  Downloaded --> Loading
+  Loading --> Failed: runtime load or health failure
+  Loading --> Ready: runtime probe and floors pass
+  Ready --> Ready: heartbeat and inference
+  Ready --> [*]: release, sign out or TTL expiry
+  Blocked --> CheckingResources: retry
+  Failed --> CheckingBackend: retry
+%% Owner: cross-system architecture
+%% Status: mixed current/expected; see README.md and canonical status indices
+%% Verified: frontend f0910e6; target baseline bff4ec7; 2026-09-18
+%% Source: codex/diagrams/MODEL_DOWNLOAD_PREPARE_RELEASE.mmd

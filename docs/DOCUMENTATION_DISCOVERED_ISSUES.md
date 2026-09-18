@@ -1,28 +1,34 @@
-# Documentation-Discovered Issues
+# Current documentation and implementation issues
 
-Status: CURRENT — REASSESSED 2026-09-15
+| Field | Value |
+|---|---|
+| Owner | Architecture/release owner |
+| Status | Current reconciled issue register |
+| Canonical path | `docs/DOCUMENTATION_DISCOVERED_ISSUES.md` |
+| Verified | frontend `f0910e6`, target `bff4ec7`, live handover 2026-09-18 |
 
-| Issue | Status | Evidence / action |
+This is a final-state register, not an append-only correction log.
+
+| Issue | Status | Owner/next proof |
 |---|---|---|
-| Production Supabase could not be inspected | NOT AN ISSUE AFTER LIVE VERIFICATION | Project, migrations, tables, RLS, buckets, functions, cron, types, and advisors were queried |
-| Production lacked domain/context tables | NOT AN ISSUE AFTER LIVE VERIFICATION | 28 RLS-enabled public tables include domain, context, study-tool, Assistant, and model-catalog tables |
-| TanStack forwarded only `X-Student-Id` | RESOLVED IN THIS BRANCH | verified bearer token and matching header are both forwarded |
-| Response-language hint was frontend-only | RESOLVED IN THIS BRANCH | current message detection > app language > English is sent explicitly to FastAPI; seven languages tested |
-| Backend implementation described as unknown | RESOLVED IN THIS BRANCH | architecture/contracts now reference verified FastAPI/context/model sources |
-| Assistant backend status unclear | STILL CURRENT | persistence/UI exist; generation and attachment parsing have no sufficiently defined contract |
-| Media cleanup described as absent | NOT AN ISSUE AFTER LIVE VERIFICATION | Edge Function and every-minute Vault/cron job are active; descriptor producer remains absent because backend produces no media |
-| Retention helper used unsupported `descriptor_ready` status | RESOLVED IN THIS BRANCH | live constraint accepts `pending/ready/processing/deleted/failed`; helper now requires a descriptor path and inserts `ready` |
-| Retention queue lacked owner-bound paths/attachment FK | RESOLVED IN PRODUCTION | migration `20260915105026` added path checks and composite ownership; the v2 worker also rejects mismatches |
-| Browser-local state conflicts with live domain tables | NOT AN ISSUE AFTER LIVE VERIFICATION | table existence does not change `asa.data.v2` ownership |
-| Materials metadata implied indexing | RESOLVED IN DOCUMENTATION | backend ingestion exists but current Materials UI is not wired; metadata does not claim indexed state |
-| Supabase migration sources are incomplete/duplicated | STILL CURRENT | exact Supabase SQL exists through `20260914131340`; later applied SQL is partly Drizzle/external and is documented without fabricated history |
-| Generated frontend Supabase types were partial | RESOLVED IN THIS BRANCH | regenerated directly from project `ucacmeadsufiedxrgqit` |
-| Edge Function source was absent | RESOLVED IN THIS BRANCH | exact current sources retrieved into `supabase/functions/` |
-| Edge telemetry sanitizer was narrower than browser policy | RESOLVED IN PRODUCTION | `activity-log` and `feedback-submit` v2 deployed and re-fetched with exact source parity |
-| Excessive Data API grants and four uncovered foreign keys | RESOLVED IN PRODUCTION | migrations `20260915105026` and `20260915105236` reduced grants and cleared all unindexed-FK findings |
-| Security advisor flags privileged read-only RPCs | ACCEPTED — INTENTIONAL | both storage-usage and AI-runtime-policy RPCs have empty search paths, authenticated-only ACLs, `auth.uid()` guards, and bounded outputs |
-| User-facing automatic-cleanup toggle had no server effect | RESOLVED IN THIS BRANCH | concurrent live migration made cleanup global; obsolete preference/UI control removed while manual cleanup remains |
-| Concurrent production changes during reconciliation | RESOLVED/DOCUMENTED | four external migrations plus `storage-emergency-cleanup` v2 were re-inspected, preserved, typed, and documented |
-| Frontend runtime/gates unavailable in this environment | RESOLVED | standalone Bun 1.4.2 in `/tmp` ran tests, typecheck, lint, translations, formatting, and production build |
-| Authenticated two-user live RLS CRUD not executed | DEFERRED — EXPLICIT REASON | no disposable test users/tokens supplied; catalog policies and static RLS tests were inspected |
-| Remaining i18n/date defects | NOT FOUND BY AUTOMATED GATES | all locale modules have 822 keys, Swiss German has no `ß`, and seven-language detection/fallback tests pass |
+| Study-chat adapter omits the bearer token required by FastAPI | `BACKEND GAP` / integration blocker | Prompt 03: forward the already verified token and add negative contract tests; never weaken backend JWT checks |
+| Nine enabled model IDs lack verified artifact/runtime mappings | `UNKNOWN — REQUIRES VERIFICATION` | Prompt 04: primary model/runtime sources, immutable artifact metadata, license/hash/resource proof or explicit disable decision |
+| Capability, prepare/poll, admission/lease/health/release APIs are absent | `BACKEND GAP` | Prompt 04 contract and lifecycle tests |
+| Local safety, moderated peer send/scan, Assistant generation/parse and assessment jobs are absent | `BACKEND GAP` | Prompts 05–07; safety-required paths fail closed |
+| Repository migration files do not reconstruct all observed live migration identities | `UNKNOWN — REQUIRES VERIFICATION` | Prompt 07 forward reconciliation; never edit/delete applied migrations |
+| Leaked-password protection and sufficient MFA options were warned by live advisors | `UNKNOWN — REQUIRES OWNER DECISION` | Prompt 07 read-only recheck and explicit configuration decision |
+| Browser-local school/planner/grade state has no approved canonical durable migration | `UNKNOWN — REQUIRES VERIFICATION` | product/data-owner decision before backend study features assume server data |
+| Exact Assistant transport and server-media scope remain undecided | `UNKNOWN — REQUIRES VERIFICATION` | product/backend contract decision; no fabricated reply |
+| Current combined Conda bootstrap conflicts with per-layer isolation | `DEPRECATED` environment design | Prompt 08 split environments and launcher tests |
+| Physical MacBook M4 and working Ubuntu CUDA smoke evidence is absent | `UNKNOWN — REQUIRES VERIFICATION` | Prompts 08–09; current Ubuntu run was CPU-only |
+| Existing frontend dependency directory lacks locked `vitest` and `mathlive` | local environment limitation | authorized lockfile install, then rerun typecheck/test/build |
+
+Resolved facts folded into current documentation:
+
+- Production Supabase and backend source are inspectable; older “unavailable”
+  claims are historical only.
+- There is no Lovable/cloud AI inference fallback in the authoritative product.
+- Active target frontend paths now match pinned `main`, with the documented
+  `.env` and documentation-tool exceptions.
+- Root `src/integrations/supabase` is tool-managed duplicate material, not the
+  active `frontend/src` import target.

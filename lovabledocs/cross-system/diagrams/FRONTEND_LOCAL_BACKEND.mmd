@@ -1,0 +1,26 @@
+sequenceDiagram
+  actor U as User
+  participant B as Browser
+  participant T as TanStack server
+  participant S as Supabase
+  participant P as Local FastAPI
+  participant M as Local model
+  U->>B: Invoke AI control
+  B->>B: Require AI-ready session
+  B->>T: Request plus bearer token
+  T->>S: Verify claims and resource ownership
+  S-->>T: claims.sub and owned context
+  T->>P: Contract request plus bearer and X-Student-Id cross-check
+  P->>P: Verify JWT and validate input
+  P->>S: RLS-scoped context/data read
+  P->>M: Local inference
+  M-->>P: Untrusted model output
+  P->>P: Validate and attach provenance
+  P-->>T: Typed result or bounded error
+  T->>S: Persist only authorized real result
+  T-->>B: Stream or normalized response
+  B-->>U: Success, retry or unavailable state
+%% Owner: cross-system architecture
+%% Status: mixed current/expected; see README.md and canonical status indices
+%% Verified: frontend f0910e6; target baseline bff4ec7; 2026-09-18
+%% Source: codex/diagrams/FRONTEND_LOCAL_BACKEND.mmd

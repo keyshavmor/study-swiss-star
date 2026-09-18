@@ -4,7 +4,9 @@ flowchart TD
   Cache --> Render["Render with cached or default English language"]
   Boot --> AuthCheck{"Signed in?"}
   AuthCheck -->|No| WelcomeLocal["Localise welcome/auth screen from cache"]
-  AuthCheck -->|Yes| Load["Load user_preferences.preferences.app_language, AUTHORITATIVE"]
+  AuthCheck -->|Yes| Load["Load user_preferences.preferences.app_language<br/>DURABLE SAVED DEFAULT HINT only:<br/>never counts as the session selection"]
+  Load --> Decide["/onboarding/language: MANDATORY per-session decision<br/>select a language (persisted) or explicit skip (keeps the default)<br/>alim.language_session.v1, cleared on sign-out"]
+  Decide --> NextGate["then /onboarding/model (mandatory session decision)"]
   Load --> Valid{"Value is one of en de gsw ru es fr it?"}
   Valid -->|Yes| Apply["Apply language, update cache"]
   Valid -->|No or missing| English["Recover to English default"]
@@ -17,7 +19,9 @@ flowchart TD
   WriteDB --> UI
   UI --> Format["lib/i18n/format.ts: formatDate/formatWeekday/formatTime etc.<br/>dd/mm/yyyy, weekday, 24h HH:mm"]
   UI --> Detect["Per-message: detectLanguage / effectiveResponseLanguage (chat + assistant)"]
-  Detect --> Hint["responseLanguageHint retained for local read-aloud state"]
+  Detect --> Hint["responseLanguageHint, CLIENT STATE ONLY, not sent today"]
   Detect --> SpeechLocale["speechLocaleFor for Listen/Stop read-aloud"]
-  Hint --> ChatContract["Tutoring /api/chat applies message_then_app<br/>and forwards effective language to FastAPI<br/>CURRENT - INTEGRATED"]
-  Hint -.-> AssistantContract["General Assistant generation language contract<br/>DEFERRED with generation endpoint"]
+  Hint -.-> FutureContract["ui_language, message_language, response_language contract<br/>FUTURE CODEX IMPLEMENTATION"]
+%% CURRENT (2026-09-17): language_onboarding_completed is LEGACY metadata; the
+%% language screen appears once per browser session and is the first gate after
+%% compliance. Canonical: docs/sequences/LANGUAGE_ONBOARDING.mmd

@@ -1,5 +1,11 @@
 # Supabase source and deployment authority
 
+**Status:** CURRENT repository/live reconciliation evidence, last live retrieval 2026-09-15.
+
+The frontend-consumed contract and current implementation-gap labels live in
+[`../docs/supabase/README.md`](../docs/supabase/README.md). Prompt 02 reorganizes documentation
+only; it does not change the linked project, migrations, policies, buckets, or Edge Functions.
+
 Project `ucacmeadsufiedxrgqit` owns authentication, Postgres/RLS, private Storage, durable user
 state, tutoring transcripts/context, Assistant history, telemetry, and media-retention scheduling.
 FastAPI performs tutoring AI computation locally.

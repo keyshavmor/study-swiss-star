@@ -1,0 +1,26 @@
+flowchart TB
+  subgraph Host[Local Linux or macOS host]
+    Browser[Browser]
+    Frontend[TanStack frontend :8080]
+    API[FastAPI :8001 loopback]
+    Model[llama.cpp server :8000 loopback]
+    Files[(Model cache, materials, logs and local state)]
+    Browser --> Frontend
+    Frontend --> API
+    API --> Model
+    API --> Files
+  end
+  Frontend --> TLS[TLS internet]
+  API --> TLS
+  TLS --> Supabase[Supabase eu-central-2]
+  TLS --> Google[Google Calendar]
+  TLS -. compact permitted query .-> Reference[Reference provider]
+  Operator[Local operator] --> Orchestrator[Setup and start orchestrator]
+  Orchestrator --> Frontend
+  Orchestrator --> API
+  Orchestrator --> Model
+  LAN[Optional LAN clients] -. explicit TLS, firewall and auth only .-> Frontend
+%% Owner: cross-system architecture
+%% Status: mixed current/expected; see README.md and canonical status indices
+%% Verified: frontend f0910e6; target baseline bff4ec7; 2026-09-18
+%% Source: codex/diagrams/LOCAL_DEPLOYMENT.mmd

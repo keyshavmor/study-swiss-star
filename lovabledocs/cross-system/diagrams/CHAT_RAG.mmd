@@ -1,0 +1,30 @@
+sequenceDiagram
+  actor U as User
+  participant UI as StudyChat
+  participant TS as TanStack API route
+  participant SB as Supabase
+  participant SA as Local safety
+  participant CTX as Context and RAG
+  participant LLM as Local model
+  U->>UI: Send prompt
+  UI->>TS: UI messages, thread and bearer
+  TS->>SB: Verify JWT and thread ownership
+  TS->>SA: Moderate prompt
+  alt not explicitly allowed
+    SA-->>TS: block or unavailable
+    TS-->>UI: 403 or 503, no message generation
+  else allow
+    TS->>SB: Persist user message
+    TS->>CTX: Question plus scoped IDs and bearer
+    CTX->>SB: Read user context through RLS
+    CTX->>CTX: Retrieve, deduplicate, rerank and budget
+    CTX->>LLM: Bounded prompt
+    LLM-->>CTX: Answer
+    CTX-->>TS: Answer, sources, tip, model, summary
+    TS->>SB: Persist returned assistant bytes
+    TS-->>UI: AI-SDK text and context metadata
+  end
+%% Owner: cross-system architecture
+%% Status: mixed current/expected; see README.md and canonical status indices
+%% Verified: frontend f0910e6; target baseline bff4ec7; 2026-09-18
+%% Source: codex/diagrams/CHAT_RAG.mmd
