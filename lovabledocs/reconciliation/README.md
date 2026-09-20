@@ -5,7 +5,7 @@
 | Owner | Release/documentation owner |
 | Status | Current evidence index |
 | Canonical path | `docs/reconciliation/README.md` |
-| Last reviewed | 2026-09-18 |
+| Last reviewed | 2026-09-20 |
 
 Prompt 02 preserves the union of useful target documentation and source-only
 frontend-authority paths. It does not overwrite target backend or forward
@@ -31,3 +31,7 @@ Authority/result anchors:
 - frontend authority: `f0910e6971f12efe0ad547b904f6e2a518b13856`;
 - target documentation start: `bff4ec7905f0d00fbf024c8e28717082a848d71a`;
 - Prompt 01 rollback: `codex-preflight-00-20260918T153128Z`.
+
+The [final merge-readiness audit](FINAL_MERGE_READINESS.md) records Prompt 10's
+NO-GO decision, exhaustive diff/conflict accounting, blockers, controlled
+integration sequence, reviewer checklist and rollback/post-merge procedure.

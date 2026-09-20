@@ -22,7 +22,7 @@ application/runtime file is archived by this manifest.
 | `CROSS_PLATFORM_SETUP.md` | monolithic/stale setup | `../cross-system/EXECUTION_ENVIRONMENTS.md` |
 | `FRONTEND_ARCHITECTURE.md` | superseded snapshot | `../frontend/FRONTEND_ARCHITECTURE.md` |
 | `FRONTEND_DATA_MODEL.md` | superseded snapshot | `../frontend/FRONTEND_DATA_MODEL.md` |
-| `LOCAL_DEV_WITH_PYTHON_BACKEND.md` | stale launch guide | future Prompt 08 tested guides |
+| `LOCAL_DEV_WITH_PYTHON_BACKEND.md` | stale launch guide | `../operations/LOCAL_STACK_QUICKSTART.md` |
 | `OPEN_QUESTIONS_FOR_BACKEND.md` | chronological question set | `../DOCUMENTATION_DISCOVERED_ISSUES.md` |
 | `PYTHON_BACKEND_INTEGRATION_PLAN.md` | superseded plan | `../../backend/docs/handoff/README.md` |
 | `QWEN_MODEL_RUNTIME_AND_WEB.md` | single-model snapshot | `../../backend/docs/models/MODEL_CATALOG_AND_RUNTIME.md` |
@@ -34,6 +34,8 @@ application/runtime file is archived by this manifest.
 | `UI_BACKEND_MAPPING.md` | old ownership map | `../ui/CONTROL_TO_SYSTEM_MATRIX.md` |
 | `USER_FLOWS.md` | old UX snapshot | `../ux/README.md` |
 
-Physical relocation/deletion is deferred to Prompt 08 and requires link/import/
-build/test evidence plus an explicit restoration procedure. Applied Supabase
-migrations are never archive candidates.
+Prompt 08 completed evidenced code/environment archive moves under dated
+manifests. These documentation references remain archived in place so historical
+links keep working; any later deletion requires owner approval, link/build/test
+evidence and an explicit restoration procedure. Applied Supabase migrations are
+never archive candidates.

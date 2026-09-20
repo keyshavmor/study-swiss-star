@@ -6,7 +6,7 @@
 | Status | Current isolated boundaries, per-layer lifecycle and central launcher |
 | Canonical path | `docs/cross-system/EXECUTION_ENVIRONMENTS.md` |
 | Verified | Ubuntu 26.04.1 x86_64 lifecycle simulation, 2026-09-20 |
-| MacBook M4 | `UNVERIFIED — MANUAL` pending Prompt 09 physical-host smoke |
+| MacBook M4 | `UNVERIFIED — MANUAL` pending a physical-host release smoke |
 
 ## One owner per dependency and process
 

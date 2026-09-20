@@ -6,7 +6,7 @@
 | Status | `CURRENT — FRONTEND`, `CURRENT — SUPABASE`, and `CURRENT — LOCAL BACKEND` are separated below |
 | Canonical path | `docs/README.md` |
 | Frontend authority | `study-swiss-star-frontend/main` at `f0910e6971f12efe0ad547b904f6e2a518b13856` |
-| Target baseline | Prompt 09 working tree based on `43b4281f62db283a0289221a63a2f50e6925c9a1` |
+| Target baseline | Prompt 10 audit started from `b9a9385b528cb4210f3da8d2fa287c4d90ce63ea` |
 | Live Supabase evidence | project `ucacmeadsufiedxrgqit`, read-only verification dated 2026-09-18 |
 | Last reviewed | 2026-09-20 |
 | Review trigger | frontend-authority SHA, live schema, or backend API/runtime change |
@@ -28,6 +28,7 @@ always marked `EXPECTED LOCAL BACKEND CONTRACT`, `BACKEND GAP`, or
 | End-to-end contracts, ownership, security and deployment | [Cross-system](cross-system/README.md) | Architecture |
 | Implemented FastAPI, local models and RAG | [Backend documentation](../backend/docs/README.md) | Backend |
 | Branch/document decisions and evidence | [Reconciliation](reconciliation/README.md) | Release owner |
+| Final merge decision and controlled integration plan | [Merge-readiness audit](reconciliation/FINAL_MERGE_READINESS.md) | Release owner |
 | Superseded material | [Archive manifest](archive/ARCHIVE_MANIFEST.md) | Documentation owner |
 | Local operation | [Local stack quickstart](operations/LOCAL_STACK_QUICKSTART.md) | Operator |
 | Test, security and recovery evidence | [Testing and hardening](testing/README.md) | QA + security + release owners |
