@@ -1,4 +1,5 @@
-# Shared, architecture-neutral tools. The setup script installs the matching
+# ARCHIVED monolithic environment. Use the isolated manifests documented in
+# docs/operations/DEPENDENCY_OWNERSHIP.md. Shared, architecture-neutral tools.
 # llama.cpp CUDA, Metal/Accelerate, or CPU build after it detects the host.
 name: alim-study
 channels:

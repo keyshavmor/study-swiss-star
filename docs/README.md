@@ -29,6 +29,7 @@ always marked `EXPECTED LOCAL BACKEND CONTRACT`, `BACKEND GAP`, or
 | Implemented FastAPI, local models and RAG | [Backend documentation](../backend/docs/README.md) | Backend |
 | Branch/document decisions and evidence | [Reconciliation](reconciliation/README.md) | Release owner |
 | Superseded material | [Archive manifest](archive/ARCHIVE_MANIFEST.md) | Documentation owner |
+| Local operation | [Local stack quickstart](operations/LOCAL_STACK_QUICKSTART.md) | Operator |
 
 `frontend/docs/README.md` is a frontend-local doorway to the canonical UX/UI/
 frontend pages. It intentionally links here instead of copying documents.
@@ -68,8 +69,8 @@ design reference, or deprecated. Canonical cross-system conclusions live under
 - Frontend implementer: [route inventory](ux/ROUTE_AND_SCREEN_INVENTORY.md) →
   [frontend architecture](frontend/README.md) →
   [Supabase consumption](supabase/CONSUMED_OBJECT_INDEX.md).
-- Operator: [execution environments](cross-system/EXECUTION_ENVIRONMENTS.md) →
-  frontend/backend operations pages. Launcher scripts are not claimed to exist
-  until Prompt 08 implements and tests them.
+- Operator: [local stack quickstart](operations/LOCAL_STACK_QUICKSTART.md) →
+  [dependency ownership](operations/DEPENDENCY_OWNERSHIP.md) → frontend/backend
+  owned operation pages.
 - Security reviewer: [security boundaries](cross-system/SECURITY_AND_DATA_BOUNDARIES.md)
   → [backend Supabase access](../backend/docs/supabase/ACCESS_CONTRACT.md).

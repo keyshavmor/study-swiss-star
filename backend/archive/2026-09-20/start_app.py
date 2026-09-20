@@ -1,5 +1,4 @@
-#!/usr/bin/env python3
-"""Start the preloaded model backend and frontend as one local process group."""
+"""ARCHIVED legacy launcher; use scripts/dev/start_all.sh instead."""
 
 from __future__ import annotations
 

@@ -33,8 +33,8 @@ From any directory:
 
 `reset` is destructive only to the CLI-owned local database and additionally
 requires `ALIM_ALLOW_LOCAL_DB_RESET=yes`. Never run `db reset --linked`.
-Prompt 08 owns the cross-layer bootstrap and central launcher; it should call
-this wrapper instead of duplicating Supabase lifecycle logic.
+The current central launcher calls this wrapper when
+`ALIM_SUPABASE_MODE=local`, without duplicating Supabase lifecycle logic.
 
 After `start`, record exact container images/digests for a supported-host smoke
 receipt with:

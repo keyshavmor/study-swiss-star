@@ -5,10 +5,11 @@ Alim uses the Apache-2.0 `Qwen/Qwen3.8-27B` checkpoint through the upstream llam
 for BF16, allowing the same model to run on an RTX 3090 or a 48 GB Apple Silicon Mac. The app is
 currently text-only, so the separate vision projector is not downloaded.
 
-Weights are stored at `models/Qwen3.8-27B/` and excluded from Git.
-`backend/scripts/start_app.py` checks this location on every launch and runs the resumable downloader
-automatically when the checkpoint is absent. Set `ALIM_MODEL_AUTO_DOWNLOAD=false` to require manual
-or offline provisioning instead.
+The legacy downloader below stores weights at ignored `models/Qwen3.8-27B/`.
+The current registry-backed runtime defaults to the OS data directory or
+`ALIM_MODEL_CACHE_ROOT`, checks artifacts explicitly, and never downloads during
+startup. Acquisition requires an affirmative `model_runtime.py download
+--yes-download` command.
 
 ```bash
 uv run --project backend python models/download_qwen3_8_27b.py --check

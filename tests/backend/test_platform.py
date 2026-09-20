@@ -19,7 +19,6 @@ from app.platform import (
 )
 from app.services.model_runtime import ModelRuntimeConfig, ModelRuntimeManager
 from scripts.setup_environment import llama_matchspec, runtime_manifest, setup_commands
-from scripts.start_app import ensure_model
 
 
 def completed(
@@ -190,35 +189,6 @@ class EnvironmentSetupTests(unittest.TestCase):
         )
         self.assertIn("--source", commands[-1])
         self.assertIn("/Volumes/Models/Qwen.gguf", commands[-1])
-
-
-class ApplicationStartupTests(unittest.TestCase):
-    """Verify model acquisition requires an explicit operator opt-in."""
-
-    @patch("scripts.start_app.subprocess.run")
-    @patch("scripts.start_app.inspect_model")
-    def test_opted_in_model_download_is_revalidated(self, inspect, run) -> None:
-        """An explicit opt-in fetches absent weights before launching services."""
-
-        missing = type("Presence", (), {"present": False})()
-        present = type("Presence", (), {"present": True})()
-        inspect.side_effect = [missing, present]
-        with patch.dict("os.environ", {"ALIM_MODEL_AUTO_DOWNLOAD": "true"}, clear=True):
-            self.assertIs(ensure_model(), present)
-        run.assert_called_once()
-        self.assertIn("model_runtime.py", run.call_args.args[0][1])
-        self.assertIn("--yes-download", run.call_args.args[0])
-
-    @patch("scripts.start_app.inspect_model")
-    def test_model_download_is_disabled_by_default(self, inspect) -> None:
-        """Default startup never begins a large network transfer."""
-
-        inspect.return_value = type("Presence", (), {"present": False})()
-        with (
-            patch.dict("os.environ", {}, clear=True),
-            self.assertRaisesRegex(SystemExit, "automatic download is disabled"),
-        ):
-            ensure_model()
 
 
 if __name__ == "__main__":

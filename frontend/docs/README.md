@@ -18,6 +18,6 @@ copy.
 - [Frontend ↔ Supabase](../../docs/supabase/README.md)
 - [Cross-system contracts](../../docs/cross-system/README.md)
 - [Execution environments](../../docs/cross-system/EXECUTION_ENVIRONMENTS.md)
+- [Local setup and hosting](operations/LOCAL_SETUP_AND_HOSTING.md)
 
-The tested local frontend setup/hosting guide and scripts are a Prompt 08
-deliverable. Until then, do not infer platform support from this doorway.
+Physical M4 inference remains explicitly unverified until a real-host smoke is recorded.

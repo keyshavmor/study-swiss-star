@@ -3,11 +3,11 @@
 | Field | Value |
 |---|---|
 | Owner | Backend operations |
-| Status | Prompt 04 model-runtime lifecycle current; Prompt 08 central launcher remains future |
+| Status | Prompt 08 isolated lifecycle and central launcher current |
 | Canonical path | `backend/docs/operations/ENVIRONMENTS_AND_LAUNCH.md` |
 | Host evidence | Ubuntu 26.04.1 x86_64 only; CUDA unavailable |
 | MacBook M4 | `UNVERIFIED — MANUAL` |
-| Last reviewed | 2026-09-19 |
+| Last reviewed | 2026-09-20 |
 
 Python application dependencies belong to `alim-backend`, governed by
 `backend/environment.yml`, `backend/.python-version` (Python 3.11),
@@ -35,8 +35,8 @@ conda run -n alim-model-runtime python backend/scripts/model_runtime.py health
 conda run -n alim-model-runtime python backend/scripts/model_runtime.py stop
 ```
 
-`start` is a foreground controller suitable for Prompt 08's future process
-supervisor. It owns its PID marker outside Git, binds llama.cpp to loopback and
+`start` is a foreground controller composed by `scripts/dev/model.sh`. It owns
+its PID marker outside Git, binds llama.cpp to loopback and
 stops only its child. Automatic startup/download are false by default.
 
 Current API development command remains documented in `backend/README.md` and
@@ -61,8 +61,8 @@ Ubuntu CPU/CUDA and Apple-silicon Metal are required target paths. Prompt 04
 adds selection fixtures and runtime tuning; the present physical host proves
 Ubuntu 26.04.1 CPU probing only. CUDA and M4/Metal are `UNVERIFIED — MANUAL`.
 Prompt 06's chat, assessment, hashing/local embedding, retrieval and parser code is
-platform-neutral; tests on this host are not physical M4 evidence. Prompt 08 must build the
-isolated bootstrap/lifecycle scripts and user guides; Prompt 09 must run real or
+platform-neutral; tests on this host are not physical M4 evidence. Prompt 08
+supplies the isolated bootstrap/lifecycle scripts and user guides; Prompt 09 must run real or
 explicitly manual platform smoke tests. Large model acquisition must show
 size/time and require operator opt-in.
 

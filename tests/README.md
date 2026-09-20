@@ -30,7 +30,7 @@ is not working, but generation will be much slower. From the repository root:
 ```bash
 python3 backend/scripts/setup_environment.py --check
 python3 models/download_qwen3_8_27b.py --check --json
-python backend/scripts/start_app.py
+ALIM_ENABLE_AI=1 ./scripts/dev/start_all.sh foreground
 ```
 
 In another terminal, verify preload and deterministic generation:

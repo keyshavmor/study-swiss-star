@@ -12,7 +12,8 @@ the backend is being adapted to fulfil them without a cloud-AI fallback.
   documentation-tool exceptions.
 - `CURRENT — LOCAL BACKEND`: authenticated context/RAG/document/chat services,
   caller-token Supabase persistence, one verified Qwen 3.8 27B GGUF lifecycle,
-  and loopback process management.
+  loopback process management, isolated bootstrap, per-layer lifecycle and a
+  readiness/rollback-aware central launcher.
 - `BACKEND GAP`: full ten-model lifecycle, capability/admission/leases/health,
   safety, moderated peer send, Assistant generation/parsing and assessment jobs.
 - `CURRENT — SUPABASE`: Auth, Postgres/RLS, private Storage, RPC and Edge
@@ -63,23 +64,20 @@ Start at [the canonical documentation map](docs/README.md).
 - [Cross-system contracts and diagrams](docs/cross-system/README.md)
 - [Backend implementation](backend/docs/README.md)
 - [Environment and launcher contract](docs/cross-system/EXECUTION_ENVIRONMENTS.md)
+- [Local stack quickstart](docs/operations/LOCAL_STACK_QUICKSTART.md)
 - [Current issue register](docs/DOCUMENTATION_DISCOVERED_ISSUES.md)
 
-## Environment warning
+## Local operation
 
-The checked-in legacy `environment.yml` and setup scripts currently combine
-multiple layers. They remain implemented inputs, but are `DEPRECATED` as the
-final environment architecture. Do not treat them as the promised isolated
-Ubuntu/macOS setup.
-
-Prompt 08 owns separate frontend, Supabase CLI/local services, Python backend,
-model runtime and E2E environments; per-layer start/stop/status/health scripts;
-tested local user guides; and a centralized fail-fast launcher. Until that work
-is complete, commands in historical documents are reference evidence, not a
-guaranteed fresh-machine procedure.
+Prompt 08 separated frontend, Supabase CLI/local services, Python backend,
+model runtime and E2E/quality ownership. The deprecated monolithic manifest is
+archived. Start with `scripts/env/bootstrap_ubuntu.sh` or
+`scripts/env/bootstrap_macos.sh`, then use `scripts/dev/start_all.sh`. The guide
+above is the copy/paste contract; historical commands are reference evidence.
 
 Required targets are Ubuntu 24.04/26.04 LTS x86_64 and Apple-silicon macOS,
-including MacBook M4. This documentation run observed Ubuntu 26.04.1 CPU-only.
+including MacBook M4. Prompt 08 observed Ubuntu 26.04.1 CPU-only and ran
+loopback lifecycle simulation.
 CUDA, Ubuntu 24.04 and physical M4 application support remain
 `UNVERIFIED — MANUAL` until platform smoke tests pass.
 

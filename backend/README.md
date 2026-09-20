@@ -1,11 +1,11 @@
 # Alim backend
 
-Status: `CURRENT — LOCAL BACKEND` through the Prompt 06 assessment foundation,
+Status: `CURRENT — LOCAL BACKEND` through the Prompt 08 local-operation foundation,
 not the complete frontend-required backend. See
 [backend documentation](docs/README.md) and the
 [gap analysis](docs/handoff/BACKEND_GAP_ANALYSIS.md). Commands below describe
 the implemented registry-backed model foundation; nine enabled IDs honestly
-remain unresolved and the central all-layer launcher remains later prompt work.
+remain unresolved and the central launcher is now operationally owned by `scripts/dev/`.
 Physical MacBook M4 and working CUDA paths
 are not proven by this document.
 
@@ -29,7 +29,7 @@ expected model alias is resident and listed by `/v1/models`.
 | `app/assessment/` | Generation contracts, private lifecycle/keys, Supabase public store and server grading |
 | `scripts/setup_environment.py` | Cross-platform Conda/runtime/frontend setup |
 | `scripts/model_runtime.py` | Isolated check/import/download/start/stop/status lifecycle |
-| `scripts/start_app.py` | Legacy coordinated API/frontend startup; Prompt 08 will reconcile it |
+| `../scripts/dev/start_all.sh` | Current all-layer startup, readiness, ownership and rollback |
 
 ## Run
 
@@ -78,8 +78,9 @@ writes contain only sanitized questions, attempts, answers and results. See the
 Large model download and model autostart are disabled by default. The explicit
 Prepare request may acquire the one verified mapping, or an operator may run
 `conda run -n alim-model-runtime python backend/scripts/model_runtime.py download
---yes-download`. Model data defaults outside Git. `start_app.py` honors
-`ALIM_MODEL_AUTO_DOWNLOAD=true` only as an explicit legacy operator opt-in.
+--yes-download`. Model data defaults outside Git. The current launcher never
+auto-downloads a model; acquisition always requires
+the explicit `download --yes-download` command.
 
 Tests live in repository-level `tests/backend/` and `tests/e2e/`; they do not require Lovable or
 Supabase. AI inference, parsing, embeddings, reranking, and context compilation remain local;

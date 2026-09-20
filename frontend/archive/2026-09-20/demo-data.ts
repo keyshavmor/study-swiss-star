@@ -1,4 +1,4 @@
-/** Local application-state types and persistence helpers. */
+/** ARCHIVED: inactive demo-state fixture; retained for history and restoration only. */
 import type {
   Assessment,
   DataState,

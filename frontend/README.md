@@ -30,9 +30,8 @@ bun run test
 bun run build
 ```
 
-This documentation run did not download packages. The existing ignored
-dependency directory lacked `vitest` and `mathlive`, so only lint completed;
-Prompt 08 must publish and test the clean-install procedure on supported hosts.
+The locked clean-install and lifecycle procedure is in
+[`docs/operations/LOCAL_SETUP_AND_HOSTING.md`](docs/operations/LOCAL_SETUP_AND_HOSTING.md).
 
 ## Source map
 

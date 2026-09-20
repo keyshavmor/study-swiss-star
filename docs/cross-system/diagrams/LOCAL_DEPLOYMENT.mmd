@@ -15,12 +15,12 @@ flowchart TB
   TLS --> Supabase[Supabase eu-central-2]
   TLS --> Google[Google Calendar]
   TLS -. compact permitted query .-> Reference[Reference provider]
-  Operator[Local operator] --> Orchestrator[Setup and start orchestrator]
-  Orchestrator --> Frontend
-  Orchestrator --> API
+  Operator[Local operator] --> Orchestrator[scripts/dev/stack.sh]
+  Orchestrator --> Supabase
   Orchestrator --> Model
-  LAN[Optional LAN clients] -. explicit TLS, firewall and auth only .-> Frontend
+  Orchestrator --> API
+  Orchestrator --> Frontend
 %% Owner: cross-system architecture
-%% Status: current layer boundaries/model controller; Prompt 08 central launcher expected
-%% Verified: frontend f0910e6; target baseline bff4ec7; 2026-09-18
+%% Status: current layer boundaries and Prompt 08 central launcher
+%% Verified: frontend f0910e6; Prompt 08 lifecycle simulation; 2026-09-20
 %% Source: codex/diagrams/LOCAL_DEPLOYMENT.mmd

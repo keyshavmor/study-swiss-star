@@ -154,8 +154,8 @@ explicitly authorized operation.
 The pinned CLI/Docker lifecycle is documented in
 `supabase/LOCAL_ENVIRONMENT.md`. It is separate from Node, Python, model, and
 documentation environments. Supabase service URLs are not the app URL; users
-open the app at its loopback frontend URL. Prompt 08 owns the central launcher
-and should compose `supabase/scripts/local.sh`.
+open the app at its loopback frontend URL. The Prompt 08 central launcher
+composes `supabase/scripts/local.sh` when `ALIM_SUPABASE_MODE=local`.
 
 ## Official references reviewed
 

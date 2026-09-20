@@ -3,10 +3,10 @@
 | Field | Value |
 |---|---|
 | Owner | Operations with each layer owner |
-| Status | Current boundaries and model lifecycle; Prompt 08 central launcher remains future |
+| Status | Current isolated boundaries, per-layer lifecycle and central launcher |
 | Canonical path | `docs/cross-system/EXECUTION_ENVIRONMENTS.md` |
-| Verified | Ubuntu 26.04.1 x86_64 documentation run, 2026-09-18 |
-| MacBook M4 | `UNVERIFIED — MANUAL` until Prompt 08/09 physical-host smoke |
+| Verified | Ubuntu 26.04.1 x86_64 lifecycle simulation, 2026-09-20 |
+| MacBook M4 | `UNVERIFIED — MANUAL` pending Prompt 09 physical-host smoke |
 
 ## One owner per dependency and process
 
@@ -19,11 +19,10 @@
 | Model runtime | `alim-model-runtime`; one pinned platform manifest under `backend/model-runtime/`; registry + lifecycle script | OpenAI-compatible runtime on `127.0.0.1:8000` | no remote AI key; tuning overrides only | weights/cache/provenance/PID state under OS data root or `ALIM_MODEL_CACHE_ROOT`; never Git |
 | E2E | backend/frontend test manifests and optional browser runner | fake services use isolated ephemeral ports | fixture-only credentials | `tests/results`, temporary directories and logs; no user data |
 
-The root `environment.yml` is `DEPRECATED`; it combines Node, Python and build
-tools and is no longer consumed by `setup_environment.py`. That bootstrap now
-selects `backend/environment.yml`, one model-runtime manifest and the frontend
-package manager independently. Prompt 08 must reconcile these with the final
-all-layer orchestrator without returning to one global environment.
+The deprecated root `environment.yml` is preserved under
+`backend/archive/2026-09-20/`. Bootstrap selects `backend/environment.yml`, one
+model-runtime manifest and the frontend package manager independently. The
+detailed SBOM-style ownership table is in `docs/operations/DEPENDENCY_OWNERSHIP.md`.
 
 ## Platform variants
 
@@ -51,16 +50,15 @@ artifact is 18,973,870,432 bytes with an estimated 23,717,338,040 resident-byte
 envelope before context/runtime variance. Admission uses measured resources and
 never extrapolates the nine unresolved entries.
 
-## Launcher contract (`FUTURE CODEX IMPLEMENTATION`, Prompt 08)
+## Launcher contract (`CURRENT — LOCAL BACKEND`, Prompt 08)
 
-Prompt 04 supplies a foreground model-runtime controller with check, command,
-start, stop, status, explicit import and authorized download. The repository
-does not yet claim the requested all-layer launcher exists. Prompt 08 must
-provide idempotent, non-root, caller-directory-independent bootstrap plus
-per-layer `start`, `stop`, `status` and `health`, and one fail-fast orchestrator.
-The orchestrator starts dependencies in order, reports URLs/PIDs/logs/readiness,
-handles partial failure, and stops only processes it owns. It must support a
-non-AI frontend path without downloading model weights.
+`scripts/env/bootstrap_{ubuntu,macos}.sh` provide non-root prerequisite checks
+and locked project setup. `scripts/dev/{supabase,model,backend,frontend}.sh`
+provide `start`, `stop`, `status` and `health`; `scripts/dev/stack.sh` and the
+`*_all.sh` entry points orchestrate them. Ownership tokens, PID-command checks,
+real HTTP readiness and ignored per-layer logs prevent unrelated-process
+termination and hidden failure. Foreground signals and failed startup roll back
+only layers newly started by that invocation.
 
 Default order: optional local Supabase → model runtime when authorized →
 FastAPI → frontend. Startup must never silently trigger a large model download;
@@ -78,5 +76,5 @@ and requires explicit TLS, firewall, host/origin and trust configuration.
 callback, CORS, health or user-guide destination.
 
 Prompt 03 validates backend bind/port, explicit credentialed CORS origins,
-HTTP Host values and the TanStack loopback backend URL. It does not replace the
-Prompt 08 lifecycle/bootstrap deliverable or constitute remote/LAN support.
+HTTP Host values and the TanStack loopback backend URL. Prompt 08 materializes
+the matching lifecycle without claiming remote/LAN support.

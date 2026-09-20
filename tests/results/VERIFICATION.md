@@ -34,7 +34,7 @@ On 2026-09-13, the real local Q4_K_M checkpoint was loaded through CUDA on an RT
 `preloaded=true`, `process_running=true`, `engine=llama.cpp`, and a 32,768-token runtime ceiling.
 The deterministic generation returned exactly `ALIM_MODEL_OK` in about one second. A live
 MediaWiki-backed compile selected Large Hadron Collider sources and kept 1,168 compiled tokens under
-the deliberately reduced 1,536-token input allowance. The final `start_app.py` smoke loaded all
+the deliberately reduced 1,536-token input allowance. The historical coordinated-launch smoke loaded all
 three local processes, returned HTTP 200 from the frontend, and generated `ALIM_FULL_APP_OK` through
 the FastAPI chat path. Shutdown released the model's GPU allocation. No Lovable or Supabase service
 was contacted.

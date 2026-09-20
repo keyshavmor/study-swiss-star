@@ -36,12 +36,12 @@ API objects must be explicitly reviewed for both. `UPDATE` policies require
 read visibility, `USING`, and `WITH CHECK`; privileged functions require
 restricted execute grants, safe search paths and caller checks.
 
-Current platform compatibility notes checked 2026-09-18: Supabase is moving
+Current platform compatibility notes checked 2026-09-20: Supabase is moving
 public-schema Data API exposure to explicit opt-in, with enforcement announced
 for 2026-10-30; this reinforces the grants-plus-RLS rule. The JavaScript client
 family has dropped Node 20 support, while this frontend targets Node 22. Hosted
-Supabase remains the deployed data service; any future local CLI stack must use
-its own pinned CLI/container boundary and verify commands with `--help`.
+Supabase remains the deployed data service; the optional local CLI stack uses
+its own pinned CLI/container boundary and verified wrapper commands.
 
 References: [Securing the Data API](https://supabase.com/docs/guides/api/securing-your-api),
 [RLS](https://supabase.com/docs/guides/database/postgres/row-level-security), and

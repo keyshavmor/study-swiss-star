@@ -123,7 +123,7 @@ def setup_commands(
             "--extra",
             "documents",
         ],
-        ["npm", "ci", "--prefix", str(REPOSITORY_ROOT / "frontend")],
+        ["bun", "install", "--frozen-lockfile", "--cwd", str(REPOSITORY_ROOT / "frontend")],
     ]
     if with_model or model_source is not None:
         model_command = [
@@ -158,7 +158,7 @@ def environment_report(conda: str, profile: HostProfile) -> dict[str, object]:
             "--version",
         ],
         "node": ["node", "--version"],
-        "npm": ["npm", "--version"],
+        "bun": ["bun", "--version"],
     }
     for name, command in commands.items():
         result = subprocess.run(

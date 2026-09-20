@@ -75,7 +75,8 @@ or provider messages.
 
 ## Known frontend-only remnants
 
-`frontend/src/lib/store/demo-data.ts` and translated `school.demoModeNote` are
-unreferenced remnants after demo-mode removal. Root `src/integrations/supabase`
-is tool-managed, not active app code. Both require archive classification, not
-casual deletion.
+The unreferenced `frontend/src/lib/store/demo-data.ts` was moved, with evidence
+and recovery instructions, to `frontend/archive/2026-09-20/`. The translated
+`school.demoModeNote` remains an inert key pending a translation-wide cleanup.
+Root `src/integrations/supabase` is tool-managed, not active app code, and was
+deliberately retained.

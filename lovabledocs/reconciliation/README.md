@@ -22,7 +22,7 @@ Decisions:
 5. Existing detailed architecture/contracts/sequences/wireframes remain
    traceable compatibility/reference corpora with directory-level status.
 6. Old archive files remain in place and are classified by the archive
-   manifest; physical code/doc archival is deferred to Prompt 08.
+   manifest; Prompt 08 completed evidenced code/environment archival with dated manifests.
 7. Live Supabase claims retain their 2026-09-18 read-only evidence date. This
    documentation run performs no live write and does not claim a fresh query.
 
