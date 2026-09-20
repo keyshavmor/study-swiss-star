@@ -185,14 +185,16 @@ export function AssessmentModePanel({
       feature: "assessment",
       properties: { kind, questions: totalQuestions(config.questionMix) },
     });
-    const response = await getAssessmentApi().createGenerationJob(config);
+    const response = await getAssessmentApi().createGenerationJob(config, {
+      modelId: ai.modelId ?? undefined,
+    });
     if (!response.ok) {
       noteFailure(response.failure);
       dispatch({ type: "generation_failed", errorKey: "assessment.unavailable.heading" });
       return;
     }
     dispatch({ type: "generation_accepted", jobId: response.data.jobId });
-  }, [aiBlocked, config, kind, noteFailure]);
+  }, [ai.modelId, aiBlocked, config, kind, noteFailure]);
 
   // Poll generation status while a job is running.
   useEffect(() => {
@@ -236,11 +238,34 @@ export function AssessmentModePanel({
 
   /* ------------------------------------------------------------- timer */
 
+  const timerEnabled = session.state === "in_progress" && session.secondsRemaining !== null;
   useEffect(() => {
-    if (session.state !== "in_progress" || session.secondsRemaining === null) return;
+    if (!timerEnabled) return;
     const timer = window.setInterval(() => dispatch({ type: "tick" }), 1000);
     return () => window.clearInterval(timer);
-  }, [session.state, session.secondsRemaining === null]);
+  }, [timerEnabled]);
+
+  // Backend heartbeats enforce server-owned attempt liveness and deadlines.
+  useEffect(() => {
+    if (session.state !== "in_progress" || !session.attemptId) return;
+    const attemptId = session.attemptId;
+    let active = true;
+    const heartbeat = async () => {
+      const response = await getAssessmentApi().heartbeat(attemptId);
+      if (!active) return;
+      if (!response.ok) {
+        noteFailure(response.failure);
+        dispatch({ type: "expire" });
+      } else if (!response.data.alive) {
+        dispatch({ type: "expire" });
+      }
+    };
+    const timer = window.setInterval(() => void heartbeat(), 15_000);
+    return () => {
+      active = false;
+      window.clearInterval(timer);
+    };
+  }, [session.state, session.attemptId, noteFailure]);
 
   /* -------------------------------------------------------- submission */
 
@@ -326,10 +351,16 @@ export function AssessmentModePanel({
 
   /* ------------------------------------------------------------ actions */
 
-  function begin() {
+  async function begin() {
+    if (!session.attemptId) return;
+    const response = await getAssessmentApi().beginAssessment(session.attemptId);
+    if (!response.ok) {
+      noteFailure(response.failure);
+      return;
+    }
     dispatch({
       type: "begin",
-      startedAt: new Date().toISOString(),
+      startedAt: response.data.startedAt,
       secondsRemaining:
         session.config?.timeLimitMinutes === null || session.config === null
           ? null
@@ -449,7 +480,7 @@ export function AssessmentModePanel({
         <AssessmentReadyScreen
           config={session.config}
           questionCount={session.questions.length}
-          onBegin={begin}
+          onBegin={() => void begin()}
           onDiscard={cancelGeneration}
         />
       </div>

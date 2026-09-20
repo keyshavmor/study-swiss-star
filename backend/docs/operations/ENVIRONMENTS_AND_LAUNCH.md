@@ -51,10 +51,16 @@ Lovable origins fail before startup. The current launcher consumes the same
 validated host/port settings; remote binding needs explicit opt-in and is not
 claimed as a supported local default.
 
+`ALIM_ASSESSMENT_DB` optionally selects the local private assessment-state file.
+Its default is `app-data/context/alim-assessments.db`, outside tracked source;
+the backend creates its directory mode `0700` and file mode `0600`. It belongs to the Python backend layer, not
+the frontend, Supabase CLI or model-runtime environments. Operators must protect
+and delete it with the same care as answer keys; no browser can read it.
+
 Ubuntu CPU/CUDA and Apple-silicon Metal are required target paths. Prompt 04
 adds selection fixtures and runtime tuning; the present physical host proves
 Ubuntu 26.04.1 CPU probing only. CUDA and M4/Metal are `UNVERIFIED — MANUAL`.
-Prompt 05's chat, hashing/local embedding, retrieval and parser code is
+Prompt 06's chat, assessment, hashing/local embedding, retrieval and parser code is
 platform-neutral; tests on this host are not physical M4 evidence. Prompt 08 must build the
 isolated bootstrap/lifecycle scripts and user guides; Prompt 09 must run real or
 explicitly manual platform smoke tests. Large model acquisition must show

@@ -1,7 +1,6 @@
 # Assessment System Architecture
 
-Tags: **CURRENT FRONTEND**, **CURRENT SUPABASE**, **EXPECTED LOCAL BACKEND CONTRACT**,
-**FUTURE CODEX IMPLEMENTATION**
+Tags: **CURRENT — FRONTEND**, **CURRENT — SUPABASE**, **CURRENT — LOCAL BACKEND**
 
 Covers Quick Check, Practice, Quiz Mode, Mock Exam Mode, Results & Review and the
 Knowledge Profile inside the existing subject workspace
@@ -15,11 +14,12 @@ Knowledge Profile inside the existing subject workspace
 | Typed question/answer/result contracts, Zod validation | Frontend (`src/lib/assessment/types.ts`) | **CURRENT FRONTEND** |
 | Lifecycle state machine | Frontend (`src/lib/assessment/lifecycle.ts`) | **CURRENT FRONTEND** |
 | Assessment API abstraction | Frontend (`src/lib/assessment/api.ts`) | **CURRENT FRONTEND** |
-| Question generation, grading, mastery computation | Local Python backend | **FUTURE CODEX IMPLEMENTATION** |
-| Durable completed attempts, answer keys, mastery rows | Production Supabase | **FUTURE CODEX IMPLEMENTATION** |
+| Question generation, private keys, timing and grading | Local Python backend | **CURRENT — LOCAL BACKEND** |
+| Sanitized quiz/exam, attempts and grading results | Production Supabase through caller JWT | **CURRENT — SUPABASE contract** |
+| AI mastery refresh and Study Plan generation | no settled transport/control | **BACKEND GAP / explicit unsupported state** |
 
-The production adapter (`unavailableAssessmentApi`) always returns
-`backend_unavailable`. A clearly labelled development-only preview adapter
+The production adapter calls authenticated TanStack functions and loopback
+FastAPI. A clearly labelled development-only preview adapter
 (`preview-adapter.ts`, installed via `installPreviewAdapterInDevelopment()`)
 exists so the flows can be reviewed; it never runs in a production build and
 never claims to be AI output.
@@ -69,15 +69,14 @@ sequenceDiagram
   F->>F: Warn about consequences (quit dialog)
   F->>F: Stop timer, clear questions and answers from memory
   F->>B: abandonAssessment({ jobId?, attemptId? })
-  B->>B: Delete generated questions, answer keys, config, media refs
-  B->>DB: Keep only a minimal incomplete summary (no content)
-  Note over F,DB: Nothing generated is stored durably and nothing<br/>is written to localStorage before final submission.
+  B->>B: Delete generated questions, answer keys and config
+  Note over F,DB: No Supabase quiz, attempt, answer or grading row exists before submission.
 ```
 
 Heartbeats (`heartbeat(attemptId)`) let the backend expire stale attempts by TTL
 when the browser disappears without a clean abandon call.
 
-## 5. Frontend / Supabase / future backend boundary
+## 5. Frontend / Supabase / backend boundary
 
 ```mermaid
 flowchart LR
@@ -86,16 +85,16 @@ flowchart LR
     API[AssessmentApi abstraction]
     UI --> API
   end
-  subgraph SRV[Server bridge - FUTURE CODEX IMPLEMENTATION]
+  subgraph SRV[TanStack server bridge - CURRENT]
     BR[Authenticated server bridge<br/>forwards verified Supabase JWT]
   end
-  subgraph PY[Local Python backend - FUTURE CODEX IMPLEMENTATION]
+  subgraph PY[Local Python backend - CURRENT]
     GEN[Generation + validation]
     GRADE[Deterministic + rubric/AI grading]
-    KEYS[Answer keys and rubrics<br/>server-only]
+    KEYS[Mode-0600 local SQLite<br/>answer keys and lifecycle]
   end
   subgraph SB[Production Supabase - CURRENT SUPABASE]
-    T[quizzes, quiz_attempts, mock_exams,<br/>mock_exam_attempts, grading_results, study_plans]
+    T[quizzes, quiz_attempts, mock_exams,<br/>mock_exam_attempts, grading_results]
     ST[Private buckets: user-materials]
   end
   API --> BR --> GEN
@@ -108,12 +107,12 @@ flowchart LR
 
 ## 6. Answer-key security boundary
 
-`PublicQuestion` (Zod, strict) is the only shape the runner ever receives. It has
+`PublicQuestion` (Zod, strict) is the only shape the runner receives. It has
 no correct option ids, no canonical values, no tolerances, no model answers and
 no rubrics; a payload containing any of those fields fails validation outright
-(regression-tested). `AnswerKey` and `GradingRubric` are server-only types and
-appear in the frontend exclusively inside a **graded** result, alongside the
-model answer, explanation and distractor explanations.
+(regression-tested). Private `AnswerKey` and `GradingRubric` values stay local
+and server-only. A graded result may expose a model answer, explanation and
+bounded rubric feedback, never the private key itself.
 
 ## 7. Scientific rendering and input
 
@@ -128,7 +127,9 @@ normalisation, BCE/CE preserved.
 
 ## 8. Durability rules
 
-- Ephemeral (never durable): `setup`, `generation_requested`, `generating`, `ready`, `in_progress`.
+- Ephemeral and local-only: `setup`, `generation_requested`, `generating`,
+  `ready`, `in_progress`. Abandon/TTL removes private local material; these
+  states create no Supabase assessment rows.
 - Durable: `submitted`, `grading`, `graded`, `grading_failed`, plus a minimal
   incomplete summary for abandoned/expired attempts.
 - AI practice attempts default to `includeInStats = false` and never mix into
@@ -165,7 +166,7 @@ documentation claimed otherwise. The frontend contracts are therefore designed
 to REUSE and EXTEND those tables; no parallel assessment tables are introduced,
 and any future migration must be additive.
 
-### Ephemeral content cleanup now also covers sign-out
+### Ephemeral content cleanup covers sign-out and backend TTL
 
 `frontend/src/lib/assessment/api.ts` keeps the single pre-submission reference of
 the tab in memory (never localStorage) via `setActiveAssessmentReference()`.
@@ -178,8 +179,8 @@ Cleanup is requested on:
 - sign-out (`lib/sign-out.ts` calls `abandonActiveAssessment()` while the bearer
   token is still valid).
 
-Browser lifecycle events remain best-effort; the backend heartbeat/TTL sweeper is
-authoritative (FUTURE BACKEND / CODEX).
+Browser lifecycle events remain best-effort; the backend's server timestamp,
+heartbeat and TTL cleanup are authoritative.
 
 ### Per-user quota interaction
 

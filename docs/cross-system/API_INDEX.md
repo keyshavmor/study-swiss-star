@@ -5,7 +5,7 @@
 | Owner | Frontend/backend contract owners |
 | Status | Endpoint-specific below |
 | Canonical path | `docs/cross-system/API_INDEX.md` |
-| Verified | frontend `f0910e6`; Prompt 04 backend contract tests; 2026-09-18 |
+| Verified | frontend `f0910e6`; Prompt 06 backend/adapter tests; 2026-09-19 |
 
 All private FastAPI calls must carry a verified Supabase bearer token. The
 backend derives identity from `claims.sub`; `X-Student-Id` is only a cross-check.
@@ -32,7 +32,11 @@ stacks, prompts, filesystem paths or provider bodies.
 | `POST /api/safety/moderate` | chat/safety adapters | `EXPECTED LOCAL BACKEND CONTRACT` / `BACKEND GAP` | Prompt 05/07; fail closed |
 | peer send and attachment scan | messaging UI | `EXPECTED LOCAL BACKEND CONTRACT` / `BACKEND GAP` | Prompt 07; no direct-write fallback |
 | Assistant generation/parse | Assistant UI | `BACKEND GAP` | exact transport remains a product decision |
-| assessment generation/attempt/grading operations | assessment adapter | `EXPECTED LOCAL BACKEND CONTRACT` / `BACKEND GAP` | Prompt 06; private answer material server-only |
+| `POST /api/assessments/generation` | assessment server adapter | `CURRENT — LOCAL BACKEND`; authenticated, idempotent, safety/model gated | Prompt 06 tests; private answer material server-only |
+| generation status/cancel | assessment server adapter | `CURRENT — LOCAL BACKEND`; owner-scoped 404 and bounded lifecycle | Prompt 06 tests |
+| attempt begin/heartbeat/submit/abandon | assessment server adapter | `CURRENT — LOCAL BACKEND`; server time, snapshot checks, exact replay | Prompt 06 tests |
+| grading status/result | assessment server adapter | `CURRENT — LOCAL BACKEND`; deterministic/objective plus bounded local-model subjective grading | Prompt 06 tests |
+| Study Plan, Knowledge Profile AI refresh, Subject Tools | no settled caller control | `EXPLICITLY UNSUPPORTED` | authoritative frontend remains placeholder/read-only |
 
 Frontend request/response field detail lives in
 `../contracts/FRONTEND_BACKEND_CONTRACT.md`,

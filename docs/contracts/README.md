@@ -11,3 +11,5 @@ labelled current must still match executable code and the pinned authority SHA.
 
 Prompt 05's current cross-system transaction is documented in
 [Chat, Assistant, materials, and RAG contract](CHAT_ASSISTANT_RAG_CONTRACT.md).
+Prompt 06's current generation, attempt, grading and persistence boundary is
+documented in [Assessment API contract](ASSESSMENT_API_CONTRACT.md).

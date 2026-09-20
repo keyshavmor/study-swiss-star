@@ -5,6 +5,7 @@ from __future__ import annotations
 import unittest
 from pathlib import Path
 
+from app.assessment.supabase import SupabaseAssessmentStore
 from app.context.models import ConversationMessage, DocumentChunk
 from app.context.store_supabase import SupabaseContextStore
 
@@ -21,6 +22,30 @@ class CapturingStore(SupabaseContextStore):
 
     def _request(self, method, table, *, query=None, body=None, prefer=None):
         self.requests.append((method, table, query, body, prefer))
+        return []
+
+
+class CapturingAssessmentStore(SupabaseAssessmentStore):
+    """Capture assessment writes and emulate the required post-write verification read."""
+
+    def __init__(self, user_id: str) -> None:
+        super().__init__("https://project.supabase.co", "publishable", "token", user_id)
+        self.requests: list[tuple[str, str, dict | None, object, str | None]] = []
+        self.persisted: dict[str, object] | None = None
+
+    def _request(self, method, table, *, query=None, body=None, prefer=None):
+        self.requests.append((method, table, query, body, prefer))
+        if method == "POST" and table in {"quizzes", "mock_exams"}:
+            self.persisted = body[0]
+            return None
+        if method == "GET" and self.persisted:
+            return [
+                {
+                    "id": self.persisted["id"],
+                    "questions": self.persisted["questions"],
+                    "model_used": self.persisted["model_used"],
+                }
+            ]
         return []
 
 
@@ -93,6 +118,49 @@ class SupabaseSecurityTests(unittest.TestCase):
         self.assertEqual(chunk["document_id"], "document-a")
         self.assertEqual(chunk["embedding"], [0.125, -0.25, 0.5])
         self.assertIsInstance(chunk["embedding"], list)
+
+    def test_assessment_public_write_is_owner_scoped_verified_and_key_free(self) -> None:
+        store = CapturingAssessmentStore("user-a")
+        questions = [
+            {
+                "id": "question-a",
+                "type": "true_false",
+                "subject": "Biology",
+                "difficulty": "medium",
+                "points": 1,
+                "prompt": [{"kind": "prose", "text": "Cells contain DNA."}],
+                "media": [],
+                "sources": [{"id": "source-a", "label": "Notes", "type": "document"}],
+            }
+        ]
+        job = {
+            "id": "quiz-a",
+            "attempt_id": "attempt-a",
+            "user_id": "user-a",
+            "model_id": "Qwen/Qwen3.8-27B",
+            "model_used": "Qwen/Qwen3.8-27B",
+            "answer_keys": [{"questionId": "question-a", "correctBoolean": True}],
+            "config": {
+                "kind": "quiz",
+                "subjectName": "Biology",
+                "component": None,
+                "topic": None,
+                "academicYear": None,
+                "selectedMaterialIds": ["not-a-database-uuid"],
+                "difficulty": "medium",
+                "language": "German",
+            },
+        }
+        store.save_generated(job=job, questions=questions)
+        method, table, _query, body, _prefer = store.requests[0]
+        self.assertEqual((method, table), ("POST", "quizzes"))
+        self.assertEqual(body[0]["user_id"], "user-a")
+        self.assertEqual(body[0]["questions"], questions)
+        self.assertEqual(body[0]["source_document_ids"], [])
+        self.assertNotIn("answer_keys", body[0])
+        verify = store.requests[1]
+        self.assertEqual(verify[0], "GET")
+        self.assertEqual(verify[2]["user_id"], "eq.user-a")
 
     def test_migration_contains_structural_and_storage_isolation(self) -> None:
         sql = MIGRATION.read_text(encoding="utf-8").casefold()

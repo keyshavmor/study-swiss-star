@@ -33,6 +33,13 @@ export const SAFETY_ENDPOINTS = {
   attachmentScanStatus: "/api/safety/attachment-scan",
 } as const;
 
+/** Assessment generation, private attempts and durable grading. */
+export const ASSESSMENT_ENDPOINTS = {
+  generation: "/api/assessments/generation",
+  abandon: "/api/assessments/abandon",
+  attempt: "/api/assessments/attempts",
+} as const;
+
 /** Base URL of the local backend. Server-side only. */
 export function localBackendBaseUrl(): string {
   const raw = process.env["ALIM_CONTEXT_BACKEND_URL"]?.trim() || "http://127.0.0.1:8001";

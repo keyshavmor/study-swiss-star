@@ -1,6 +1,6 @@
 # Alim backend
 
-Status: `CURRENT — LOCAL BACKEND` through the Prompt 04 model/runtime foundation,
+Status: `CURRENT — LOCAL BACKEND` through the Prompt 06 assessment foundation,
 not the complete frontend-required backend. See
 [backend documentation](docs/README.md) and the
 [gap analysis](docs/handoff/BACKEND_GAP_ANALYSIS.md). Commands below describe
@@ -26,6 +26,7 @@ expected model alias is resident and listed by `/v1/models`.
 | `app/system_probe.py` / `app/runtime_control.py` | Capability, recommendation, operations and leases |
 | `app/services/model_runtime.py` | Managed llama.cpp process and readiness checks |
 | `app/context/` | Intent analysis, retrieval, memory, web cache, budgeting, prompt compilation |
+| `app/assessment/` | Generation contracts, private lifecycle/keys, Supabase public store and server grading |
 | `scripts/setup_environment.py` | Cross-platform Conda/runtime/frontend setup |
 | `scripts/model_runtime.py` | Isolated check/import/download/start/stop/status lifecycle |
 | `scripts/start_app.py` | Legacy coordinated API/frontend startup; Prompt 08 will reconcile it |
@@ -53,7 +54,7 @@ The API exposes liveness at `/health`, model-dependent readiness at `/ready`,
 the authenticated model/system routes documented in
 [`docs/api/CONTRACT_V1.md`](docs/api/CONTRACT_V1.md), `/api/chat`, `/api/context/compile`,
 `/api/context/documents/text`, `/api/context/documents/storage`, `/api/context/events`, and
-`/api/context/artifacts`. Every private endpoint verifies a Supabase bearer token, derives the owner
+`/api/context/artifacts`, and the `/api/assessments/*` lifecycle. Every private endpoint verifies a Supabase bearer token, derives the owner
 from its verified `sub`, and constructs a new user-scoped Supabase store for that request. Reference
 retrieval searches `material/web/` first
 and automatically uses Wikipedia only when no relevant local match exists. It is intent-gated,
@@ -67,6 +68,13 @@ safety bypass: chat returns `safety_unavailable` until Prompt 07 wires the local
 moderator. See the cross-system
 [`CHAT_ASSISTANT_RAG_CONTRACT`](../docs/contracts/CHAT_ASSISTANT_RAG_CONTRACT.md).
 
+Assessment generation and subjective grading use that same selected local model
+and fail closed on missing safety or model readiness. A mode-0600 local SQLite
+file keeps answer keys and restart-safe ephemeral state; caller-token Supabase
+writes contain only sanitized questions, attempts, answers and results. See the
+[assessment API contract](../docs/contracts/ASSESSMENT_API_CONTRACT.md). Set
+`ALIM_ASSESSMENT_DB` only to override its ignored app-data location.
+
 Large model download and model autostart are disabled by default. The explicit
 Prepare request may acquire the one verified mapping, or an operator may run
 `conda run -n alim-model-runtime python backend/scripts/model_runtime.py download
@@ -75,7 +83,8 @@ Prepare request may acquire the one verified mapping, or an operator may run
 
 Tests live in repository-level `tests/backend/` and `tests/e2e/`; they do not require Lovable or
 Supabase. AI inference, parsing, embeddings, reranking, and context compilation remain local;
-SQLite is a test adapter rather than the production user database.
+SQLite is not the production user database; it is the deliberately private
+local store for assessment keys/lifecycle as well as an adapter used in tests.
 
 See the [versioned API contract](docs/api/CONTRACT_V1.md). Default application
 and API origins are loopback-local; a Lovable URL is never a runtime origin.

@@ -1,80 +1,106 @@
-# Assessment API Contract
+# Assessment API contract
 
-Tags: **EXPECTED LOCAL BACKEND CONTRACT**, **FUTURE CODEX IMPLEMENTATION**
+Tags: **CURRENT — FRONTEND**, **CURRENT — LOCAL BACKEND**, **CURRENT — SUPABASE**
 
-The frontend talks to exactly one abstraction, `AssessmentApi`
-(`frontend/src/lib/assessment/api.ts`). In production it is bound to
-`unavailableAssessmentApi`, which returns `{ ok: false, failure: "backend_unavailable" }`
-for every call. A local Python backend implements the operations below behind an
-authenticated server bridge that forwards the verified Supabase bearer JWT
-server-to-server. No service-role key is ever used and the JWT is never
-persisted or logged.
+The frontend talks to the `AssessmentApi` abstraction in
+`frontend/src/lib/assessment/api.ts`. Production binds it to
+`productionAssessmentApi`; development may visibly replace it with the labelled
+preview adapter. Authenticated TanStack server functions forward the verified
+Supabase bearer JWT to loopback FastAPI. No service-role key is used and the JWT
+is neither persisted nor logged.
 
 ## Failure vocabulary
 
-`backend_unavailable | unauthorized | invalid_request | rate_limited | server_error`
+The frontend normalizes failures to:
 
-Any 404, connection error or timeout maps to `backend_unavailable`.
+`backend_unavailable | not_implemented | invalid_payload | cancelled`
 
-## Operations
+Transport/auth/server failures map to `backend_unavailable`; bounded 400/409/
+415/422 responses map to `invalid_payload`. FastAPI's error envelope retains
+the more precise bounded code and request ID without exposing private content.
 
-| Operation | Request | Response |
-| --- | --- | --- |
-| `createGenerationJob(config)` | `AssessmentConfig` | `{ jobId, acceptedAt }` |
-| `getGenerationStatus(jobId)` | `jobId` | `{ phase, questions?, attemptId?, failureReason?, expiresAt? }` |
-| `cancelGeneration(jobId)` | `jobId` | `{ cancelled: boolean }` |
-| `beginAssessment(attemptId)` | `attemptId` | `{ startedAt }` |
-| `heartbeat(attemptId)` | `attemptId` | `{ alive: boolean }` |
-| `submitAssessment(payload)` | attempt id, answers, timing, reason | `{ attemptId }` |
-| `abandonAssessment({ jobId?, attemptId? })` | either reference | `{ cleaned: boolean }` |
-| `getGradingStatus(attemptId)` | `attemptId` | `{ status, failureReason? }` |
-| `getResult(attemptId)` | `attemptId` | `AssessmentResult` |
+## Operations and routes
 
-`phase` is one of `queued | generating | validating | ready | failed | cancelled | expired`.
-The frontend renders only phases the backend reports — it never fakes progress
-or percentages.
+| Frontend operation | Loopback FastAPI route | Response |
+|---|---|---|
+| `createGenerationJob(config, { modelId })` | `POST /api/assessments/generation` | `{ jobId, phase }` |
+| `getGenerationStatus(jobId)` | `GET /api/assessments/generation/{jobId}` | state/phase; ready adds public questions and attempt ID |
+| `cancelGeneration(jobId)` | `POST /api/assessments/generation/{jobId}/cancel` | `{ cancelled }` |
+| `beginAssessment(attemptId)` | `POST /api/assessments/attempts/{attemptId}/begin` | authoritative `{ startedAt }` |
+| `heartbeat(attemptId)` | `POST /api/assessments/attempts/{attemptId}/heartbeat` | `{ alive }` |
+| `submitAssessment(payload)` | `POST /api/assessments/attempts/{attemptId}/submit` | `{ attemptId }` |
+| `abandonAssessment(reference)` | `POST /api/assessments/abandon` | `{ cleaned }` |
+| `getGradingStatus(attemptId)` | `GET /api/assessments/attempts/{attemptId}/grading` | submitted/grading/graded/grading_failed |
+| `getResult(attemptId)` | `GET /api/assessments/attempts/{attemptId}/result` | strict `AssessmentResult` |
 
-`status` (grading) is one of `submitted | grading | graded | grading_failed`.
-The backend is authoritative for elapsed time and for time expiry.
+Generation state is `queued | generating | validating | ready | failed |
+cancelled | expired`. The frontend displays only backend-reported phases. The
+backend owns start time, deadline and elapsed time; client timestamps and scores
+are never authority.
 
-## Content rules
+## Answer-key and content boundary
 
-- `questions` MUST validate against `publicQuestionSchema`. Answer keys,
-  correct option ids, tolerances, canonical values, model answers and rubrics
-  MUST NOT appear in that payload.
-- Model answers, explanations, distractor explanations and rubric feedback are
-  returned only by `getResult` after grading completes.
-- Media is delivered as `AssessmentMedia` with signed, private object URLs plus
-  caption, alt text, long description, credit and licence. No hotlinking and no
-  browser-fetched internet resources.
-- Web sources carry title, URL, publisher, retrieval date and image attribution.
+- Public questions validate against `publicQuestionSchema`. Correct option IDs,
+  canonical values, tolerances, private rubrics and answer keys never appear.
+- Model answers, explanations and rubric feedback appear only in a validated
+  result after grading. Correct keys remain server-only even then.
+- Prompt 06 deliberately rejects generated media. A future signed private-media
+  contract may use `AssessmentMedia`; no hotlink or invented URL is accepted.
+- Every public source reference is replaced with metadata from an actually
+  selected context item; the model cannot inject an arbitrary URL or source ID.
 
-## Lifecycle obligations
+## Lifecycle, idempotency and cleanup
 
-- `abandonAssessment` MUST delete the generated question set, answer keys and
-  configuration, and MUST NOT persist the set as a completed attempt.
-- Attempts without a heartbeat within the agreed TTL MUST be expired and cleaned
-  up the same way.
-- Only final submission creates a durable snapshot (questions, answers,
-  provenance, timing, configuration, completion timestamp).
+- A generation key is scoped to verified user plus semantic config/model
+  fingerprint. Exact retries join/replay one job; changed input conflicts.
+- `beginAssessment` is idempotent and creates the server start/deadline.
+  Heartbeats refresh only an owned active attempt. A timed submission receives
+  only a 30-second transport grace after the server deadline.
+- Submission verifies the stored config/question snapshot, validates answer
+  type/IDs/options, and persists one semantic fingerprint. Exact retries replay;
+  changed-body or changed-key reuse conflicts.
+- `abandonAssessment` cancels owned inference and deletes local questions,
+  keys/configuration. It cannot delete submitted/grading/graded work.
+- Ready jobs expire after two hours. In-progress attempts with no heartbeat for
+  five minutes expire and their private question/key material is cleared.
+- No Supabase row exists before submission. A browser close therefore leaves
+  only TTL-governed private local state, not an orphan public assessment row.
 
-## Supabase persistence — FUTURE CODEX IMPLEMENTATION
+## Generation and grading
 
-Reuse and extend `quizzes`, `quiz_attempts`, `mock_exams`,
-`mock_exam_attempts`, `grading_results` and `study_plans`; never duplicate them.
-Persisted rows carry kind, subject, component, academic year, school level,
-topic, difficulty, source scope, source document ids, learning goal ids,
-duration, question blueprint, generated/started/submitted/graded timestamps,
-model, score, status and provenance. Answer keys live in server-only storage
-that is not readable by the client role. RLS stays enabled with per-user
-isolation, no public buckets and no service-role key in any client path.
+Setup is revalidated server-side: exact enums, 1–60 questions, per-type caps,
+required mock-exam timing, unique material/learning-goal IDs and bounded text.
+Safety must explicitly allow before inference. The selected local model mapping
+and live endpoint are checked for generation and again for subjective grading.
 
-CORRECTION (verified 2026-09-16): these tables ARE present in the authoritative
-production project — `quizzes`, `quiz_attempts`, `mock_exams`,
-`mock_exam_attempts`, `grading_results`, `assessments` and `study_plans` all
-exist with RLS and user ownership. An earlier version of this document claimed
-they did not exist; that claim was wrong. The remaining backend work is to
-REUSE and EXTEND those tables (columns / server-only answer-key storage), never
-to create parallel assessment tables. All user-owned rows are additionally
-subject to the per-user 50 MB quota guard
-(`docs/contracts/USER_QUOTA_CONTRACT.md`).
+Retrieval is bounded by material IDs and `materials | web | both`. Every
+question must cite an available source. Retrieved/student/model content remains
+untrusted data. Model output is strict JSON under versioned prompts, with at most
+two repair attempts, a closed rich-content vocabulary and no generated media.
+
+Multiple-choice, true/false, matching and calculation scores are deterministic.
+Short-answer and essay awards may use the local model, but question IDs and
+point bounds are validated and the server recomputes all totals and percentages.
+No Swiss grade is invented without a settled grading policy.
+
+## Supabase persistence
+
+FastAPI uses the caller JWT plus publishable key and explicit `user_id`
+filters. After final submission and successful grading, it writes sanitized
+questions to `quizzes`/`mock_exams`, server start state to the corresponding
+attempt table, and final answers/result to the attempt plus `grading_results`.
+Writes are read back or returned as a representation before local state
+advances; a failed sequence is marked honestly and performs best-effort cleanup.
+
+Answer keys/rubrics live only in the local mode-0600 assessment database under
+the ignored app-data boundary. They never enter exposed tables, logs, telemetry
+or browser payloads. No Prompt 06 migration or live Supabase write was made;
+Prompt 07 remains responsible for schema/RLS reconciliation and two-user live
+proof.
+
+## Explicit unsupported states
+
+Study Plan, AI-refreshed Knowledge Profile and Subject Tools remain authoritative
+frontend “coming next”/empty placeholders with no generation control. Prompt 06
+does not invent routes, persistence or results for them. The non-AI subject
+workspace remains usable when assessment AI is blocked or unavailable.

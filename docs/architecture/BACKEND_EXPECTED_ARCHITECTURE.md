@@ -3,7 +3,7 @@
 Status: CURRENT — VERIFIED FROM SOURCE
 
 Verified 2026-09-19 against authoritative frontend `main`
-`f0910e6971f12efe0ad547b904f6e2a518b13856`, Prompt 05 target code, and
+`f0910e6971f12efe0ad547b904f6e2a518b13856`, Prompt 06 target code, and
 read-only Supabase evidence for project `ucacmeadsufiedxrgqit`.
 
 The filename is retained for inbound links; the architecture is implemented, not hypothetical.
@@ -16,6 +16,8 @@ The filename is retained for inbound links; the architecture is implemented, not
 - `frontend/src/lib/context-backend.server.ts` forwards the bearer token and matching student ID only over the server-to-server hop.
 - `backend/app/context/` owns intent analysis, exact prompt compilation, budgets, retrieval, memory, summaries, artifacts, working memory, embeddings, and optional web retrieval.
 - `backend/app/context/store_supabase.py` is request scoped and uses a publishable key plus caller JWT, leaving RLS authoritative.
+- `backend/app/assessment/` owns strict generation contracts, private keys, restart-safe lifecycle, timing, scoring, local-model subjective grading and caller-JWT public persistence.
+- `frontend/src/lib/assessment-backend.server.ts` and authenticated TanStack server functions connect the existing assessment abstraction to loopback FastAPI without exposing the bearer token to a new browser destination.
 - `backend/app/services/documents.py` bounds, signature-checks, deterministically chunks and embeds text/PDF/DOCX input. The Storage endpoint rejects traversal, downloads at most 50 MiB from private `user-materials` with the caller JWT, and deletes the temporary file in `finally`.
 - `backend/app/services/llm.py` calls an OpenAI-compatible local model server.
 - `backend/app/services/model_runtime.py` and platform/model modules manage the local Qwen/llama.cpp runtime on `127.0.0.1:8000`.
@@ -34,3 +36,12 @@ Prompt 07 wires the concrete moderator. General Assistant persistence exists in
 the current product defines no backend endpoint contract. The backend produces
 no media, so descriptor generation has no active producer; the deployed cleanup
 consumer is nevertheless live and enforces descriptor-first deletion.
+
+Quiz and mock-exam generation, begin/heartbeat/submit/abandon, grading status and
+result retrieval are integrated. FastAPI keeps answer keys in a private local
+mode-0600 database and exposes only strict public questions. It verifies stored
+snapshots and server timing, deterministically scores objective answers, bounds
+local-model subjective awards, recomputes totals and persists sanitized records
+through the caller JWT. The assessment path also fails closed until Prompt 07
+wires the concrete moderator. Study Plan, Knowledge Profile AI refresh and
+Subject Tools remain explicit product-contract gaps.

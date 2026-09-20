@@ -420,6 +420,76 @@ export interface AssessmentResult {
   includeInStats: boolean;
 }
 
+const questionResultSchema = z
+  .object({
+    questionId: z.string(),
+    awardedPoints: z.number().nonnegative(),
+    maxPoints: z.number().positive(),
+    correctness: z.enum(["correct", "partial", "incorrect", "unanswered", "pending"]),
+    modelAnswer: richContentSchema.optional(),
+    explanation: richContentSchema.optional(),
+    improvement: richContentSchema.optional(),
+    optionExplanations: z.record(z.string(), richContentSchema).optional(),
+    rubricFeedback: z
+      .array(
+        z
+          .object({
+            criterionId: z.string(),
+            description: z.string(),
+            awarded: z.number().nonnegative(),
+            max: z.number().positive(),
+          })
+          .strict(),
+      )
+      .optional(),
+    sources: z.array(sourceReferenceSchema).optional(),
+  })
+  .strict();
+
+/** Untrusted backend results are validated before the browser renders them. */
+export const assessmentResultSchema = z
+  .object({
+    attemptId: z.string(),
+    status: z.enum(ATTEMPT_STATUSES),
+    kind: z.enum(ASSESSMENT_KINDS),
+    subjectName: z.string(),
+    topics: z.array(z.string()),
+    difficulty: z.enum(DIFFICULTY_LEVELS),
+    awardedPoints: z.number().nonnegative(),
+    maxPoints: z.number().positive(),
+    percentage: z.number().min(0).max(100),
+    swissGrade: z.number().nullable(),
+    timeTakenSeconds: z.number().int().nonnegative().nullable(),
+    submittedAt: z.string().datetime(),
+    gradedAt: z.string().datetime().nullable(),
+    byQuestionType: z.array(
+      z
+        .object({
+          type: z.enum(QUESTION_TYPES),
+          awarded: z.number().nonnegative(),
+          max: z.number().positive(),
+        })
+        .strict(),
+    ),
+    byLearningGoal: z.array(
+      z
+        .object({
+          learningGoalId: z.string(),
+          label: z.string(),
+          awarded: z.number().nonnegative(),
+          max: z.number().positive(),
+        })
+        .strict(),
+    ),
+    strengths: z.array(z.string()),
+    improvements: z.array(z.string()),
+    questions: publicQuestionListSchema,
+    answers: z.array(studentAnswerSchema),
+    results: z.array(questionResultSchema),
+    includeInStats: z.boolean(),
+  })
+  .strict();
+
 /* -------------------------------------------------------- knowledge profile */
 
 export interface MasteryEntry {

@@ -17,6 +17,7 @@ import type {
   PublicQuestion,
   StudentAnswer,
 } from "./types";
+import { assessmentResultSchema } from "./types";
 import type { GenerationPhase } from "./lifecycle";
 
 export type AssessmentApiFailure =
@@ -60,7 +61,10 @@ export interface GradingStatus {
 }
 
 export interface AssessmentApi {
-  createGenerationJob(config: AssessmentConfig): Promise<AssessmentApiResult<GenerationJob>>;
+  createGenerationJob(
+    config: AssessmentConfig,
+    options?: { modelId?: string | undefined },
+  ): Promise<AssessmentApiResult<GenerationJob>>;
   getGenerationStatus(jobId: string): Promise<AssessmentApiResult<GenerationStatus>>;
   cancelGeneration(jobId: string): Promise<AssessmentApiResult<{ cancelled: boolean }>>;
   beginAssessment(attemptId: string): Promise<AssessmentApiResult<{ startedAt: string }>>;
@@ -96,7 +100,73 @@ export const unavailableAssessmentApi: AssessmentApi = {
   getResult: unavailable,
 };
 
-let activeApi: AssessmentApi = unavailableAssessmentApi;
+function idempotencyKey(prefix: string): string {
+  return `${prefix}-${crypto.randomUUID()}`;
+}
+
+const submissionKeys = new Map<string, string>();
+
+/** Production adapter: browser → authenticated TanStack function → loopback backend. */
+export const productionAssessmentApi: AssessmentApi = {
+  async createGenerationJob(config, options) {
+    if (!options?.modelId) return { ok: false, failure: "backend_unavailable" };
+    const { createAssessmentGeneration } = await import("@/lib/assessment.functions");
+    return createAssessmentGeneration({
+      data: {
+        config,
+        modelId: options.modelId,
+        idempotencyKey: idempotencyKey("assessment-generation"),
+      },
+    });
+  },
+  async getGenerationStatus(jobId) {
+    const { fetchAssessmentGeneration } = await import("@/lib/assessment.functions");
+    return fetchAssessmentGeneration({ data: { jobId } });
+  },
+  async cancelGeneration(jobId) {
+    const { cancelAssessmentGeneration } = await import("@/lib/assessment.functions");
+    return cancelAssessmentGeneration({ data: { jobId } });
+  },
+  async beginAssessment(attemptId) {
+    const { beginAssessmentAttempt } = await import("@/lib/assessment.functions");
+    return beginAssessmentAttempt({ data: { attemptId } });
+  },
+  async heartbeat(attemptId) {
+    const { heartbeatAssessmentAttempt } = await import("@/lib/assessment.functions");
+    return heartbeatAssessmentAttempt({ data: { attemptId } });
+  },
+  async submitAssessment(payload) {
+    const { submitAssessmentAttempt } = await import("@/lib/assessment.functions");
+    const key =
+      submissionKeys.get(payload.attemptId) ??
+      idempotencyKey(`assessment-submit-${payload.attemptId}`);
+    submissionKeys.set(payload.attemptId, key);
+    return submitAssessmentAttempt({
+      data: { payload, idempotencyKey: key },
+    });
+  },
+  async abandonAssessment(reference) {
+    const { abandonAssessmentAttempt } = await import("@/lib/assessment.functions");
+    const result = await abandonAssessmentAttempt({ data: reference });
+    if (reference.attemptId) submissionKeys.delete(reference.attemptId);
+    return result;
+  },
+  async getGradingStatus(attemptId) {
+    const { fetchAssessmentGrading } = await import("@/lib/assessment.functions");
+    return fetchAssessmentGrading({ data: { attemptId } });
+  },
+  async getResult(attemptId) {
+    const { fetchAssessmentResult } = await import("@/lib/assessment.functions");
+    const result = await fetchAssessmentResult({ data: { attemptId } });
+    if (!result.ok) return result;
+    const parsed = assessmentResultSchema.safeParse(result.data);
+    if (!parsed.success) return { ok: false, failure: "invalid_payload" };
+    submissionKeys.delete(attemptId);
+    return { ok: true, data: parsed.data };
+  },
+};
+
+let activeApi: AssessmentApi = productionAssessmentApi;
 
 /** Swap the adapter. Used by the development preview adapter and by tests. */
 export function setAssessmentApi(api: AssessmentApi): void {

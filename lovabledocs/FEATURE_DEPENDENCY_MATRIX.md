@@ -13,4 +13,5 @@ Status: CURRENT — RECONCILED 2026-09-19
 | Materials | current local metadata panel | user-materials/documents/chunks exist | bounded owner-path ingestion, type sniffing, deterministic chunks | backend implemented; UI not wired |
 | Feedback/telemetry | forms/sanitizer | functions, rows, private mirrors | none | implemented; function hardening pending deploy |
 | Generated media retention | settings/read contract | queue, descriptor bucket, minute cleanup | no producer | consumer infrastructure only |
-| Study tools | placeholder modes | tables exist | endpoints undefined | deferred |
+| Quiz/mock-exam assessment | current setup/runner/result UI + production adapter | sanitized quiz/exam/attempt/grading rows through caller JWT | local generation, private keys, server time, scoring, grading, cleanup | implemented; AI fails closed until Prompt 07 moderator |
+| Study Plan / Knowledge Profile AI refresh / Subject Tools | placeholder/read-only UI | tables may exist but no authoritative control contract | no invented endpoint | explicitly unsupported pending product contract |

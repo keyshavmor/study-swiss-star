@@ -22,7 +22,7 @@ NOT be duplicated in Python.
 - Authentication/startup routing. AI readiness is NOT an auth gate; never
   design an endpoint that must answer before a user can sign in.
 
-## 1. Assessment generation and grading
+## 1. Assessment generation and grading — CURRENT after Prompt 06
 
 Operations (client abstraction: `frontend/src/lib/assessment/api.ts`; semantics:
 `docs/contracts/ASSESSMENT_API_CONTRACT.md`):
@@ -47,6 +47,14 @@ Obligations:
   provenance, timing, configuration, completion timestamp).
 - Because a browser can be closed mid-flight, a lease/attempt TTL sweeper is
   mandatory: browser lifecycle events are best-effort only.
+
+These obligations are implemented in `backend/app/assessment/`, exposed by
+`backend/app/main.py`, and connected by the target-only TanStack server adapter.
+Private keys/lifecycle live in a mode-0600 local database; only sanitized rows
+cross caller-JWT RLS. Do not regress its idempotency, ownership, snapshot,
+server-time, retry, provenance or cleanup tests. Generated media is rejected.
+Study Plan, Knowledge Profile AI refresh and Subject Tools still have no
+authoritative controls/transport and therefore remain explicitly unsupported.
 
 ## 2. Local system capability probe and model recommendation
 
@@ -80,9 +88,9 @@ probe, bounded RAG, stable ID/exact replay, response language, citation metadata
 and durable caller-token persistence. Read
 `docs/contracts/CHAT_ASSISTANT_RAG_CONTRACT.md` before changing it.
 
-Still outstanding: `/api/safety/moderate`, the concrete in-process chat safety
+Still outstanding: `/api/safety/moderate`, the concrete in-process chat and assessment safety
 moderator, `/api/peer-messaging/send`, `/api/safety/attachment-scan`, and the
-assessment/study-tool/privacy operations assigned to later prompts. Until the
+study-tool/privacy operations assigned to later prompts. Until the
 safety implementation is wired, chat correctly returns `safety_unavailable`.
 
 Note the behavioural change: admission and model readiness are ADVISORY. They

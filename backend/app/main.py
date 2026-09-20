@@ -31,6 +31,15 @@ from starlette.middleware.trustedhost import TrustedHostMiddleware
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 from .artifact_store import ArtifactStore
+from .assessment import (
+    AbandonRequest,
+    AssessmentRepository,
+    AssessmentService,
+    CreateGenerationRequest,
+    NullAssessmentPublicStore,
+    SubmitAssessmentRequest,
+    SupabaseAssessmentStore,
+)
 from .auth import AccessTokenVerifier, AuthenticatedUser, BearerAuthenticator
 from .config import BackendSettings
 from .context import ContextConfig, ContextManager
@@ -66,9 +75,7 @@ def _validate_owner_storage_path(user_id: str, path: str) -> None:
     if "\\" in path or path.startswith("/"):
         raise ApiError(403, "forbidden_material", "Material path is not owned by this user")
     parts = PurePosixPath(path).parts
-    if len(parts) < 2 or parts[0] != user_id or any(
-        part in {"", ".", ".."} for part in parts
-    ):
+    if len(parts) < 2 or parts[0] != user_id or any(part in {"", ".", ".."} for part in parts):
         raise ApiError(403, "forbidden_material", "Material path is not owned by this user")
 
 
@@ -245,6 +252,7 @@ def create_app(
     settings: BackendSettings | None = None,
     runtime_coordinator: RuntimeCoordinator | None = None,
     safety_moderator: SafetyModerator | None = None,
+    assessment_service: AssessmentService | None = None,
 ) -> FastAPI:
     """Construct an injectable app for production startup and isolated tests."""
 
@@ -285,6 +293,8 @@ def create_app(
     )
     chat_locks: weakref.WeakValueDictionary[str, asyncio.Lock] = weakref.WeakValueDictionary()
     chat_locks_guard = asyncio.Lock()
+    assessment = assessment_service
+    owned_assessment_repository = False
 
     @asynccontextmanager
     async def lifespan(_api: FastAPI):
@@ -309,6 +319,10 @@ def create_app(
             sweeper.cancel()
             with contextlib.suppress(asyncio.CancelledError):
                 await sweeper
+            if assessment is not None:
+                await assessment.shutdown()
+                if owned_assessment_repository:
+                    assessment.repository.close()
             if runtime is not None:
                 await runtime.stop()
 
@@ -456,6 +470,32 @@ def create_app(
         store = SupabaseContextStore.from_env(identity.access_token, identity.user_id)
         return ContextManager(config, store=store)
 
+    if assessment is None:
+        assessment_database: str | Path = ":memory:"
+        if production_runtime:
+            assessment_database = Path(
+                os.getenv(
+                    "ALIM_ASSESSMENT_DB",
+                    str(config.database_path.parent / "alim-assessments.db"),
+                )
+            )
+        repository = AssessmentRepository(assessment_database)
+        owned_assessment_repository = True
+        assessment = AssessmentService(
+            repository=repository,
+            llm=llm,
+            context_factory=manager_for,
+            public_store_factory=(
+                lambda identity: (
+                    SupabaseAssessmentStore.from_env(identity.access_token, identity.user_id)
+                    if production_runtime
+                    else NullAssessmentPublicStore()
+                )
+            ),
+            safety_moderator=safety_moderator,
+            enforce_registry=production_runtime,
+        )
+
     def download_private_material(identity: AuthenticatedUser, path: str) -> bytes:
         """Fetch one object with the caller's JWT so Storage RLS remains authoritative."""
 
@@ -559,7 +599,10 @@ def create_app(
         existing = next((message for message in messages if message.id == message_id), None)
         if existing is None:
             return None
-        if existing.role != "assistant" or existing.metadata.get("request_fingerprint") != fingerprint:
+        if (
+            existing.role != "assistant"
+            or existing.metadata.get("request_fingerprint") != fingerprint
+        ):
             raise ApiError(
                 409,
                 "idempotency_conflict",
@@ -910,6 +953,90 @@ def create_app(
                     retryable=True,
                 )
             return persisted
+
+    @api.post("/api/assessments/generation")
+    async def create_assessment_generation(
+        body: CreateGenerationRequest,
+        identity: AuthenticatedUser = Depends(require_user),  # noqa: B008
+    ) -> dict[str, Any]:
+        """Create or replay one caller-owned local-model generation operation."""
+
+        return await assessment.create_generation(identity, body)
+
+    @api.get("/api/assessments/generation/{job_id}")
+    async def assessment_generation_status(
+        job_id: str,
+        identity: AuthenticatedUser = Depends(require_user),  # noqa: B008
+    ) -> dict[str, Any]:
+        """Return only public questions after strict validation succeeds."""
+
+        return assessment.status(identity.user_id, job_id)
+
+    @api.post("/api/assessments/generation/{job_id}/cancel")
+    async def cancel_assessment_generation(
+        job_id: str,
+        identity: AuthenticatedUser = Depends(require_user),  # noqa: B008
+    ) -> dict[str, bool]:
+        """Cancel a caller-owned generation task without exposing another owner."""
+
+        return await assessment.cancel(identity.user_id, job_id)
+
+    @api.post("/api/assessments/attempts/{attempt_id}/begin")
+    async def begin_assessment(
+        attempt_id: str,
+        identity: AuthenticatedUser = Depends(require_user),  # noqa: B008
+    ) -> dict[str, str]:
+        """Establish the authoritative server start time and optional deadline."""
+
+        return await assessment.begin(identity, attempt_id)
+
+    @api.post("/api/assessments/attempts/{attempt_id}/heartbeat")
+    async def heartbeat_assessment(
+        attempt_id: str,
+        identity: AuthenticatedUser = Depends(require_user),  # noqa: B008
+    ) -> dict[str, bool]:
+        """Refresh an active attempt without accepting client timing authority."""
+
+        return await assessment.heartbeat(identity.user_id, attempt_id)
+
+    @api.post("/api/assessments/attempts/{attempt_id}/submit")
+    async def submit_assessment(
+        attempt_id: str,
+        body: SubmitAssessmentRequest,
+        identity: AuthenticatedUser = Depends(require_user),  # noqa: B008
+    ) -> dict[str, str]:
+        """Validate an immutable snapshot and start server-owned grading."""
+
+        if body.payload.attempt_id != attempt_id:
+            raise ApiError(409, "assessment_snapshot_mismatch", "Attempt identifiers differ")
+        return await assessment.submit(identity, body)
+
+    @api.post("/api/assessments/abandon")
+    async def abandon_assessment(
+        body: AbandonRequest,
+        identity: AuthenticatedUser = Depends(require_user),  # noqa: B008
+    ) -> dict[str, bool]:
+        """Clean ephemeral private material; submitted results remain immutable."""
+
+        return await assessment.abandon(identity, body)
+
+    @api.get("/api/assessments/attempts/{attempt_id}/grading")
+    async def assessment_grading_status(
+        attempt_id: str,
+        identity: AuthenticatedUser = Depends(require_user),  # noqa: B008
+    ) -> dict[str, Any]:
+        """Return a caller-owned durable grading state."""
+
+        return assessment.grading_status(identity.user_id, attempt_id)
+
+    @api.get("/api/assessments/attempts/{attempt_id}/result")
+    async def assessment_result(
+        attempt_id: str,
+        identity: AuthenticatedUser = Depends(require_user),  # noqa: B008
+    ) -> dict[str, Any]:
+        """Return answers/rubrics only after durable grading completes."""
+
+        return assessment.result(identity.user_id, attempt_id)
 
     @api.post("/api/context/events")
     async def record_event(

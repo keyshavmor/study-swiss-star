@@ -6,7 +6,7 @@
 | Status | `CURRENT — LOCAL BACKEND` for implemented rows; future rows stay explicit gaps |
 | Contract version | `2026-09-18` |
 | Executable fixture | `tests/contracts/local-backend-v1.json` |
-| Last verified | Prompt 05, 2026-09-19 |
+| Last verified | Prompt 06, 2026-09-19 |
 
 ## Transport and identity
 
@@ -46,10 +46,37 @@ logs.
 | `POST /api/context/artifacts` | bearer | User-scoped reusable artifact persistence |
 | `POST /api/context/documents/text` | bearer | Text parse/chunk/embed/index |
 | `POST /api/context/documents/storage` | bearer | Owner-prefixed private Storage download, temporary parse, cleanup and indexing |
+| `POST /api/assessments/generation` | bearer | Create/join one user-scoped, idempotent local-model generation job |
+| `GET /api/assessments/generation/{job_id}` | bearer | Poll truthful generation state; ready returns only validated public questions |
+| `POST /api/assessments/generation/{job_id}/cancel` | bearer | Cancel owned inference and clear private/temporary material |
+| `POST /api/assessments/attempts/{attempt_id}/begin` | bearer | Establish/replay authoritative server start and deadline |
+| `POST /api/assessments/attempts/{attempt_id}/heartbeat` | bearer | Renew only an owned active attempt |
+| `POST /api/assessments/attempts/{attempt_id}/submit` | bearer | Validate snapshot/answers and start idempotent server-owned grading |
+| `POST /api/assessments/abandon` | bearer | Cancel/clean only unsubmitted owned assessment state |
+| `GET /api/assessments/attempts/{attempt_id}/grading` | bearer | Poll submitted/grading/graded/grading-failed state |
+| `GET /api/assessments/attempts/{attempt_id}/result` | bearer | Return one strict, server-calculated graded result |
 
-Missing safety/messaging/assessment routes retain
+Missing safety/messaging/study-plan routes retain
 `EXPECTED LOCAL BACKEND CONTRACT` or `BACKEND GAP` status in the cross-system
 index. A reserved path in the fixture does not prove an implementation.
+
+## Assessment invariants
+
+The complete operation and payload contract is
+[`../../../docs/contracts/ASSESSMENT_API_CONTRACT.md`](../../../docs/contracts/ASSESSMENT_API_CONTRACT.md).
+Generation and subjective grading use the selected live local model, bounded
+context, versioned strict-JSON prompts and at most two repair attempts. Objective
+scores are deterministic; all totals are recomputed server-side. Equivalent
+retries replay, changed idempotency bodies conflict, and foreign/missing IDs are
+indistinguishable 404 responses.
+
+The private mode-0600 SQLite file contains ephemeral lifecycle state and answer
+keys. Only sanitized questions, attempt state, answers and results cross the
+caller-JWT Supabase boundary. Ready jobs expire after two hours; active attempts
+expire after five minutes without a heartbeat. Generated media, Study Plan,
+Knowledge Profile AI refresh and Subject Tools are explicitly unsupported until
+their authoritative UI/transport contracts exist. Safety remains fail-closed
+until Prompt 07 installs a concrete moderator.
 
 ## Model/system invariants
 

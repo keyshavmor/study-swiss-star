@@ -21,6 +21,7 @@ meanings remain canonical under `docs/`; backend code cannot weaken them.
 | Endpoints, schemas and errors | [API](api/README.md) |
 | Model registry/acquisition/runtime | [models](models/README.md) |
 | Context, RAG and documents | [RAG](rag/README.md) |
+| Assessment generation/grading | [assessment](assessment/README.md) |
 | Caller-token and privileged Supabase access | [Supabase](supabase/README.md) |
 | Environments, ports and launcher contract | [operations](operations/ENVIRONMENTS_AND_LAUNCH.md) |
 | Implementation order and known gaps | [handoff](handoff/README.md) |
@@ -28,8 +29,9 @@ meanings remain canonical under `docs/`; backend code cannot weaken them.
 Current strengths include JWT verification, user-token/RLS persistence,
 private Storage ownership/size/type checks, idempotent safety-gated subject
 chat, context compilation, memory/artifacts, hybrid retrieval/reranking,
-bounded document parsing, local/web reference lookup,
+bounded document parsing, local/web reference lookup, assessment generation,
+private-key isolation, server-owned timing/scoring and caller-JWT result persistence,
 versioned/redacted API errors, loopback/Host/CORS validation, cancellable
-OpenAI-compatible local inference and one Qwen 3.8 27B lifecycle. Model,
-concrete safety moderation, peer messaging, Assistant and assessment contracts
-remain incomplete as listed in the handoff.
+OpenAI-compatible local inference and one Qwen 3.8 27B lifecycle. Concrete
+safety moderation, peer messaging, Assistant generation and study-plan/profile
+AI controls remain incomplete as listed in the handoff.

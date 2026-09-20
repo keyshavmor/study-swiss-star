@@ -5,7 +5,7 @@
 | Owner | Backend API |
 | Status | Endpoint-specific |
 | Canonical path | `backend/docs/api/README.md` |
-| Verified | Prompt 05 chat/RAG contract, 2026-09-19 |
+| Verified | Prompt 06 assessment contract, 2026-09-19 |
 
 The canonical implemented/expected endpoint registry is
 [`../../../docs/cross-system/API_INDEX.md`](../../../docs/cross-system/API_INDEX.md).
@@ -28,3 +28,8 @@ Chat uses its required user-message ID for exact durable replay. Other mutating
 operations require explicit idempotency; long-running model/assessment work
 requires operation IDs, cancellation, timeout and restart recovery. A frontend
 type or documentation row alone does not prove an endpoint exists.
+
+Assessment generation, timing, submission, grading and cleanup are implemented
+under `/api/assessments/*`; use the
+[assessment backend guide](../assessment/README.md) and
+[cross-system contract](../../../docs/contracts/ASSESSMENT_API_CONTRACT.md).
