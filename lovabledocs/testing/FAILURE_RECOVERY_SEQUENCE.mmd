@@ -1,0 +1,23 @@
+sequenceDiagram
+    autonumber
+    actor Operator
+    participant Stack as Owned launcher
+    participant Frontend
+    participant Backend
+    participant Model
+    participant Supabase
+    Operator->>Stack: status_all + health
+    Stack->>Frontend: loopback readiness
+    Stack->>Backend: GET /health and /ready
+    Backend->>Model: local /models probe
+    Stack->>Supabase: configured health only
+    alt one owned layer failed
+        Stack-->>Operator: typed cause + owned log/PID
+        Operator->>Stack: stop failed owned layer
+        Operator->>Stack: restart smallest dependency chain
+        Stack-->>Operator: loopback URLs and verified readiness
+    else hosted/external dependency failed
+        Stack-->>Operator: explicit unavailable/partial state
+        Note over Stack,Supabase: Never stop or mutate hosted Supabase
+    end
+    Operator->>Frontend: retry exact operation idempotently

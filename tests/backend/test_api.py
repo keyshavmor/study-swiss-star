@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import unittest
 from datetime import UTC, datetime, timedelta
 
@@ -186,6 +187,50 @@ class ApiTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(conflict.status_code, 409)
         self.assertEqual(conflict.json()["error"]["code"], "idempotency_conflict")
         self.assertEqual(self.model.calls, 1)
+
+    async def test_concurrent_identical_chat_requests_share_one_inference(self) -> None:
+        """A retry racing an in-flight turn waits and replays the durable answer."""
+
+        started = asyncio.Event()
+        release = asyncio.Event()
+
+        async def delayed_complete(context):
+            self.model.calls += 1
+            self.model.last_context = context
+            started.set()
+            await release.wait()
+            return LLMResponse(
+                content="one durable answer", model=self.model.model, latency_ms=1
+            )
+
+        self.model.complete = delayed_complete
+        body = {
+            "thread_id": "thread-concurrent",
+            "user_message_id": "message-concurrent",
+            "question": "Explain ATP",
+            "allow_web": False,
+        }
+        headers = {"Authorization": "Bearer token-student-1"}
+        first = asyncio.create_task(
+            self.client.post("/api/chat", headers=headers, json=body)
+        )
+        await asyncio.wait_for(started.wait(), timeout=2)
+        second = asyncio.create_task(
+            self.client.post("/api/chat", headers=headers, json=body)
+        )
+        await asyncio.sleep(0)
+        release.set()
+        responses = await asyncio.gather(first, second)
+        self.assertEqual([response.status_code for response in responses], [200, 200])
+        self.assertEqual(responses[0].json(), responses[1].json())
+        self.assertEqual(self.model.calls, 1)
+        self.assertEqual(
+            [
+                item.role
+                for item in self.store.list_messages("student-1", "thread-concurrent")
+            ],
+            ["user", "assistant"],
+        )
 
     async def test_chat_fails_closed_without_safety_or_ready_model(self) -> None:
         """No safety verdict or unreachable runtime can ever produce a canned answer."""
@@ -405,7 +450,9 @@ class ApiTests(unittest.IsolatedAsyncioTestCase):
                 self.assertEqual(response.status_code, 400)
                 self.assertEqual(response.json()["error"]["code"], "invalid_range")
 
-    async def test_privacy_range_honours_ai_selection_and_half_open_bounds(self) -> None:
+    async def test_privacy_range_honours_ai_selection_and_half_open_bounds(
+        self,
+    ) -> None:
         headers = {"Authorization": "Bearer token-user-a"}
         created = await self.client.post(
             "/api/context/events",

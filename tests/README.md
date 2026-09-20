@@ -9,15 +9,14 @@ The default suite is fully local and does not call Lovable or Supabase.
 - `tests/results/` stores generated reports while caches remain ignored.
 
 ```bash
-PYTHONPATH=backend:. uv run --project backend pytest tests/backend tests/e2e -q
+backend/.venv/bin/python -m pytest tests/backend tests/e2e tests/operations -q
 ```
 
 ```bash
-uv run --project backend ruff check backend models tests
-uv run --project backend ruff format --check backend models tests
-npm --prefix frontend run typecheck
-npm --prefix frontend run lint
-npm --prefix frontend run build
+backend/.venv/bin/python -m ruff check backend models tests
+backend/.venv/bin/python -m ruff format --check backend models tests
+PATH=/path/to/node22/bin:$PATH frontend/node_modules/.bin/tsc --noEmit -p frontend/tsconfig.json
+PATH=/path/to/node22/bin:$PATH frontend/node_modules/.bin/vitest run --root frontend
 ```
 
 The process-level E2E fixture proves orchestration without paying a 27B load cost on every run.
@@ -37,10 +36,7 @@ In another terminal, verify preload and deterministic generation:
 
 ```bash
 curl --fail http://127.0.0.1:8001/health
-curl --fail http://127.0.0.1:8001/api/model/status
-curl --fail -H 'Content-Type: application/json' \
-  -d '{"thread_id":"real-smoke","question":"Reply with exactly: ALIM_MODEL_OK","allow_web":false}' \
-  http://127.0.0.1:8001/api/chat
+curl --fail http://127.0.0.1:8001/ready
 ```
 
 For a visible budget audit, start with `ALIM_CONTEXT_DEBUG=true` and call
@@ -48,4 +44,7 @@ For a visible budget audit, start with `ALIM_CONTEXT_DEBUG=true` and call
 `reserve_output_tokens=512`. Confirm `compiled_total_tokens <= token_budget.input_limit`. These
 requests touch only local FastAPI/llama.cpp. Automated tests prove that `auto` does not open the
 network when local evidence matches and that it invokes the remote adapter when local material is
-missing. Neither path contacts Lovable or Supabase from the Python backend.
+missing. Neither reference path contacts Lovable. Private API smoke requires a
+disposable Supabase user access token and a caller-owned thread; never paste the
+token into shell history or test a real user's data. See
+`docs/testing/README.md` for the complete matrix and release blockers.

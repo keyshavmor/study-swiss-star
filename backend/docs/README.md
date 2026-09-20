@@ -25,6 +25,7 @@ meanings remain canonical under `docs/`; backend code cannot weaken them.
 | Caller-token and privileged Supabase access | [Supabase](supabase/README.md) |
 | Environment architecture | [environment contract](operations/ENVIRONMENTS_AND_LAUNCH.md) |
 | Setup, launch and recovery | [local operations](operations/LOCAL_SETUP_AND_HOSTING.md) |
+| Verification and hardening | [testing](testing/README.md) |
 | Implementation order and known gaps | [handoff](handoff/README.md) |
 
 Current strengths include JWT verification, user-token/RLS persistence,

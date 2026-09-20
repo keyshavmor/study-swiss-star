@@ -1,0 +1,209 @@
+{
+  "version": "2026-09-20",
+  "scope": "authoritative frontend f0910e6 reconciled with local backend and Supabase",
+  "coverage_levels": {
+    "automated": "deterministic executable coverage in this repository",
+    "manual": "requires an operator, browser, service, real model, or physical host",
+    "not_applicable": "the layer is intentionally outside this journey"
+  },
+  "journeys": [
+    {
+      "id": "auth_and_password_recovery",
+      "routes": ["frontend/src/routes/index.tsx", "frontend/src/routes/auth.tsx", "frontend/src/routes/auth.update-password.tsx"],
+      "controls": ["email or username sign-in", "sign-up", "OAuth", "password recovery and update"],
+      "classification": "supabase_managed_no_local_ai",
+      "frontend": ["frontend/src/lib/auth-errors.test.ts", "frontend/src/lib/auth-confirmation-pending.test.ts", "frontend/src/lib/auth-no-captcha.test.ts", "frontend/src/lib/username-login.test.ts"],
+      "backend": [],
+      "supabase": ["supabase/functions/username-login/index.ts", "supabase/functions/username-availability/index.ts", "tests/backend/test_supabase_security.py"],
+      "e2e": ["tests/e2e/test_critical_journey_contracts.py"],
+      "manual": "Real password/OAuth/recovery mail with disposable test users; production writes are forbidden."
+    },
+    {
+      "id": "legal_and_startup_shell",
+      "routes": ["frontend/src/routes/__root.tsx", "frontend/src/routes/legal.terms.tsx", "frontend/src/routes/legal.privacy.tsx", "frontend/src/routes/legal.acceptable-use.tsx", "frontend/src/routes/legal.child-safety.tsx"],
+      "controls": ["legal navigation", "localized content", "error and not-found recovery"],
+      "classification": "browser_local_static",
+      "frontend": ["frontend/src/lib/onboarding-decision-contract.test.ts"],
+      "backend": [],
+      "supabase": [],
+      "e2e": ["tests/e2e/test_critical_journey_contracts.py"],
+      "manual": "Legal text still requires product/legal approval."
+    },
+    {
+      "id": "language_onboarding",
+      "routes": ["frontend/src/routes/_authenticated/onboarding.language.tsx"],
+      "controls": ["choose language", "retry preference", "skip", "sign out"],
+      "classification": "frontend_session_plus_supabase_preference",
+      "frontend": ["frontend/src/lib/language-session.test.ts", "frontend/src/lib/post-login-gate.test.ts", "frontend/src/lib/onboarding-route-protection.test.ts"],
+      "backend": [],
+      "supabase": ["frontend/src/integrations/supabase/types.ts"],
+      "e2e": ["tests/e2e/test_critical_journey_contracts.py"],
+      "manual": "None for deterministic state contract; browser accessibility remains a release smoke."
+    },
+    {
+      "id": "model_selection_or_skip",
+      "routes": ["frontend/src/routes/_authenticated/onboarding.model.tsx", "frontend/src/routes/_authenticated/onboarding.system-admission.tsx"],
+      "controls": ["capability probe", "catalog selection", "prepare or retry", "continue with AI", "continue without AI", "admission retry"],
+      "classification": "local_ai_optional",
+      "frontend": ["frontend/src/lib/initial-capability-gate.test.ts", "frontend/src/lib/model-readiness.test.ts", "frontend/src/lib/system-admission.test.ts", "frontend/src/lib/model-backend.server.test.ts"],
+      "backend": ["tests/backend/test_model_runtime_contract.py", "tests/backend/test_model_management.py", "tests/backend/test_platform.py"],
+      "supabase": ["frontend/src/lib/ai-model-catalog.test.ts", "frontend/src/lib/onboarding-decision-contract.test.ts"],
+      "e2e": ["tests/e2e/test_qwen_startup_and_web.py", "tests/e2e/test_critical_journey_contracts.py"],
+      "manual": "Real 17.67 GiB artifact and physical accelerator smoke are not authorized here."
+    },
+    {
+      "id": "compliance_and_suspension",
+      "routes": ["frontend/src/routes/_authenticated/onboarding.compliance.tsx", "frontend/src/routes/_authenticated/account.suspended.tsx"],
+      "controls": ["consent validation", "save compliance", "refresh suspension", "sign out"],
+      "classification": "supabase_managed_no_local_ai",
+      "frontend": ["frontend/src/lib/compliance.test.ts", "frontend/src/lib/startup-flow.test.ts"],
+      "backend": [],
+      "supabase": ["supabase/migrations/20260914131010_canonical_user_backend.sql"],
+      "e2e": ["tests/e2e/test_critical_journey_contracts.py"],
+      "manual": "Two-user hosted RLS and suspension transition smoke needs disposable test users."
+    },
+    {
+      "id": "authenticated_shell_and_home",
+      "routes": ["frontend/src/routes/_authenticated/route.tsx", "frontend/src/routes/_authenticated/home.tsx"],
+      "controls": ["navigation", "language", "theme", "academic year", "notifications", "sign out", "AI status"],
+      "classification": "mixed_non_ai_shell",
+      "frontend": ["frontend/src/lib/post-login-gate.test.ts", "frontend/src/lib/sign-out.test.ts", "frontend/src/lib/ai-mode-classification.test.ts"],
+      "backend": ["tests/backend/test_api.py"],
+      "supabase": ["frontend/src/integrations/supabase/types.ts"],
+      "e2e": ["tests/e2e/test_critical_journey_contracts.py"],
+      "manual": "Responsive navigation and screen-reader traversal require browser smoke."
+    },
+    {
+      "id": "school_subjects_and_materials",
+      "routes": ["frontend/src/routes/_authenticated/school.index.tsx", "frontend/src/routes/_authenticated/school.$subject.tsx"],
+      "controls": ["add or import subject", "sort and filter", "component and mode", "grade actions", "material upload/list/delete", "transcript import"],
+      "classification": "mixed_browser_supabase_local_ingestion",
+      "frontend": ["frontend/src/lib/ai-mode-classification.test.ts", "frontend/src/lib/attachment-processing.test.ts", "frontend/src/lib/user-quota.test.ts"],
+      "backend": ["tests/backend/test_chat_rag_contract.py", "tests/backend/test_api.py"],
+      "supabase": ["tests/backend/test_supabase_security.py"],
+      "e2e": ["tests/e2e/test_qwen_startup_and_web.py", "tests/e2e/test_critical_journey_contracts.py"],
+      "manual": "Transcript persistence is not contracted; real private Storage upload remains a two-user smoke."
+    },
+    {
+      "id": "study_chat",
+      "routes": ["frontend/src/routes/_authenticated/chat.index.tsx", "frontend/src/routes/_authenticated/chat.$threadId.tsx", "frontend/src/routes/api/chat.ts"],
+      "controls": ["create or delete thread", "send", "stop", "citations", "read aloud"],
+      "classification": "local_ai_with_supabase_transcript",
+      "frontend": ["frontend/src/lib/context-backend.server.test.ts", "frontend/src/lib/safety.test.ts"],
+      "backend": ["tests/backend/test_api.py", "tests/backend/test_context_integration.py", "tests/backend/test_chat_rag_contract.py"],
+      "supabase": ["tests/backend/test_supabase_security.py"],
+      "e2e": ["tests/e2e/test_qwen_startup_and_web.py", "tests/e2e/test_critical_journey_contracts.py"],
+      "manual": "Production safety moderator is unresolved, so production chat remains fail-closed."
+    },
+    {
+      "id": "assistant_and_attachments",
+      "routes": ["frontend/src/routes/_authenticated/assistant.index.tsx", "frontend/src/routes/_authenticated/assistant.$threadId.tsx"],
+      "controls": ["create or delete assistant thread", "attach or remove file", "send prompt"],
+      "classification": "supabase_persistence_generation_unsupported",
+      "frontend": ["frontend/src/lib/attachment-processing.test.ts", "frontend/src/lib/onboarding-decision-contract.test.ts"],
+      "backend": ["tests/backend/test_chat_rag_contract.py"],
+      "supabase": ["tests/backend/test_supabase_security.py"],
+      "e2e": ["tests/e2e/test_critical_journey_contracts.py"],
+      "manual": "Assistant generation and attachment parsing have no authoritative production contract and must stay unavailable."
+    },
+    {
+      "id": "assessments",
+      "routes": ["frontend/src/routes/_authenticated/school.$subject.tsx"],
+      "controls": ["generate quiz or exam", "begin", "answer and navigate", "heartbeat", "review", "submit", "abandon", "poll grading", "view result"],
+      "classification": "local_ai_private_ephemeral_plus_supabase_snapshot",
+      "frontend": ["frontend/src/lib/assessment/assessment.test.ts", "frontend/src/lib/assessment-backend.server.test.ts"],
+      "backend": ["tests/backend/test_assessment_api.py"],
+      "supabase": ["tests/backend/test_supabase_security.py"],
+      "e2e": ["tests/e2e/test_critical_journey_contracts.py"],
+      "manual": "Real model generation and hosted RLS persistence need disposable data and operator authorization."
+    },
+    {
+      "id": "peer_messaging",
+      "routes": ["frontend/src/routes/_authenticated/messages.index.tsx", "frontend/src/routes/_authenticated/messages.$conversationId.tsx"],
+      "controls": ["new exact-username conversation", "open and mark read", "attach file", "send message"],
+      "classification": "supabase_reads_send_fail_closed",
+      "frontend": ["frontend/src/lib/peer-messaging.test.ts", "frontend/src/lib/attachment-processing.test.ts", "frontend/src/lib/safety.test.ts"],
+      "backend": [],
+      "supabase": ["tests/backend/test_supabase_security.py"],
+      "e2e": ["tests/e2e/test_critical_journey_contracts.py"],
+      "manual": "Privileged moderated send is unresolved; the UI must not report a sent message."
+    },
+    {
+      "id": "planner_and_calendar",
+      "routes": ["frontend/src/routes/_authenticated/planner.tsx"],
+      "controls": ["calendar or list view", "add/edit/delete event", "recurrence", "Google connect/sync/disconnect"],
+      "classification": "browser_supabase_external_no_local_ai",
+      "frontend": ["frontend/src/lib/google-calendar.test.ts"],
+      "backend": [],
+      "supabase": ["frontend/src/integrations/supabase/types.ts"],
+      "e2e": ["tests/e2e/test_critical_journey_contracts.py"],
+      "manual": "Google OAuth and Calendar writes require an isolated provider test account."
+    },
+    {
+      "id": "statistics",
+      "routes": ["frontend/src/routes/_authenticated/stats.tsx"],
+      "controls": ["subject filter", "grade and assessment views", "add result", "charts"],
+      "classification": "browser_local_no_ai",
+      "frontend": ["frontend/src/lib/ai-mode-classification.test.ts", "frontend/src/lib/assessment/assessment.test.ts"],
+      "backend": [],
+      "supabase": [],
+      "e2e": ["tests/e2e/test_critical_journey_contracts.py"],
+      "manual": "Visual chart and empty-state browser smoke remains."
+    },
+    {
+      "id": "profile",
+      "routes": ["frontend/src/routes/_authenticated/profile.tsx"],
+      "controls": ["edit profile", "avatar", "school and account summaries", "data links"],
+      "classification": "supabase_managed_no_local_ai",
+      "frontend": ["frontend/src/lib/user-quota.test.ts"],
+      "backend": [],
+      "supabase": ["tests/backend/test_supabase_security.py"],
+      "e2e": ["tests/e2e/test_critical_journey_contracts.py"],
+      "manual": "Real avatar Storage isolation requires two disposable users."
+    },
+    {
+      "id": "settings_privacy_and_quota",
+      "routes": ["frontend/src/routes/_authenticated/settings.tsx"],
+      "controls": ["preferences", "model retry or switch", "quota", "cleanup", "range deletion", "content deletion", "account deletion"],
+      "classification": "mixed_supabase_and_local_privacy",
+      "frontend": ["frontend/src/lib/preferences-contract.test.ts", "frontend/src/lib/user-quota.test.ts", "frontend/src/lib/model-readiness.test.ts"],
+      "backend": ["tests/backend/test_api.py", "tests/backend/test_model_runtime_contract.py"],
+      "supabase": ["supabase/functions/delete-my-data/index.ts", "supabase/functions/storage-emergency-cleanup/index.ts", "tests/backend/test_supabase_security.py"],
+      "e2e": ["tests/e2e/test_critical_journey_contracts.py"],
+      "manual": "Irreversible hosted account deletion must use a disposable account and explicit authorization."
+    },
+    {
+      "id": "feedback",
+      "routes": ["frontend/src/routes/_authenticated/feedback.tsx"],
+      "controls": ["category", "feedback text", "submit", "partial retry"],
+      "classification": "supabase_edge_no_local_ai",
+      "frontend": ["frontend/src/lib/feedback-submit.test.ts"],
+      "backend": [],
+      "supabase": ["supabase/functions/feedback-submit/index.ts", "tests/backend/test_supabase_security.py"],
+      "e2e": ["tests/e2e/test_critical_journey_contracts.py"],
+      "manual": "Hosted Edge/Storage partial-failure smoke needs disposable content."
+    },
+    {
+      "id": "help",
+      "routes": ["frontend/src/routes/_authenticated/help.tsx"],
+      "controls": ["help sections", "localized PDF guides"],
+      "classification": "browser_local_static",
+      "frontend": ["frontend/src/lib/onboarding-route-protection.test.ts"],
+      "backend": [],
+      "supabase": [],
+      "e2e": ["tests/e2e/test_critical_journey_contracts.py"],
+      "manual": "PDF rendering and link traversal require browser smoke."
+    },
+    {
+      "id": "system_health",
+      "routes": ["frontend/src/routes/_authenticated/system-health.tsx"],
+      "controls": ["local and Supabase health", "refresh", "GPU/process/queue/model recommendation"],
+      "classification": "mixed_observability",
+      "frontend": ["frontend/src/lib/system-health.test.ts", "frontend/src/lib/system-capability.test.ts"],
+      "backend": ["tests/backend/test_model_runtime_contract.py", "tests/backend/test_api.py"],
+      "supabase": ["frontend/src/lib/system-health.test.ts"],
+      "e2e": ["tests/e2e/test_critical_journey_contracts.py"],
+      "manual": "Live Supabase advisor data and physical accelerator readings need operator smoke."
+    }
+  ]
+}

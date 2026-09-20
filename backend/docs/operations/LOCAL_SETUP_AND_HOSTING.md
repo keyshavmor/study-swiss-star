@@ -57,8 +57,8 @@ UI maps to registry capabilities and cannot install arbitrary code.
 ## Tests, logs, data, and recovery
 
 ```bash
-uv run --project backend --frozen pytest
-uv run --project backend --frozen ruff check backend tests/backend
+backend/.venv/bin/python -m pytest tests/backend tests/e2e tests/operations -q
+backend/.venv/bin/python -m ruff check backend models tests
 ```
 
 Lifecycle state/logs are in ignored `.local/alim`; private SQLite data defaults

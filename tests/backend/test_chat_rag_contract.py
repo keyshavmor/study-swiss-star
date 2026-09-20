@@ -11,7 +11,11 @@ from app.context.models import ContextItem, ContextPriority, ContextType, QueryC
 from app.context.retrieval.dense import HashingEmbedder
 from app.context.store import SQLiteContextStore
 from app.context.tokenization import ApproximateTokenCounter
-from app.services.documents import DocumentIngestor, UnsupportedDocumentError
+from app.services.documents import (
+    MAX_MATERIAL_BYTES,
+    DocumentIngestor,
+    UnsupportedDocumentError,
+)
 
 
 class ChatRagContractTests(unittest.IsolatedAsyncioTestCase):
@@ -46,7 +50,9 @@ class ChatRagContractTests(unittest.IsolatedAsyncioTestCase):
         second = await self.ingestor.ingest_text(content, **values)
 
         self.assertEqual([chunk.id for chunk in second], [chunk.id for chunk in first])
-        stored = self.store.list_chunks(student_id="user-a", document_ids={"document-a"})
+        stored = self.store.list_chunks(
+            student_id="user-a", document_ids={"document-a"}
+        )
         self.assertEqual(len(stored), len(first))
 
     async def test_file_signature_and_binary_text_are_rejected(self) -> None:
@@ -72,6 +78,18 @@ class ChatRagContractTests(unittest.IsolatedAsyncioTestCase):
                     binary_text,
                     student_id="user-a",
                     title="Notes",
+                    subject="biology",
+                    document_type="notes",
+                )
+
+            oversized = root / "oversized.txt"
+            with oversized.open("wb") as handle:
+                handle.truncate(MAX_MATERIAL_BYTES + 1)
+            with self.assertRaisesRegex(UnsupportedDocumentError, "50 MiB"):
+                await self.ingestor.ingest_file(
+                    oversized,
+                    student_id="user-a",
+                    title="Oversized",
                     subject="biology",
                     document_type="notes",
                 )

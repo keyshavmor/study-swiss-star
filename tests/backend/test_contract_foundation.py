@@ -237,7 +237,7 @@ class ContractBoundaryTests(unittest.IsolatedAsyncioTestCase):
             (method, route.path)
             for route in app.routes
             for method in getattr(route, "methods", set())
-            if route.path in {item["path"] for item in fixture["implemented_routes"]}
+            if route.path in {"/health", "/ready"} or route.path.startswith("/api/")
         }
         expected = {
             (item["method"], item["path"]) for item in fixture["implemented_routes"]

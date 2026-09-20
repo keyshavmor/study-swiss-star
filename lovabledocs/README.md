@@ -6,9 +6,9 @@
 | Status | `CURRENT — FRONTEND`, `CURRENT — SUPABASE`, and `CURRENT — LOCAL BACKEND` are separated below |
 | Canonical path | `docs/README.md` |
 | Frontend authority | `study-swiss-star-frontend/main` at `f0910e6971f12efe0ad547b904f6e2a518b13856` |
-| Target baseline | `kmor/migrate-supabase` after frontend sync at `bff4ec7905f0d00fbf024c8e28717082a848d71a` |
+| Target baseline | Prompt 09 working tree based on `43b4281f62db283a0289221a63a2f50e6925c9a1` |
 | Live Supabase evidence | project `ucacmeadsufiedxrgqit`, read-only verification dated 2026-09-18 |
-| Last reviewed | 2026-09-18 |
+| Last reviewed | 2026-09-20 |
 | Review trigger | frontend-authority SHA, live schema, or backend API/runtime change |
 
 This is the canonical entry point. Product behavior comes from executable
@@ -30,6 +30,7 @@ always marked `EXPECTED LOCAL BACKEND CONTRACT`, `BACKEND GAP`, or
 | Branch/document decisions and evidence | [Reconciliation](reconciliation/README.md) | Release owner |
 | Superseded material | [Archive manifest](archive/ARCHIVE_MANIFEST.md) | Documentation owner |
 | Local operation | [Local stack quickstart](operations/LOCAL_STACK_QUICKSTART.md) | Operator |
+| Test, security and recovery evidence | [Testing and hardening](testing/README.md) | QA + security + release owners |
 
 `frontend/docs/README.md` is a frontend-local doorway to the canonical UX/UI/
 frontend pages. It intentionally links here instead of copying documents.
@@ -73,4 +74,5 @@ design reference, or deprecated. Canonical cross-system conclusions live under
   [dependency ownership](operations/DEPENDENCY_OWNERSHIP.md) → frontend/backend
   owned operation pages.
 - Security reviewer: [security boundaries](cross-system/SECURITY_AND_DATA_BOUNDARIES.md)
-  → [backend Supabase access](../backend/docs/supabase/ACCESS_CONTRACT.md).
+  → [backend Supabase access](../backend/docs/supabase/ACCESS_CONTRACT.md) →
+  [threat/failure model](testing/THREAT_AND_FAILURE_MODEL.md).

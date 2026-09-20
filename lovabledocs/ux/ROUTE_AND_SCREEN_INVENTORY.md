@@ -20,8 +20,8 @@ at `frontend/src`; the detailed ownership paths are in handover 07.
 | `/auth/update-password` | new password, confirm, submit, invalid-link recovery/back | `CURRENT — FRONTEND` + Supabase Auth |
 | `/legal/{terms,privacy,acceptable-use,child-safety}` | localized legal content and navigation | `CURRENT — FRONTEND`; legal review still required |
 | `/onboarding/language` | seven language cards, retry preference, continue, explicit skip, sign out | `CURRENT — FRONTEND` |
-| `/onboarding/model` | capability assessment, recommendation, catalogue selector, prepare/retry/progress, continue with AI, continue without AI, sign out | `CURRENT — FRONTEND`; backend endpoints are gaps |
-| `/onboarding/system-admission` | optional check/retry, continue, logout | `CURRENT — FRONTEND`; backend gap |
+| `/onboarding/model` | capability assessment, recommendation, catalogue selector, prepare/retry/progress, continue with AI, continue without AI, sign out | `CURRENT — FRONTEND` + `CURRENT — LOCAL BACKEND`; nine model mappings remain unavailable |
+| `/onboarding/system-admission` | optional check/retry, continue, logout | `CURRENT — FRONTEND` + `CURRENT — LOCAL BACKEND` |
 | `/onboarding/compliance` | account role/DOB/guardian data, required consent checkboxes, save, retry, sign out | `CURRENT — FRONTEND` + `CURRENT — SUPABASE` |
 | `/account/suspended` | refresh status, legal/help links, sign out | `CURRENT — FRONTEND` + `CURRENT — SUPABASE` |
 
@@ -38,7 +38,7 @@ session gates and attempts runtime release before Supabase sign-out.
 |---|---|---|
 | `/home` | school/planner cards, schedule/overview, AI status/recovery | non-AI navigation; readiness banner only |
 | `/school` | add subject, import transcript, academic year, sort/filter, subject cards/links | mostly browser/Supabase; AI-independent |
-| `/school/$subject` | component selector, mode tabs, combined/component stats, grades add/edit/duplicate/move/delete, materials, chat link, quiz/exam/study-plan/tool actions, notify | mixed; AI controls require future backend |
+| `/school/$subject` | component selector, mode tabs, combined/component stats, grades add/edit/duplicate/move/delete, materials, chat link, quiz/exam/study-plan/tool actions, notify | mixed; assessment lifecycle is implemented; Study Plan/Subject Tools remain unsupported |
 | `/chat`, `/chat/$threadId` | subject/title inputs, create/delete thread, prompt input, send/stop, citations, exam tip/model metadata, read aloud, sign out | `/api/chat` → safety → local backend |
 | `/assistant`, `/assistant/$threadId` | thread list/create/delete, prompt, attachments/remove, send, persisted messages | persistence exists; generation/parsing gap |
 | `/messages`, `/messages/$conversationId` | conversation list, new username conversation, message composer, compressed attachments, send, safety notice, read marking | Supabase read/RPC + local safety/send gap |
@@ -53,8 +53,8 @@ session gates and attempts runtime release before Supabase sign-out.
 ## Shared control families
 
 - `AssessmentSetup/ModePanel/GenerationWaitingRoom/Runner/QuestionNavigator/
-  AnswerInputs/SubmissionReview/Results/KnowledgeProfile`: full assessment UI;
-  backend generation/grading is not implemented.
+  AnswerInputs/SubmissionReview/Results`: full assessment UI with implemented
+  local generation/lifecycle/grading. Knowledge Profile AI refresh remains unsupported.
 - `ModelReadinessPanel/SystemCapabilityPanel/SystemHealthPanel`: normalize
   untrusted server payloads and never infer ready hardware state.
 - `DataRightsPanel/UserQuotaCard/SettingsSections`: quota, cleanup, deletion and

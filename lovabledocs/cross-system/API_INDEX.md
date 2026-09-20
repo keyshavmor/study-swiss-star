@@ -20,7 +20,7 @@ stacks, prompts, filesystem paths or provider bodies.
 | `GET /api/model/status` | model legacy fallback | `CURRENT — LOCAL BACKEND`; authenticated; optional model ID is fail-closed and never downloads | backend auth/model tests |
 | `POST /api/context/compile` | context tools | `CURRENT — LOCAL BACKEND` | backend context tests |
 | `POST /api/context/events` | context tools | `CURRENT — LOCAL BACKEND` | backend context store tests |
-| `GET/POST /api/context/artifacts` | context tools | `CURRENT — LOCAL BACKEND` | backend artifact tests |
+| `POST /api/context/artifacts` | context tools | `CURRENT — LOCAL BACKEND` | backend artifact tests |
 | `POST /api/context/documents/text` | ingestion | `CURRENT — LOCAL BACKEND` | bounded deterministic parser tests |
 | `POST /api/context/documents/storage` | private Storage ingestion | `CURRENT — LOCAL BACKEND` | caller-token, traversal, size and signature tests |
 | `POST /api/model/prepare` | model readiness functions | `CURRENT — LOCAL BACKEND`; explicit acquire/verify/load or typed unresolved | Prompt 04 API/artifact tests |

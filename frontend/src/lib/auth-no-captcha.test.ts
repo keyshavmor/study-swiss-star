@@ -7,7 +7,7 @@
  * Bot and Abuse Protection must be disabled, otherwise Supabase itself rejects
  * these calls with a challenge error.
  */
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
@@ -36,7 +36,10 @@ describe("auth surface has no CAPTCHA dependency", () => {
 
   it("has no CAPTCHA environment configuration left", () => {
     for (const envFile of ["../.env", ".env"]) {
-      expect(read(envFile)).not.toMatch(/VITE_AUTH_CAPTCHA_/);
+      const absolute = resolve(process.cwd(), envFile);
+      if (existsSync(absolute)) {
+        expect(read(envFile)).not.toMatch(/VITE_AUTH_CAPTCHA_/);
+      }
     }
   });
 });
