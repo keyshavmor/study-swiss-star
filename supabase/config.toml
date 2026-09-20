@@ -19,3 +19,6 @@ verify_jwt = false
 # Invoked by pg_cron with a Vault-held x-retention-secret.
 [functions.media-retention-cleanup]
 verify_jwt = false
+
+[functions.delete-my-data]
+verify_jwt = true

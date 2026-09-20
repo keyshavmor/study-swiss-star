@@ -5,7 +5,7 @@
 | Owner | Backend and Supabase |
 | Status | Current user-token pattern plus explicitly listed gaps |
 | Canonical path | `backend/docs/supabase/ACCESS_CONTRACT.md` |
-| Verified | Prompt 05 ownership/idempotency tests, 2026-09-19 |
+| Verified | Prompt 07 live read-only audit and local contract tests, 2026-09-20 |
 
 ## Identity model
 
@@ -55,16 +55,23 @@ authorization before every call. Log only sanitized audit metadata.
 
 ## Current gaps
 
-- Backend does not yet implement the concrete safety engine, peer, assessment,
-  media or deletion contracts; chat therefore fails closed until Prompt 07
-  wires its safety moderator.
+- Assessment generation/attempt/timing/grading is implemented; public result
+  persistence uses the caller JWT and keeps answer keys local/private.
+- Backend does not yet implement the concrete production safety engine,
+  privileged peer send, or media producer; those paths remain fail-closed
+  rather than bypassing moderation or claiming readiness.
 - Nine enabled catalogue IDs remain intentionally unavailable because their
   immutable local artifact mappings are unresolved.
 - Assistant generation and attachment parsing are absent.
-- Context tables are supported, but exact live schema/type drift must be tested
-  after forward migration reconciliation.
-- Delete-my-data/account workflows do not yet erase local caches, embeddings,
-  artifacts, leases, operations, downloads and temporary files.
+- Live TypeScript schema types were regenerated on 2026-09-20. SQL behavior on
+  a clean local production-equivalent baseline remains blocked because 23
+  original applied migration bodies are absent from Git.
+- `POST /api/privacy/purge-local` implements the authenticated local-first half
+  of data deletion. It removes caller-owned context/index and assessment state,
+  cancels selected assessment work, and removes leases/operation ownership
+  before the Edge Function runs. It intentionally retains shared model files
+  and global web cache; ingestion temporary files already have `finally`
+  cleanup.
 
 ## Security rules
 

@@ -628,6 +628,55 @@ class SQLiteContextStore:
             )
             return cursor.rowcount
 
+    def purge_user_data(
+        self,
+        student_id: str,
+        *,
+        start: datetime | None = None,
+        end: datetime | None = None,
+    ) -> int:
+        """Delete only one student's local context, optionally in ``[start, end)``."""
+
+        if (start is None) != (end is None):
+            raise ValueError("start and end must be supplied together")
+        if start is not None and end is not None and start >= end:
+            raise ValueError("start must be before end")
+
+        ranged_tables = (
+            ("student_memories", "updated_at"),
+            ("learning_events", "occurred_at"),
+            ("conversation_messages", "created_at"),
+            ("conversation_summaries", "created_at"),
+            ("context_artifacts", "created_at"),
+            ("working_memory", "created_at"),
+        )
+        deleted = 0
+        with self._lock, self._connection:
+            for table, timestamp in ranged_tables:
+                if start is None or end is None:
+                    cursor = self._connection.execute(
+                        f"DELETE FROM {table} WHERE student_id=?", (student_id,)
+                    )
+                else:
+                    cursor = self._connection.execute(
+                        f"DELETE FROM {table} WHERE student_id=? AND {timestamp}>=? AND {timestamp}<?",
+                        (student_id, _iso(start), _iso(end)),
+                    )
+                deleted += max(cursor.rowcount, 0)
+
+            if start is None or end is None:
+                document_cursor = self._connection.execute(
+                    "DELETE FROM documents WHERE student_id=?", (student_id,)
+                )
+            else:
+                document_cursor = self._connection.execute(
+                    "DELETE FROM documents WHERE student_id=? AND created_at>=? AND created_at<?",
+                    (student_id, _iso(start), _iso(end)),
+                )
+            # document_chunks are deleted by the documents ON DELETE CASCADE.
+            deleted += max(document_cursor.rowcount, 0)
+        return deleted
+
     def get_web_cache(self, query: str, *, now: datetime) -> list[dict[str, Any]] | None:
         """Return fresh cached web results for a normalized query."""
 

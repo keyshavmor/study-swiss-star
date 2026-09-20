@@ -1,6 +1,6 @@
 # Production Database Schema
 
-Status: CURRENT — GENERATED/CATALOG VERIFIED 2026-09-15
+Status: CURRENT — GENERATED/CATALOG VERIFIED READ-ONLY 2026-09-20
 
 All listed `public` tables have RLS enabled and a `user_id` ownership key unless noted.
 
@@ -13,6 +13,8 @@ All listed `public` tables have RLS enabled and a `user_id` ownership key unless
 | feedback/telemetry | `feedback`, `usage_events` | Admin-only reads use `app_metadata.role`; approved pre-auth usage events may have null `user_id` |
 | Assistant | `assistant_threads`, `assistant_messages`, `assistant_attachments`, `media_retention_queue` | Composite ownership FKs; user queue inserts must start `pending` |
 | runtime catalog | `ai_model_catalog` | Global authenticated-read-only list of 10 allowed local model IDs; no `user_id` |
+| compliance/safety | `account_compliance`, `user_legal_consents`, `moderation_events`, `guardian_notification_queue` | User-visible state is own/admin scoped; privileged safety writes are service-only |
+| peer messaging | `peer_conversations`, `peer_conversation_members`, `peer_messages`, `peer_message_attachments`, `peer_message_notifications` | Active-member reads; direct browser message/attachment writes denied |
 
 Important verified constraints:
 
@@ -26,3 +28,6 @@ Important verified constraints:
 - `ai_model_catalog(model_id)` is the primary key; authenticated clients have SELECT only.
 
 The complete machine-readable schema is `frontend/src/integrations/supabase/types.ts`.
+It was regenerated from the live project during Prompt 07; product-specific
+nested JSON response helpers are retained above the generator-owned Database
+section.

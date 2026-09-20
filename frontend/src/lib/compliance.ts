@@ -32,6 +32,14 @@ export interface AccountComplianceState {
   suspensionReasonCode: string | null;
 }
 
+function accountType(value: string): AccountType {
+  return value === "student" || value === "teacher" ? value : "unknown";
+}
+
+function accountStatus(value: string): AccountStatus {
+  return value === "suspended_pending_review" || value === "deletion_pending" ? value : "active";
+}
+
 export const MIN_TEACHER_AGE = 18;
 
 /** Whole years between `dob` and `at` (default now). */
@@ -132,12 +140,12 @@ export async function fetchAccountCompliance(): Promise<AccountComplianceState |
 
   return {
     userId: data.user_id,
-    accountType: data.account_type,
+    accountType: accountType(data.account_type),
     dateOfBirth: data.date_of_birth,
     guardianEmail: data.guardian_email,
     complianceOnboardingCompleted: data.compliance_onboarding_completed === true,
     safetyIntroAcknowledgedAt: data.safety_intro_acknowledged_at,
-    accountStatus: data.account_status,
+    accountStatus: accountStatus(data.account_status),
     safetyStrikeCount: data.safety_strike_count ?? 0,
     suspensionReasonCode: data.suspension_reason_code,
   };
@@ -155,7 +163,7 @@ export async function completeComplianceOnboarding(input: {
   const { error } = await supabase.rpc("complete_account_compliance_onboarding", {
     p_account_type: input.accountType,
     p_date_of_birth: input.dateOfBirth,
-    p_guardian_email: input.accountType === "student" ? input.guardianEmail : null,
+    p_guardian_email: input.accountType === "student" ? (input.guardianEmail ?? "") : "",
     p_terms_version: LEGAL_VERSIONS.terms,
     p_privacy_version: LEGAL_VERSIONS.privacy,
     p_acceptable_use_version: LEGAL_VERSIONS.acceptable_use,

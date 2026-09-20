@@ -1,6 +1,6 @@
 # Storage Architecture
 
-Status: CURRENT — LIVE VERIFIED 2026-09-15
+Status: CURRENT — LIVE VERIFIED READ-ONLY 2026-09-20
 
 All buckets are private.
 
@@ -10,6 +10,7 @@ All buckets are private.
 | `assistant-descriptors` | 1 MiB | text/plain, text/markdown, application/json | trusted producer writes; owner reads |
 | `chat-attachments` | 50 MiB | approved PDF/DOCX/images/audio/video | owner path CRUD |
 | `feedback-messages` | 1 MiB | text/plain | function writes; admin reads |
+| `peer-message-attachments` | 250,000 B | reviewed compressed image/file set | trusted backend writes after scan/moderation; active conversation members read |
 | `profile-avatars` | 2 MiB | PNG/JPEG/WebP | owner path CRUD |
 | `user-materials` | 50 MiB | PDF/DOCX/text/markdown/PNG/JPEG/SVG | owner path CRUD |
 
@@ -20,3 +21,9 @@ FastAPI downloads only `user-materials/<verified-user-id>/...` through the authe
 Global capacity cleanup runs every five minutes through a Vault-authenticated Edge Function. It
 starts at 90% used, targets 80% used, and removes eligible objects through the Storage API before
 deleting associated document/attachment metadata. It is not governed by a user preference.
+
+The combined per-user durable-data limit is 50 MiB across database rows and
+Storage. Client-side preflight is advisory; Storage policies and database
+triggers/RPCs are the final concurrent-write boundary. Peer attachment input is
+untrusted until the local backend has validated content, scanned it, moderated
+the message, and performed the privileged write.

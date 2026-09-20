@@ -89,6 +89,17 @@ class ContextStore(Protocol):
 
     def purge_expired_working_memory(self, *, now: datetime) -> int: ...
 
+    def purge_user_data(
+        self,
+        student_id: str,
+        *,
+        start: datetime | None = None,
+        end: datetime | None = None,
+    ) -> int:
+        """Delete caller-owned persisted context, optionally in a half-open time range."""
+
+        ...
+
     def get_web_cache(self, query: str, *, now: datetime) -> list[dict[str, Any]] | None: ...
 
     def set_web_cache(

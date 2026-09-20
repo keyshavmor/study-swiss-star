@@ -8,6 +8,12 @@ flowchart TB
   TanStack -->|"caller JWT + RLS"| Data
   FastAPI["FastAPI request-scoped store"] -->|"caller JWT + publishable key"| Data
   FastAPI -->|"temporary material download"| Storage
+  FastAPI -->|"moderated/scanned peer write; privileged boundary"| Data
+  Browser --> Rights["authenticated data-rights server function"]
+  Rights -->|"caller JWT; local purge first"| LocalPurge["FastAPI /api/privacy/purge-local"]
+  Rights -->|"only after local success"| DeleteEdge["delete-my-data"]
+  DeleteEdge --> Data
+  DeleteEdge --> Storage
   Cron["pg_cron + Vault"] --> Cleanup["media-retention-cleanup<br/>every minute"]
   Cron --> Capacity["storage-emergency-cleanup<br/>every five minutes"]
   Cleanup --> Data

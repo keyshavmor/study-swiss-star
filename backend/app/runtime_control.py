@@ -144,9 +144,7 @@ class RuntimeCoordinator:
         }
 
     @staticmethod
-    def _resource_block(
-        snapshot: CapabilitySnapshot, thresholds: dict[str, float]
-    ) -> str | None:
+    def _resource_block(snapshot: CapabilitySnapshot, thresholds: dict[str, float]) -> str | None:
         ram = _percent(snapshot.ram.total, snapshot.ram.available)
         storage = _percent(snapshot.storage.total, snapshot.storage.available)
         gpu_values = [
@@ -180,11 +178,22 @@ class RuntimeCoordinator:
                 lease["expires_at"] = (_now() + timedelta(seconds=self.lease_seconds)).isoformat()
                 self._save()
                 return self._admission_payload(
-                    "admitted", lease_id, lease, snapshot, preferred_model_id, policy, "lease_reused"
+                    "admitted",
+                    lease_id,
+                    lease,
+                    snapshot,
+                    preferred_model_id,
+                    policy,
+                    "lease_reused",
                 )
             if self._active_users() >= self._max_active_users(policy):
                 return self._admission_payload(
-                    "denied_user_limit", None, None, snapshot, preferred_model_id, policy,
+                    "denied_user_limit",
+                    None,
+                    None,
+                    snapshot,
+                    preferred_model_id,
+                    policy,
                     "active_user_limit",
                 )
             ram_free = _percent(snapshot.ram.total, snapshot.ram.available)
@@ -201,7 +210,12 @@ class RuntimeCoordinator:
             )
             if insufficient:
                 return self._admission_payload(
-                    "denied_capacity", None, None, snapshot, preferred_model_id, policy,
+                    "denied_capacity",
+                    None,
+                    None,
+                    snapshot,
+                    preferred_model_id,
+                    policy,
                     "insufficient_resources",
                 )
             lease_id = f"lease_{uuid.uuid4().hex}"
@@ -272,9 +286,11 @@ class RuntimeCoordinator:
 
     async def release(self, user_id: str, lease_id: str | None) -> bool:
         async with self._lock:
-            candidates = [lease_id] if lease_id else [
-                key for key, row in self.leases.items() if row["user_id"] == user_id
-            ]
+            candidates = (
+                [lease_id]
+                if lease_id
+                else [key for key, row in self.leases.items() if row["user_id"] == user_id]
+            )
             released = False
             for candidate in candidates:
                 if candidate and self.leases.get(candidate, {}).get("user_id") == user_id:
@@ -284,6 +300,35 @@ class RuntimeCoordinator:
         if released and not self.leases and self.runtime_release is not None:
             await self.runtime_release()
         return released
+
+    async def purge_user_references(self, user_id: str) -> int:
+        """Remove one user's leases and operation ownership without deleting shared models."""
+
+        removed = 0
+        released_lease = False
+        async with self._lock:
+            for lease_id in [
+                key for key, row in self.leases.items() if row.get("user_id") == user_id
+            ]:
+                self.leases.pop(lease_id, None)
+                removed += 1
+                released_lease = True
+
+            for operation_id, row in list(self.operations.items()):
+                owners = list(row.get("owner_user_ids", []))
+                if user_id not in owners:
+                    continue
+                remaining = [owner for owner in owners if owner != user_id]
+                removed += 1
+                if remaining or row.get("state") in self.transient_states:
+                    row["owner_user_ids"] = remaining
+                else:
+                    self.operations.pop(operation_id, None)
+            self._save()
+            idle = not self.leases
+        if released_lease and idle and self.runtime_release is not None:
+            await self.runtime_release()
+        return removed
 
     async def sweep(self) -> int:
         """Expire abandoned leases and release an idle owned runtime."""
@@ -385,7 +430,9 @@ class RuntimeCoordinator:
                     }
                 elif inspection.state != "verified":
                     reason = (
-                        "download_failed" if inspection.state == "invalid" else "model_not_available"
+                        "download_failed"
+                        if inspection.state == "invalid"
+                        else "model_not_available"
                     )
                     operation = base | {
                         "state": "blocked",
@@ -405,9 +452,7 @@ class RuntimeCoordinator:
                         "state": "ready" if ready else "blocked",
                         "progress_percent": 100 if ready else None,
                         "message_code": (
-                            "model_ready"
-                            if ready
-                            else runtime_block or "model_runtime_not_ready"
+                            "model_ready" if ready else runtime_block or "model_runtime_not_ready"
                         ),
                         "model_present_on_disk": True,
                         "can_start_new_allocation": True,
@@ -470,9 +515,7 @@ class RuntimeCoordinator:
                     state="ready" if ready else "blocked",
                     can_start_new_allocation=ready,
                     can_continue_with_ai=ready,
-                    blocking_reasons=(
-                        [] if ready else [runtime_block or "model_load_failed"]
-                    ),
+                    blocking_reasons=([] if ready else [runtime_block or "model_load_failed"]),
                     message_code=(
                         "model_ready" if ready else runtime_block or "model_runtime_not_ready"
                     ),
@@ -539,11 +582,14 @@ class RuntimeCoordinator:
                         "name": gpu.get("name"),
                         "total_vram_bytes": total,
                         "free_vram_bytes": free,
-                        "used_vram_bytes": total - free if isinstance(total, int) and isinstance(free, int) else None,
+                        "used_vram_bytes": total - free
+                        if isinstance(total, int) and isinstance(free, int)
+                        else None,
                         "utilisation_percent": gpu.get("utilisation_percent"),
                         "instances": [],
                     }
                 )
+
             def usage(measure: Any) -> dict[str, Any]:
                 used = (
                     measure.total - measure.available
@@ -554,8 +600,11 @@ class RuntimeCoordinator:
                     "total_bytes": measure.total,
                     "free_bytes": measure.available,
                     "used_bytes": used,
-                    "used_percent": (used * 100 / measure.total if used is not None and measure.total else None),
+                    "used_percent": (
+                        used * 100 / measure.total if used is not None and measure.total else None
+                    ),
                 }
+
             return {
                 "active_user_count": self._active_users(),
                 "max_active_users": self._max_active_users(policy),
@@ -567,7 +616,9 @@ class RuntimeCoordinator:
                 "rebalance_state": "idle",
                 "recommended_model_id": recommendation["recommended_model_id"],
                 "recommendation_reason_code": (
-                    recommendation["rationale_codes"][0] if recommendation["rationale_codes"] else None
+                    recommendation["rationale_codes"][0]
+                    if recommendation["rationale_codes"]
+                    else None
                 ),
                 "my_preferred_model_id": mine[1].get("preferred_model_id") if mine else None,
                 "my_assigned_model_id": mine[1].get("assigned_model_id") if mine else None,

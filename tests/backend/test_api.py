@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import unittest
+from datetime import UTC, datetime, timedelta
 
 from app.auth import TokenVerificationError
 from app.context.config import ContextConfig
@@ -10,6 +11,7 @@ from app.context.manager import ContextManager
 from app.context.models import DocumentChunk
 from app.context.store import SQLiteContextStore
 from app.main import create_app
+from app.runtime_control import RuntimeCoordinator
 from app.services.llm import LLMResponse
 from httpx import ASGITransport, AsyncClient
 
@@ -75,6 +77,7 @@ class ApiTests(unittest.IsolatedAsyncioTestCase):
             self.model,
             auth_verifier=FakeTokenVerifier(),
             safety_moderator=allow_safe_content,
+            runtime_coordinator=RuntimeCoordinator(state_path=None),
         )
         self.client = AsyncClient(
             transport=ASGITransport(app=app), base_url="http://127.0.0.1"
@@ -342,7 +345,101 @@ class ApiTests(unittest.IsolatedAsyncioTestCase):
         )
         self.assertEqual(matching.status_code, 200)
 
-    async def test_storage_ingestion_rejects_owner_prefix_traversal_before_download(self) -> None:
+    async def test_privacy_purge_is_authenticated_owner_scoped_and_idempotent(
+        self,
+    ) -> None:
+        """Local deletion removes only caller data before the Supabase stage runs."""
+
+        for user in ("user-a", "user-b"):
+            created = await self.client.post(
+                "/api/context/events",
+                headers={"Authorization": f"Bearer token-{user}"},
+                json={"event_type": "study_session", "content": f"private {user}"},
+            )
+            self.assertEqual(created.status_code, 200)
+
+        missing = await self.client.post(
+            "/api/privacy/purge-local", json={"mode": "all_content"}
+        )
+        self.assertEqual(missing.status_code, 401)
+
+        headers = {"Authorization": "Bearer token-user-a", "X-Student-Id": "user-a"}
+        first = await self.client.post(
+            "/api/privacy/purge-local",
+            headers=headers,
+            json={"mode": "all_content"},
+        )
+        self.assertEqual(first.status_code, 200)
+        self.assertTrue(first.json()["ok"])
+        self.assertGreaterEqual(first.json()["deleted_local_records"], 1)
+        self.assertEqual(self.store.list_events("user-a"), [])
+        self.assertEqual(len(self.store.list_events("user-b")), 1)
+
+        repeated = await self.client.post(
+            "/api/privacy/purge-local",
+            headers=headers,
+            json={"mode": "all_content"},
+        )
+        self.assertEqual(repeated.status_code, 200)
+        self.assertEqual(repeated.json()["deleted_local_records"], 0)
+
+    async def test_privacy_range_requires_ordered_timezone_aware_bounds(self) -> None:
+        headers = {"Authorization": "Bearer token-user-a"}
+        for payload in (
+            {"mode": "range"},
+            {
+                "mode": "range",
+                "start_at": "2026-01-02T00:00:00Z",
+                "end_at": "2026-01-01T00:00:00Z",
+            },
+            {
+                "mode": "range",
+                "start_at": "2026-01-01T00:00:00",
+                "end_at": "2026-01-02T00:00:00",
+            },
+        ):
+            with self.subTest(payload=payload):
+                response = await self.client.post(
+                    "/api/privacy/purge-local", headers=headers, json=payload
+                )
+                self.assertEqual(response.status_code, 400)
+                self.assertEqual(response.json()["error"]["code"], "invalid_range")
+
+    async def test_privacy_range_honours_ai_selection_and_half_open_bounds(self) -> None:
+        headers = {"Authorization": "Bearer token-user-a"}
+        created = await self.client.post(
+            "/api/context/events",
+            headers=headers,
+            json={"event_type": "study_session", "content": "range-owned event"},
+        )
+        self.assertEqual(created.status_code, 200)
+        now = datetime.now(UTC)
+        body = {
+            "mode": "range",
+            "start_at": (now - timedelta(minutes=1)).isoformat(),
+            "end_at": (now + timedelta(minutes=1)).isoformat(),
+            "delete_peer_messages": True,
+            "delete_ai_messages": False,
+        }
+        peer_only = await self.client.post(
+            "/api/privacy/purge-local", headers=headers, json=body
+        )
+        self.assertEqual(peer_only.status_code, 200)
+        self.assertEqual(peer_only.json()["deleted_local_records"], 0)
+        self.assertEqual(len(self.store.list_events("user-a")), 1)
+
+        with_ai = await self.client.post(
+            "/api/privacy/purge-local",
+            headers=headers,
+            json=body | {"delete_ai_messages": True},
+        )
+        self.assertEqual(with_ai.status_code, 200)
+        self.assertEqual(with_ai.json()["deleted_local_records"], 1)
+        self.assertEqual(self.store.list_events("user-a"), [])
+
+    async def test_storage_ingestion_rejects_owner_prefix_traversal_before_download(
+        self,
+    ) -> None:
         response = await self.client.post(
             "/api/context/documents/storage",
             headers={"Authorization": "Bearer token-student-1"},

@@ -1,6 +1,6 @@
 # Data Flow and Privacy
 
-Status: CURRENT — VERIFIED 2026-09-15
+Status: CURRENT — VERIFIED 2026-09-20
 
 ## Subject chat
 
@@ -20,3 +20,16 @@ No password, access/refresh/provider token, authorization/cookie value, arbitrar
 ## Retention
 
 Assistant-generated media can be deleted only after its durable private descriptor exists and the 30-minute threshold passes. Cleanup runs every minute, defers failures, and retains descriptors. The current backend produces no media.
+
+## Data rights
+
+Deletion is fail-closed and local-first. An authenticated TanStack server
+function forwards the caller JWT to `POST /api/privacy/purge-local`; FastAPI
+deletes only that caller's local context/index data and assessment secrets, and
+removes their runtime leases/operation ownership for all-content/account modes.
+The browser invokes `delete-my-data` only after local success. The Edge Function
+re-verifies the same JWT and supports `[start,end)` range deletion, all-content
+deletion with account retention, and account deletion. It removes known private
+objects before service-only database RPCs. Both stages are idempotent and accept
+no target user ID. Shared models/global cache remain because they are not user
+data; temporary downloads are deleted after each ingestion attempt.

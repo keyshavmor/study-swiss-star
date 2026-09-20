@@ -275,6 +275,55 @@ class AssessmentRepository:
             )
         return True
 
+    def user_job_ids(
+        self,
+        user_id: str,
+        *,
+        start: datetime | None = None,
+        end: datetime | None = None,
+    ) -> list[str]:
+        """Return caller-owned jobs selected for a privacy purge."""
+
+        if (start is None) != (end is None):
+            raise ValueError("start and end must be supplied together")
+        query = "select id from assessment_jobs where user_id = ?"
+        values: list[Any] = [user_id]
+        if start is not None and end is not None:
+            if start >= end:
+                raise ValueError("start must be before end")
+            query += " and created_at >= ? and created_at < ?"
+            values.extend([start.astimezone(UTC).isoformat(), end.astimezone(UTC).isoformat()])
+        with self.lock:
+            rows = self.connection.execute(query, values).fetchall()
+        return [str(row["id"]) for row in rows]
+
+    def purge_user_data(
+        self,
+        user_id: str,
+        *,
+        start: datetime | None = None,
+        end: datetime | None = None,
+    ) -> int:
+        """Delete one user's local assessment jobs and cascading attempts."""
+
+        job_ids = self.user_job_ids(user_id, start=start, end=end)
+        if not job_ids:
+            return 0
+        placeholders = ",".join("?" for _ in job_ids)
+        with self.transaction() as connection:
+            attempt_count = int(
+                connection.execute(
+                    f"select count(*) from assessment_attempts where user_id = ? "
+                    f"and job_id in ({placeholders})",
+                    (user_id, *job_ids),
+                ).fetchone()[0]
+            )
+            cursor = connection.execute(
+                f"delete from assessment_jobs where user_id = ? and id in ({placeholders})",
+                (user_id, *job_ids),
+            )
+        return max(cursor.rowcount, 0) + attempt_count
+
     def expire_stale(self, now: str) -> int:
         """Expire unsubmitted jobs by their durable deadline without deleting evidence."""
 

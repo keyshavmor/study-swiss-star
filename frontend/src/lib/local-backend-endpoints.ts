@@ -40,6 +40,11 @@ export const ASSESSMENT_ENDPOINTS = {
   attempt: "/api/assessments/attempts",
 } as const;
 
+/** Caller-scoped local data-rights operations. */
+export const PRIVACY_ENDPOINTS = {
+  purgeLocal: "/api/privacy/purge-local",
+} as const;
+
 /** Base URL of the local backend. Server-side only. */
 export function localBackendBaseUrl(): string {
   const raw = process.env["ALIM_CONTEXT_BACKEND_URL"]?.trim() || "http://127.0.0.1:8001";

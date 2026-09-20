@@ -3,12 +3,17 @@ import { createClient } from "npm:@supabase/supabase-js@2.111.0";
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
-const JSON_HEADERS = { ...CORS, "Content-Type": "application/json; charset=utf-8" };
+const JSON_HEADERS = {
+  ...CORS,
+  "Content-Type": "application/json; charset=utf-8",
+  "Cache-Control": "no-store",
+};
 const FORBIDDEN_CONTEXT_KEY =
-  /(password|token|secret|key|authorization|cookie|content|prompt|body|email)/i;
+  /(password|token|secret|key|authorization|cookie|content|prompt|body|email|username|identifier|guardian|phone|birth)/i;
 
 function respond(status: number, body: Record<string, unknown>) {
   return new Response(JSON.stringify(body), { status, headers: JSON_HEADERS });
@@ -18,13 +23,18 @@ function cleanText(value: unknown, max: number): string {
   return typeof value === "string" ? value.trim().slice(0, max) : "";
 }
 
-function cleanContext(value: unknown): Record<string, string | number | boolean | null> {
+function cleanContext(
+  value: unknown,
+): Record<string, string | number | boolean | null> {
   if (!value || typeof value !== "object" || Array.isArray(value)) return {};
   const out: Record<string, string | number | boolean | null> = {};
-  for (const [key, raw] of Object.entries(value as Record<string, unknown>).slice(0, 20)) {
+  for (const [key, raw] of Object.entries(
+    value as Record<string, unknown>,
+  ).slice(0, 20)) {
     if (!/^[a-zA-Z0-9_.-]{1,48}$/.test(key)) continue;
     if (FORBIDDEN_CONTEXT_KEY.test(key)) continue;
-    if (typeof raw === "string") out[key] = raw.replace(/[\r\n\t]+/g, " ").slice(0, 400);
+    if (typeof raw === "string")
+      out[key] = raw.replace(/[\r\n\t]+/g, " ").slice(0, 400);
     else if (typeof raw === "number" && Number.isFinite(raw)) out[key] = raw;
     else if (typeof raw === "boolean" || raw === null) out[key] = raw;
   }
@@ -32,47 +42,82 @@ function cleanContext(value: unknown): Record<string, string | number | boolean 
 }
 
 Deno.serve(async (req: Request) => {
-  if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: CORS });
-  if (req.method !== "POST") return respond(405, { error: "Method not allowed." });
+  if (req.method === "OPTIONS")
+    return new Response(null, { status: 204, headers: CORS });
+  if (req.method !== "POST")
+    return respond(405, {
+      ok: false,
+      database_recorded: false,
+      storage_recorded: false,
+      error_code: "method_not_allowed",
+    });
 
   const url = Deno.env.get("SUPABASE_URL");
   const serviceRole = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-  if (!url || !serviceRole) return respond(500, { error: "Feedback service unavailable." });
+  if (!url || !serviceRole)
+    return respond(500, {
+      ok: false,
+      database_recorded: false,
+      storage_recorded: false,
+      error_code: "service_unavailable",
+    });
   const admin = createClient(url, serviceRole, {
-    auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+    auth: {
+      persistSession: false,
+      autoRefreshToken: false,
+      detectSessionInUrl: false,
+    },
   });
 
   const authorization = req.headers.get("authorization");
-  const token = authorization?.startsWith("Bearer ") ? authorization.slice(7) : "";
-  if (!token) return respond(401, { error: "Authentication required." });
+  const token = authorization?.startsWith("Bearer ")
+    ? authorization.slice(7)
+    : "";
+  if (!token)
+    return respond(401, {
+      ok: false,
+      database_recorded: false,
+      storage_recorded: false,
+      error_code: "authentication_required",
+    });
   const { data: userData, error: userError } = await admin.auth.getUser(token);
   const userId = userData.user?.id;
-  if (userError || !userId) return respond(401, { error: "Authentication required." });
+  if (userError || !userId)
+    return respond(401, {
+      ok: false,
+      database_recorded: false,
+      storage_recorded: false,
+      error_code: "authentication_required",
+    });
 
   let payload: unknown;
   try {
     payload = await req.json();
   } catch {
-    return respond(400, { error: "Invalid request." });
+    return respond(400, {
+      ok: false,
+      database_recorded: false,
+      storage_recorded: false,
+      error_code: "invalid_request",
+    });
   }
-  const body = payload && typeof payload === "object" ? (payload as Record<string, unknown>) : {};
+  const body =
+    payload && typeof payload === "object"
+      ? (payload as Record<string, unknown>)
+      : {};
   const message = cleanText(body.message, 8000);
   const category = cleanText(body.category, 64).toLowerCase() || "general";
   const context = cleanContext(body.context);
-  if (message.length < 2) return respond(400, { error: "Please enter feedback." });
+  if (message.length < 2)
+    return respond(400, {
+      ok: false,
+      database_recorded: false,
+      storage_recorded: false,
+      error_code: "feedback_too_short",
+    });
 
   const id = crypto.randomUUID();
   const createdAt = new Date().toISOString();
-  const { error: insertError } = await admin.from("feedback").insert({
-    id,
-    user_id: userId,
-    category,
-    message,
-    context,
-    created_at: createdAt,
-  });
-  if (insertError) return respond(500, { error: "Could not save feedback." });
-
   const objectPath = `${userId}/${createdAt.slice(0, 10)}/${id}.txt`;
   const text = [
     `id: ${id}`,
@@ -83,13 +128,54 @@ Deno.serve(async (req: Request) => {
     "",
     message,
   ].join("\n");
+
+  // Store the durable text mirror FIRST. If this fails, do not create the DB row.
+  // This makes normal failures all-or-nothing and prevents a 2xx partial-success
+  // response from being mistaken for complete persistence by the client.
   const { error: storageError } = await admin.storage
     .from("feedback-messages")
-    .upload(objectPath, new Blob([text], { type: "text/plain; charset=utf-8" }), { upsert: false });
+    .upload(
+      objectPath,
+      new Blob([text], { type: "text/plain; charset=utf-8" }),
+      { upsert: false },
+    );
+  if (storageError) {
+    return respond(503, {
+      ok: false,
+      database_recorded: false,
+      storage_recorded: false,
+      error_code: "storage_write_failed",
+    });
+  }
 
-  return respond(storageError ? 207 : 200, {
-    ok: !storageError,
+  const { error: insertError } = await admin.from("feedback").insert({
+    id,
+    user_id: userId,
+    category,
+    message,
+    context,
+    created_at: createdAt,
+  });
+  if (insertError) {
+    // Compensating cleanup: if DB persistence fails, remove the already-written mirror.
+    // If cleanup itself fails, return the truthful partial state so the UI never claims success.
+    const { error: cleanupError } = await admin.storage
+      .from("feedback-messages")
+      .remove([objectPath]);
+    return respond(cleanupError ? 207 : 500, {
+      ok: false,
+      database_recorded: false,
+      storage_recorded: Boolean(cleanupError),
+      error_code: cleanupError
+        ? "database_write_failed_storage_orphaned"
+        : "database_write_failed",
+    });
+  }
+
+  return respond(200, {
+    ok: true,
     database_recorded: true,
-    storage_recorded: !storageError,
+    storage_recorded: true,
+    feedback_id: id,
   });
 });

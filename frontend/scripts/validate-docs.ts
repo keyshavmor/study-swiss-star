@@ -1,7 +1,9 @@
 import { access, readdir, readFile } from "node:fs/promises";
 import { dirname, join, relative, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 
-const repositoryRoot = resolve(import.meta.dir, "../..");
+const scriptDirectory = fileURLToPath(new URL(".", import.meta.url));
+const repositoryRoot = resolve(scriptDirectory, "../..");
 const docsRoot = join(repositoryRoot, "docs");
 const mirrorRoot = join(repositoryRoot, "lovabledocs");
 

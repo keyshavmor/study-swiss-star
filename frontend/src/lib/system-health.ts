@@ -8,6 +8,7 @@
  */
 import { supabase } from "@/integrations/supabase/client";
 import type { MyDataSummaryJson, SupabaseHealthJson } from "@/integrations/supabase/types";
+import { purgeMyLocalData } from "@/lib/privacy.functions";
 
 export const NOT_EXPOSED_STATUS = "not_exposed_by_sql";
 
@@ -64,11 +65,12 @@ export interface DeleteMyDataResult {
   deleted_objects: number | null;
   deleted_rows: number | null;
   account_deleted: boolean;
+  local_deleted_records: number;
 }
 
 /**
- * Invokes the Edge Function. The request NEVER carries a target user id — the
- * function acts only on the caller identified by the verified JWT.
+ * Purges caller-owned local state first, then invokes the Edge Function. Both
+ * stages derive identity from the verified JWT and never accept a target id.
  */
 export async function requestMyDataDeletion(
   request: DeleteMyDataRequest,
@@ -77,16 +79,19 @@ export async function requestMyDataDeletion(
   if (request.mode === "range") {
     body["start_at"] = request.startAt ?? null;
     body["end_at"] = request.endAt ?? null;
-    body["include_peer"] = request.includePeer ?? true;
-    body["include_ai"] = request.includeAi ?? true;
+    body["delete_peer_messages"] = request.includePeer ?? true;
+    body["delete_ai_messages"] = request.includeAi ?? true;
   }
+  const local = await purgeMyLocalData({ data: body });
   const { data, error } = await supabase.functions.invoke("delete-my-data", { body });
   if (error) throw new Error(error.message);
   const row = (data ?? {}) as Record<string, unknown>;
   return {
     mode: request.mode,
-    deleted_objects: typeof row["deleted_objects"] === "number" ? row["deleted_objects"] : null,
+    deleted_objects:
+      typeof row["removed_storage_objects"] === "number" ? row["removed_storage_objects"] : null,
     deleted_rows: typeof row["deleted_rows"] === "number" ? row["deleted_rows"] : null,
     account_deleted: row["account_deleted"] === true,
+    local_deleted_records: local.deleted_local_records,
   };
 }

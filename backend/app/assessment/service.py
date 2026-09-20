@@ -832,6 +832,26 @@ class AssessmentService:
             )
             return {"cleaned": cleaned}
 
+    async def purge_user_data(
+        self,
+        user_id: str,
+        *,
+        start: datetime | None = None,
+        end: datetime | None = None,
+    ) -> int:
+        """Cancel selected inference work, then delete its caller-owned local state."""
+
+        job_ids = self.repository.user_job_ids(user_id, start=start, end=end)
+        tasks = [self.task_by_job[job_id] for job_id in job_ids if job_id in self.task_by_job]
+        for task in tasks:
+            task.cancel()
+        if tasks:
+            await asyncio.gather(*tasks, return_exceptions=True)
+        deleted = self.repository.purge_user_data(user_id, start=start, end=end)
+        for job_id in job_ids:
+            self.locks.pop(job_id, None)
+        return deleted
+
     def _owned_job(self, user_id: str, job_id: str) -> dict[str, Any]:
         job = self.repository.get_job(user_id, job_id)
         if job is None:

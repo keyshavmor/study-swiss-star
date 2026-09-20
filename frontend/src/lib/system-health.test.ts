@@ -1,6 +1,19 @@
 import { describe, expect, it, vi } from "vitest";
 
 const invoked: { name: string; body: Record<string, unknown> }[] = [];
+const localPurges: Record<string, unknown>[] = [];
+
+vi.mock("@/lib/privacy.functions", () => ({
+  purgeMyLocalData: ({ data }: { data: Record<string, unknown> }) => {
+    localPurges.push(data);
+    return Promise.resolve({
+      ok: true,
+      mode: data["mode"],
+      deleted_local_records: 3,
+      removed_runtime_references: 0,
+    });
+  },
+}));
 
 vi.mock("@/integrations/supabase/client", () => ({
   supabase: {
@@ -45,7 +58,14 @@ vi.mock("@/integrations/supabase/client", () => ({
     functions: {
       invoke: (name: string, options: { body: Record<string, unknown> }) => {
         invoked.push({ name, body: options.body });
-        return Promise.resolve({ data: { deleted_rows: 4, account_deleted: false }, error: null });
+        return Promise.resolve({
+          data: {
+            removed_storage_objects: 2,
+            database: { deleted_rows: 4 },
+            account_deleted: false,
+          },
+          error: null,
+        });
       },
     },
   },
@@ -105,6 +125,7 @@ describe("supabase health", () => {
 describe("data deletion requests", () => {
   it("never sends a target user id", async () => {
     invoked.length = 0;
+    localPurges.length = 0;
     await requestMyDataDeletion({
       mode: "range",
       startAt: "2026-01-01T00:00:00.000Z",
@@ -128,10 +149,21 @@ describe("data deletion requests", () => {
     }
     expect(invoked[0]!.body).toMatchObject({
       mode: "range",
-      include_peer: true,
-      include_ai: false,
+      delete_peer_messages: true,
+      delete_ai_messages: false,
     });
     expect(Object.keys(invoked[1]!.body)).toEqual(["mode"]);
     expect(invoked[2]!.body).toEqual({ mode: "delete_account" });
+    expect(localPurges).toEqual(invoked.map((call) => call.body));
+  });
+
+  it("returns the live Edge and local deletion receipt fields", async () => {
+    const result = await requestMyDataDeletion({ mode: "all_content" });
+    expect(result).toMatchObject({
+      mode: "all_content",
+      deleted_objects: 2,
+      account_deleted: false,
+      local_deleted_records: 3,
+    });
   });
 });

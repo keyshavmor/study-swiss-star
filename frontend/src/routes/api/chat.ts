@@ -10,6 +10,7 @@ import {
 import type { Database, Json } from "@/integrations/supabase/types";
 import { effectiveResponseLanguage } from "@/lib/i18n/detect";
 import { DEFAULT_LANGUAGE, isLanguageCode } from "@/lib/i18n/languages";
+import { assertPublishableSupabaseKey } from "@/integrations/supabase/key-safety";
 
 type AlimUIMessage = UIMessage<never, { "context-metadata": ContextResponseMetadata }>;
 
@@ -42,6 +43,7 @@ async function getUserClient(request: Request) {
   if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
     throw new Response("Supabase not configured", { status: 500 });
   }
+  assertPublishableSupabaseKey(SUPABASE_PUBLISHABLE_KEY);
 
   const authHeader = request.headers.get("authorization");
   if (!authHeader || !authHeader.startsWith("Bearer ")) {

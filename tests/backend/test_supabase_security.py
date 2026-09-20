@@ -11,6 +11,10 @@ from app.context.store_supabase import SupabaseContextStore
 
 ROOT = Path(__file__).resolve().parents[2]
 MIGRATION = ROOT / "supabase/migrations/20260914131010_canonical_user_backend.sql"
+PROMPT_07_MIGRATION = (
+    ROOT / "supabase/migrations/20260920120000_harden_exposed_grants_and_function_paths.sql"
+)
+SUPABASE_CONFIG = ROOT / "supabase/config.toml"
 
 
 class CapturingStore(SupabaseContextStore):
@@ -170,6 +174,71 @@ class SupabaseSecurityTests(unittest.TestCase):
         self.assertIn("storage.foldername(name)", sql)
         self.assertIn("bucket_id = 'user-materials'", sql)
         self.assertNotIn("security definer", sql)
+
+    def test_prompt_07_forward_migration_is_least_privilege_and_non_destructive(self) -> None:
+        sql = PROMPT_07_MIGRATION.read_text(encoding="utf-8").casefold()
+        self.assertIn("revoke all privileges on all tables in schema public from anon", sql)
+        self.assertIn("revoke execute on functions from public", sql)
+        self.assertIn("private.enforce_user_database_quota", sql)
+        self.assertIn("set search_path = pg_catalog, information_schema", sql)
+        self.assertNotIn("disable row level security", sql)
+        self.assertNotIn("drop table", sql)
+        self.assertNotIn("drop schema", sql)
+
+    def test_all_seven_edge_functions_and_gateway_modes_are_checked_in(self) -> None:
+        expected = {
+            "storage-emergency-cleanup": False,
+            "username-login": False,
+            "activity-log": False,
+            "feedback-submit": True,
+            "username-availability": False,
+            "media-retention-cleanup": False,
+            "delete-my-data": True,
+        }
+        config = SUPABASE_CONFIG.read_text(encoding="utf-8")
+        for slug, verify_jwt in expected.items():
+            source = ROOT / "supabase/functions" / slug / "index.ts"
+            self.assertTrue(source.is_file(), slug)
+            self.assertIn(f"[functions.{slug}]", config)
+            block = config.split(f"[functions.{slug}]", 1)[1].split("[functions.", 1)[0]
+            self.assertIn(f"verify_jwt = {str(verify_jwt).lower()}", block)
+
+    def test_unverified_edge_functions_have_an_application_auth_boundary(self) -> None:
+        functions = ROOT / "supabase/functions"
+        storage = (functions / "storage-emergency-cleanup/index.ts").read_text()
+        retention = (functions / "media-retention-cleanup/index.ts").read_text()
+        activity = (functions / "activity-log/index.ts").read_text()
+        login = (functions / "username-login/index.ts").read_text()
+        availability = (functions / "username-availability/index.ts").read_text()
+
+        self.assertIn("verify_storage_capacity_cleanup_secret", storage)
+        self.assertIn("auth.getUser", storage)
+        self.assertIn("x-retention-secret", retention)
+        self.assertIn("ANONYMOUS_EVENTS", activity)
+        self.assertIn("auth.getUser", activity)
+        self.assertIn("invalid_credentials", login)
+        self.assertIn("const USERNAME =", availability)
+
+    def test_user_data_edge_functions_reverify_the_bearer(self) -> None:
+        functions = ROOT / "supabase/functions"
+        for slug in ("feedback-submit", "delete-my-data"):
+            source = (functions / slug / "index.ts").read_text(encoding="utf-8")
+            self.assertIn("auth.getUser", source, slug)
+            self.assertIn("Cache-Control", source, slug)
+
+    def test_frontend_publishable_boundaries_reject_privileged_keys(self) -> None:
+        helper = (
+            ROOT / "frontend/src/integrations/supabase/key-safety.ts"
+        ).read_text(encoding="utf-8")
+        self.assertIn('value.startsWith("sb_secret_")', helper)
+        self.assertIn('claims["role"] === "service_role"', helper)
+        for relative in (
+            "frontend/src/integrations/supabase/client.ts",
+            "frontend/src/integrations/supabase/auth-middleware.ts",
+            "frontend/src/routes/api/chat.ts",
+        ):
+            source = (ROOT / relative).read_text(encoding="utf-8")
+            self.assertIn("assertPublishableSupabaseKey(SUPABASE_PUBLISHABLE_KEY)", source)
 
 
 if __name__ == "__main__":

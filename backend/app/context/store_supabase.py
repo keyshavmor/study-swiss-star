@@ -121,16 +121,19 @@ class SupabaseContextStore:
         """Verify thread ownership through caller-token RLS and an explicit owner filter."""
 
         self._assert_owner(student_id)
-        rows = self._request(
-            "GET",
-            "threads",
-            query={
-                "select": "id",
-                "id": f"eq.{conversation_id}",
-                "user_id": f"eq.{self.user_id}",
-                "limit": 1,
-            },
-        ) or []
+        rows = (
+            self._request(
+                "GET",
+                "threads",
+                query={
+                    "select": "id",
+                    "id": f"eq.{conversation_id}",
+                    "user_id": f"eq.{self.user_id}",
+                    "limit": 1,
+                },
+            )
+            or []
+        )
         return bool(rows)
 
     def add_chunks(self, chunks: Iterable[DocumentChunk], *, student_id: str | None = None) -> None:
@@ -550,6 +553,19 @@ class SupabaseContextStore:
             or []
         )
         return len(rows)
+
+    def purge_user_data(
+        self,
+        student_id: str,
+        *,
+        start: datetime | None = None,
+        end: datetime | None = None,
+    ) -> int:
+        """Leave durable deletion to the reviewed service-role Edge Function."""
+
+        self._assert_owner(student_id)
+        del start, end
+        return 0
 
     def get_web_cache(self, query: str, *, now: datetime) -> list[dict[str, Any]] | None:
         with self._cache_lock:

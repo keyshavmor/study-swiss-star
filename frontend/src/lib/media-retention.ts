@@ -58,6 +58,9 @@ export interface RetentionRow {
  * Safe to call only for assistant-generated or assistant-fetched media.
  */
 export async function enqueueAssistantMedia(input: RetentionEnqueueInput): Promise<void> {
+  if (!input.descriptorPath) {
+    throw new Error("descriptor_required_before_retention_enqueue");
+  }
   const { error } = await supabase.from("media_retention_queue").insert({
     user_id: input.userId,
     attachment_id: input.attachmentId ?? null,
@@ -65,10 +68,10 @@ export async function enqueueAssistantMedia(input: RetentionEnqueueInput): Promi
     storage_bucket: input.storageBucket,
     object_path: input.objectPath,
     descriptor_bucket: input.descriptorBucket ?? DESCRIPTOR_BUCKET,
-    descriptor_path: input.descriptorPath ?? null,
+    descriptor_path: input.descriptorPath,
     source_url: input.sourceUrl ?? null,
     source_path: input.sourcePath ?? null,
-    status: input.descriptorPath ? "descriptor_ready" : "pending",
+    status: "descriptor_ready",
   });
   if (error) throw new Error(error.message);
 }

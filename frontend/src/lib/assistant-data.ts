@@ -229,7 +229,7 @@ export async function sendAssistantMessage(input: {
         storage_bucket: CHAT_ATTACHMENT_BUCKET,
         object_path: objectPath,
         file_name: file.name,
-        mime_type: file.type || null,
+        mime_type: file.type || "application/octet-stream",
         byte_size: file.size,
         kind: kindFromMime(file.type, file.name),
         parse_status: "unparsed",

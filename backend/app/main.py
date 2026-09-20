@@ -243,6 +243,33 @@ class ReleaseRequest(BaseModel):
     lease_id: str | None = Field(default=None, max_length=200)
 
 
+class PrivacyPurgeRequest(BaseModel):
+    """Caller-scoped local half of the data-deletion workflow."""
+
+    mode: Literal["range", "all_content", "delete_account"]
+    start_at: str | None = Field(default=None, max_length=64)
+    end_at: str | None = Field(default=None, max_length=64)
+    delete_peer_messages: bool = True
+    delete_ai_messages: bool = True
+
+
+def _privacy_range(body: PrivacyPurgeRequest) -> tuple[datetime | None, datetime | None]:
+    """Validate the same half-open ISO-8601 range accepted by delete-my-data."""
+
+    if body.mode != "range":
+        return None, None
+    if not body.start_at or not body.end_at:
+        raise ApiError(400, "invalid_range", "A valid deletion range is required")
+    try:
+        start = datetime.fromisoformat(body.start_at)
+        end = datetime.fromisoformat(body.end_at)
+    except ValueError as error:
+        raise ApiError(400, "invalid_range", "A valid deletion range is required") from error
+    if start.tzinfo is None or end.tzinfo is None or start >= end:
+        raise ApiError(400, "invalid_range", "A valid deletion range is required")
+    return start.astimezone(UTC), end.astimezone(UTC)
+
+
 def create_app(
     context_manager: ContextManager | None = None,
     llm_client: LocalOpenAICompatibleClient | None = None,
@@ -712,6 +739,37 @@ def create_app(
 
         released = await coordinator.release(identity.user_id, body.lease_id)
         return {"released": released, "message_code": "released" if released else "not_found"}
+
+    @api.post("/api/privacy/purge-local")
+    async def purge_local_user_data(
+        body: PrivacyPurgeRequest,
+        identity: AuthenticatedUser = Depends(require_user),  # noqa: B008
+    ) -> dict[str, object]:
+        """Idempotently purge caller-owned local state before Supabase deletion."""
+
+        start, end = _privacy_range(body)
+        deleted = 0
+        runtime_references = 0
+        if body.mode != "range" or body.delete_ai_messages:
+            manager = manager_for(identity)
+            deleted += manager.store.purge_user_data(
+                identity.user_id,
+                start=start,
+                end=end,
+            )
+            deleted += await assessment.purge_user_data(
+                identity.user_id,
+                start=start,
+                end=end,
+            )
+        if body.mode != "range":
+            runtime_references = await coordinator.purge_user_references(identity.user_id)
+        return {
+            "ok": True,
+            "mode": body.mode,
+            "deleted_local_records": deleted,
+            "removed_runtime_references": runtime_references,
+        }
 
     @api.post("/api/model/prepare")
     async def prepare_model(

@@ -3,10 +3,15 @@ import { createClient } from "npm:@supabase/supabase-js@2.111.0";
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
-const JSON_HEADERS = { ...CORS, "Content-Type": "application/json; charset=utf-8" };
+const JSON_HEADERS = {
+  ...CORS,
+  "Content-Type": "application/json; charset=utf-8",
+  "Cache-Control": "no-store",
+};
 const USERNAME_RE = /^[a-z0-9._-]{3,30}$/;
 
 function response(status: number, body: Record<string, unknown>) {
@@ -14,34 +19,52 @@ function response(status: number, body: Record<string, unknown>) {
 }
 
 function invalidCredentials() {
-  return response(401, { error: "Invalid username or password." });
+  return response(200, { ok: false, error_code: "invalid_credentials" });
+}
+function unavailable() {
+  return response(200, { ok: false, error_code: "authentication_unavailable" });
 }
 
 Deno.serve(async (req: Request) => {
-  if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: CORS });
-  if (req.method !== "POST") return response(405, { error: "Method not allowed." });
+  if (req.method === "OPTIONS")
+    return new Response(null, { status: 204, headers: CORS });
+  if (req.method !== "POST") {
+    return response(405, { ok: false, error_code: "method_not_allowed" });
+  }
 
   let payload: unknown;
   try {
     payload = await req.json();
   } catch {
-    return response(400, { error: "Invalid request." });
+    return invalidCredentials();
   }
 
-  const body = payload && typeof payload === "object" ? (payload as Record<string, unknown>) : {};
-  const username = typeof body.username === "string" ? body.username.trim().toLowerCase() : "";
+  const body =
+    payload && typeof payload === "object"
+      ? (payload as Record<string, unknown>)
+      : {};
+  const username =
+    typeof body.username === "string" ? body.username.trim().toLowerCase() : "";
   const password = typeof body.password === "string" ? body.password : "";
-  if (!USERNAME_RE.test(username) || password.length < 6 || password.length > 1024) {
+  if (
+    !USERNAME_RE.test(username) ||
+    password.length < 6 ||
+    password.length > 1024
+  ) {
     return invalidCredentials();
   }
 
   const url = Deno.env.get("SUPABASE_URL");
   const serviceRole = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
   const anonKey = Deno.env.get("SUPABASE_ANON_KEY");
-  if (!url || !serviceRole || !anonKey) return response(500, { error: "Authentication is unavailable." });
+  if (!url || !serviceRole || !anonKey) return unavailable();
 
   const admin = createClient(url, serviceRole, {
-    auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+    auth: {
+      persistSession: false,
+      autoRefreshToken: false,
+      detectSessionInUrl: false,
+    },
   });
   const { data: profile, error: profileError } = await admin
     .from("profiles")
@@ -50,17 +73,26 @@ Deno.serve(async (req: Request) => {
     .maybeSingle();
   if (profileError || !profile?.user_id) return invalidCredentials();
 
-  const { data: userData, error: userError } = await admin.auth.admin.getUserById(profile.user_id);
+  const { data: userData, error: userError } =
+    await admin.auth.admin.getUserById(profile.user_id);
   const email = userData.user?.email;
   if (userError || !email) return invalidCredentials();
 
   const publicClient = createClient(url, anonKey, {
-    auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+    auth: {
+      persistSession: false,
+      autoRefreshToken: false,
+      detectSessionInUrl: false,
+    },
   });
-  const { data, error } = await publicClient.auth.signInWithPassword({ email, password });
+  const { data, error } = await publicClient.auth.signInWithPassword({
+    email,
+    password,
+  });
   if (error || !data.session) return invalidCredentials();
 
   return response(200, {
+    ok: true,
     access_token: data.session.access_token,
     refresh_token: data.session.refresh_token,
     expires_in: data.session.expires_in,

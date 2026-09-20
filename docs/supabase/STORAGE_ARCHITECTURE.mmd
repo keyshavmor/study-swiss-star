@@ -8,7 +8,12 @@ flowchart LR
   Functions --> Feedback["feedback-messages"]
   Producer["Future media descriptor producer"] --> Descriptors["assistant-descriptors"]
   User -->|"own-prefix read"| Descriptors
+  PeerBackend["Local backend scan + moderation"] -->|"trusted write"| Peer["peer-message-attachments"]
+  User -->|"active-member read"| Peer
   Cron["media-retention-cleanup"] --> Descriptors
   Cron --> Chat
   Capacity["global storage cleanup<br/>cron every 5 minutes"] --> Chat
   Capacity --> Materials
+  Rights["delete-my-data"] --> Chat
+  Rights --> Materials
+  Rights --> Peer

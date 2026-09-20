@@ -1,6 +1,13 @@
 # Backend Branch Reconciliation Report
 
-Status: IMPLEMENTATION AND AUTHORIZED PRODUCTION DEPLOYMENT COMPLETE
+Status: HISTORICAL 2026-09-15 RECONCILIATION RECEIPT — NOT CURRENT INVENTORY
+
+This report preserves evidence of the earlier authorized reconciliation. Its
+counts and SHAs are intentionally historical. Current live Supabase inventory
+is in `docs/supabase/SUPABASE_CURRENT_STATE.md` and
+`supabase/LIVE_MIGRATION_HISTORY.md`; Prompt 07 inspected 32 migrations, 37
+RLS-enabled public tables, seven private buckets, and seven Edge Functions on
+2026-09-20 without changing production.
 
 Last verified: 2026-09-15 (Europe/Zurich)
 

@@ -1,11 +1,11 @@
 /**
- * Supabase schema types for the production project.
+ * Generated from the verified live Supabase project on 2026-09-20.
  *
- * Hand-maintained to match the live schema: tutoring `threads`/`messages`,
- * `profiles`, `user_preferences`, `documents`/`document_chunks`, and the
- * separate general-assistant tables (`assistant_threads`,
- * `assistant_messages`, `assistant_attachments`).
+ * The Database/utility sections below are generator output. Product-specific
+ * response helpers remain above Database because JSON-returning RPCs cannot
+ * express their nested shapes through the schema generator.
  */
+
 export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
 
 export type StorageUsageStatus = {
@@ -147,322 +147,752 @@ export type PeerDirectoryRow = {
 };
 
 export type Database = {
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "14.5";
   };
   public: {
     Tables: {
-      feedback: {
+      account_compliance: {
         Row: {
-          id: string;
-          user_id: string;
-          category: string;
-          message: string;
-          context: Json;
+          account_status: string;
+          account_type: string;
+          compliance_onboarding_completed: boolean;
           created_at: string;
-        };
-        Insert: {
-          id?: string;
-          user_id: string;
-          category: string;
-          message: string;
-          context: Json;
-          created_at?: string;
-        };
-        Update: {
-          category?: string;
-          message?: string;
-          context?: Json;
-        };
-        Relationships: [];
-      };
-      usage_events: {
-        Row: {
-          id: string;
-          user_id: string | null;
-          event_name: string;
-          feature: string | null;
-          subject: string | null;
-          properties: Json;
-          occurred_at: string;
-        };
-        Insert: {
-          id?: string;
-          user_id?: string | null;
-          event_name: string;
-          feature?: string | null;
-          subject?: string | null;
-          properties?: Json;
-          occurred_at?: string;
-        };
-        Update: {
-          event_name?: string;
-          feature?: string | null;
-          subject?: string | null;
-          properties?: Json;
-        };
-        Relationships: [];
-      };
-      profiles: {
-        Row: {
-          user_id: string;
-          username: string;
-          full_name: string;
-          preferred_name: string;
-          photo: string;
-          nationality: string;
-          contact_phone: string;
-          contact_details: Json;
           date_of_birth: string | null;
-          created_at: string;
+          guardian_contact_verified_at: string | null;
+          guardian_email: string | null;
+          safety_intro_acknowledged_at: string | null;
+          safety_strike_count: number;
+          suspended_at: string | null;
+          suspension_reason_code: string | null;
           updated_at: string;
-          [key: string]: Json | undefined;
+          user_id: string;
         };
         Insert: {
-          user_id: string;
-          username?: string;
-          full_name?: string;
-          preferred_name?: string;
-          photo?: string;
-          nationality?: string;
-          contact_phone?: string;
-          contact_details?: Json;
-          date_of_birth?: string | null;
-        };
-        Update: {
-          username?: string;
-          full_name?: string;
-          preferred_name?: string;
-          photo?: string;
-          nationality?: string;
-          contact_phone?: string;
-          contact_details?: Json;
-          date_of_birth?: string | null;
-          updated_at?: string;
-        };
-        Relationships: [];
-      };
-
-      user_preferences: {
-        Row: {
-          user_id: string;
-          academic_year: string | null;
-          preferences: Json;
-          created_at: string;
-          updated_at: string;
-        };
-        Insert: {
-          user_id: string;
-          academic_year?: string | null;
-          preferences?: Json;
-        };
-        Update: {
-          academic_year?: string | null;
-          preferences?: Json;
-          updated_at?: string;
-        };
-        Relationships: [];
-      };
-
-      /**
-       * Assistant OUTPUT media retention queue. Originals become eligible for
-       * deletion 30 minutes after creation; the textual descriptor in
-       * `assistant-descriptors` is the retrieval surface afterwards.
-       */
-      media_retention_queue: {
-        Row: {
-          id: string;
-          user_id: string;
-          attachment_id: string | null;
-          media_kind: string;
-          storage_bucket: string;
-          object_path: string;
-          descriptor_bucket: string;
-          descriptor_path: string | null;
-          source_url: string | null;
-          source_path: string | null;
-          status: string;
-          created_at: string;
-          delete_after: string;
-          deleted_at: string | null;
-          error_code: string | null;
-        };
-        Insert: {
-          id?: string;
-          user_id: string;
-          attachment_id?: string | null;
-          media_kind: string;
-          storage_bucket: string;
-          object_path: string;
-          descriptor_bucket?: string;
-          descriptor_path?: string | null;
-          source_url?: string | null;
-          source_path?: string | null;
-          status?: string;
+          account_status?: string;
+          account_type?: string;
+          compliance_onboarding_completed?: boolean;
           created_at?: string;
-          delete_after?: string;
-          deleted_at?: string | null;
-          error_code?: string | null;
+          date_of_birth?: string | null;
+          guardian_contact_verified_at?: string | null;
+          guardian_email?: string | null;
+          safety_intro_acknowledged_at?: string | null;
+          safety_strike_count?: number;
+          suspended_at?: string | null;
+          suspension_reason_code?: string | null;
+          updated_at?: string;
+          user_id: string;
         };
         Update: {
-          attachment_id?: string | null;
-          media_kind?: string;
-          storage_bucket?: string;
-          object_path?: string;
-          descriptor_bucket?: string;
-          descriptor_path?: string | null;
-          source_url?: string | null;
-          source_path?: string | null;
-          status?: string;
-          delete_after?: string;
-          deleted_at?: string | null;
-          error_code?: string | null;
+          account_status?: string;
+          account_type?: string;
+          compliance_onboarding_completed?: boolean;
+          created_at?: string;
+          date_of_birth?: string | null;
+          guardian_contact_verified_at?: string | null;
+          guardian_email?: string | null;
+          safety_intro_acknowledged_at?: string | null;
+          safety_strike_count?: number;
+          suspended_at?: string | null;
+          suspension_reason_code?: string | null;
+          updated_at?: string;
+          user_id?: string;
         };
         Relationships: [];
       };
-
-      documents: {
+      ai_model_catalog: {
         Row: {
-          id: string;
-          user_id: string;
-          created_at: string | null;
-          [key: string]: Json | undefined;
-        };
-        Insert: {
-          id?: string;
-          user_id: string;
-          [key: string]: Json | undefined;
-        };
-        Update: {
-          [key: string]: Json | undefined;
-        };
-        Relationships: [];
-      };
-      document_chunks: {
-        Row: {
-          id: string;
-          document_id: string;
-          user_id: string | null;
-          [key: string]: Json | undefined;
-        };
-        Insert: {
-          id?: string;
-          document_id: string;
-          [key: string]: Json | undefined;
-        };
-        Update: {
-          [key: string]: Json | undefined;
-        };
-        Relationships: [];
-      };
-      assistant_threads: {
-        Row: {
-          id: string;
-          user_id: string;
-          title: string;
           created_at: string;
+          display_name: string;
+          enabled: boolean;
+          model_id: string;
+          sort_order: number;
           updated_at: string;
         };
         Insert: {
-          id?: string;
-          user_id: string;
-          title?: string;
+          created_at?: string;
+          display_name: string;
+          enabled?: boolean;
+          model_id: string;
+          sort_order: number;
+          updated_at?: string;
         };
         Update: {
-          title?: string;
+          created_at?: string;
+          display_name?: string;
+          enabled?: boolean;
+          model_id?: string;
+          sort_order?: number;
           updated_at?: string;
         };
         Relationships: [];
       };
-      assistant_messages: {
+      assessments: {
         Row: {
-          id: string;
-          thread_id: string;
-          user_id: string;
-          role: string;
-          content: string;
-          parts: Json | null;
-          metadata: Json | null;
+          academic_year: string;
+          assessment_date: string;
+          assessment_type: string;
           created_at: string;
+          id: string;
+          imported_from: string | null;
+          include_in_stats: boolean;
+          max_points: number | null;
+          notes: string;
+          points: number | null;
+          source: string;
+          subject_slug: string;
+          teacher_grade: number | null;
+          title: string;
+          topic: string;
+          updated_at: string;
+          user_id: string;
+          weight: number;
         };
         Insert: {
+          academic_year: string;
+          assessment_date: string;
+          assessment_type: string;
+          created_at?: string;
           id?: string;
-          thread_id: string;
+          imported_from?: string | null;
+          include_in_stats?: boolean;
+          max_points?: number | null;
+          notes?: string;
+          points?: number | null;
+          source: string;
+          subject_slug: string;
+          teacher_grade?: number | null;
+          title: string;
+          topic?: string;
+          updated_at?: string;
           user_id: string;
-          role: string;
-          content: string;
-          parts?: Json | null;
-          metadata?: Json | null;
+          weight?: number;
         };
         Update: {
-          content?: string;
-          parts?: Json | null;
-          metadata?: Json | null;
+          academic_year?: string;
+          assessment_date?: string;
+          assessment_type?: string;
+          created_at?: string;
+          id?: string;
+          imported_from?: string | null;
+          include_in_stats?: boolean;
+          max_points?: number | null;
+          notes?: string;
+          points?: number | null;
+          source?: string;
+          subject_slug?: string;
+          teacher_grade?: number | null;
+          title?: string;
+          topic?: string;
+          updated_at?: string;
+          user_id?: string;
+          weight?: number;
         };
         Relationships: [];
       };
       assistant_attachments: {
         Row: {
-          id: string;
-          user_id: string;
-          thread_id: string | null;
-          message_id: string | null;
-          storage_bucket: string;
-          object_path: string;
-          file_name: string;
-          mime_type: string | null;
-          byte_size: number | null;
-          kind: string | null;
-          parse_status: string | null;
-          metadata: Json | null;
+          byte_size: number;
           created_at: string;
           deleted_at: string | null;
+          file_name: string;
+          id: string;
+          kind: string;
+          message_id: string | null;
+          metadata: Json;
+          mime_type: string;
+          object_path: string;
+          parse_status: string;
+          storage_bucket: string;
+          thread_id: string;
+          user_id: string;
         };
         Insert: {
-          id?: string;
-          user_id: string;
-          thread_id?: string | null;
-          message_id?: string | null;
-          storage_bucket: string;
-          object_path: string;
+          byte_size: number;
+          created_at?: string;
+          deleted_at?: string | null;
           file_name: string;
-          mime_type?: string | null;
-          byte_size?: number | null;
-          kind?: string | null;
-          parse_status?: string | null;
-          metadata?: Json | null;
+          id?: string;
+          kind: string;
+          message_id?: string | null;
+          metadata?: Json;
+          mime_type: string;
+          object_path: string;
+          parse_status?: string;
+          storage_bucket?: string;
+          thread_id: string;
+          user_id: string;
         };
         Update: {
-          message_id?: string | null;
-          parse_status?: string | null;
-          metadata?: Json | null;
+          byte_size?: number;
+          created_at?: string;
           deleted_at?: string | null;
+          file_name?: string;
+          id?: string;
+          kind?: string;
+          message_id?: string | null;
+          metadata?: Json;
+          mime_type?: string;
+          object_path?: string;
+          parse_status?: string;
+          storage_bucket?: string;
+          thread_id?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "assistant_attachments_message_owner_fkey";
+            columns: ["message_id", "user_id"];
+            isOneToOne: false;
+            referencedRelation: "assistant_messages";
+            referencedColumns: ["id", "user_id"];
+          },
+          {
+            foreignKeyName: "assistant_attachments_thread_owner_fkey";
+            columns: ["thread_id", "user_id"];
+            isOneToOne: false;
+            referencedRelation: "assistant_threads";
+            referencedColumns: ["id", "user_id"];
+          },
+        ];
+      };
+      assistant_messages: {
+        Row: {
+          content: string;
+          created_at: string;
+          id: string;
+          metadata: Json;
+          parts: Json;
+          role: string;
+          thread_id: string;
+          user_id: string;
+        };
+        Insert: {
+          content?: string;
+          created_at?: string;
+          id?: string;
+          metadata?: Json;
+          parts?: Json;
+          role: string;
+          thread_id: string;
+          user_id: string;
+        };
+        Update: {
+          content?: string;
+          created_at?: string;
+          id?: string;
+          metadata?: Json;
+          parts?: Json;
+          role?: string;
+          thread_id?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "assistant_messages_thread_owner_fkey";
+            columns: ["thread_id", "user_id"];
+            isOneToOne: false;
+            referencedRelation: "assistant_threads";
+            referencedColumns: ["id", "user_id"];
+          },
+        ];
+      };
+      assistant_threads: {
+        Row: {
+          created_at: string;
+          id: string;
+          title: string;
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          id?: string;
+          title?: string;
+          updated_at?: string;
+          user_id: string;
+        };
+        Update: {
+          created_at?: string;
+          id?: string;
+          title?: string;
+          updated_at?: string;
+          user_id?: string;
         };
         Relationships: [];
+      };
+      context_artifacts: {
+        Row: {
+          artifact_type: string;
+          content: string;
+          content_location: string;
+          created_at: string;
+          id: string;
+          metadata: Json;
+          searchable: boolean;
+          summary: string;
+          title: string;
+          token_count: number;
+          user_id: string;
+        };
+        Insert: {
+          artifact_type: string;
+          content: string;
+          content_location: string;
+          created_at?: string;
+          id?: string;
+          metadata?: Json;
+          searchable?: boolean;
+          summary: string;
+          title: string;
+          token_count?: number;
+          user_id: string;
+        };
+        Update: {
+          artifact_type?: string;
+          content?: string;
+          content_location?: string;
+          created_at?: string;
+          id?: string;
+          metadata?: Json;
+          searchable?: boolean;
+          summary?: string;
+          title?: string;
+          token_count?: number;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
+      conversation_summaries: {
+        Row: {
+          covered_message_ids: string[];
+          created_at: string;
+          id: string;
+          summary: string;
+          thread_id: string;
+          token_count: number;
+          user_id: string;
+        };
+        Insert: {
+          covered_message_ids?: string[];
+          created_at?: string;
+          id?: string;
+          summary: string;
+          thread_id: string;
+          token_count?: number;
+          user_id: string;
+        };
+        Update: {
+          covered_message_ids?: string[];
+          created_at?: string;
+          id?: string;
+          summary?: string;
+          thread_id?: string;
+          token_count?: number;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "conversation_summaries_thread_id_user_id_fkey";
+            columns: ["thread_id", "user_id"];
+            isOneToOne: false;
+            referencedRelation: "threads";
+            referencedColumns: ["id", "user_id"];
+          },
+        ];
+      };
+      document_chunks: {
+        Row: {
+          chapter: string | null;
+          content: string;
+          created_at: string;
+          document_id: string;
+          document_type: string | null;
+          embedding: Json | null;
+          id: string;
+          language: string | null;
+          metadata: Json;
+          page: number | null;
+          section: string | null;
+          source: string | null;
+          subject: string | null;
+          subtopic: string | null;
+          title: string;
+          token_count: number;
+          topic: string | null;
+          user_id: string;
+        };
+        Insert: {
+          chapter?: string | null;
+          content: string;
+          created_at?: string;
+          document_id: string;
+          document_type?: string | null;
+          embedding?: Json | null;
+          id?: string;
+          language?: string | null;
+          metadata?: Json;
+          page?: number | null;
+          section?: string | null;
+          source?: string | null;
+          subject?: string | null;
+          subtopic?: string | null;
+          title: string;
+          token_count?: number;
+          topic?: string | null;
+          user_id: string;
+        };
+        Update: {
+          chapter?: string | null;
+          content?: string;
+          created_at?: string;
+          document_id?: string;
+          document_type?: string | null;
+          embedding?: Json | null;
+          id?: string;
+          language?: string | null;
+          metadata?: Json;
+          page?: number | null;
+          section?: string | null;
+          source?: string | null;
+          subject?: string | null;
+          subtopic?: string | null;
+          title?: string;
+          token_count?: number;
+          topic?: string | null;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "document_chunks_document_id_user_id_fkey";
+            columns: ["document_id", "user_id"];
+            isOneToOne: false;
+            referencedRelation: "documents";
+            referencedColumns: ["id", "user_id"];
+          },
+        ];
+      };
+      documents: {
+        Row: {
+          archived: boolean;
+          byte_size: number | null;
+          created_at: string;
+          document_type: string;
+          id: string;
+          language: string | null;
+          metadata: Json;
+          mime_type: string | null;
+          notes: string;
+          object_path: string | null;
+          section: string | null;
+          source: string | null;
+          status: string;
+          storage_bucket: string | null;
+          subject_slug: string | null;
+          title: string;
+          topic: string | null;
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          archived?: boolean;
+          byte_size?: number | null;
+          created_at?: string;
+          document_type: string;
+          id?: string;
+          language?: string | null;
+          metadata?: Json;
+          mime_type?: string | null;
+          notes?: string;
+          object_path?: string | null;
+          section?: string | null;
+          source?: string | null;
+          status?: string;
+          storage_bucket?: string | null;
+          subject_slug?: string | null;
+          title: string;
+          topic?: string | null;
+          updated_at?: string;
+          user_id: string;
+        };
+        Update: {
+          archived?: boolean;
+          byte_size?: number | null;
+          created_at?: string;
+          document_type?: string;
+          id?: string;
+          language?: string | null;
+          metadata?: Json;
+          mime_type?: string | null;
+          notes?: string;
+          object_path?: string | null;
+          section?: string | null;
+          source?: string | null;
+          status?: string;
+          storage_bucket?: string | null;
+          subject_slug?: string | null;
+          title?: string;
+          topic?: string | null;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
+      feedback: {
+        Row: {
+          category: string;
+          context: Json;
+          created_at: string;
+          id: string;
+          message: string;
+          user_id: string;
+        };
+        Insert: {
+          category: string;
+          context?: Json;
+          created_at?: string;
+          id?: string;
+          message: string;
+          user_id: string;
+        };
+        Update: {
+          category?: string;
+          context?: Json;
+          created_at?: string;
+          id?: string;
+          message?: string;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
+      grading_results: {
+        Row: {
+          academic_year: string | null;
+          component: string | null;
+          feedback: Json;
+          graded_at: string;
+          id: string;
+          max_points: number | null;
+          metadata: Json;
+          model_used: string | null;
+          points: number | null;
+          source_id: string | null;
+          source_type: string;
+          subject: string;
+          swiss_grade: number | null;
+          user_answers: Json;
+          user_id: string;
+        };
+        Insert: {
+          academic_year?: string | null;
+          component?: string | null;
+          feedback?: Json;
+          graded_at?: string;
+          id?: string;
+          max_points?: number | null;
+          metadata?: Json;
+          model_used?: string | null;
+          points?: number | null;
+          source_id?: string | null;
+          source_type: string;
+          subject: string;
+          swiss_grade?: number | null;
+          user_answers?: Json;
+          user_id: string;
+        };
+        Update: {
+          academic_year?: string | null;
+          component?: string | null;
+          feedback?: Json;
+          graded_at?: string;
+          id?: string;
+          max_points?: number | null;
+          metadata?: Json;
+          model_used?: string | null;
+          points?: number | null;
+          source_id?: string | null;
+          source_type?: string;
+          subject?: string;
+          swiss_grade?: number | null;
+          user_answers?: Json;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
+      guardian_notification_queue: {
+        Row: {
+          created_at: string;
+          id: string;
+          moderation_event_id: string | null;
+          reviewed_at: string | null;
+          sent_at: string | null;
+          status: string;
+          student_user_id: string | null;
+        };
+        Insert: {
+          created_at?: string;
+          id?: string;
+          moderation_event_id?: string | null;
+          reviewed_at?: string | null;
+          sent_at?: string | null;
+          status?: string;
+          student_user_id?: string | null;
+        };
+        Update: {
+          created_at?: string;
+          id?: string;
+          moderation_event_id?: string | null;
+          reviewed_at?: string | null;
+          sent_at?: string | null;
+          status?: string;
+          student_user_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "guardian_notification_queue_moderation_event_id_fkey";
+            columns: ["moderation_event_id"];
+            isOneToOne: true;
+            referencedRelation: "moderation_events";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      learning_events: {
+        Row: {
+          content: string;
+          created_at: string;
+          event_type: string;
+          id: string;
+          importance: number;
+          metadata: Json;
+          occurred_at: string;
+          subject: string | null;
+          topic: string | null;
+          user_id: string;
+        };
+        Insert: {
+          content: string;
+          created_at?: string;
+          event_type: string;
+          id?: string;
+          importance?: number;
+          metadata?: Json;
+          occurred_at?: string;
+          subject?: string | null;
+          topic?: string | null;
+          user_id: string;
+        };
+        Update: {
+          content?: string;
+          created_at?: string;
+          event_type?: string;
+          id?: string;
+          importance?: number;
+          metadata?: Json;
+          occurred_at?: string;
+          subject?: string | null;
+          topic?: string | null;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
+      media_retention_queue: {
+        Row: {
+          attachment_id: string | null;
+          created_at: string;
+          delete_after: string;
+          deleted_at: string | null;
+          descriptor_bucket: string;
+          descriptor_path: string;
+          error_code: string | null;
+          id: string;
+          media_kind: string;
+          object_path: string;
+          source_path: string | null;
+          source_url: string | null;
+          status: string;
+          storage_bucket: string;
+          user_id: string;
+        };
+        Insert: {
+          attachment_id?: string | null;
+          created_at?: string;
+          delete_after?: string;
+          deleted_at?: string | null;
+          descriptor_bucket?: string;
+          descriptor_path: string;
+          error_code?: string | null;
+          id?: string;
+          media_kind: string;
+          object_path: string;
+          source_path?: string | null;
+          source_url?: string | null;
+          status?: string;
+          storage_bucket: string;
+          user_id: string;
+        };
+        Update: {
+          attachment_id?: string | null;
+          created_at?: string;
+          delete_after?: string;
+          deleted_at?: string | null;
+          descriptor_bucket?: string;
+          descriptor_path?: string;
+          error_code?: string | null;
+          id?: string;
+          media_kind?: string;
+          object_path?: string;
+          source_path?: string | null;
+          source_url?: string | null;
+          status?: string;
+          storage_bucket?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "media_retention_queue_attachment_owner_fkey";
+            columns: ["attachment_id", "user_id"];
+            isOneToOne: false;
+            referencedRelation: "assistant_attachments";
+            referencedColumns: ["id", "user_id"];
+          },
+        ];
       };
       messages: {
         Row: {
           content: string;
           created_at: string;
           id: string;
+          metadata: Json;
           parts: Json | null;
           role: string;
           thread_id: string;
+          token_count: number;
           user_id: string;
         };
         Insert: {
           content: string;
           created_at?: string;
           id?: string;
+          metadata?: Json;
           parts?: Json | null;
           role: string;
           thread_id: string;
+          token_count?: number;
           user_id: string;
         };
         Update: {
           content?: string;
+          created_at?: string;
+          id?: string;
+          metadata?: Json;
           parts?: Json | null;
           role?: string;
+          thread_id?: string;
+          token_count?: number;
+          user_id?: string;
         };
         Relationships: [
           {
@@ -473,6 +903,780 @@ export type Database = {
             referencedColumns: ["id", "user_id"];
           },
         ];
+      };
+      mock_exam_attempts: {
+        Row: {
+          answers: Json;
+          attempt_number: number;
+          completed_at: string | null;
+          grading_feedback: Json;
+          id: string;
+          max_points: number | null;
+          mock_exam_id: string;
+          points: number | null;
+          score: number | null;
+          started_at: string;
+          swiss_grade: number | null;
+          user_id: string;
+        };
+        Insert: {
+          answers?: Json;
+          attempt_number?: number;
+          completed_at?: string | null;
+          grading_feedback?: Json;
+          id?: string;
+          max_points?: number | null;
+          mock_exam_id: string;
+          points?: number | null;
+          score?: number | null;
+          started_at?: string;
+          swiss_grade?: number | null;
+          user_id: string;
+        };
+        Update: {
+          answers?: Json;
+          attempt_number?: number;
+          completed_at?: string | null;
+          grading_feedback?: Json;
+          id?: string;
+          max_points?: number | null;
+          mock_exam_id?: string;
+          points?: number | null;
+          score?: number | null;
+          started_at?: string;
+          swiss_grade?: number | null;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "mock_exam_attempts_mock_exam_id_user_id_fkey";
+            columns: ["mock_exam_id", "user_id"];
+            isOneToOne: false;
+            referencedRelation: "mock_exams";
+            referencedColumns: ["id", "user_id"];
+          },
+        ];
+      };
+      mock_exams: {
+        Row: {
+          academic_year: string | null;
+          component: string | null;
+          duration_minutes: number | null;
+          generated_at: string;
+          id: string;
+          metadata: Json;
+          model_used: string | null;
+          questions: Json;
+          source_document_ids: string[];
+          subject: string;
+          topic: string | null;
+          user_id: string;
+        };
+        Insert: {
+          academic_year?: string | null;
+          component?: string | null;
+          duration_minutes?: number | null;
+          generated_at?: string;
+          id?: string;
+          metadata?: Json;
+          model_used?: string | null;
+          questions: Json;
+          source_document_ids?: string[];
+          subject: string;
+          topic?: string | null;
+          user_id: string;
+        };
+        Update: {
+          academic_year?: string | null;
+          component?: string | null;
+          duration_minutes?: number | null;
+          generated_at?: string;
+          id?: string;
+          metadata?: Json;
+          model_used?: string | null;
+          questions?: Json;
+          source_document_ids?: string[];
+          subject?: string;
+          topic?: string | null;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
+      moderation_events: {
+        Row: {
+          category: string;
+          content_hash: string | null;
+          created_at: string;
+          decision: string;
+          id: string;
+          occurred_at: string;
+          reason_code: string;
+          review_status: string;
+          reviewed_at: string | null;
+          source_type: string;
+          strike_number: number | null;
+          user_id: string | null;
+        };
+        Insert: {
+          category: string;
+          content_hash?: string | null;
+          created_at?: string;
+          decision?: string;
+          id?: string;
+          occurred_at?: string;
+          reason_code: string;
+          review_status?: string;
+          reviewed_at?: string | null;
+          source_type: string;
+          strike_number?: number | null;
+          user_id?: string | null;
+        };
+        Update: {
+          category?: string;
+          content_hash?: string | null;
+          created_at?: string;
+          decision?: string;
+          id?: string;
+          occurred_at?: string;
+          reason_code?: string;
+          review_status?: string;
+          reviewed_at?: string | null;
+          source_type?: string;
+          strike_number?: number | null;
+          user_id?: string | null;
+        };
+        Relationships: [];
+      };
+      notification_state: {
+        Row: {
+          dismissed_at: string | null;
+          notification_key: string;
+          read_at: string | null;
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          dismissed_at?: string | null;
+          notification_key: string;
+          read_at?: string | null;
+          updated_at?: string;
+          user_id: string;
+        };
+        Update: {
+          dismissed_at?: string | null;
+          notification_key?: string;
+          read_at?: string | null;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
+      peer_conversation_members: {
+        Row: {
+          conversation_id: string;
+          joined_at: string;
+          last_read_at: string | null;
+          left_at: string | null;
+          member_role: string;
+          muted: boolean;
+          user_id: string;
+        };
+        Insert: {
+          conversation_id: string;
+          joined_at?: string;
+          last_read_at?: string | null;
+          left_at?: string | null;
+          member_role?: string;
+          muted?: boolean;
+          user_id: string;
+        };
+        Update: {
+          conversation_id?: string;
+          joined_at?: string;
+          last_read_at?: string | null;
+          left_at?: string | null;
+          member_role?: string;
+          muted?: boolean;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "peer_conversation_members_conversation_id_fkey";
+            columns: ["conversation_id"];
+            isOneToOne: false;
+            referencedRelation: "peer_conversations";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      peer_conversations: {
+        Row: {
+          conversation_type: string;
+          created_at: string;
+          created_by: string | null;
+          direct_key: string | null;
+          id: string;
+          title: string | null;
+          updated_at: string;
+        };
+        Insert: {
+          conversation_type?: string;
+          created_at?: string;
+          created_by?: string | null;
+          direct_key?: string | null;
+          id?: string;
+          title?: string | null;
+          updated_at?: string;
+        };
+        Update: {
+          conversation_type?: string;
+          created_at?: string;
+          created_by?: string | null;
+          direct_key?: string | null;
+          id?: string;
+          title?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      peer_message_attachments: {
+        Row: {
+          byte_size: number;
+          conversation_id: string;
+          created_at: string;
+          file_name: string;
+          id: string;
+          message_id: string;
+          mime_type: string;
+          object_path: string;
+          owner_user_id: string;
+          storage_bucket: string;
+        };
+        Insert: {
+          byte_size: number;
+          conversation_id: string;
+          created_at?: string;
+          file_name: string;
+          id?: string;
+          message_id: string;
+          mime_type: string;
+          object_path: string;
+          owner_user_id: string;
+          storage_bucket?: string;
+        };
+        Update: {
+          byte_size?: number;
+          conversation_id?: string;
+          created_at?: string;
+          file_name?: string;
+          id?: string;
+          message_id?: string;
+          mime_type?: string;
+          object_path?: string;
+          owner_user_id?: string;
+          storage_bucket?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "peer_message_attachments_conversation_id_fkey";
+            columns: ["conversation_id"];
+            isOneToOne: false;
+            referencedRelation: "peer_conversations";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "peer_message_attachments_message_id_fkey";
+            columns: ["message_id"];
+            isOneToOne: false;
+            referencedRelation: "peer_messages";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      peer_message_notifications: {
+        Row: {
+          conversation_id: string;
+          created_at: string;
+          id: string;
+          message_id: string;
+          read_at: string | null;
+          user_id: string;
+        };
+        Insert: {
+          conversation_id: string;
+          created_at?: string;
+          id?: string;
+          message_id: string;
+          read_at?: string | null;
+          user_id: string;
+        };
+        Update: {
+          conversation_id?: string;
+          created_at?: string;
+          id?: string;
+          message_id?: string;
+          read_at?: string | null;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "peer_message_notifications_conversation_id_fkey";
+            columns: ["conversation_id"];
+            isOneToOne: false;
+            referencedRelation: "peer_conversations";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "peer_message_notifications_message_id_fkey";
+            columns: ["message_id"];
+            isOneToOne: false;
+            referencedRelation: "peer_messages";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      peer_messages: {
+        Row: {
+          body: string;
+          conversation_id: string;
+          created_at: string;
+          deleted_at: string | null;
+          edited_at: string | null;
+          id: string;
+          moderation_event_id: string | null;
+          moderation_status: string;
+          sender_user_id: string;
+        };
+        Insert: {
+          body?: string;
+          conversation_id: string;
+          created_at?: string;
+          deleted_at?: string | null;
+          edited_at?: string | null;
+          id?: string;
+          moderation_event_id?: string | null;
+          moderation_status?: string;
+          sender_user_id: string;
+        };
+        Update: {
+          body?: string;
+          conversation_id?: string;
+          created_at?: string;
+          deleted_at?: string | null;
+          edited_at?: string | null;
+          id?: string;
+          moderation_event_id?: string | null;
+          moderation_status?: string;
+          sender_user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "peer_messages_conversation_id_fkey";
+            columns: ["conversation_id"];
+            isOneToOne: false;
+            referencedRelation: "peer_conversations";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "peer_messages_moderation_event_id_fkey";
+            columns: ["moderation_event_id"];
+            isOneToOne: false;
+            referencedRelation: "moderation_events";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      planner_events: {
+        Row: {
+          category: string;
+          color: string | null;
+          created_at: string;
+          done: boolean;
+          end_time: string;
+          event_date: string;
+          exceptions: string[];
+          generated: boolean;
+          id: string;
+          location: string | null;
+          notes: string | null;
+          overrides: Json;
+          recurrence: string;
+          reminder: string | null;
+          start_time: string;
+          subject_slug: string | null;
+          title: string;
+          travel_after: number | null;
+          travel_before: number | null;
+          travel_minutes: number | null;
+          until_date: string | null;
+          updated_at: string;
+          user_id: string;
+          weekdays: number[];
+        };
+        Insert: {
+          category: string;
+          color?: string | null;
+          created_at?: string;
+          done?: boolean;
+          end_time: string;
+          event_date: string;
+          exceptions?: string[];
+          generated?: boolean;
+          id?: string;
+          location?: string | null;
+          notes?: string | null;
+          overrides?: Json;
+          recurrence?: string;
+          reminder?: string | null;
+          start_time: string;
+          subject_slug?: string | null;
+          title: string;
+          travel_after?: number | null;
+          travel_before?: number | null;
+          travel_minutes?: number | null;
+          until_date?: string | null;
+          updated_at?: string;
+          user_id: string;
+          weekdays?: number[];
+        };
+        Update: {
+          category?: string;
+          color?: string | null;
+          created_at?: string;
+          done?: boolean;
+          end_time?: string;
+          event_date?: string;
+          exceptions?: string[];
+          generated?: boolean;
+          id?: string;
+          location?: string | null;
+          notes?: string | null;
+          overrides?: Json;
+          recurrence?: string;
+          reminder?: string | null;
+          start_time?: string;
+          subject_slug?: string | null;
+          title?: string;
+          travel_after?: number | null;
+          travel_before?: number | null;
+          travel_minutes?: number | null;
+          until_date?: string | null;
+          updated_at?: string;
+          user_id?: string;
+          weekdays?: number[];
+        };
+        Relationships: [];
+      };
+      profiles: {
+        Row: {
+          class_name: string;
+          class_teacher: string;
+          contact_details: Json;
+          contact_phone: string;
+          created_at: string;
+          date_of_birth: string | null;
+          focus_subject: string;
+          full_name: string;
+          language: string;
+          nationality: string;
+          photo: string;
+          preferred_name: string;
+          school_email: string;
+          school_name: string;
+          school_type: string;
+          student_number: string;
+          updated_at: string;
+          user_id: string;
+          username: string;
+        };
+        Insert: {
+          class_name?: string;
+          class_teacher?: string;
+          contact_details?: Json;
+          contact_phone?: string;
+          created_at?: string;
+          date_of_birth?: string | null;
+          focus_subject?: string;
+          full_name?: string;
+          language?: string;
+          nationality?: string;
+          photo?: string;
+          preferred_name?: string;
+          school_email?: string;
+          school_name?: string;
+          school_type?: string;
+          student_number?: string;
+          updated_at?: string;
+          user_id: string;
+          username?: string;
+        };
+        Update: {
+          class_name?: string;
+          class_teacher?: string;
+          contact_details?: Json;
+          contact_phone?: string;
+          created_at?: string;
+          date_of_birth?: string | null;
+          focus_subject?: string;
+          full_name?: string;
+          language?: string;
+          nationality?: string;
+          photo?: string;
+          preferred_name?: string;
+          school_email?: string;
+          school_name?: string;
+          school_type?: string;
+          student_number?: string;
+          updated_at?: string;
+          user_id?: string;
+          username?: string;
+        };
+        Relationships: [];
+      };
+      quiz_attempts: {
+        Row: {
+          answers: Json;
+          attempt_number: number;
+          completed_at: string | null;
+          grading_feedback: Json;
+          id: string;
+          max_points: number | null;
+          points: number | null;
+          quiz_id: string;
+          score: number | null;
+          started_at: string;
+          swiss_grade: number | null;
+          user_id: string;
+        };
+        Insert: {
+          answers?: Json;
+          attempt_number?: number;
+          completed_at?: string | null;
+          grading_feedback?: Json;
+          id?: string;
+          max_points?: number | null;
+          points?: number | null;
+          quiz_id: string;
+          score?: number | null;
+          started_at?: string;
+          swiss_grade?: number | null;
+          user_id: string;
+        };
+        Update: {
+          answers?: Json;
+          attempt_number?: number;
+          completed_at?: string | null;
+          grading_feedback?: Json;
+          id?: string;
+          max_points?: number | null;
+          points?: number | null;
+          quiz_id?: string;
+          score?: number | null;
+          started_at?: string;
+          swiss_grade?: number | null;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "quiz_attempts_quiz_id_user_id_fkey";
+            columns: ["quiz_id", "user_id"];
+            isOneToOne: false;
+            referencedRelation: "quizzes";
+            referencedColumns: ["id", "user_id"];
+          },
+        ];
+      };
+      quizzes: {
+        Row: {
+          academic_year: string | null;
+          component: string | null;
+          generated_at: string;
+          id: string;
+          metadata: Json;
+          model_used: string | null;
+          questions: Json;
+          source_document_ids: string[];
+          subject: string;
+          topic: string | null;
+          user_id: string;
+        };
+        Insert: {
+          academic_year?: string | null;
+          component?: string | null;
+          generated_at?: string;
+          id?: string;
+          metadata?: Json;
+          model_used?: string | null;
+          questions: Json;
+          source_document_ids?: string[];
+          subject: string;
+          topic?: string | null;
+          user_id: string;
+        };
+        Update: {
+          academic_year?: string | null;
+          component?: string | null;
+          generated_at?: string;
+          id?: string;
+          metadata?: Json;
+          model_used?: string | null;
+          questions?: Json;
+          source_document_ids?: string[];
+          subject?: string;
+          topic?: string | null;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
+      school_links: {
+        Row: {
+          accent: string;
+          added_on: string;
+          category: string;
+          created_at: string;
+          description: string | null;
+          icon: string | null;
+          id: string;
+          name: string;
+          open_count: number;
+          sort_order: number;
+          subject_slug: string | null;
+          updated_at: string;
+          url: string;
+          user_id: string;
+        };
+        Insert: {
+          accent: string;
+          added_on?: string;
+          category: string;
+          created_at?: string;
+          description?: string | null;
+          icon?: string | null;
+          id?: string;
+          name: string;
+          open_count?: number;
+          sort_order?: number;
+          subject_slug?: string | null;
+          updated_at?: string;
+          url: string;
+          user_id: string;
+        };
+        Update: {
+          accent?: string;
+          added_on?: string;
+          category?: string;
+          created_at?: string;
+          description?: string | null;
+          icon?: string | null;
+          id?: string;
+          name?: string;
+          open_count?: number;
+          sort_order?: number;
+          subject_slug?: string | null;
+          updated_at?: string;
+          url?: string;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
+      student_memories: {
+        Row: {
+          confidence: number;
+          content: string;
+          created_at: string;
+          evidence: Json;
+          evidence_count: number;
+          id: string;
+          importance: number;
+          last_accessed_at: string | null;
+          memory_type: string;
+          metadata: Json;
+          subject: string | null;
+          topic: string | null;
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          confidence?: number;
+          content: string;
+          created_at?: string;
+          evidence?: Json;
+          evidence_count?: number;
+          id?: string;
+          importance?: number;
+          last_accessed_at?: string | null;
+          memory_type: string;
+          metadata?: Json;
+          subject?: string | null;
+          topic?: string | null;
+          updated_at?: string;
+          user_id: string;
+        };
+        Update: {
+          confidence?: number;
+          content?: string;
+          created_at?: string;
+          evidence?: Json;
+          evidence_count?: number;
+          id?: string;
+          importance?: number;
+          last_accessed_at?: string | null;
+          memory_type?: string;
+          metadata?: Json;
+          subject?: string | null;
+          topic?: string | null;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
+      study_plans: {
+        Row: {
+          academic_year: string | null;
+          completed_at: string | null;
+          generated_at: string;
+          id: string;
+          learning_goal_id: string | null;
+          metadata: Json;
+          model_used: string | null;
+          plan: Json;
+          status: string;
+          subject: string | null;
+          title: string;
+          topic: string | null;
+          user_id: string;
+        };
+        Insert: {
+          academic_year?: string | null;
+          completed_at?: string | null;
+          generated_at?: string;
+          id?: string;
+          learning_goal_id?: string | null;
+          metadata?: Json;
+          model_used?: string | null;
+          plan: Json;
+          status?: string;
+          subject?: string | null;
+          title: string;
+          topic?: string | null;
+          user_id: string;
+        };
+        Update: {
+          academic_year?: string | null;
+          completed_at?: string | null;
+          generated_at?: string;
+          id?: string;
+          learning_goal_id?: string | null;
+          metadata?: Json;
+          model_used?: string | null;
+          plan?: Json;
+          status?: string;
+          subject?: string | null;
+          title?: string;
+          topic?: string | null;
+          user_id?: string;
+        };
+        Relationships: [];
       };
       threads: {
         Row: {
@@ -492,229 +1696,143 @@ export type Database = {
           user_id: string;
         };
         Update: {
+          created_at?: string;
+          id?: string;
           subject?: string | null;
           title?: string;
           updated_at?: string;
+          user_id?: string;
         };
         Relationships: [];
       };
-      /**
-       * CURRENT SUPABASE: read-only catalog of selectable local models.
-       * Authenticated users may SELECT; nobody writes from the frontend.
-       */
-      ai_model_catalog: {
+      usage_events: {
         Row: {
-          model_id: string;
-          display_name: string;
-          enabled: boolean;
-          sort_order: number;
-          created_at: string;
-          updated_at: string;
+          event_name: string;
+          feature: string | null;
+          id: string;
+          occurred_at: string;
+          properties: Json;
+          subject: string | null;
+          user_id: string | null;
         };
         Insert: {
-          model_id: string;
-          display_name: string;
-          enabled?: boolean;
-          sort_order?: number;
+          event_name: string;
+          feature?: string | null;
+          id?: string;
+          occurred_at?: string;
+          properties?: Json;
+          subject?: string | null;
+          user_id?: string | null;
         };
         Update: {
-          display_name?: string;
-          enabled?: boolean;
-          sort_order?: number;
-          updated_at?: string;
+          event_name?: string;
+          feature?: string | null;
+          id?: string;
+          occurred_at?: string;
+          properties?: Json;
+          subject?: string | null;
+          user_id?: string | null;
         };
         Relationships: [];
       };
-      /**
-       * CURRENT SUPABASE: per-user compliance/safety state. The user may SELECT
-       * their own row; there is no client write path (the RPC owns writes).
-       */
-      account_compliance: {
-        Row: {
-          user_id: string;
-          account_type: AccountType;
-          date_of_birth: string | null;
-          guardian_email: string | null;
-          guardian_contact_verified_at: string | null;
-          compliance_onboarding_completed: boolean;
-          safety_intro_acknowledged_at: string | null;
-          account_status: AccountStatus;
-          safety_strike_count: number;
-          suspended_at: string | null;
-          suspension_reason_code: string | null;
-          created_at: string;
-          updated_at: string;
-        };
-        Insert: never;
-        Update: never;
-        Relationships: [];
-      };
-      /** CURRENT SUPABASE: versioned consent records; own-row SELECT only. */
       user_legal_consents: {
         Row: {
-          id: string;
-          user_id: string;
-          document_type: LegalDocumentType;
-          document_version: string;
           accepted_at: string;
-          withdrawn_at: string | null;
-          /** CURRENT SUPABASE (verified 2026-09-15): NOT NULL with a default. */
           consent_source: string;
           created_at: string;
-        };
-        Insert: never;
-        Update: never;
-        Relationships: [];
-      };
-      /**
-       * CURRENT SUPABASE: bounded safety audit metadata. NEVER stores raw
-       * offending content — only category/reason codes and a content hash.
-       */
-      moderation_events: {
-        Row: {
+          document_type: string;
+          document_version: string;
           id: string;
           user_id: string;
-          surface: string;
-          verdict: string;
-          category_code: string | null;
-          reason_code: string | null;
-          content_hash: string | null;
-          strike_number: number | null;
-          review_status: string;
-          created_at: string;
+          withdrawn_at: string | null;
         };
-        Insert: never;
-        Update: never;
-        Relationships: [];
-      };
-      /** CURRENT SUPABASE: admin-only guardian notification review queue. */
-      guardian_notification_queue: {
-        Row: {
-          id: string;
+        Insert: {
+          accepted_at?: string;
+          consent_source?: string;
+          created_at?: string;
+          document_type: string;
+          document_version: string;
+          id?: string;
           user_id: string;
-          guardian_email: string | null;
-          reason_code: string | null;
-          review_status: string;
-          created_at: string;
-          reviewed_at: string | null;
+          withdrawn_at?: string | null;
         };
-        Insert: never;
-        Update: never;
+        Update: {
+          accepted_at?: string;
+          consent_source?: string;
+          created_at?: string;
+          document_type?: string;
+          document_version?: string;
+          id?: string;
+          user_id?: string;
+          withdrawn_at?: string | null;
+        };
         Relationships: [];
       };
-      /**
-       * CURRENT SUPABASE (verified 2026-09-15): there is no `kind` and no
-       * `last_message_at`; ordering uses `updated_at`.
-       */
-      peer_conversations: {
+      user_preferences: {
         Row: {
-          id: string;
-          conversation_type: string;
-          /** CURRENT SUPABASE (verified 2026-09-15): nullable. */
-          created_by: string | null;
-          direct_key: string | null;
-          title: string | null;
+          academic_year: string | null;
           created_at: string;
+          preferences: Json;
           updated_at: string;
+          user_id: string;
         };
-        Insert: never;
-        Update: never;
+        Insert: {
+          academic_year?: string | null;
+          created_at?: string;
+          preferences?: Json;
+          updated_at?: string;
+          user_id: string;
+        };
+        Update: {
+          academic_year?: string | null;
+          created_at?: string;
+          preferences?: Json;
+          updated_at?: string;
+          user_id?: string;
+        };
         Relationships: [];
       };
-      peer_conversation_members: {
+      working_memory: {
         Row: {
-          conversation_id: string;
+          content: string;
+          created_at: string;
+          expires_at: string | null;
+          id: string;
+          metadata: Json;
+          task_id: string | null;
+          thread_id: string | null;
+          token_count: number;
           user_id: string;
-          member_role: string;
-          joined_at: string;
-          last_read_at: string | null;
-          muted: boolean;
-          left_at: string | null;
         };
-        Insert: never;
-        Update: never;
-        Relationships: [
-          {
-            foreignKeyName: "peer_conversation_members_conversation_id_fkey";
-            columns: ["conversation_id"];
-            isOneToOne: false;
-            referencedRelation: "peer_conversations";
-            referencedColumns: ["id"];
-          },
-        ];
-      };
-      /**
-       * CURRENT SUPABASE: readable by conversation members. Direct client
-       * INSERT/UPDATE is intentionally disabled until the future local safety
-       * backend returns an allow verdict — do not work around this.
-       */
-      peer_messages: {
-        Row: {
-          id: string;
-          conversation_id: string;
-          sender_user_id: string;
-          body: string;
-          moderation_status: string;
-          moderation_event_id: string | null;
-          created_at: string;
-          edited_at: string | null;
-          deleted_at: string | null;
-        };
-        Insert: never;
-        Update: never;
-        Relationships: [
-          {
-            foreignKeyName: "peer_messages_conversation_id_fkey";
-            columns: ["conversation_id"];
-            isOneToOne: false;
-            referencedRelation: "peer_conversations";
-            referencedColumns: ["id"];
-          },
-        ];
-      };
-      peer_message_attachments: {
-        Row: {
-          id: string;
-          message_id: string;
-          conversation_id: string;
-          owner_user_id: string;
-          storage_bucket: string;
-          object_path: string;
-          file_name: string;
-          mime_type: string;
-          byte_size: number;
-          created_at: string;
-        };
-        Insert: never;
-        Update: never;
-        Relationships: [
-          {
-            foreignKeyName: "peer_message_attachments_message_id_fkey";
-            columns: ["message_id"];
-            isOneToOne: false;
-            referencedRelation: "peer_messages";
-            referencedColumns: ["id"];
-          },
-        ];
-      };
-      peer_message_notifications: {
-        Row: {
-          id: string;
+        Insert: {
+          content: string;
+          created_at?: string;
+          expires_at?: string | null;
+          id?: string;
+          metadata?: Json;
+          task_id?: string | null;
+          thread_id?: string | null;
+          token_count?: number;
           user_id: string;
-          conversation_id: string;
-          message_id: string;
-          read_at: string | null;
-          created_at: string;
         };
-        Insert: never;
-        Update: never;
+        Update: {
+          content?: string;
+          created_at?: string;
+          expires_at?: string | null;
+          id?: string;
+          metadata?: Json;
+          task_id?: string | null;
+          thread_id?: string | null;
+          token_count?: number;
+          user_id?: string;
+        };
         Relationships: [
           {
-            foreignKeyName: "peer_message_notifications_conversation_id_fkey";
-            columns: ["conversation_id"];
+            foreignKeyName: "working_memory_thread_id_user_id_fkey";
+            columns: ["thread_id", "user_id"];
             isOneToOne: false;
-            referencedRelation: "peer_conversations";
-            referencedColumns: ["id"];
+            referencedRelation: "threads";
+            referencedColumns: ["id", "user_id"];
           },
         ];
       };
@@ -723,69 +1841,142 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
-      get_storage_usage_status: {
-        Args: Record<string, never>;
-        Returns: StorageUsageStatus[];
+      apply_confirmed_safety_strike: {
+        Args: {
+          p_category: string;
+          p_content_hash?: string;
+          p_reason_code: string;
+          p_source_type: string;
+          p_user_id: string;
+        };
+        Returns: Json;
       };
-      get_ai_runtime_policy: {
-        Args: Record<string, never>;
-        Returns: AiRuntimePolicyRow[];
+      begin_emergency_storage_cleanup: {
+        Args: never;
+        Returns: {
+          quota_bytes: number;
+          run_token: string;
+          target_delete_bytes: number;
+          used_bytes: number;
+        }[];
       };
-      get_system_admission_policy: {
-        Args: Record<string, never>;
-        Returns: SystemAdmissionPolicyRow[];
+      can_allocate_my_quota: {
+        Args: { p_additional_bytes?: number };
+        Returns: boolean;
       };
-      /** Returns ONE JSON object (nested groups), not a flat row set. */
-      get_user_visible_supabase_health: {
-        Args: Record<string, never>;
-        Returns: SupabaseHealthJson;
-      };
-      /** Returns ONE JSON object scoped to the caller. */
-      get_my_data_summary: {
-        Args: Record<string, never>;
-        Returns: MyDataSummaryJson;
-      };
-      /** Returns JSONB describing the recorded compliance state. */
       complete_account_compliance_onboarding: {
         Args: {
+          p_acceptable_use_version: string;
           p_account_type: string;
           p_date_of_birth: string;
-          p_guardian_email: string | null;
-          p_terms_version: string;
+          p_guardian_email: string;
           p_privacy_version: string;
-          p_acceptable_use_version: string;
           p_safety_version: string;
+          p_terms_version: string;
         };
         Returns: Json;
       };
       find_peer_by_exact_username: {
         Args: { p_username: string };
-        Returns: PeerDirectoryRow[];
+        Returns: {
+          preferred_name: string;
+          user_id: string;
+          username: string;
+        }[];
       };
-      /** Returns a ROW SET; read `conversation_id` from the first row. */
+      finish_emergency_storage_cleanup: {
+        Args: { p_freed_bytes: number; p_run_token: string };
+        Returns: undefined;
+      };
+      get_ai_runtime_policy: {
+        Args: never;
+        Returns: {
+          allow_parallel_per_user_model_processes: boolean;
+          check_active_users: boolean;
+          deduplicate_model_downloads: boolean;
+          preflight_gpu_free_percent: number;
+          preflight_ram_free_percent: number;
+          preflight_storage_free_percent: number;
+          ready_gpu_free_percent: number;
+          ready_ram_free_percent: number;
+          ready_storage_free_percent: number;
+        }[];
+      };
+      get_emergency_cleanup_candidates: {
+        Args: { p_target_bytes: number };
+        Returns: {
+          bucket_id: string;
+          created_at: string;
+          object_path: string;
+          size_bytes: number;
+        }[];
+      };
+      get_my_data_summary: { Args: never; Returns: Json };
+      get_my_quota_status: { Args: never; Returns: Json };
       get_or_create_direct_peer_conversation: {
         Args: { p_username: string };
-        Returns: DirectPeerConversationRow[];
+        Returns: {
+          conversation_id: string;
+          peer_preferred_name: string;
+          peer_user_id: string;
+          peer_username: string;
+        }[];
       };
+      get_storage_usage_status: {
+        Args: never;
+        Returns: {
+          cleanup_delete_percent: number;
+          cleanup_remaining_percent: number;
+          emergency_cleanup_needed: boolean;
+          quota_bytes: number;
+          remaining_bytes: number;
+          remaining_percent: number;
+          used_bytes: number;
+          used_percent: number;
+          warning: boolean;
+          warning_remaining_percent: number;
+        }[];
+      };
+      get_system_admission_policy: {
+        Args: never;
+        Returns: {
+          automatic_model_rebalancing: boolean;
+          login_gpu_free_percent: number;
+          login_ram_free_percent: number;
+          login_storage_free_percent: number;
+          max_active_users: number;
+          max_gpu_used_percent: number;
+          max_ram_used_percent: number;
+          max_storage_used_percent: number;
+          preserve_inflight_requests: boolean;
+          queue_new_allocations_while_rebalancing: boolean;
+          recommend_model_from_system_health: boolean;
+        }[];
+      };
+      get_user_visible_supabase_health: { Args: never; Returns: Json };
       mark_peer_conversation_read: {
         Args: { p_conversation_id: string };
         Returns: undefined;
       };
-      /**
-       * LIVE (migration `add_per_user_combined_50mb_quota`): returns ONE JSON
-       * object with the caller's combined database + Storage usage.
-       */
-      get_my_quota_status: {
-        Args: Record<string, never>;
+      service_delete_all_user_content: {
+        Args: { p_user_id: string };
         Returns: Json;
       };
-      /** Preflight for a planned write of `p_additional_bytes` bytes. */
-      can_allocate_my_quota: {
-        Args: { p_additional_bytes: number };
+      service_delete_user_range: {
+        Args: {
+          p_delete_ai_messages?: boolean;
+          p_delete_peer_messages?: boolean;
+          p_end: string;
+          p_start: string;
+          p_user_id: string;
+        };
+        Returns: Json;
+      };
+      verify_storage_capacity_cleanup_secret: {
+        Args: { p_secret: string };
         Returns: boolean;
       };
     };
-
     Enums: {
       [_ in never]: never;
     };
@@ -872,6 +2063,38 @@ export type TablesUpdate<
       }
       ? U
       : never
+    : never;
+
+export type Enums<
+  DefaultSchemaEnumNameOrOptions extends
+    keyof DefaultSchema["Enums"] | { schema: keyof DatabaseWithoutInternals },
+  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals;
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
+    : never) = never,
+> = DefaultSchemaEnumNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals;
+}
+  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
+  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
+    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
+    : never;
+
+export type CompositeTypes<
+  PublicCompositeTypeNameOrOptions extends
+    keyof DefaultSchema["CompositeTypes"] | { schema: keyof DatabaseWithoutInternals },
+  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals;
+  }
+    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    : never) = never,
+> = PublicCompositeTypeNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals;
+}
+  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
+  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
+    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
     : never;
 
 export const Constants = {

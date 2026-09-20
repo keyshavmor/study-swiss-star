@@ -4,6 +4,7 @@ import { createMiddleware } from "@tanstack/react-start";
 import { getRequest } from "@tanstack/react-start/server";
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "./types";
+import { assertPublishableSupabaseKey } from "./key-safety";
 
 function isNewSupabaseApiKey(value: string): boolean {
   return value.startsWith("sb_publishable_") || value.startsWith("sb_secret_");
@@ -46,6 +47,7 @@ export const requireSupabaseAuth = createMiddleware({ type: "function" }).server
       console.error(`[Supabase] ${message}`);
       throw new Error(message);
     }
+    assertPublishableSupabaseKey(SUPABASE_PUBLISHABLE_KEY);
 
     const request = getRequest();
 

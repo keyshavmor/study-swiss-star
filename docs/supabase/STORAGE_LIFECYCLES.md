@@ -1,6 +1,6 @@
 # Storage Lifecycles
 
-Status: CURRENT — LIVE VERIFIED 2026-09-15
+Status: CURRENT — LIVE VERIFIED READ-ONLY 2026-09-20
 
 ## User materials
 
@@ -30,3 +30,20 @@ The live private policy starts cleanup at 90% used and targets 80% used. Cleanup
 than controlled by a per-user preference; authenticated users may also invoke the same guarded
 operation manually from Settings. The v2 function removes Storage objects first and then associated
 document/attachment metadata through supported APIs.
+
+## Peer-message attachments
+
+The browser may stage a bounded file, but it is not deliverable until the local
+backend verifies membership, sniffs and validates content, scans it, moderates
+the message, and writes the attachment/message atomically through the
+privileged path. Conversation UUID is the first path segment; only active
+members may read. Scanner or moderation unavailability fails closed.
+
+## Data rights and account deletion
+
+`delete-my-data` v1 re-verifies the bearer token and binds every range,
+all-content, or account operation to that subject. It removes known Storage
+objects before service-only database deletion. Errors are retryable and never
+reported as success. The local backend must separately purge its user caches,
+indexes, assessment answer keys and attempts, operations, leases, artifacts,
+downloads, and temporary files and return a resumable receipt.

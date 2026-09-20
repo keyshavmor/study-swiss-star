@@ -6,7 +6,7 @@
 | Status | `CURRENT — SUPABASE` only where timestamped; otherwise explicit gap/unknown |
 | Canonical path | `docs/supabase/README.md` |
 | Project | `ucacmeadsufiedxrgqit` (`GymmiExamPrep`) |
-| Live metadata last verified | 2026-09-18, read-only |
+| Live metadata last verified | 2026-09-20, read-only |
 | Frontend verified against | `f0910e6971f12efe0ad547b904f6e2a518b13856` |
 
 [Consumed object index](CONSUMED_OBJECT_INDEX.md) is the canonical inventory of
@@ -21,6 +21,7 @@ Supporting evidence:
 - [Storage architecture](STORAGE_ARCHITECTURE.md)
 - [Storage lifecycles](STORAGE_LIFECYCLES.md)
 - [Edge Functions](EDGE_FUNCTIONS.md)
+- [Security and data boundaries](SECURITY_AND_DATA_BOUNDARIES.md)
 - [User preferences](USER_PREFERENCES_CONTRACT.md)
 
 ## Security boundary
@@ -46,7 +47,9 @@ References: [Securing the Data API](https://supabase.com/docs/guides/api/securin
 [RLS](https://supabase.com/docs/guides/database/postgres/row-level-security), and
 [Supabase breaking-change changelog](https://supabase.com/changelog?types=breaking-change).
 
-Applied migrations are immutable history. The repository does not yet reproduce
-all 32 live migration identities observed through 2026-09-17; Prompt 07 owns
-forward reconciliation and two-user security proof. This documentation phase
-made no database, Auth, Storage, function or project-setting change.
+Applied migrations are immutable history. The repository records all 32 live
+identities but lacks 23 original SQL bodies; it therefore does not claim a clean
+production-equivalent reset. Prompt 07 added an undeployed forward hardening
+migration, both catalog/two-user security suites, all seven retrieved Edge
+Function contracts, regenerated live types, and isolated local lifecycle hooks.
+It made no database, Auth, Storage, function, or project-setting change.

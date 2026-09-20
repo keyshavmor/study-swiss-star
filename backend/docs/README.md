@@ -7,7 +7,7 @@
 | Canonical path | `backend/docs/README.md` |
 | Backend foundation | Prompt 03 implementation begun from `f61aeaf21ad3aa3030fb6c1db42203cadb9d8f8c` |
 | Frontend contract authority | `f0910e6971f12efe0ad547b904f6e2a518b13856` |
-| Last reviewed | 2026-09-19 |
+| Last reviewed | 2026-09-20 |
 
 This tree owns implemented backend behavior and the handoff for moving that
 backend toward the authoritative frontend contract. Cross-system UX and API

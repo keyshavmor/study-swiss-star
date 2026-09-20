@@ -1,31 +1,39 @@
 # Supabase source and deployment authority
 
-**Status:** CURRENT repository/live reconciliation evidence, last live retrieval 2026-09-15.
+Status: CURRENT repository/live reconciliation evidence, last live retrieval
+2026-09-20 (read-only).
 
-The frontend-consumed contract and current implementation-gap labels live in
-[`../docs/supabase/README.md`](../docs/supabase/README.md). Prompt 02 reorganizes documentation
-only; it does not change the linked project, migrations, policies, buckets, or Edge Functions.
+Project `ucacmeadsufiedxrgqit` owns Auth, Postgres/RLS, private Storage,
+durable user state, telemetry, messaging/compliance data, and scheduled
+retention. FastAPI performs AI inference locally. Supabase URLs are service
+endpoints, never the user-facing app launch URL.
 
-Project `ucacmeadsufiedxrgqit` owns authentication, Postgres/RLS, private Storage, durable user
-state, tutoring transcripts/context, Assistant history, telemetry, and media-retention scheduling.
-FastAPI performs tutoring AI computation locally.
+- `migrations/` has nine exact applied historical files plus the new,
+  undeployed forward-only Prompt 07 hardening migration.
+- `LIVE_MIGRATION_HISTORY.md` records all 32 live identities and the 23 missing
+  original SQL bodies. Do not fabricate, rename, reorder, or replay them.
+- `functions/` represents all seven retrieved live Edge Function sources,
+  including `delete-my-data`; `config.toml` records JWT gateway modes.
+- `tests/rls_isolation.sql` and `tests/security_contract.sql` are disposable
+  local-database tests. Never run them on the linked production project.
+- `CLI_VERSION`, `LOCAL_ENVIRONMENT.md`, and `scripts/local.sh` define the
+  isolated local CLI/container boundary for Ubuntu and Apple-silicon macOS.
 
-- `migrations/` contains the exact historical SQL available in Git through
-  `20260914131340_cover_composite_foreign_keys.sql` plus the two reconciliation migrations applied
-  as live versions `20260915105026` and `20260915105236`.
-- `LIVE_MIGRATION_HISTORY.md` records every live migration and explicitly identifies later SQL
-  whose original source is not available in either authoritative clone.
-- `functions/` contains exact current source fetched from each deployed Edge Function on
-  2026-09-15. The three reconciliation targets were deployed and re-fetched at v2; the concurrently
-  deployed `storage-emergency-cleanup` v2 was preserved.
-- `config.toml` records each live function's `verify_jwt` mode.
-- `tests/rls_isolation.sql` is a local-database, rollback-only isolation test. Never run it against
-  the linked production project.
+The repository cannot yet reproduce a clean production-equivalent database
+because 23 applied SQL bodies were never committed. It can safely describe and,
+after a reviewed disposable-baseline test and explicit authorization, advance
+the existing live baseline with the forward migration. Never run
+`supabase db reset --linked`.
 
-The live Supabase migration table is the deployment-history authority. Drizzle files are retained
-for application development but are not a complete production migration history. Never use
-`supabase db reset --linked`, never expose a secret/service-role key to the browser, and do not
-invent replacement SQL for unavailable historical migrations.
+Canonical documentation:
 
-See [`../docs/supabase/SUPABASE_CURRENT_STATE.md`](../docs/supabase/SUPABASE_CURRENT_STATE.md) and
-[`../docs/supabase/RLS_AUTHORIZATION_MATRIX.md`](../docs/supabase/RLS_AUTHORIZATION_MATRIX.md).
+- `../docs/supabase/SUPABASE_CURRENT_STATE.md`
+- `../docs/supabase/SECURITY_AND_DATA_BOUNDARIES.md`
+- `../docs/supabase/RLS_AUTHORIZATION_MATRIX.md`
+- `../docs/supabase/STORAGE_ARCHITECTURE.md`
+- `../docs/supabase/EDGE_FUNCTIONS.md`
+
+Browser code receives only the project URL and publishable key. Service-role and
+scheduler secrets are server/Vault-only. Production SQL, Auth settings, Edge
+Function deployment, or advisor remediation always requires a separate reviewed
+authorization.

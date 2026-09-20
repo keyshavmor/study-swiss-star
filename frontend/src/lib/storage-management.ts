@@ -58,8 +58,17 @@ export function formatBytes(bytes: number): string {
 export async function fetchStorageUsage(): Promise<StorageUsageStatus | null> {
   const { data, error } = await supabase.rpc("get_storage_usage_status");
   if (error) throw new Error(error.message);
-  const rows = (Array.isArray(data) ? data : [data]) as StorageUsageStatus[];
-  return rows[0] ?? null;
+  const row = (Array.isArray(data) ? data[0] : data) ?? null;
+  if (!row) return null;
+  return {
+    quota_bytes: row.quota_bytes,
+    used_bytes: row.used_bytes,
+    remaining_bytes: row.remaining_bytes,
+    used_percent: row.used_percent,
+    remaining_percent: row.remaining_percent,
+    warning_threshold_reached: row.warning,
+    emergency_cleanup_needed: row.emergency_cleanup_needed,
+  };
 }
 
 function readString(row: Record<string, unknown>, keys: string[]): string {

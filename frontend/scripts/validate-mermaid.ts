@@ -1,9 +1,11 @@
 import { readdir, readFile } from "node:fs/promises";
 import { join, relative, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 
 import mermaid from "mermaid";
 
-const docsRoot = resolve(import.meta.dir, "../../docs");
+const scriptDirectory = fileURLToPath(new URL(".", import.meta.url));
+const docsRoot = resolve(scriptDirectory, "../../docs");
 
 async function collect(directory: string): Promise<string[]> {
   const entries = await readdir(directory, { withFileTypes: true });
